@@ -9713,6 +9713,21 @@ async def lifespan(app: FastAPI):
 
         await layer_alert_service.observe(printer_id, layer_num, printer_manager.get_client(printer_id))
 
+        async def calibrate_snapshot(image: bytes) -> bytes:
+            """Ein gemessenes Bild (Plattenaufsicht) anliefern, wenn eingerückt.
+
+            Ohne Einmessung oder bei Fehler kommt das Original durch — die
+            Beobachter rechnen mit ihrem ROI-Ausschnitt weiter, nie mit nichts.
+            """
+            try:
+                from backend.app.services.plate_calibration import warp_snapshot
+
+                warped = await warp_snapshot(printer_id, image)
+                return warped or image
+            except Exception as exc:  # noqa: BLE001 - Kamerapfad darf nicht abbrechen
+                logging.getLogger(__name__).warning("Platteinmessung übersprungen: %s", exc)
+                return image
+
         # Erste-Schicht-Inspektor: Bild der ersten Schichten ohne Referenz beurteilen.
         fl_client = printer_manager.get_client(printer_id)
         fl_state = fl_client.state if fl_client else None
@@ -9729,6 +9744,7 @@ async def lifespan(app: FastAPI):
                             image = await _capture_snapshot_for_notification(
                                 printer_id, fl_printer, logging.getLogger(__name__)
                             )
+                            image = await calibrate_snapshot(image)
                             warning = first_layer_service.observe(printer_id, layer_num, image, fl_key)
                             if warning:
                                 await notification_service.on_ai_failure_detection(
@@ -9755,6 +9771,7 @@ async def lifespan(app: FastAPI):
                             image = await _capture_snapshot_for_notification(
                                 printer_id, pw_printer, logging.getLogger(__name__)
                             )
+                            image = await calibrate_snapshot(image)
                             warning = part_watcher_service.observe(
                                 printer_id, pw_printer.name, layer_num,
                                 pw_state.total_layers, image, pw_key,
@@ -10736,6 +10753,11 @@ app.include_router(maintenance_programs.router, prefix=app_settings.api_prefix)
 app.include_router(maintenance_print.router, prefix=app_settings.api_prefix)
 app.include_router(layer_alerts.router, prefix=app_settings.api_prefix)
 app.include_router(part_watcher.router, prefix=app_settings.api_prefix)
+
+# Kamera-Einmessung (Monitor-Port P1): vier Plattenecken -> Plattenaufsicht.
+from backend.app.api.routes import plate_calibration as plate_calibration_router  # noqa: E402
+
+app.include_router(plate_calibration_router.router, prefix=app_settings.api_prefix)
 app.include_router(first_layer_inspector.router, prefix=app_settings.api_prefix)
 app.include_router(hardware.router, prefix=app_settings.api_prefix)
 app.include_router(camera.router, prefix=app_settings.api_prefix)

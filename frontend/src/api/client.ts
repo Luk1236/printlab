@@ -4182,6 +4182,12 @@ export interface HardwareActionResponse extends HardwareStatus {
   message: string;
 }
 
+export interface PlateCalibrationStatus {
+  calibrated: boolean;
+  points: Array<[number, number]> | null;
+  plate_size: number;
+}
+
 export interface MaintenancePrintResponse {
   success: boolean;
   message: string;
@@ -7380,6 +7386,17 @@ export const api = {
     withStreamToken(`${API_BASE}/printers/${printerId}/camera/stream?fps=${fps}`),
   getCameraSnapshotUrl: (printerId: number) =>
     withStreamToken(`${API_BASE}/printers/${printerId}/camera/snapshot`),
+  getPlateCalibration: (printerId: number) =>
+    request<PlateCalibrationStatus>(`/printers/${printerId}/plate-calibration`),
+  setPlateCalibration: (printerId: number, points: Array<[number, number]>) =>
+    request<PlateCalibrationStatus>(`/printers/${printerId}/plate-calibration`, {
+      method: 'PUT',
+      body: JSON.stringify({ points }),
+    }),
+  clearPlateCalibration: (printerId: number) =>
+    request<PlateCalibrationStatus>(`/printers/${printerId}/plate-calibration`, { method: 'DELETE' }),
+  getPlateCalibrationPreviewUrl: (printerId: number) =>
+    withStreamToken(`${API_BASE}/printers/${printerId}/plate-calibration/preview`),
   testCameraConnection: (printerId: number) =>
     request<{ success: boolean; message?: string; error?: string }>(`/printers/${printerId}/camera/test`),
   getCameraStatus: (printerId: number) =>

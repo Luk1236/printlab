@@ -11,6 +11,7 @@ import type {
   MaintenanceProgram,
   MaintenanceProgramStatus,
   PartWatcherStatus,
+  PlateCalibrationStatus,
   Printer,
 } from '../api/client';
 import { Button } from './Button';
@@ -97,6 +98,32 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
     onSuccess: () => {
       showToast(t('common.success'));
       queryClient.invalidateQueries({ queryKey: ['hardwareStatus', printerId] });
+    },
+    onError: (error: Error) => showToast(error.message, 'error'),
+  });
+
+  // Kamera-Einmessung (P1): vier Plattenecken klicken, Homographie speichern.
+  const { data: plateCalibration } = useQuery<PlateCalibrationStatus>({
+    queryKey: ['plateCalibration', printerId],
+    queryFn: () => api.getPlateCalibration(printerId),
+    enabled: printerId > 0,
+  });
+  const [calibrationOpen, setCalibrationOpen] = useState(false);
+  const [calibrationPoints, setCalibrationPoints] = useState<Array<[number, number]>>([]);
+  const calibrationMutation = useMutation({
+    mutationFn: () => api.setPlateCalibration(printerId, calibrationPoints),
+    onSuccess: () => {
+      showToast(t('common.success'));
+      setCalibrationOpen(false);
+      setCalibrationPoints([]);
+      queryClient.invalidateQueries({ queryKey: ['plateCalibration', printerId] });
+    },
+    onError: (error: Error) => showToast(error.message, 'error'),
+  });
+  const calibrationClearMutation = useMutation({
+    mutationFn: () => api.clearPlateCalibration(printerId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['plateCalibration', printerId] });
     },
     onError: (error: Error) => showToast(error.message, 'error'),
   });
@@ -441,10 +468,95 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
           {firstLayer?.result && !firstLayer.result.ok && (
             <span className="text-xs text-red-700 dark:text-red-400">{firstLayer.result.message}</span>
           )}
+          {/* Kamera-Einmessung */}
+          <Button
+            size="sm"
+            variant="secondary"
+            className="whitespace-nowrap"
+            disabled={!canControl || printerId === 0}
+            onClick={() => {
+              setCalibrationPoints([]);
+              setCalibrationOpen(true);
+            }}
+          >
+            {t('maintenance.programs.calibrateCamera')}
+          </Button>
+          {plateCalibration?.calibrated && (
+            <span className="text-xs text-bambu-green">{t('maintenance.programs.calibrationDone')}</span>
+          )}
         </div>
 
         <p className="text-xs text-bambu-gray">{t('maintenance.programs.safety')}</p>
       </CardContent>
+
+      {/* Kamera-Einmessung: Live-Snapshot, vier Ecken anklicken (TL, TR, BR, BL). */}
+      {calibrationOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 overflow-y-auto">
+          <div className="bg-bambu-dark-secondary rounded-xl p-5 max-w-2xl w-full border border-bambu-dark-tertiary">
+            <h3 className="text-base font-semibold text-white mb-2">
+              {t('maintenance.programs.calibrateCamera')}
+            </h3>
+            <p className="text-xs text-bambu-gray mb-3">{t('maintenance.programs.calibrationHint')}</p>
+            <div
+              className="relative"
+              onPointerDown={(event) => {
+                if (calibrationPoints.length >= 4 || calibrationMutation.isPending) return;
+                const target = event.currentTarget.getBoundingClientRect();
+                const x = Math.min(1, Math.max(0, (event.clientX - target.left) / target.width));
+                const y = Math.min(1, Math.max(0, (event.clientY - target.top) / target.height));
+                setCalibrationPoints((points) => [...points, [Number(x.toFixed(4)), Number(y.toFixed(4))]]);
+              }}
+            >
+              <img
+                src={api.getCameraSnapshotUrl(printerId) + '&ts=' + Date.now()}
+                alt=""
+                className="w-full rounded-lg select-none pointer-events-none"
+                draggable={false}
+              />
+              {calibrationPoints.map(([x, y], index) => (
+                <span
+                  key={`${x}-${y}`}
+                  className="absolute w-4 h-4 -ml-2 -mt-2 rounded-full bg-bambu-green ring-2 ring-white/80 pointer-events-none"
+                  style={{ left: `${x * 100}%`, top: `${y * 100}%` }}
+                />
+              ))}
+              {/* Klick-Reihenfolge anzeigen */}
+              <span className="absolute left-2 top-2 rounded bg-black/60 px-2 py-0.5 text-[11px] text-white">
+                {calibrationPoints.length < 4
+                  ? `${t('maintenance.programs.calibrationNext')} ${calibrationPoints.length + 1}/4`
+                  : t('maintenance.programs.calibrationSet')}
+              </span>
+            </div>
+            <div className="mt-4 flex flex-wrap justify-end gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setCalibrationOpen(false);
+                  setCalibrationPoints([]);
+                }}
+              >
+                {t('common.cancel')}
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={calibrationMutation.isPending}
+                onClick={() => setCalibrationPoints((points) => points.slice(0, -1))}
+              >
+                {t('maintenance.programs.calibrationUndo')}
+              </Button>
+              <Button
+                size="sm"
+                disabled={calibrationPoints.length !== 4 || calibrationMutation.isPending}
+                onClick={() => calibrationMutation.mutate()}
+              >
+                {t('common.save')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
