@@ -34,30 +34,42 @@
 
 ### P1 Optik abschließen
 - [x] Kamera-Einmessung über vier Plattenecken (Homographie) — erledigt 27.10.2026.
-- [ ] Referenzbild-Ausrichtung für den Leerbett-/Bauteilvergleich (über die
-      Homographie-Aufsicht stark abgedeckt; Rest: Bildversatz-Abgleich).
+- [x] Leerbett-Prüfung beim Druckstart (Referenz per Klick, Warn-Kanal) — 27.10.2026.
+- [ ] Spaghetti-/Abbruch-Erkennung nach Druckmitte (Warf-Bilder auf abruptes
+      Filament-Ende) — Bausteine (Warp, Warnkanal) sind da.
 - [ ] Optional: Part-Watcher-Schwelle und Zielschicht pro Auftrag statt pro Drucker.
 
 ### P2 Queue und Automatik
 - [X] Automatischer Plattenwechsel nach Druckende (Abkühlung, Türprüfung, Fehlerzustand) — erledigt 27.10.2026.
-- [ ] Wartungsdruck direkt in die Warteschlange legen (P2S-/G-code-/MD5-Prüfung).
-- [ ] Hardware-Konfiguration in der UI statt `data/hardware.json`.
-- [ ] Magazinverwaltung in der UI (Fächer belegen/freigeben, Etiketten).
-- [ ] Audit-Log und Benachrichtigungen für Hardware-/Wartungsaktionen.
+- [X] Wartungsdruck direkt in die Warteschlange — `queue=true` am
+      Wartungsdruck-Endpunkt; 3MF in der Bibliothek, Auftrag geplant.
+- [X] Hardware-Konfiguration in der UI (Befehle/Modus/Zeitlimit) — Hardware-Admin-Karte.
+- [X] Magazinverwaltung in der UI (Status klicken zum Wechseln, Etiketten).
+- [X] Audit-Log: `data/audit_log.jsonl` + Protokoll in der Karte (Benachrichtigungen
+      folgen mit dem Telegram/E-Mail-Ausbau).
+- [ ] Automatik-Verfeinerungen: „Nur wenn Auftrag wartet" ist drin
+      (`only_with_queue`); offen: Abbruch mitten im Wechsel, Füllstand-Warnung.
 
 ### P3 PC-Slicer alltagstauglich
-- [ ] Plattenwahl (`plate`) umsetzen; aktuell slict die CLI alle Platten.
-- [ ] Fortschritt über `/slice/progress` (oder klarer Hinweis auf Zeitüberwachung).
-- [ ] Autostart als Windows-Dienst (Aufgabe ist vorhanden: `install_pc_slicer_task.ps1`).
+- [X] Plattenwahl (`plate`): `--export-plate N`, Fallback auf alle Platten bei
+      älteren CLIs; G-code-Auszug wählt `plate_N.gcode`. (27.10.2026)
+- [x] Fortschritt: Seitecar meldet bewusst 404 → Bambuddy nutzt seine
+      Zeitüberwachung (dokumentiert im `pc_slicer.py`).
+- [x] Autostart als Windows-Dienst (Aufgabe ist vorhanden: `install_pc_slicer_task.ps1`).
 - [ ] Voller E2E-Test: MakerWorld → PC-Slicer → Queue.
 - [ ] Token/Firewall, sobald der Dienst nicht nur auf `127.0.0.1` lauscht.
 
 ### P4 Engineering und Betrieb
+- [X] CI auf dem Fork-Branch: `.github/workflows/ci.yml` lauscht jetzt auch auf
+      `bambu-monitor-port` (Backend-Lint/-Test/Frontend wie Upstream).
+- [X] Lokales Backup: `werkzeuge/backup_erstellen.ps1` (getestet) +
+      tägliche Aufgabe `install_backup_task.ps1`. GitHub-Backup ist ohnehin
+      in Bambuddy selbst eingebaut (Einstellungen → Backup).
 - [ ] Volle Upstream-Suite auf Linux/CI (Windows scheitert an Pfad-Trennern).
 - [ ] Docker-/ARM-Build und Test auf Pi 4/5.
-- [ ] Fork-Version/Changelog pflegen, AGPL-Hinweis, Upstream-Merge-Strategie.
 - [ ] Frontend-Tests für die Wartungskarte; Backend-Meldungen für alle 15 Sprachen.
-- [ ] Auth einschalten, Admin anlegen, HTTPS/Tailscale, Backup.
+- [ ] Auth einschalten (wartet auf das Passwort), HTTPS/Tailscale.
+- [ ] Kalkulator am Warteschlangen-Auftrag, Monats-Report, Preisliste-Tarife.
 - [ ] Release-Paket und Installationsanleitung für Pi 4/5.
 
 ### P5 Oberfläche
