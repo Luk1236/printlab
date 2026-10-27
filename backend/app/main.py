@@ -38,9 +38,11 @@ from backend.app.api.routes import (
     github_backup,
     groups,
     ha_sensors,
+    hardware,
     inventory,
     kprofiles,
     labels,
+    layer_alerts,
     library,
     library_tags,
     library_trash,
@@ -49,6 +51,8 @@ from backend.app.api.routes import (
     local_presets,
     location_ha_sensors,
     maintenance,
+    maintenance_print,
+    maintenance_programs,
     makerworld,
     metrics,
     mfa,
@@ -9689,6 +9693,10 @@ async def lifespan(app: FastAPI):
     # Layer change callback for external camera timelapse
     async def on_layer_change(printer_id: int, layer_num: int):
         """Capture timelapse frame on layer change + first layer notification."""
+        from backend.app.services.layer_alerts import layer_alerts as layer_alert_service
+
+        await layer_alert_service.observe(printer_id, layer_num, printer_manager.get_client(printer_id))
+
         from backend.app.services.layer_timelapse import on_layer_change as tl_layer_change
 
         await tl_layer_change(printer_id, layer_num)
@@ -10653,6 +10661,10 @@ app.include_router(updates.router, prefix=app_settings.api_prefix)
 app.include_router(sponsor_prompt.router, prefix=app_settings.api_prefix)
 app.include_router(announcements.router, prefix=app_settings.api_prefix)
 app.include_router(maintenance.router, prefix=app_settings.api_prefix)
+app.include_router(maintenance_programs.router, prefix=app_settings.api_prefix)
+app.include_router(maintenance_print.router, prefix=app_settings.api_prefix)
+app.include_router(layer_alerts.router, prefix=app_settings.api_prefix)
+app.include_router(hardware.router, prefix=app_settings.api_prefix)
 app.include_router(camera.router, prefix=app_settings.api_prefix)
 app.include_router(camwall.router, prefix=app_settings.api_prefix)
 app.include_router(external_links.router, prefix=app_settings.api_prefix)

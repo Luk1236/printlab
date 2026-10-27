@@ -43,6 +43,7 @@ import { Card, CardContent } from '../components/Card';
 import { Button } from '../components/Button';
 import { Toggle } from '../components/Toggle';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { MaintenanceProgramsCard } from '../components/MaintenanceProgramsCard';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -1276,6 +1277,7 @@ export function MaintenancePage() {
       {/* Tab content */}
       {activeTab === 'status' ? (
         <div className="space-y-6">
+          <MaintenanceProgramsCard canControl={hasPermission('printers:control')} />
           {overview && overview.length > 0 ? (
             [...overview].sort((a, b) => {
               // Sort printers with issues first

@@ -20,7 +20,10 @@ uvicorn[standard]>=0.27.0
 # branch, which NullPool rejects — on <=2.0.37 every SQLite install (and the
 # test suite, which imports the module-level engine) dies at import with
 # "Invalid argument(s) 'pool_size','max_overflow' sent to create_engine()".
-sqlalchemy>=2.0.38
+sqlalchemy>=2.0.38,<2.1
+# Fork-Hinweis: Windows Application Control (Smart App Control/WDAC) blockiert auf
+# diesem PC die unsignierte _processors_cy-DLL von SQLAlchemy 2.1. 2.0.x laeuft mit
+# dem reinen Python-Fallback. Obergrenze entfernen, wenn die Richtlinie es erlaubt.
 aiosqlite>=0.19.0
 asyncpg>=0.29.0
 greenlet>=3.0.0

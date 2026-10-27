@@ -87,10 +87,11 @@ html {
 }
 
 :root {
-  /* Default accent color (green) */
-  --accent: #00ae42;
-  --accent-light: #00c64d;
-  --accent-dark: #009438;
+  /* Default accent color (green). Darker than Bambu's #00ae42 so white text
+     on primary buttons and the active nav item reaches WCAG AA (4.5:1). */
+  --accent: #007a2e;
+  --accent-light: #00963a;
+  --accent-dark: #006326;
 
   /* Semantic status colors - these never change with accent theme */
   --status-ok: #22c55e;      /* green-500 - always green for success/online/ok */
@@ -210,7 +211,7 @@ html {
   --bg-tertiary: #363e46;
   --text-primary: #f0f4f8;
   --text-secondary: #98a8b8;
-  --text-muted: #788898;
+  --text-muted: #9aa9b8;
   --text-tertiary: #4a5a6a;
   --border-color: #363e46;
 }
@@ -296,9 +297,9 @@ html {
    ============================================ */
 
 .accent-green {
-  --accent: #00ae42;
-  --accent-light: #00c64d;
-  --accent-dark: #009438;
+  --accent: #007a2e;
+  --accent-light: #00963a;
+  --accent-dark: #006326;
 }
 
 .accent-teal {
@@ -614,4 +615,17 @@ body {
 .slice-colour-swatch::-moz-color-swatch {
   border: none;
   border-radius: 999px;
+}
+
+/* Accessibility: green text/icons need a lighter tone than the green used for
+   filled buttons (white on #007a2e). Filled surfaces keep --accent; text uses
+   this token so both reach WCAG AA. */
+:root {
+  --accent-text: #007a2e;
+}
+.dark {
+  --accent-text: #4ade80;
+}
+.text-bambu-green {
+  color: var(--accent-text);
 }

@@ -4115,6 +4115,72 @@ export interface MaintenanceSummary {
   }>;
 }
 
+// Maintenance programs (ported from Bambu-Monitor)
+export type MaintenanceProgram = 'oil' | 'rods';
+
+export interface MaintenanceProgramStatus {
+  printer_id: number;
+  program: MaintenanceProgram | null;
+  label: string | null;
+  active: boolean;
+  phase: 'idle' | 'starting' | 'homing' | 'z' | 'xy' | 'pause' | 'done' | 'stopped' | 'error' | string;
+  message: string;
+  step: number;
+  steps: number;
+  percent: number;
+  eta_seconds: number;
+  error: string | null;
+  started_at: string | null;
+  finished_at: string | null;
+  runs: number;
+}
+
+export interface MaintenanceProgramStartResponse extends MaintenanceProgramStatus {
+  success: boolean;
+  message: string;
+}
+
+// Hardware extension (door servo + plate changer), ported from Bambu-Monitor
+export interface HardwareSlot {
+  id: number;
+  type: 'supply' | 'storage' | string;
+  status: 'ready' | 'used' | 'empty' | 'occupied' | string;
+  label?: string;
+  print?: string | null;
+}
+
+export interface HardwareStatus {
+  mode: 'simulated' | 'command' | string;
+  door: 'open' | 'closed' | 'unknown' | string;
+  plate_on_bed: boolean;
+  busy: boolean;
+  error: string | null;
+  slots: HardwareSlot[];
+  supply_ready: number;
+  storage_empty: number;
+  changes: number;
+  last_change: string | null;
+}
+
+export interface HardwareActionResponse extends HardwareStatus {
+  success: boolean;
+  message: string;
+}
+
+export interface MaintenancePrintResponse {
+  success: boolean;
+  message: string;
+  filename: string;
+  download_url: string;
+}
+
+export interface LayerAlertStatus {
+  enabled: boolean;
+  layer: number;
+  triggered: boolean;
+  last_layer: number;
+}
+
 // External Links (sidebar)
 export interface ExternalLink {
   id: number;
@@ -7099,6 +7165,69 @@ export const api = {
   removeMaintenanceItem: (itemId: number) =>
     request<{ status: string }>(`/maintenance/items/${itemId}`, {
       method: 'DELETE',
+    }),
+
+  // Maintenance programs (Bambu-Monitor port): oil / threaded rods
+  getMaintenanceProgramStatus: (printerId: number) =>
+    request<MaintenanceProgramStatus>(`/printers/${printerId}/maintenance-programs`),
+  startMaintenanceProgram: (printerId: number, program: MaintenanceProgram, runs?: number, platteFrei = false) =>
+    request<MaintenanceProgramStartResponse>(
+      `/printers/${printerId}/maintenance-programs/${program}/start?platte_frei=${platteFrei ? 1 : 0}${runs != null ? `&runs=${runs}` : ''}`,
+      { method: 'POST' }
+    ),
+  stopMaintenanceProgram: (printerId: number) =>
+    request<MaintenanceProgramStartResponse>(`/printers/${printerId}/maintenance-programs/stop`, {
+      method: 'POST',
+    }),
+
+  // Hardware extension: door + plate changer
+  getHardwareStatus: (printerId: number) =>
+    request<HardwareStatus>(`/printers/${printerId}/hardware`),
+  openHardwareDoor: (printerId: number) =>
+    request<HardwareActionResponse>(`/printers/${printerId}/hardware/door/open`, { method: 'POST' }),
+  closeHardwareDoor: (printerId: number) =>
+    request<HardwareActionResponse>(`/printers/${printerId}/hardware/door/close`, { method: 'POST' }),
+  changeHardwarePlate: (printerId: number, job?: string) =>
+    request<HardwareActionResponse>(
+      `/printers/${printerId}/hardware/plate/change${job ? `?job=${encodeURIComponent(job)}` : ''}`,
+      { method: 'POST' }
+    ),
+  refillHardwareMagazine: (printerId: number) =>
+    request<HardwareActionResponse>(`/printers/${printerId}/hardware/magazine/refill`, { method: 'POST' }),
+
+  // Maintenance print (movement-only 3MF, Bambu-Monitor port)
+  downloadMaintenancePrint: async (printerId: number, program: 'oil' | 'rods'): Promise<MaintenancePrintResponse> => {
+    const created = await request<MaintenancePrintResponse>(
+      `/printers/${printerId}/maintenance-print/${program}`,
+      { method: 'POST' }
+    );
+    const headers: Record<string, string> = {};
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+    const response = await fetch(created.download_url, { headers });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = created.filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    return created;
+  },
+
+  // Layer alert (pause at target layer)
+  getLayerAlert: (printerId: number) =>
+    request<LayerAlertStatus>(`/printers/${printerId}/layer-alert`),
+  setLayerAlert: (printerId: number, data: { enabled: boolean; layer: number }) =>
+    request<LayerAlertStatus>(`/printers/${printerId}/layer-alert`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
     }),
 
   // Camera

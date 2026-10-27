@@ -10,9 +10,9 @@ export default {
       colors: {
         // Bambu Lab color palette
         bambu: {
-          green: '#00ae42',
-          'green-light': '#00c64d',
-          'green-dark': '#009438',
+          green: '#007a2e',
+          'green-light': '#00963a',
+          'green-dark': '#006326',
           dark: '#1a1a1a',
           'dark-secondary': '#2d2d2d',
           'dark-tertiary': '#3d3d3d',
