@@ -4203,6 +4203,27 @@ export interface QuoteResponse {
   total: number;
 }
 
+export interface AuditEntry {
+  ts: string;
+  action: string;
+  ok: boolean;
+  message: string;
+  printer_id: number | null;
+  user: string | null;
+  details?: Record<string, unknown>;
+}
+
+export interface HardwareConfig {
+  mode: 'simulated' | 'command' | string;
+  door_open_command: string;
+  door_close_command: string;
+  door_status_command: string;
+  plate_change_command: string;
+  emergency_stop_command: string;
+  timeout_seconds: number;
+  auto_plate_change?: AutoPlateChange;
+}
+
 export interface MaintenancePrintResponse {
   success: boolean;
   message: string;
@@ -7267,6 +7288,20 @@ export const api = {
     request<HardwareActionResponse>(`/printers/${printerId}/hardware/emergency-stop`, { method: 'POST' }),
   updateAutoPlateChange: (printerId: number, payload: Partial<AutoPlateChange>) =>
     request<{ auto_plate_change: AutoPlateChange }>(`/printers/${printerId}/hardware/auto-plate-change`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+  setMagazineSlots: (printerId: number, slots: HardwareSlot[]) =>
+    request<HardwareActionResponse>(`/printers/${printerId}/hardware/magazine`, {
+      method: 'PUT',
+      body: JSON.stringify({ slots }),
+    }),
+  getHardwareAuditLog: (printerId: number, limit = 20) =>
+    request<AuditEntry[]>(`/printers/${printerId}/hardware/audit-log?limit=${limit}`),
+  getHardwareConfig: (printerId: number) =>
+    request<HardwareConfig>(`/printers/${printerId}/hardware/config`),
+  setHardwareConfig: (printerId: number, payload: Partial<HardwareConfig>) =>
+    request<HardwareActionResponse>(`/printers/${printerId}/hardware/config`, {
       method: 'PUT',
       body: JSON.stringify(payload),
     }),

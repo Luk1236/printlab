@@ -50,6 +50,8 @@ DEFAULT_SLOTS: list[dict[str, Any]] = [
     {"id": 6, "type": "storage", "status": "empty", "label": "Fach 3"},
 ]
 
+VALID_SLOT_STATUSES = frozenset({"ready", "used", "empty", "occupied"})
+
 
 def _read_json(path: Path, default: Any) -> Any:
     try:
@@ -288,6 +290,74 @@ class HardwareExtension:
             self._magazine["plate_on_bed"] = True
             self._save_magazine()
             return True, "Magazin aufgefüllt, Ablage geleert."
+
+    def edit_slots(self, slots_in: list[dict[str, Any]]) -> tuple[bool, str]:
+        """Einzelne Fächer setzen (Status/Etikett); der Rest bleibt.
+
+        ``slots_in``: Elemente mit ``id`` (1..6) und optional ``status``
+        (ready/used/empty/occupied) und ``label``. Der laufende
+        Hardware-Vorgang blockiert den Edit, um widersprüchliche Zustände zu
+        vermeiden.
+        """
+        with self._lock:
+            if self._busy:
+                return False, "Es läuft bereits ein Hardware-Vorgang."
+            changes: list[str] = []
+            by_id = {slot["id"]: slot for slot in self._magazine["slots"]}
+            for item in slots_in:
+                try:
+                    slot_id = int(item.get("id"))
+                except (TypeError, ValueError):
+                    return False, "Fach-Id fehlt oder ist keine Zahl."
+                slot = by_id.get(slot_id)
+                if slot is None:
+                    return False, f"Unbekanntes Fach {slot_id}."
+                label = item.get("label")
+                if label is not None:
+                    slot["label"] = str(label)[:60]
+                    changes.append(f"Fach {slot_id}: Etikett '{slot['label']}'")
+                status = item.get("status")
+                if status is not None:
+                    if status not in VALID_SLOT_STATUSES:
+                        return False, (
+                            f"Unbekannter Status '{status}' für Fach {slot_id} "
+                            f"(erlaubt: {', '.join(sorted(VALID_SLOT_STATUSES))})."
+                        )
+                    slot["status"] = status
+                    if status in ("empty", "ready"):
+                        slot.pop("print", None)
+                    changes.append(f"Fach {slot_id}: {status}")
+            if not changes:
+                return False, "Keine gültigen Änderungen übermittelt."
+            self._save_magazine()
+            return True, "; ".join(changes)
+
+    def config(self) -> dict[str, Any]:
+        """Aktuelle Konfiguration (Kopie; Befehle sind lokale, vertrauenswürdige Werte)."""
+        with self._lock:
+            return dict(self._config)
+
+    def update_config(self, data: dict[str, Any]) -> tuple[bool, str]:
+        """Konfiguration schreiben und neu laden (nur bekannte Schlüssel)."""
+        with self._lock:
+            try:
+                data = json.loads(json.dumps(data)) if not isinstance(data, dict) else data
+                unknown = [key for key in data if key not in DEFAULT_CONFIG]
+                if unknown:
+                    return False, f"Unbekannte Schlüssel: {', '.join(sorted(unknown))}."
+                merged = dict(self._config)
+                merged.update({key: data[key] for key in DEFAULT_CONFIG if key in data})
+                if merged.get("mode") not in ("simulated", "command"):
+                    return False, "Modus nur 'simulated' oder 'command'."
+                try:
+                    merged["timeout_seconds"] = max(1.0, float(merged.get("timeout_seconds") or TIMEOUT))
+                except (TypeError, ValueError):
+                    return False, "timeout_seconds muss eine Zahl sein."
+                _write_json(self.config_path, merged)
+                self._config = merged
+                return True, "Hardware-Konfiguration gespeichert."
+            except (OSError, ValueError, TypeError) as exc:
+                return False, f"Konfiguration nicht gespeichert: {exc}"
 
     def emergency_stop(self) -> tuple[bool, str]:
         """Not-Halt: bricht den laufenden Vorgang ab und fährt die Mechanik in den sicheren Zustand.
