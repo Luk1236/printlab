@@ -1813,6 +1813,7 @@ export default {
       layerAlert: 'Schicht-Stopp (Pause bei Schicht)',
       confirmPlate: 'Ist die Druckplatte leer? Das Programm fährt Home und bewegt das Bett.',
       partWatcher: 'Bauteil-Wächter (Kamera-Vergleich)',
+      emergencyStop: 'Not-Halt',
     },
     overview: 'Übersicht',
     allOk: 'Alle Wartungen aktuell',

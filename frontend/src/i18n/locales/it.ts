@@ -1812,6 +1812,7 @@ export default {
       layerAlert: 'Stop dello strato (pausa allo strato)',
       confirmPlate: 'Il piano è libero? Il programma esegue l’Home e muove il piatto.',
       partWatcher: 'Controllo del pezzo (confronto fotocamera)',
+      emergencyStop: 'Arresto di emergenza',
     },
     overview: 'Panoramica',
     allOk: 'Tutta la manutenzione aggiornata',

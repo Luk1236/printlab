@@ -1812,6 +1812,7 @@ export default {
       layerAlert: 'Parada de camada (pausa na camada)',
       confirmPlate: 'A mesa está vazia? O programa faz o Home e move a mesa.',
       partWatcher: 'Vigia da peça (comparação por câmera)',
+      emergencyStop: 'Parada de emergência',
     },
     overview: 'Visão Geral',
     allOk: 'Todas as manutenções estão em dia',

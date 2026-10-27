@@ -69,10 +69,11 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
   });
 
   const hardwareMutation = useMutation({
-    mutationFn: (action: 'open' | 'close' | 'plate' | 'refill') => {
+    mutationFn: (action: 'open' | 'close' | 'plate' | 'refill' | 'stop') => {
       if (action === 'open') return api.openHardwareDoor(printerId);
       if (action === 'close') return api.closeHardwareDoor(printerId);
       if (action === 'plate') return api.changeHardwarePlate(printerId);
+      if (action === 'stop') return api.emergencyStopHardware(printerId);
       return api.refillHardwareMagazine(printerId);
     },
     onSuccess: (data) => {
@@ -312,6 +313,15 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
             >
               <RefreshCw className="w-4 h-4" />
               {t('maintenance.programs.refill')}
+            </Button>
+            <Button
+              size="sm"
+              variant="danger"
+              disabled={!canControl}
+              onClick={() => hardwareMutation.mutate('stop')}
+            >
+              <Square className="w-4 h-4" />
+              {t('maintenance.programs.emergencyStop')}
             </Button>
           </div>
           {hardware?.error && (

@@ -1830,6 +1830,7 @@ export default {
       layerAlert: 'Lagerstopp (paus vid lager)',
       confirmPlate: 'Är plattan tom? Programmet kör Home och flyttar bädden.',
       partWatcher: 'Delbevakning (kamerajämförelse)',
+      emergencyStop: 'Nödstopp',
     },
     overview: 'Översikt',
     allOk: 'Allt underhåll är gjort',

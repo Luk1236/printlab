@@ -1812,6 +1812,7 @@ export default {
       layerAlert: 'Arrêt de couche (pause à la couche)',
       confirmPlate: 'La plaque est-elle vide ? Le programme fait un Home et déplace le plateau.',
       partWatcher: 'Surveillance de la pièce (comparaison caméra)',
+      emergencyStop: 'Arrêt d’urgence',
     },
     overview: 'Vue d\'ensemble',
     allOk: 'Toute la maintenance est à jour',

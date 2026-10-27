@@ -37,6 +37,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "door_close_command": "",
     "door_status_command": "",
     "plate_change_command": "",
+    "emergency_stop_command": "",
     "timeout_seconds": TIMEOUT,
 }
 
@@ -287,6 +288,26 @@ class HardwareExtension:
             self._magazine["plate_on_bed"] = True
             self._save_magazine()
             return True, "Magazin aufgefüllt, Ablage geleert."
+
+    def emergency_stop(self) -> tuple[bool, str]:
+        """Not-Halt: bricht den laufenden Vorgang ab und fährt die Mechanik in den sicheren Zustand.
+
+        Im Simulationsmodus wird nur der Zustand geführt. Im Befehlsmodus läuft der
+        konfigurierte Not-Halt-Befehl; der Vorgang bleibt danach gesperrt, bis die
+        Hardware-Konfiguration neu geladen oder das Magazin aufgefüllt wird.
+        """
+        with self._lock:
+            self._last_error = None
+            self._door = "unknown"
+            self._busy = False
+            if self._config["mode"] == "simulated":
+                return True, "Not-Halt ausgelöst (Simulation)."
+            ok, output = self._command("emergency_stop_command")
+            if not ok:
+                self._last_error = output
+                return False, output
+            logger.warning("[Hardware] Not-Halt ausgelöst: %s", output or "Befehl ausgeführt")
+            return True, "Not-Halt ausgelöst."
 
 
 _hardware: HardwareExtension | None = None

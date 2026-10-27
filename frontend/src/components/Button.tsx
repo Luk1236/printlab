@@ -20,7 +20,7 @@ export function Button({
     primary: 'bg-bambu-green hover:bg-bambu-green-light text-white focus:ring-bambu-green',
     secondary:
       'bg-bambu-dark-tertiary hover:bg-bambu-gray-dark text-white focus:ring-bambu-gray',
-    danger: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500',
+    danger: 'bg-red-700 hover:bg-red-800 text-white focus:ring-red-600',
     ghost:
       'bg-transparent hover:bg-bambu-dark-tertiary text-bambu-gray-light hover:text-white',
   };

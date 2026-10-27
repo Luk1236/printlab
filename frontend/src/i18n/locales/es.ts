@@ -1814,6 +1814,7 @@ export default {
       layerAlert: 'Parada de capa (pausa en la capa)',
       confirmPlate: '¿Está vacía la placa? El programa hace Home y mueve la cama.',
       partWatcher: 'Vigilante de pieza (comparación de cámara)',
+      emergencyStop: 'Parada de emergencia',
     },
     overview: 'Resumen',
     allOk: 'Todo el mantenimiento al día',

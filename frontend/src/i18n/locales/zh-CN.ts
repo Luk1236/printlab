@@ -1812,6 +1812,7 @@ export default {
       layerAlert: '层暂停（在指定层暂停）',
       confirmPlate: '打印板是空的吗？程序会回原点并移动热床。',
       partWatcher: '零件监测（摄像头对比）',
+      emergencyStop: '急停',
     },
     overview: '概览',
     allOk: '所有维护均已完成',

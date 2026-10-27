@@ -1831,6 +1831,7 @@ export default {
       layerAlert: 'Layer stop (pause at layer)',
       confirmPlate: 'Is the build plate clear? The program homes the printer and moves the bed.',
       partWatcher: 'Part watcher (camera comparison)',
+      emergencyStop: 'Emergency stop',
     },
     overview: 'Overview',
     allOk: 'All maintenance up to date',

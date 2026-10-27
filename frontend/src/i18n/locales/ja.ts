@@ -1812,6 +1812,7 @@ export default {
       layerAlert: 'レイヤー停止（指定レイヤーで一時停止）',
       confirmPlate: 'プレートは空ですか？プログラムはホームし、ベッドを動かします。',
       partWatcher: 'パーツ監視（カメラ比較）',
+      emergencyStop: '緊急停止',
     },
     overview: '概要',
     allOk: 'すべてのメンテナンスは最新です',

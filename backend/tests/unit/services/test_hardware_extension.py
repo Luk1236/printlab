@@ -115,3 +115,25 @@ class TestCommand:
         assert not ok
         assert "offen" in message
         assert hw.status()["door"] == "open"
+
+
+class TestEmergencyStop:
+    def test_simulation_setzt_zustand_auf_unbekannt(self, tmp_path):
+        hw = make(tmp_path)
+        ok, message = hw.emergency_stop()
+        assert ok
+        assert "Simulation" in message
+        assert hw.status()["door"] == "unknown"
+
+    def test_befehl_wird_ausgefuehrt(self, tmp_path):
+        cmd = f'"{sys.executable}" -c "print(\'STOP:OK\')"'
+        hw = make(tmp_path, mode="command", emergency_stop_command=cmd)
+        ok, message = hw.emergency_stop()
+        assert ok, message
+        assert hw.status()["door"] == "unknown"
+
+    def test_ohne_befehl_scheitert(self, tmp_path):
+        hw = make(tmp_path, mode="command")
+        ok, message = hw.emergency_stop()
+        assert not ok
+        assert "Kein Befehl" in message

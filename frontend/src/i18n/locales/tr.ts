@@ -1814,6 +1814,7 @@ export default {
       layerAlert: 'Katman durdurma (katmanda duraklat)',
       confirmPlate: 'Plaka boş mu? Program Home yapar ve tablayı hareket ettirir.',
       partWatcher: 'Parça denetimi (kamera karşılaştırması)',
+      emergencyStop: 'Acil durdurma',
     },
     overview: 'Genel Bakış',
     allOk: 'Tüm bakım güncel',

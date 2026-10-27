@@ -207,10 +207,13 @@ wird genutzt, kein zweiter Stream.
 
 - **Platte-frei-Bestätigung** vor Wartungsprogrammen (Backend-Pflicht + Rückfrage in der UI).
 - **Tür-Endschalterprüfung** im Befehlsmodus: `DOOR:UNKNOWN` oder der falsche Zustand bricht ab.
+- **Not-Halt** (`POST …/hardware/emergency-stop`) funktioniert bewusst auch bei Druck/offline,
+  setzt die Tür auf „unbekannt“ und führt im Befehlsmodus `emergency_stop_command` aus.
 - **Axe/WCAG AA** auf der Wartungsseite: 0 Verstöße. Dafür wurde der Grün-Akzent für weiße
   Schrift abgedunkelt (`#007a2e`), grüne Schrift bekommt einen helleren Text-Ton
   (`#4ade80` im Dark Mode), und die Viewport-Sperre (`user-scalable=no`) wurde entfernt.
-- Der PC-Slicer hat einen Startknopf `starte_pc_slicer.bat`.
+- Der PC-Slicer hat einen Startknopf `starte_pc_slicer.bat`; `install_pc_slicer_task.ps1`
+  legt ihn als Aufgabe beim Anmelden an.
 
 ## Geänderte Dateien (Stand jetzt)
 
@@ -227,6 +230,8 @@ wird genutzt, kein zweiter Stream.
 - `backend/app/api/routes/layer_alerts.py` (neu)
 - `backend/app/api/routes/part_watcher.py` (neu)
 - `starte_pc_slicer.bat` (neu)
+- `install_pc_slicer_task.ps1` (neu)
+- `FORK-CHANGELOG.md` (neu)
 - `backend/app/main.py` (Router registriert)
 - `backend/tests/unit/services/test_maintenance_programs.py` (neu, 14 Tests)
 - `backend/tests/unit/services/test_maintenance_print.py` (neu, 5 Tests)
@@ -287,6 +292,8 @@ Live geprüft:
   ist mit 6 Unit-Tests abgedeckt (ohne echten Drucker).
 - Bauteil-Wächter: API live aktiviert (Schwelle 1,0); der Bildvergleich ist mit 8 Tests
   abgedeckt, ein echter Kameradurchlauf steht ohne Drucker noch aus.
+- Not-Halt: in der Simulation live ausgelöst (Tür → `unknown`); der Befehlspfad ist
+  mit 3 Tests abgedeckt.
 
 ## Offene Punkte
 

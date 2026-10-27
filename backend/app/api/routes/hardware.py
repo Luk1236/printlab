@@ -103,3 +103,19 @@ async def refill_magazine(
         raise HTTPException(400, message)
     logger.info("[Hardware] Magazin für Drucker %s aufgefüllt (%s)", printer.id, message)
     return {"success": True, "message": message, **get_hardware().status()}
+
+
+@router.post("/{printer_id}/hardware/emergency-stop")
+async def emergency_stop(
+    printer_id: int,
+    _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_CONTROL),
+    db: AsyncSession = Depends(get_db),
+):
+    """Not-Halt: funktioniert bewusst auch bei Druck/offline, ohne den normalen Guard."""
+    result = await db.execute(select(Printer).where(Printer.id == printer_id))
+    if result.scalar_one_or_none() is None:
+        raise HTTPException(404, "Printer not found")
+    ok, message = await asyncio.to_thread(get_hardware().emergency_stop)
+    if not ok:
+        raise HTTPException(400, message)
+    return {"success": True, "message": message, **get_hardware().status()}

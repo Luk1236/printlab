@@ -7210,6 +7210,8 @@ export const api = {
     ),
   refillHardwareMagazine: (printerId: number) =>
     request<HardwareActionResponse>(`/printers/${printerId}/hardware/magazine/refill`, { method: 'POST' }),
+  emergencyStopHardware: (printerId: number) =>
+    request<HardwareActionResponse>(`/printers/${printerId}/hardware/emergency-stop`, { method: 'POST' }),
 
   // Maintenance print (movement-only 3MF, Bambu-Monitor port)
   downloadMaintenancePrint: async (printerId: number, program: 'oil' | 'rods'): Promise<MaintenancePrintResponse> => {

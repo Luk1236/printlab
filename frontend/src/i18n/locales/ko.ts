@@ -1739,6 +1739,7 @@ export default {
       layerAlert: '레이어 정지 (해당 레이어에서 일시정지)',
       confirmPlate: '플레이트가 비어 있습니까? 프로그램이 홈으로 이동하고 베드를 움직입니다.',
       partWatcher: '부품 감시 (카메라 비교)',
+      emergencyStop: '비상 정지',
     },
     overview: '개요',
     allOk: '모든 유지보수 최신 상태',
