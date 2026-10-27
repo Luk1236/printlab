@@ -7,17 +7,30 @@ Start (PC, im Bambuddy-Ordner):
 In Bambuddy unter Einstellungen → Workflow → Slicer die „Bambu Studio sidecar URL“
 auf http://127.0.0.1:3001 setzen (oder die IP des PCs, wenn Bambuddy auf dem Pi läuft)
 und „Slicer-API verwenden“ einschalten.
+
+Zugriffsschutz (Standard: nur Anfragen von diesem PC, also Loopback):
+
+- ``PC_SLICER_ALLOWED_IPS`` – kommagetrennte IPs/Netze (z. B. ``192.168.178.133,10.0.0.0/24``),
+  die zusätzlich zugreifen dürfen. Das ist der Weg für Bambuddy auf dem Pi, weil Bambuddys
+  Slicer-Client keinen Token mitschickt.
+- ``PC_SLICER_TOKEN`` – wenn gesetzt, müssen Nicht-Loopback-Clients ``Authorization: Bearer <Token>``
+  oder ``X-Slicer-Token`` senden.
+
+Ohne eine der beiden Variablen werden Anfragen von anderen Rechnern mit 403 abgelehnt, auch
+wenn der Dienst auf ``0.0.0.0`` lauscht (Firewall-Regel für Port 3001 bleibt trotzdem sinnvoll).
 """
 from __future__ import annotations
 
 import asyncio
+import hmac
+import ipaddress
 import logging
 import os
 import tempfile
 import zipfile
 from pathlib import Path
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse, Response
 
 from backend.app.services.slicer_cli import SlicerCliError, program_path, slice_file
@@ -30,6 +43,54 @@ MAX_BYTES = 200 * 1024 * 1024
 
 def _truthy(value: str | None) -> bool:
     return str(value or "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def _parse_ip(value: str | None):
+    try:
+        return ipaddress.ip_address((value or "").strip().split("%")[0])
+    except ValueError:
+        return None
+
+
+def _allowed_networks() -> list:
+    networks = []
+    for part in os.environ.get("PC_SLICER_ALLOWED_IPS", "").split(","):
+        part = part.strip()
+        if not part:
+            continue
+        try:
+            networks.append(ipaddress.ip_network(part, strict=False))
+        except ValueError:
+            logger.warning("[PC-Slicer] Ungültiger Eintrag in PC_SLICER_ALLOWED_IPS ignoriert: %r", part)
+    return networks
+
+
+def _client_allowed(client_host: str | None, headers) -> bool:
+    """Loopback immer; sonst müssen konfigurierte IP-Liste und/oder Token passen (Standard: verweigern)."""
+    ip = _parse_ip(client_host)
+    if ip is not None and ip.is_loopback:
+        return True
+    networks = _allowed_networks()
+    token = os.environ.get("PC_SLICER_TOKEN", "")
+    if not networks and not token:
+        return False
+    if networks and (ip is None or not any(ip in net for net in networks)):
+        return False
+    if token:
+        auth = headers.get("authorization", "")
+        supplied = auth[7:].strip() if auth.lower().startswith("bearer ") else headers.get("x-slicer-token", "")
+        if not hmac.compare_digest(supplied.encode(), token.encode()):
+            return False
+    return True
+
+
+@app.middleware("http")
+async def access_guard(request: Request, call_next):
+    client_host = request.client.host if request.client else None
+    if not _client_allowed(client_host, request.headers):
+        logger.warning("[PC-Slicer] Zugriff von %s abgelehnt", client_host)
+        return JSONResponse(status_code=403, content={"detail": "Zugriff nicht erlaubt."})
+    return await call_next(request)
 
 
 @app.get("/health")
@@ -129,7 +190,8 @@ async def slice_route(
             names = set(zf.namelist())
             wanted = next((c for c in candidates if c in names), None)
             if wanted is None:
-                raise KeyError("plate_N.gcode nicht in der 3MF (gefunden: %s)" % [n for n in names if n.endswith('.gcode')][:3])
+                found = [n for n in names if n.endswith(".gcode")][:3]
+                raise KeyError(f"plate_N.gcode nicht in der 3MF (gefunden: {found})")
             gcode = zf.read(wanted)
         return Response(content=gcode, media_type="text/plain", headers=headers)
     except (OSError, KeyError, zipfile.BadZipFile) as exc:

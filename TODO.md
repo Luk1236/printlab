@@ -62,7 +62,10 @@
       Zeitüberwachung (dokumentiert im `pc_slicer.py`).
 - [x] Autostart als Windows-Dienst (Aufgabe ist vorhanden: `install_pc_slicer_task.ps1`).
 - [ ] Voller E2E-Test: MakerWorld → PC-Slicer → Queue.
-- [ ] Token/Firewall, sobald der Dienst nicht nur auf `127.0.0.1` lauscht.
+- [x] Zugriffsschutz des PC-Slicers (27.10.2026): Loopback immer erlaubt, andere Rechner nur
+      über `PC_SLICER_ALLOWED_IPS` (IPs/Netze) und/oder `PC_SLICER_TOKEN`, sonst 403.
+      Bambuddys Slicer-Client schickt keinen Token mit → für den Pi die IP-Liste nutzen.
+      Offen: Windows-Firewallregel für Port 3001 beim Wechsel auf `0.0.0.0`.
 
 ### P4 Engineering und Betrieb
 - [X] CI auf dem Fork-Branch: `.github/workflows/ci.yml` lauscht jetzt auch auf
@@ -72,7 +75,9 @@
       in Bambuddy selbst eingebaut (Einstellungen → Backup).
 - [ ] Volle Upstream-Suite auf Linux/CI (Windows scheitert an Pfad-Trennern).
 - [ ] Docker-/ARM-Build und Test auf Pi 4/5.
-- [ ] Frontend-Tests für die Wartungskarte; Backend-Meldungen für alle 15 Sprachen.
+- [x] Frontend-Tests für die Wartungskarte (Hardware-Abschnitt: Magazin, Automatik,
+      Warnung, Fehler, Not-Halt, Rechte) — 27.10.2026.
+- [ ] Backend-Meldungen für alle 15 Sprachen.
 - [ ] Auth einschalten (wartet auf das Passwort), HTTPS/Tailscale.
 - [x] Kalkulator am Warteschlangen-Auftrag: Zeitstrahl lädt bei Hover
       `GET /quote/for-archive/{id}` (Material/Energie/Arbeit/Aufschlag).
