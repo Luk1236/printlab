@@ -4203,6 +4203,12 @@ export interface QuoteResponse {
   total: number;
 }
 
+export interface BedEmptyCheckStatus {
+  enabled: boolean;
+  threshold: number;
+  has_reference: boolean;
+}
+
 export interface AuditEntry {
   ts: string;
   action: string;
@@ -7304,6 +7310,17 @@ export const api = {
     request<HardwareActionResponse>(`/printers/${printerId}/hardware/config`, {
       method: 'PUT',
       body: JSON.stringify(payload),
+    }),
+  getBedEmptyCheck: (printerId: number) =>
+    request<BedEmptyCheckStatus>(`/printers/${printerId}/bed-empty-check`),
+  setBedEmptyCheck: (printerId: number, payload: { enabled: boolean; threshold: number }) =>
+    request<BedEmptyCheckStatus>(`/printers/${printerId}/bed-empty-check`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+  captureBedReference: (printerId: number) =>
+    request<{ saved: boolean; reference: string }>(`/printers/${printerId}/bed-empty-check/reference`, {
+      method: 'POST',
     }),
 
   // Maintenance print (movement-only 3MF, Bambu-Monitor port)

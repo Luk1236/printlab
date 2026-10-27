@@ -16,6 +16,7 @@ import type {
 } from '../api/client';
 import { Button } from './Button';
 import { Card, CardContent } from './Card';
+import { BedEmptyCheckRow } from './BedEmptyCheckRow';
 import { useToast } from '../contexts/ToastContext';
 
 interface MaintenanceProgramsCardProps {
@@ -504,6 +505,8 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
           {firstLayer?.result && !firstLayer.result.ok && (
             <span className="text-xs text-red-700 dark:text-red-400">{firstLayer.result.message}</span>
           )}
+          {/* Leerbett-Prüfung: nur Warnung beim Druckstart */}
+          <BedEmptyCheckRow printerId={printerId} canControl={canControl} />
           {/* Kamera-Einmessung */}
           <Button
             size="sm"

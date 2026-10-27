@@ -4037,6 +4037,28 @@ async def on_print_start(printer_id: int, data: dict):
     # Notify when the print-start AMS mapping references tray slots without spool assignments.
     await notify_missing_spool_assignments_on_print_start(printer_id, data, logger)
 
+    # Leerbett-Prüfung (Monitor-Port P1): Kamera sagt, ob beim Start Material
+    # auf der Platte liegt. Nur Warnung; Fehlschläge brechen den Start nicht.
+    try:
+        from backend.app.services import bed_empty_check
+
+        if bed_empty_check.read_config()["enabled"]:
+            async with async_session() as be_db:
+                result = await be_db.execute(select(Printer).where(Printer.id == printer_id))
+                be_printer = result.scalar_one_or_none()
+                if be_printer is not None:
+                    frame = await _capture_snapshot_for_notification(printer_id, be_printer, logger)
+                    if frame:
+                        outcome = await asyncio.to_thread(bed_empty_check.check, printer_id, frame)
+                        if outcome and outcome.get("warning"):
+                            await notification_service.on_ai_failure_detection(
+                                printer_id, be_printer.name,
+                                data.get("subtask_name", ""), 0.5, "bed_empty_check",
+                                be_db, image_data=frame,
+                            )
+    except Exception as exc:  # noqa: BLE001 - Start-Pfad darf nicht brechen
+        logger.warning("Leerbett-Prüfung fehlgeschlagen: %s", exc)
+
     # MQTT relay - publish print start
     try:
         printer_info = printer_manager.get_printer(printer_id)
