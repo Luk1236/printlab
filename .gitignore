@@ -111,3 +111,5 @@ feature_votes.sh
 /magazine.json
 /layer_alerts.json
 /maintenance/
+/part_watcher.json
+/first_layer_inspector.json
