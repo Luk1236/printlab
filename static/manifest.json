@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "Bambu Monitor",
-  "short_name": "Bambu Monitor",
+  "name": "PrintLab",
+  "short_name": "PrintLab",
   "description": "Monitor and manage your Bambu Lab 3D printers",
   "start_url": "/",
   "display": "standalone",

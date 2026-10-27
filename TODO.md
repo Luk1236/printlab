@@ -61,7 +61,8 @@
 
 ## Persönliche Anpassung (27.10.2026)
 
-- Rebrand als **Bambu Monitor**, deutsche Oberfläche als Standard, eigene Logos/Icons.
+- Rebrand als **PrintLab** (vorher „Bambu Monitor“), deutsche Oberfläche als
+  Standard, dunkles Design voreingestellt, eigene Logos/Icons.
 - P2S aus der alten `config.ini` übernommen (IP, Seriennummer, Zugangscode, P2S, Werkstatt);
   aktuell offline.
 - Einstellungen: EUR, 22 €/kg, 0,35 €/kWh, PC-Slicer `http://127.0.0.1:3001`.
