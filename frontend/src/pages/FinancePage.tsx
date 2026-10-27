@@ -6,6 +6,7 @@ import { api, type ManualPrintRequest, type TransactionEditRequest, type WalletT
 import { Button } from '../components/Button';
 import { Card, CardContent, CardHeader } from '../components/Card';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { QuoteCalculator } from '../components/QuoteCalculator';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { getCurrencySymbol } from '../utils/currency';
@@ -681,6 +682,8 @@ export function FinancePage() {
 
   return (
     <div className="p-4 md:p-8 space-y-8">
+      {/* Angebotskalkulator (gewerbliche Nutzung): Material, Energie, Arbeit, Aufschlag */}
+      <QuoteCalculator />
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <div className="flex items-center gap-2">

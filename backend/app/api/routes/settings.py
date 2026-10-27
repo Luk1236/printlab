@@ -225,6 +225,9 @@ _FLOAT_SETTING_KEYS = frozenset(
     {
         "default_filament_cost",
         "energy_cost_per_kwh",
+        "printer_power_watts",
+        "labor_rate_per_hour",
+        "quote_markup_percent",
         "ams_temp_good",
         "ams_temp_fair",
         "library_disk_warning_gb",

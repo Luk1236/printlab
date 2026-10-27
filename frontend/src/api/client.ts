@@ -1379,6 +1379,10 @@ export interface AppSettings {
   default_filament_cost: number;
   currency: string;
   energy_cost_per_kwh: number;
+  printer_power_watts: number;
+  labor_rate_per_hour: number;
+  quote_markup_percent: number;
+  energy_cost_per_kwh: number;
   energy_tracking_mode: 'print' | 'total';
   check_updates: boolean;
   check_printer_firmware: boolean;
@@ -4186,6 +4190,17 @@ export interface PlateCalibrationStatus {
   calibrated: boolean;
   points: Array<[number, number]> | null;
   plate_size: number;
+}
+
+export interface QuoteResponse {
+  currency: string;
+  inputs: Record<string, number>;
+  material: number;
+  energy: number;
+  labor: number;
+  subtotal: number;
+  markup: number;
+  total: number;
 }
 
 export interface MaintenancePrintResponse {
@@ -7397,6 +7412,19 @@ export const api = {
     request<PlateCalibrationStatus>(`/printers/${printerId}/plate-calibration`, { method: 'DELETE' }),
   getPlateCalibrationPreviewUrl: (printerId: number) =>
     withStreamToken(`${API_BASE}/printers/${printerId}/plate-calibration/preview`),
+  getQuote: (params: {
+    grams: number;
+    duration_minutes: number;
+    labor_minutes?: number;
+    filament_cost_per_kg?: number;
+    currency?: string;
+  }) => {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) query.set(key, String(value));
+    });
+    return request<QuoteResponse>(`/quote?${query.toString()}`);
+  },
   testCameraConnection: (printerId: number) =>
     request<{ success: boolean; message?: string; error?: string }>(`/printers/${printerId}/camera/test`),
   getCameraStatus: (printerId: number) =>

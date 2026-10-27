@@ -10758,6 +10758,11 @@ app.include_router(part_watcher.router, prefix=app_settings.api_prefix)
 from backend.app.api.routes import plate_calibration as plate_calibration_router  # noqa: E402
 
 app.include_router(plate_calibration_router.router, prefix=app_settings.api_prefix)
+
+# Angebotskalkulator (Gewerbliches): Stundenlohn, Aufschlag, Energie.
+from backend.app.api.routes import quote as quote_router  # noqa: E402
+
+app.include_router(quote_router.router, prefix=app_settings.api_prefix)
 app.include_router(first_layer_inspector.router, prefix=app_settings.api_prefix)
 app.include_router(hardware.router, prefix=app_settings.api_prefix)
 app.include_router(camera.router, prefix=app_settings.api_prefix)
