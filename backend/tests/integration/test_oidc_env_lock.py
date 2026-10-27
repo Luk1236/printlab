@@ -1,11 +1,11 @@
 """The env-managed provider is read-only through the API (#2593).
 
-Startup rewrites this row from BAMBUDDY_OIDC_* on every boot, so a UI edit
+Startup rewrites this row from PRINTLAB_OIDC_* on every boot, so a UI edit
 would silently disappear at the next restart -- the operator would see their
 change accepted and then reverted, with nothing explaining why. Refusing the
 write is the honest answer.
 
-Locking it out is safe because BAMBUDDY_LOCAL_LOGIN (#1589) is the documented
+Locking it out is safe because PRINTLAB_LOCAL_LOGIN (#1589) is the documented
 recovery path if the provider itself becomes unusable.
 """
 
@@ -65,7 +65,7 @@ async def test_delete_is_refused(async_client: AsyncClient, db_session):
 @pytest.mark.asyncio
 @pytest.mark.integration
 async def test_icon_delete_is_refused(async_client: AsyncClient, db_session):
-    """The icon is part of the env config too -- BAMBUDDY_OIDC_ICON_URL."""
+    """The icon is part of the env config too -- PRINTLAB_OIDC_ICON_URL."""
     provider_id = await _env_managed_provider(db_session)
     token = await _setup_and_login(async_client, "envlockicondel", "envlockicondel123")
 

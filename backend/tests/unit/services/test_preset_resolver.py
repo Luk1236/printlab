@@ -202,7 +202,7 @@ async def test_cloud_falls_back_to_top_level_when_no_envelope():
         # only accepts `machine` / `process` / `filament`. Without rewrite
         # the CLI exits -5 with `operator(): unknown config type` and the
         # sidecar surfaces "The input preset file is invalid and can not be
-        # parsed" (#1712 follow-up, reported by maziggy on Mecha Mewtwo).
+        # parsed" (#1712 follow-up, reported upstream on Mecha Mewtwo).
         ("printer", "printer", "machine"),
         ("process", "print", "process"),
         ("filament", "filament", "filament"),

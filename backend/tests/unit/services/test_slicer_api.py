@@ -134,7 +134,7 @@ class TestSliceWithProfiles:
     @pytest.mark.asyncio
     async def test_5xx_includes_sidecar_details_field(self):
         """Sidecar's AppError emits ``{message, details}`` — both must end up
-        in the raised error so ``bambuddy.log`` carries the actual CLI
+        in the raised error so ``printlab.log`` carries the actual CLI
         rejection reason instead of just the generic outer message.
         Pinned to fix the regression where every 3MF slice surfaced as
         the unhelpful ``Failed to slice the model`` line in production."""
@@ -514,7 +514,7 @@ class TestSliceOutputValidation:
     @pytest.mark.asyncio
     async def test_export_3mf_rejects_non_zip_200_body(self):
         # The exact failure from #2671: sidecar/proxy returns 200 with a tiny
-        # garbage body; Bambuddy must NOT accept it as a sliced 3MF.
+        # garbage body; PrintLab must NOT accept it as a sliced 3MF.
         body = b'{"detail":"Not Found"}xxxxxx'  # 28 bytes, not a zip
         assert len(body) == 28
 

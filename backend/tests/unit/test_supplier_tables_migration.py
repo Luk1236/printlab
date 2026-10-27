@@ -43,7 +43,7 @@ def _register_all_models():
 @pytest.fixture
 async def engine_without_supplier_tables():
     """create_all builds the current schema; dropping the tables reproduces a
-    database from a Bambuddy version that predates #2988."""
+    database from a PrintLab version that predates #2988."""
     from backend.app.core.database import Base
 
     _register_all_models()
@@ -198,7 +198,7 @@ async def test_migration_collapses_duplicates_instead_of_aborting(engine_with_pr
 
     CREATE UNIQUE INDEX refuses to build over the duplicates and _safe_execute
     re-raises that IntegrityError out of run_migrations, so without the
-    collapse Bambuddy never finishes starting — and every migration queued
+    collapse PrintLab never finishes starting — and every migration queued
     after this one is skipped with it (#2988).
 
     Collapsed by merging, not deleting: a supplier is referenced. The oldest

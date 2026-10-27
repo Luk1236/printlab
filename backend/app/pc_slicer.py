@@ -1,17 +1,17 @@
-"""PC-Slicer für Bambuddy: Bambu Studio CLI über die Sidecar-Schnittstelle.
+"""PC-Slicer für PrintLab: Bambu Studio CLI über die Sidecar-Schnittstelle.
 
-Start (PC, im Bambuddy-Ordner):
+Start (PC, im PrintLab-Ordner):
 
     .venv\\Scripts\\python.exe -m uvicorn backend.app.pc_slicer:app --host 127.0.0.1 --port 3001
 
-In Bambuddy unter Einstellungen → Workflow → Slicer die „Bambu Studio sidecar URL“
-auf http://127.0.0.1:3001 setzen (oder die IP des PCs, wenn Bambuddy auf dem Pi läuft)
+In PrintLab unter Einstellungen → Workflow → Slicer die „Bambu Studio sidecar URL“
+auf http://127.0.0.1:3001 setzen (oder die IP des PCs, wenn PrintLab auf dem Pi läuft)
 und „Slicer-API verwenden“ einschalten.
 
 Zugriffsschutz (Standard: nur Anfragen von diesem PC, also Loopback):
 
 - ``PC_SLICER_ALLOWED_IPS`` – kommagetrennte IPs/Netze (z. B. ``192.168.178.133,10.0.0.0/24``),
-  die zusätzlich zugreifen dürfen. Das ist der Weg für Bambuddy auf dem Pi, weil Bambuddys
+  die zusätzlich zugreifen dürfen. Das ist der Weg für PrintLab auf dem Pi, weil PrintLabs
   Slicer-Client keinen Token mitschickt.
 - ``PC_SLICER_TOKEN`` – wenn gesetzt, müssen Nicht-Loopback-Clients ``Authorization: Bearer <Token>``
   oder ``X-Slicer-Token`` senden.
@@ -111,7 +111,7 @@ async def root():
 
 @app.get("/slice/progress/{request_id}")
 async def progress(request_id: str):
-    """Fortschritt wird nicht gemeldet; Bambuddy fällt auf seine Zeitüberwachung zurück."""
+    """Fortschritt wird nicht gemeldet; PrintLab fällt auf seine Zeitüberwachung zurück."""
     return JSONResponse(status_code=404, content={"detail": "progress not supported"})
 
 
@@ -178,7 +178,7 @@ async def slice_route(
     if str(exportType or "").strip().lower() == "3mf":
         return Response(content=result.content, media_type="application/octet-stream", headers=headers)
 
-    # Ohne 3MF-Wunsch den G-code aus der erzeugten Datei liefern (Bambuddy erwartet dann Text).
+    # Ohne 3MF-Wunsch den G-code aus der erzeugten Datei liefern (PrintLab erwartet dann Text).
     # Mit Plattenwahl: zuerst Metadata/plate_N.gcode, sonst plate_1.gcode.
     candidates = ([f"Metadata/plate_{plate_num}.gcode", "Metadata/plate_1.gcode"]
                   if plate_num is not None else ["Metadata/plate_1.gcode"])

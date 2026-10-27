@@ -49,7 +49,7 @@ class TestTheDefaultForAQueueItemNobodyToggled:
 
     @pytest.mark.asyncio
     async def test_the_external_setting_only_covers_external_origins(self, db_session):
-        """A Bambu Studio plate counts; a pipeline run Bambuddy started itself
+        """A Bambu Studio plate counts; a pipeline run PrintLab started itself
         does not -- that one follows the per-job default like any queued job."""
         await _set_setting(db_session, "confirm_outcome_external_prints", "true")
 

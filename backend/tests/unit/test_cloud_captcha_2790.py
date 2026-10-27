@@ -9,11 +9,11 @@ That body is well-formed JSON, so the Cloudflare detector never fired on it and
 ``login_request`` fell through to its generic error path, which lifted Bambu's
 sentence out of ``error`` and returned it verbatim. The reporter got a bare
 toast reading "We need you to confirm you are not a robot" -- no challenge to
-answer, no explanation, nothing to click -- and filed it as a Bambuddy bug.
+answer, no explanation, nothing to click -- and filed it as a PrintLab bug.
 
 These tests pin: the challenge is recognised by shape rather than by wording,
 all three sign-in calls report it as ``reason="captcha"`` with an explanation
-instead of Bambu's raw string, retries are held back per-origin so Bambuddy
+instead of Bambu's raw string, retries are held back per-origin so PrintLab
 stops deepening the block, and the scanner names it in the next support bundle.
 """
 
@@ -230,7 +230,7 @@ class TestTheSupportBundleNamesIt:
             svc._note_captcha(_response(418, _CAPTCHA_BODY))
         logged = caplog.records[-1].getMessage()
 
-        log_file = tmp_path / "bambuddy.log"
+        log_file = tmp_path / "printlab.log"
         log_file.write_text(
             f"2026-08-08 05:15:37,068 WARNING [backend.app.services.bambu_cloud] {logged}\n",
             encoding="utf-8",

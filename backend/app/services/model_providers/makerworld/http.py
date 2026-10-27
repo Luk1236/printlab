@@ -47,13 +47,13 @@ _ALLOWED_DOWNLOAD_SUFFIXES = (".amazonaws.com",)
 MAKERWORLD_CDN_HOSTS = ("makerworld.bblmw.com", "public-cdn.bblmw.com")
 
 # Client identity sent to MakerWorld / api.bambulab.com. We identify honestly
-# as Bambuddy with a source URL so Bambu can distinguish our traffic from
+# as PrintLab with a source URL so Bambu can distinguish our traffic from
 # impersonators — the opposite of what the OrcaSlicer fork was called out for
 # in the May 2026 Bambu Lab blog post on cloud access. The Referer is kept
 # because MakerWorld's CSRF / origin-check middleware uses it on some
 # endpoints — that's distinct from client impersonation.
 _CLIENT_HEADERS = {
-    "User-Agent": "Bambuddy/1.0 (+https://github.com/maziggy/bambuddy)",
+    "User-Agent": "PrintLab/1.0 (+https://github.com/Luk1236/printlab)",
     "Accept": "text/html,application/json,*/*",
     "Accept-Language": "en-US,en;q=0.9",
     "Referer": "https://makerworld.com/",
@@ -79,7 +79,7 @@ def _s3_ssl_context() -> ssl.SSLContext:
     """Build the TLS context used for the S3 presigned download (#2562).
 
     ``urllib.request`` verifies against the *OS* trust store, while httpx —
-    every other network call in Bambuddy — verifies against the bundled
+    every other network call in PrintLab — verifies against the bundled
     ``certifi`` CA bundle. On Windows those two disagree: Python's
     ``ssl.load_default_certs()`` only enumerates the roots already cached in
     the Windows ROOT store, and Windows populates that store lazily via

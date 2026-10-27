@@ -390,10 +390,10 @@ class TestPhotoDirectoryCleanup:
 
     @pytest.fixture
     def external_share(self, monkeypatch, tmp_path):
-        """Bambuddy's data dir and an opted-in external share, as siblings.
+        """PrintLab's data dir and an opted-in external share, as siblings.
 
         The share cannot live under ``base_dir`` — ``_validate_external_path``
-        refuses to mount a Bambuddy-managed directory, and the module's
+        refuses to mount a PrintLab-managed directory, and the module's
         ``isolated_storage`` points ``base_dir`` at ``tmp_path`` itself.
         """
         data_dir = tmp_path / "data"
@@ -402,7 +402,7 @@ class TestPhotoDirectoryCleanup:
         monkeypatch.setattr(app_settings, "archive_dir", data_dir / "archive")
         share = tmp_path / "share"
         share.mkdir()
-        monkeypatch.setenv("BAMBUDDY_EXTERNAL_ROOTS", str(share))
+        monkeypatch.setenv("PRINTLAB_EXTERNAL_ROOTS", str(share))
         return share
 
     @pytest.mark.asyncio

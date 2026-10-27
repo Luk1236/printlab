@@ -450,7 +450,7 @@ async def get_notification_photo(filename: str):
 
 # Messages from other applications -------------------------------------------
 
-# Per caller, in memory: enough for any real app (Bambuddy Orders sends a few a
+# Per caller, in memory: enough for any real app (PrintLab Orders sends a few a
 # day), and a buggy or hostile one can't flood the channels.
 APP_MESSAGE_LIMIT = 20
 APP_MESSAGE_WINDOW_SECONDS = 60
@@ -483,7 +483,7 @@ async def send_app_message(
     caller: ScopedCaller = Depends(require_notification_send()),
 ):
     """Send a message through every enabled channel that has "Messages from
-    connected apps" on. For other applications, e.g. Bambuddy Orders; an API
+    connected apps" on. For other applications, e.g. PrintLab Orders; an API
     key needs the "Send notifications" permission."""
     key, sender = _app_sender(caller)
     _check_app_message_rate(key)

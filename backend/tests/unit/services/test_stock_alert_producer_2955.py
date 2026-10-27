@@ -125,7 +125,7 @@ async def _stored(db) -> list | None:
 
 @pytest.mark.asyncio
 async def test_a_fresh_scheduler_does_not_re_send_what_is_already_stored(db_session, scheduler, notify):
-    """The first check runs as soon as Bambuddy starts. Without the stored set, every update
+    """The first check runs as soon as PrintLab starts. Without the stored set, every update
     re-sent one message per SKU that was still low."""
     await _sku(db_session)
     await _spool(db_session, used=REORDER_USED)

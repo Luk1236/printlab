@@ -296,7 +296,7 @@ class NotificationProviderResponse(NotificationProviderBase):
 
 
 class AppMessage(BaseModel):
-    """A message another application sends through Bambuddy's notification channels."""
+    """A message another application sends through PrintLab's notification channels."""
 
     title: str = Field(min_length=1, max_length=120)
     message: str = Field(min_length=1, max_length=2000)

@@ -5,7 +5,7 @@ Referenz: ein mit „Leerbett aufnehmen“ aufgenommenes, eingemessenes Aufsicht
 bild pro Drucker (``data/plate_calibration``, gleiche Homographie wie der
 Bauteil-Wächter). Beim Start eines Drucks wird ein Snapshot gegriffen,
 eingemessen und mit dem Leerbett verglichen; Differenz über Schwelle = Warnung
-(an Bambuddys KI-Fehlerte-Kanal, ohne Eingriff).
+(an PrintLabs KI-Fehlerte-Kanal, ohne Eingriff).
 
 Konfiguration: ``data/bed_empty_check.json``:
 ``{"enabled": false, "threshold": 8.0}``

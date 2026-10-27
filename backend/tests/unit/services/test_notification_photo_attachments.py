@@ -432,7 +432,7 @@ class TestSendEmailInlineImage:
     @pytest.fixture
     def smtp_settings(self):
         return SimpleNamespace(
-            smtp_from_name="Bambuddy",
+            smtp_from_name="PrintLab",
             smtp_from_email="bambuddy@example.com",
             smtp_security="none",
             smtp_auth_enabled=False,

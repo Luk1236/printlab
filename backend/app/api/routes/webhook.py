@@ -44,7 +44,7 @@ class PrinterStatusResponse(BaseModel):
     id: int
     name: str
     # The printer's own serial, so a client can tell printers apart by what
-    # they report rather than by Bambuddy's row id (#2919).
+    # they report rather than by PrintLab's row id (#2919).
     serial_number: str
     connected: bool
     state: str | None

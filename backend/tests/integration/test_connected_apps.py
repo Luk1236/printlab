@@ -1,8 +1,8 @@
-"""Connected apps: sign-in to external applications with a Bambuddy account.
+"""Connected apps: sign-in to external applications with a PrintLab account.
 
 These lock down what a code is worth: single use, 60 seconds, one app, its
 exact callback URL, the PKCE challenge, and only with the app's secret. And
-that none of it works while Bambuddy authentication is disabled.
+that none of it works while PrintLab authentication is disabled.
 """
 
 import base64
@@ -52,7 +52,7 @@ async def operator(async_client: AsyncClient, admin_token: str) -> dict:
 
 
 async def _register(async_client: AsyncClient, admin_token: str, **overrides) -> dict:
-    payload = {"name": "Bambuddy Orders", "redirect_uri": CALLBACK, **overrides}
+    payload = {"name": "PrintLab Orders", "redirect_uri": CALLBACK, **overrides}
     response = await async_client.post("/api/v1/connect/apps", headers=_auth(admin_token), json=payload)
     assert response.status_code == 200, response.text
     return response.json()
@@ -140,7 +140,7 @@ class TestSignIn:
             params={"client_id": app["client_id"], "redirect_uri": CALLBACK},
         )
         assert info.status_code == 200
-        assert info.json() == {"app_name": "Bambuddy Orders", "username": "shopworker", "already_granted": False}
+        assert info.json() == {"app_name": "PrintLab Orders", "username": "shopworker", "already_granted": False}
 
         code, verifier = await _code(async_client, operator["token"], app)
         response = await _exchange(async_client, app, code, verifier)

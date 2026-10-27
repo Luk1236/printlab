@@ -29,12 +29,12 @@ class PrintArchive(Base):
     content_hash: Mapped[str | None] = mapped_column(String(64))  # SHA256 hash for duplicate detection
     thumbnail_path: Mapped[str | None] = mapped_column(String(500))
     timelapse_path: Mapped[str | None] = mapped_column(String(500))
-    # True when Bambuddy forced timelapse recording on for this print so the
+    # True when PrintLab forced timelapse recording on for this print so the
     # finish-photo extractor (#1397) could pull the post-park-pre-drop frame.
     # The cleanup path uses this to know the timelapse should be deleted
     # both locally and on the printer's SD after extraction — the user
     # didn't opt in to a timelapse recording.
-    bambuddy_forced_timelapse: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
+    printlab_forced_timelapse: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
     # Video filenames present in the printer's /timelapse directory when this
     # print started (#2704). The printer writes its video only at print end, so
     # anything not in this list belongs to this print — a comparison that needs
@@ -74,7 +74,7 @@ class PrintArchive(Base):
     # if the same subtask_id reappears after restart, we know it's the same
     # print and keep the original row instead of cancel-then-create.
     subtask_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    # Durable Bambuddy UUID for billing idempotency. Unlike subtask_id, this is
+    # Durable PrintLab UUID for billing idempotency. Unlike subtask_id, this is
     # not constrained by printer firmware and is replaced for every reprint.
     billing_run_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
 
@@ -130,7 +130,7 @@ class PrintArchive(Base):
     # Nullable to match the ALTER that adds it to an existing install: a fresh
     # database would otherwise get NOT NULL while an upgraded one gets a
     # nullable column, and the two would disagree about the same table. The
-    # default still means every row written by Bambuddy is True or False; only
+    # default still means every row written by PrintLab is True or False; only
     # `is_(True)` and truthiness read it, both of which treat NULL as off.
     confirm_requested: Mapped[bool | None] = mapped_column(Boolean, nullable=True, default=False, server_default="0")
     # Indexed and unique: the one-tap route is reachable with no credential

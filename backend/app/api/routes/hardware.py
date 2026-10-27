@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.core.auth import RequirePermissionIfAuthEnabled, get_current_user_optional
+from backend.app.core.auth import RequirePermissionIfAuthEnabled, get_current_user_optional, is_auth_enabled
 from backend.app.core.database import get_db
 from backend.app.core.permissions import Permission
 from backend.app.models.printer import Printer
@@ -47,7 +47,7 @@ async def _printer_and_guard(printer_id: int, db: AsyncSession) -> Printer:
         raise HTTPException(404, "Printer not found")
     # Im Simulationsmodus wird keine echte Hardware bewegt; dann darf man auch
     # ohne verbundenen Drucker testen. Im Befehlsmodus gelten die harten Sperren.
-    if get_hardware().status()["mode"] == "simulated":
+    if get_hardware(printer_id).status()["mode"] == "simulated":
         return printer
     client = printer_manager.get_client(printer_id)
     if client is None or not client.state.connected:
@@ -66,7 +66,7 @@ async def get_hardware_status(
 ):
     """Zustand von Tür und Magazin (auch bei nicht verbundenem Drucker)."""
     return {
-        **get_hardware().status(),
+        **get_hardware(printer_id).status(),
         "auto_plate_change": {
             **auto_plate_change.read_config(),
             "last_run": auto_plate_change.last_run(printer_id),
@@ -98,7 +98,7 @@ async def set_magazine_slots(
     abgelehnt, unbeteiligte Fächer bleiben unverändert.
     """
     await _printer_or_404(printer_id, db)
-    hw = get_hardware()
+    hw = get_hardware(printer_id)
     slots_in = data.get("slots") if isinstance(data, dict) else None
     if not isinstance(slots_in, list) or not slots_in:
         raise HTTPException(400, "slots-Liste erwartet.")
@@ -118,7 +118,7 @@ async def get_hardware_config(
     _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_CONTROL),
 ):
     """Hardware-Konfiguration (Befehle, Modus, Automatik) zum Anzeigen."""
-    hw = get_hardware()
+    hw = get_hardware(printer_id)
     return {**hw.config(), "auto_plate_change": auto_plate_change.read_config()}
 
 
@@ -127,19 +127,28 @@ async def set_hardware_config(
     printer_id: int,
     data: dict,
     user=Depends(get_current_user_optional),
-    _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_CONTROL),
+    _=RequirePermissionIfAuthEnabled(Permission.SETTINGS_UPDATE),
     db: AsyncSession = Depends(get_db),
 ):
     """Hardware-Konfiguration schreiben (Befehle, Modus, Timeout, Automatik)."""
     await _printer_or_404(printer_id, db)
     if not isinstance(data, dict) or not data:
         raise HTTPException(400, "Konfigurationstext erwartet.")
+    # Die Befehle werden auf dem Server als Shell-Befehle ausgeführt. Ohne Anmeldung könnte jeder im
+    # Netz beliebige Befehle eintragen und starten – deshalb nur mit eingeschalteter Anmeldung.
+    command_keys = [k for k in data if k.endswith("_command")]
+    if command_keys and not await is_auth_enabled(db):
+        raise HTTPException(
+            403,
+            "Befehle können nur mit eingeschalteter Anmeldung geändert werden "
+            "(Einstellungen → Benutzer, oder werkzeuge\admin_passwort_setzen.py).",
+        )
     merged = dict(data)
     if "auto_plate_change" in data:
         if isinstance(data["auto_plate_change"], dict):
             auto_plate_change.write_config(data["auto_plate_change"])
         merged.pop("auto_plate_change")
-    hw = get_hardware()
+    hw = get_hardware(printer_id)
     ok, message = await asyncio.to_thread(hw.update_config, merged)
     if not ok:
         raise HTTPException(400, message)
@@ -196,11 +205,11 @@ async def open_door(
     db: AsyncSession = Depends(get_db),
 ):
     await _printer_and_guard(printer_id, db)
-    ok, message = await asyncio.to_thread(get_hardware().open_door)
+    ok, message = await asyncio.to_thread(get_hardware(printer_id).open_door)
     _audit("door_open", ok, message, printer_id, user)
     if not ok:
         raise HTTPException(400, message)
-    return {"success": True, "message": message, **get_hardware().status()}
+    return {"success": True, "message": message, **get_hardware(printer_id).status()}
 
 
 @router.post("/{printer_id}/hardware/door/close")
@@ -211,11 +220,11 @@ async def close_door(
     db: AsyncSession = Depends(get_db),
 ):
     await _printer_and_guard(printer_id, db)
-    ok, message = await asyncio.to_thread(get_hardware().close_door)
+    ok, message = await asyncio.to_thread(get_hardware(printer_id).close_door)
     _audit("door_close", ok, message, printer_id, user)
     if not ok:
         raise HTTPException(400, message)
-    return {"success": True, "message": message, **get_hardware().status()}
+    return {"success": True, "message": message, **get_hardware(printer_id).status()}
 
 
 @router.post("/{printer_id}/hardware/plate/change")
@@ -227,11 +236,11 @@ async def change_plate(
     db: AsyncSession = Depends(get_db),
 ):
     await _printer_and_guard(printer_id, db)
-    ok, message = await asyncio.to_thread(get_hardware().change_plate, job)
+    ok, message = await asyncio.to_thread(get_hardware(printer_id).change_plate, job)
     _audit("plate_change", ok, message, printer_id, user, {"job": job})
     if not ok:
         raise HTTPException(400, message)
-    return {"success": True, "message": message, **get_hardware().status()}
+    return {"success": True, "message": message, **get_hardware(printer_id).status()}
 
 
 @router.post("/{printer_id}/hardware/magazine/refill")
@@ -242,12 +251,43 @@ async def refill_magazine(
     db: AsyncSession = Depends(get_db),
 ):
     printer = await _printer_and_guard(printer_id, db)
-    ok, message = await asyncio.to_thread(get_hardware().refill_magazine)
+    ok, message = await asyncio.to_thread(get_hardware(printer_id).refill_magazine)
     _audit("magazine_refill", ok, message, printer_id, user)
     if not ok:
         raise HTTPException(400, message)
     logger.info("[Hardware] Magazin für Drucker %s aufgefüllt (%s)", printer.id, message)
-    return {"success": True, "message": message, **get_hardware().status()}
+    return {"success": True, "message": message, **get_hardware(printer_id).status()}
+
+
+@router.post("/{printer_id}/hardware/emergency-stop/reset")
+async def reset_emergency_stop(
+    printer_id: int,
+    user=Depends(get_current_user_optional),
+    _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_CONTROL),
+    db: AsyncSession = Depends(get_db),
+):
+    """Sperre nach einem Not-Halt aufheben (lädt die Hardware-Konfiguration neu)."""
+    await _printer_or_404(printer_id, db)
+    hw = get_hardware(printer_id)
+    await asyncio.to_thread(hw.reload_config)
+    _audit("emergency_stop_reset", True, "Not-Halt-Sperre aufgehoben.", printer_id, user)
+    return {"success": True, "message": "Not-Halt-Sperre aufgehoben.", **hw.status()}
+
+
+@router.post("/{printer_id}/hardware/incomplete/resolve")
+async def resolve_incomplete_change(
+    printer_id: int,
+    user=Depends(get_current_user_optional),
+    _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_CONTROL),
+    db: AsyncSession = Depends(get_db),
+):
+    """Bestätigen, dass die Mechanik nach einem unvollständigen Wechsel geprüft wurde."""
+    await _printer_or_404(printer_id, db)
+    ok, message = await asyncio.to_thread(get_hardware(printer_id).resolve_incomplete)
+    _audit("incomplete_resolved", ok, message, printer_id, user)
+    if not ok:
+        raise HTTPException(400, message)
+    return {"success": True, "message": message, **get_hardware(printer_id).status()}
 
 
 @router.post("/{printer_id}/hardware/emergency-stop")
@@ -261,9 +301,9 @@ async def emergency_stop(
     result = await db.execute(select(Printer).where(Printer.id == printer_id))
     if result.scalar_one_or_none() is None:
         raise HTTPException(404, "Printer not found")
-    auto_plate_change.cancel(reason="Not-Halt")
-    ok, message = await asyncio.to_thread(get_hardware().emergency_stop)
+    auto_plate_change.cancel(printer_id, reason="Not-Halt")
+    ok, message = await asyncio.to_thread(get_hardware(printer_id).emergency_stop)
     _audit("emergency_stop", ok, message, printer_id, user)
     if not ok:
         raise HTTPException(400, message)
-    return {"success": True, "message": message, **get_hardware().status()}
+    return {"success": True, "message": message, **get_hardware(printer_id).status()}

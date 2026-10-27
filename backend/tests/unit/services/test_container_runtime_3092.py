@@ -1,6 +1,6 @@
 """Container detection for the connection diagnostic (#3092).
 
-The reporter ran Bambuddy in a Podman container with host networking and was
+The reporter ran PrintLab in a Podman container with host networking and was
 told "Not running in Docker - not applicable", which reads as "you are on
 bare metal" and sends people looking for the problem somewhere else. Two
 separate questions are pinned here: which engine we are under, and whether

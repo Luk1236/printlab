@@ -7,7 +7,7 @@ their 3MF files to count the number of printable objects.
 Run this once after upgrading to add proper parts tracking to your projects.
 
 Usage:
-    # From the bambuddy directory:
+    # From the printlab directory:
     python scripts/update_archive_quantities.py
 
     # Or with docker:

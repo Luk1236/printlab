@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Calculator, Settings } from 'lucide-react';
+import { Calculator, Printer, Settings } from 'lucide-react';
 
 import { api } from '../api/client';
 import type { PriceListEntry, QuoteResponse } from '../api/client';
 import { Button } from './Button';
 import { Card, CardContent } from './Card';
 import { useToast } from '../contexts/ToastContext';
+import { buildQuoteDocument } from '../utils/quoteDocument';
 
 const fmt = (value: number, currency: string) =>
   new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(value || 0);
@@ -31,6 +32,39 @@ export function QuoteCalculator() {
   const [showRates, setShowRates] = useState(false);
   const [priceListOpen, setPriceListOpen] = useState(false);
   const [priceListDraft, setPriceListDraft] = useState<PriceListEntry[] | null>(null);
+  const [customer, setCustomer] = useState('');
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyFilter, setHistoryFilter] = useState('');
+
+  const { data: history } = useQuery({
+    queryKey: ['quoteHistory', historyFilter],
+    queryFn: () => api.getQuoteHistory(historyFilter.trim() || undefined),
+    enabled: historyOpen,
+  });
+  const saveMutation = useMutation({
+    mutationFn: (data: QuoteResponse) =>
+      api.saveQuote({
+        customer,
+        currency: data.currency,
+        material: data.material,
+        energy: data.energy,
+        labor: data.labor,
+        subtotal: data.subtotal,
+        markup: data.markup,
+        total: data.total,
+        inputs: data.inputs,
+      }),
+    onSuccess: () => {
+      showToast(t('quote.saved'));
+      queryClient.invalidateQueries({ queryKey: ['quoteHistory'] });
+    },
+    onError: (error: Error) => showToast(error.message),
+  });
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => api.deleteQuote(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quoteHistory'] }),
+    onError: (error: Error) => showToast(error.message),
+  });
 
   const { data: priceList } = useQuery({
     queryKey: ['priceList'],
@@ -61,7 +95,7 @@ export function QuoteCalculator() {
         labor_rate_per_hour: Number(laborRate) || 0,
         quote_markup_percent: Number(markupPercent) || 0,
         printer_power_watts: Number(powerWatts) || 120,
-      } as any),
+      }),
     onSuccess: async () => {
       showToast(t('common.success'));
       setShowRates(false);
@@ -84,6 +118,33 @@ export function QuoteCalculator() {
       })
       .then(setQuote)
       .catch(() => setQuote(null));
+  };
+
+  // Angebot als eigenes Druckfenster öffnen; „Als PDF speichern“ im Druckdialog erzeugt das PDF.
+  const printQuote = (data: QuoteResponse) => {
+    const html = buildQuoteDocument(
+      data,
+      {
+        title: t('quote.title'),
+        material: t('quote.material'),
+        energy: t('quote.energy'),
+        labor: t('quote.labor'),
+        subtotal: t('quote.subtotal'),
+        markup: t('quote.markup'),
+        total: t('quote.total'),
+      },
+      new Date(),
+    );
+    const win = window.open('', '_blank', 'width=800,height=900');
+    if (!win) {
+      showToast(t('common.error'));
+      return;
+    }
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    win.print();
   };
 
   const row = (key: string, value: number) => (
@@ -182,7 +243,52 @@ export function QuoteCalculator() {
           >
             {t('quote.priceList')}
           </Button>
+          <Button size="sm" variant="ghost" onClick={() => setHistoryOpen((open) => !open)}>
+            {t('quote.history')}
+          </Button>
         </div>
+        {historyOpen && (
+          <div className="border border-bambu-dark-tertiary rounded-lg p-3 space-y-2">
+            <input
+              value={historyFilter}
+              onChange={(event) => setHistoryFilter(event.target.value)}
+              placeholder={t('quote.customer')}
+              className="w-full bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm"
+              aria-label={t('quote.historyFilter')}
+            />
+            {(history?.customers ?? []).length > 0 && (
+              <div className="flex flex-wrap gap-2 text-xs text-bambu-gray" aria-label={t('quote.byCustomer')}>
+                {(history?.customers ?? []).map((row) => (
+                  <span key={`${row.customer}-${row.currency}`} className="rounded bg-bambu-dark-tertiary px-2 py-1">
+                    {row.customer}: {fmt(row.total, row.currency)} ({row.count})
+                  </span>
+                ))}
+              </div>
+            )}
+            {(history?.entries ?? []).length === 0 ? (
+              <p className="text-xs text-bambu-gray">{t('quote.historyEmpty')}</p>
+            ) : (
+              <div className="space-y-1 max-h-60 overflow-y-auto">
+                {(history?.entries ?? []).map((entry) => (
+                  <div key={entry.id} className="flex items-center gap-2 text-xs">
+                    <span className="text-bambu-gray whitespace-nowrap">{new Date(entry.ts).toLocaleDateString()}</span>
+                    <span className="font-medium text-white truncate">{entry.customer}</span>
+                    <span className="ml-auto text-bambu-gray-light">{fmt(entry.total, entry.currency)}</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      aria-label={`${t('common.delete')} ${entry.customer}`}
+                      disabled={deleteMutation.isPending}
+                      onClick={() => deleteMutation.mutate(entry.id)}
+                    >
+                      ✕
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         {priceListOpen && priceListDraft && (
           <div className="border border-bambu-dark-tertiary rounded-lg p-3 space-y-2">
             {priceListDraft.map((entry, index) => (
@@ -290,6 +396,29 @@ export function QuoteCalculator() {
             <div className="flex justify-between text-base font-semibold text-white pt-1">
               <span>{t('quote.total')}</span>
               <span>{fmt(quote.total, quote.currency)}</span>
+            </div>
+            <div className="flex flex-wrap items-end justify-between gap-2 pt-1">
+              <label className="text-xs text-bambu-gray flex-1 min-w-40">
+                {t('quote.customer')}
+                <input
+                  value={customer}
+                  maxLength={80}
+                  onChange={(event) => setCustomer(event.target.value)}
+                  className="mt-1 w-full bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm"
+                  aria-label={t('quote.customer')}
+                />
+              </label>
+              <Button
+                size="sm"
+                disabled={!customer.trim() || saveMutation.isPending}
+                onClick={() => saveMutation.mutate(quote)}
+              >
+                {t('quote.saveQuote')}
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => printQuote(quote)}>
+                <Printer className="w-4 h-4" />
+                {t('quote.print')}
+              </Button>
             </div>
           </div>
         )}

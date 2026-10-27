@@ -46,7 +46,7 @@ describe('LoginPage', () => {
       render(<LoginPage />);
 
       await waitFor(() => {
-        expect(screen.getByRole('heading', { name: /Bambuddy Login/i })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /PrintLab Login/i })).toBeInTheDocument();
       });
 
       expect(screen.getByLabelText(/Username/i)).toBeInTheDocument();
@@ -281,7 +281,7 @@ describe('LoginPage', () => {
       await user.click(backButton);
 
       await waitFor(() => {
-        expect(screen.getByRole('heading', { name: /Bambuddy Login/i })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: /PrintLab Login/i })).toBeInTheDocument();
       });
     });
 
@@ -1055,7 +1055,7 @@ describe('LoginPage', () => {
   // #1889: an already-authenticated visit to /login must redirect to the app,
   // not render the credentials form. Browsers autocomplete the origin to its
   // most-visited path (/login), so live sessions kept landing on the form and
-  // it looked like Bambuddy "never stays logged in".
+  // it looked like PrintLab "never stays logged in".
   describe('authenticated redirect (#1889)', () => {
     const mockUser = {
       id: 1,

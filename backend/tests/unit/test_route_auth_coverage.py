@@ -72,7 +72,7 @@ _PUBLIC_ROUTES: frozenset[tuple[str, str]] = frozenset(
         ("POST", "/api/v1/auth/oidc/exchange"),
         # Connected-app token exchange — called by the app's server, not a browser. The client
         # secret (bcrypt-verified) plus a single-use, 60 s, PKCE-bound code in the body are the auth;
-        # rate-limited per client and per IP. Refuses outright while Bambuddy auth is disabled.
+        # rate-limited per client and per IP. Refuses outright while PrintLab auth is disabled.
         ("POST", "/api/v1/connect/token"),
         # 2FA send + verify — issued after password check; pre-auth token in cookie is the auth.
         ("POST", "/api/v1/auth/2fa/email/send"),
@@ -104,7 +104,7 @@ _PUBLIC_ROUTES: frozenset[tuple[str, str]] = frozenset(
         ("GET", "/api/v1/notifications/photos/{filename}"),
         # Obico cached frame — one-time nonce embedded in <img> tags.
         ("GET", "/api/v1/obico/cached-frame/{nonce}"),
-        # MakerWorld thumbnail proxy — fetches external URL; no Bambuddy data exposed.
+        # MakerWorld thumbnail proxy — fetches external URL; no PrintLab data exposed.
         ("GET", "/api/v1/makerworld/thumbnail"),
         # ---- HTTP API: operational + UI-bootstrap (no sensitive data) ----
         # Operational liveness probe — minimal payload, used by container orchestrators.
@@ -120,7 +120,7 @@ _PUBLIC_ROUTES: frozenset[tuple[str, str]] = frozenset(
         ("GET", "/api/v1/system/appliance"),
         # Slicer printer-models — static catalog, no user data.
         ("GET", "/api/v1/slicer/printer-models"),
-        # Current Bambuddy version — public info (already visible in HTTP response headers + Docker tags).
+        # Current PrintLab version — public info (already visible in HTTP response headers + Docker tags).
         ("GET", "/api/v1/updates/version"),
         # Webhook routes — auth lives inside the handler via get_api_key() + check_permission(), not as a Depends.
         # Once they all migrate to standard auth deps these entries come out; for now exempting the file.

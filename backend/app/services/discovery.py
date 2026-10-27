@@ -36,7 +36,7 @@ RUNTIME_LXC = "LXC"
 # (diagnostic.check.network_mode.genericRuntime), so keep the two in step.
 RUNTIME_OTHER = "container"
 
-# Runtimes that put Bambuddy in an OCI container whose network mode is a
+# Runtimes that put PrintLab in an OCI container whose network mode is a
 # choice the user made and can change. LXC is deliberately absent: a Proxmox
 # or LXD system container is bridged onto the LAN like a small VM, so there is
 # no "recreate it with host networking" advice to give.
@@ -67,7 +67,7 @@ def _read_text(path: Path) -> str:
 
 
 def detect_container_runtime() -> str | None:
-    """Name the container runtime Bambuddy is running under, or None.
+    """Name the container runtime PrintLab is running under, or None.
 
     ``is_running_in_docker`` below answers a narrower question and is
     deliberately left alone — see the comment on it.
@@ -147,7 +147,7 @@ SSDP_PORT = 2021  # Bambu Lab uses non-standard port
 # Bambu Lab SSDP search target
 BAMBU_SEARCH_TARGET = "urn:bambulab-com:device:3dprinter:1"
 
-# Virtual printer serial suffix to exclude from discovery (Bambuddy's own virtual printer)
+# Virtual printer serial suffix to exclude from discovery (PrintLab's own virtual printer)
 # All virtual printer serials end with this suffix, regardless of model
 VIRTUAL_PRINTER_SERIAL_SUFFIX = "391800001"
 
@@ -370,9 +370,9 @@ class PrinterDiscoveryService:
 
         serial = usn_match.group(1).strip()
 
-        # Skip Bambuddy's own virtual printer (any model variant)
+        # Skip PrintLab's own virtual printer (any model variant)
         if serial.endswith(VIRTUAL_PRINTER_SERIAL_SUFFIX):
-            logger.debug("Ignoring Bambuddy virtual printer at %s", ip_address)
+            logger.debug("Ignoring PrintLab virtual printer at %s", ip_address)
             return
 
         # Extract device name from LOCATION or DevName header
@@ -502,9 +502,9 @@ class SubnetScanner:
         # Try to get printer info via SSDP unicast
         serial, name, model = await self._get_printer_info_ssdp(ip, timeout)
 
-        # Skip Bambuddy's own virtual printer (any model variant)
+        # Skip PrintLab's own virtual printer (any model variant)
         if serial and serial.endswith(VIRTUAL_PRINTER_SERIAL_SUFFIX):
-            logger.debug("Ignoring Bambuddy virtual printer at %s", ip)
+            logger.debug("Ignoring PrintLab virtual printer at %s", ip)
             return
 
         printer = DiscoveredPrinter(

@@ -1,4 +1,4 @@
-"""Credentials must never reach bambuddy.log.
+"""Credentials must never reach printlab.log.
 
 Subprocesses echo their input URL back at us: ffmpeg prints the RTSP input in
 its ``Input #0`` line, so logging its stderr verbatim published the printer

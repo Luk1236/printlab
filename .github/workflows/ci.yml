@@ -82,7 +82,7 @@ jobs:
           #
           # CVE-2025-45768 (PYSEC-2025-183 / GHSA-65pc-fj4g-8rjx): disputed by PyJWT maintainers.
           # Advisory says "key length is chosen by the application that uses the library" — no
-          # PyJWT fix exists or will exist. Bambuddy is safe: backend/app/core/auth.py:184 uses
+          # PyJWT fix exists or will exist. PrintLab is safe: backend/app/core/auth.py:184 uses
           # secrets.token_urlsafe(64) (~86 chars of entropy) for auto-generated secrets and
           # rejects file-loaded secrets shorter than 32 chars at :177. Keep ignored permanently.
           pip-audit --desc on \
@@ -216,7 +216,7 @@ jobs:
                   prod.add(path.split('node_modules/')[-1])
           vulns = data.get('vulnerabilities', {})
           # Documented advisory exceptions: high/critical findings whose only offered
-          # 'fix' is a semver-major change and which do not apply to how Bambuddy ships.
+          # 'fix' is a semver-major change and which do not apply to how PrintLab ships.
           # Keyed by GHSA id. An entry only holds while the fix stays major-only (see
           # fix_is_major below) - once upstream backports, the gate fails until we take
           # the patch. That is what retired the one entry this list used to carry:
@@ -368,7 +368,7 @@ jobs:
           file: Dockerfile.test
           target: backend-test
           load: true
-          tags: bambuddy-backend-test:latest
+          tags: printlab-backend-test:latest
           cache-from: type=gha,scope=backend-test
           cache-to: type=gha,scope=backend-test,mode=max
 
@@ -377,7 +377,7 @@ jobs:
           docker run --rm \
             -e TESTING=1 \
             -e PYTHONUNBUFFERED=1 \
-            bambuddy-backend-test:latest \
+            printlab-backend-test:latest \
             pytest backend/tests/ \
               --tb=short \
               --timeout=60 --timeout-method=thread \
@@ -397,13 +397,13 @@ jobs:
 
       # Test 1: Docker Build
       - name: Build production image
-        run: docker build -t bambuddy:test .
+        run: docker build -t printlab:test .
 
       - name: Verify backend imports
-        run: docker run --rm bambuddy:test python -c "import backend.app.main; print('Backend imports OK')"
+        run: docker run --rm printlab:test python -c "import backend.app.main; print('Backend imports OK')"
 
       - name: Verify static files exist
-        run: docker run --rm bambuddy:test test -d /app/static
+        run: docker run --rm printlab:test test -d /app/static
 
       # Test 4: Integration Tests
       - name: Build integration container

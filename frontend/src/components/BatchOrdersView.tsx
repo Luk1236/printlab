@@ -15,7 +15,7 @@ type StatusFilter = 'active' | 'completed' | 'cancelled' | 'all';
 interface BatchOrdersViewProps {
   hasPermission: (p: Permission) => boolean;
   t: (key: string, options?: Record<string, unknown>) => string;
-  /** A batch to scroll to and highlight (``/queue?batch=<id>``, e.g. from Bambuddy Orders). */
+  /** A batch to scroll to and highlight (``/queue?batch=<id>``, e.g. from PrintLab Orders). */
   focusBatchId?: number | null;
 }
 

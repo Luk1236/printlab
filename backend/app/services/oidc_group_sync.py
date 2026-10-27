@@ -2,7 +2,7 @@
 
 Mirrors the LDAP group sync semantics from api/routes/auth.py
 (`_sync_ldap_user`) for OIDC logins: the provider's ``group_mapping``
-configures which Bambuddy groups the IdP is allowed to manage, and every
+configures which PrintLab groups the IdP is allowed to manage, and every
 login replaces only that managed slice — manual assignments to any other
 group survive (#1292, same fix the LDAP path needed).
 
@@ -77,9 +77,9 @@ def extract_idp_groups(claim_value: object) -> list[str]:
 
 
 def resolve_oidc_group_mapping(idp_groups: list[str], group_mapping: dict[str, str]) -> list[str]:
-    """Map IdP group values to Bambuddy group names (case-insensitive on the key).
+    """Map IdP group values to PrintLab group names (case-insensitive on the key).
 
-    Same contract as ldap_service.resolve_group_mapping: returns the Bambuddy
+    Same contract as ldap_service.resolve_group_mapping: returns the PrintLab
     group names the user should hold among the mapped set. Values are compared
     case-insensitively because IdP group casing is not stable across providers
     (Keycloak preserves case; some LDAP-backed OIDC deployments downcase),
@@ -107,7 +107,7 @@ async def sync_oidc_user_groups(
 ) -> None:
     """Apply the provider's group mapping to ``user`` after a successful login.
 
-    Only Bambuddy groups named in ``group_mapping`` values are managed; every
+    Only PrintLab groups named in ``group_mapping`` values are managed; every
     other group on the user is a manual assignment and is preserved. Commits
     only when something actually changed (the LDAP sync logs on change; same
     here). Never raises: a group-sync failure must not abort the login the

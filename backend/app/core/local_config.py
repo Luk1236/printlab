@@ -4,16 +4,16 @@ Small readers for appliance-set state files.
 Two distinct surfaces, same shape (defensive, silent on missing files,
 side-effect-free):
 
-- ``read_local_toml`` reads ``/etc/bambuddy/local.toml`` (the file the
+- ``read_local_toml`` reads ``/etc/printlab/local.toml`` (the file the
   appliance setup wizard writes during firstboot with the user's hostname,
   timezone, and locale).
-- ``read_ntp_gate`` reads ``/run/bambuddy/time-synced`` (the appliance's
+- ``read_ntp_gate`` reads ``/run/printlab/time-synced`` (the appliance's
   ntp-gate.sh signals time-sync state here once chrony reports sync, or
   when the 3-minute timeout elapses with a "warning" marker).
 
 Universal across install shapes:
 
-- On the Bambuddy Appliance: both files exist by the time bambuddy.service
+- On the PrintLab Appliance: both files exist by the time printlab.service
   starts; we surface their values to the frontend.
 - On Docker / manual installs: both files are absent; we degrade silently.
 
@@ -33,8 +33,8 @@ import tomllib
 
 log = logging.getLogger(__name__)
 
-DEFAULT_PATH = Path("/etc/bambuddy/local.toml")
-DEFAULT_NTP_GATE_PATH = Path("/run/bambuddy/time-synced")
+DEFAULT_PATH = Path("/etc/printlab/local.toml")
+DEFAULT_NTP_GATE_PATH = Path("/run/printlab/time-synced")
 
 # Three states: synced ("ok"), gated-and-timed-out ("warning"), or unknown (None).
 TimeSyncState = Literal["ok", "warning"] | None

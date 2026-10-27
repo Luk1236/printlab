@@ -116,7 +116,7 @@ class LDAPSearchResultResponse(BaseModel):
     email: str | None = None
     display_name: str | None = None
     dn: str
-    already_provisioned: bool = False  # True if this username already exists as a BamBuddy user
+    already_provisioned: bool = False  # True if this username already exists as a PrintLab user
 
 
 class LDAPProvisionRequest(BaseModel):
@@ -188,7 +188,7 @@ class SMTPSettings(BaseModel):
     smtp_security: str = "starttls"  # 'starttls', 'ssl', 'none'
     smtp_auth_enabled: bool = True
     smtp_from_email: str
-    smtp_from_name: str = "BamBuddy"
+    smtp_from_name: str = "PrintLab"
     # Deprecated field for backward compatibility
     smtp_use_tls: bool | None = None
 
@@ -363,9 +363,9 @@ def _validate_group_claim_name(v: str) -> str:
 
 
 def _validate_group_mapping(v: dict[str, str]) -> dict[str, str]:
-    """#3107 — normalise and bound an IdP-group -> Bambuddy-group mapping.
+    """#3107 — normalise and bound an IdP-group -> PrintLab-group mapping.
 
-    Values must reference Bambuddy group names; existence is checked against
+    Values must reference PrintLab group names; existence is checked against
     the database in the route handlers (same split as default_group_id), since
     the schema layer has no session. Keys are left as-is apart from stripping:
     IdP group values are opaque strings (DNs, UUIDs, names) and must match the
@@ -661,7 +661,7 @@ class OIDCProviderPublicResponse(BaseModel):
     buttons, and it needs exactly four fields: id + name for the button,
     has_icon for the avatar, is_autologin for the redirect-on-mount (#1589).
     The full OIDCProviderResponse carries group_claim / group_mapping —
-    which IdP group name maps to which Bambuddy group, including
+    which IdP group name maps to which PrintLab group, including
     Administrators — and leaking that to anonymous visitors would tell
     anyone who can reach the login page exactly which IdP group to aim for.
     """

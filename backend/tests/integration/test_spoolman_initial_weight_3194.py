@@ -2,7 +2,7 @@
 
 Spoolman keeps the net weight of a full spool on the spool (``initial_weight``)
 and falls back to the filament's catalogue ``weight``, so one filament can have
-spools of different sizes. Bambuddy read only the filament, so a 250 g spool of
+spools of different sizes. PrintLab read only the filament, so a 250 g spool of
 a 1000 g filament showed as 1000 g everywhere, and editing its label weight
 PATCHed the filament instead of the spool.
 """

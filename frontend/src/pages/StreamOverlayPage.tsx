@@ -237,7 +237,7 @@ export function StreamOverlayPage() {
 
     // GHSA-r2qv follow-up: mint a ws-token before connecting. Uses
     // api.getWebSocketToken so the JWT Authorization header rides along
-    // (raw fetch+credentials:'include' would miss it — Bambuddy uses
+    // (raw fetch+credentials:'include' would miss it — PrintLab uses
     // Bearer tokens, not cookies, for JWT auth). Auth-disabled deployments
     // succeed even without a token.
     (async () => {
@@ -289,7 +289,7 @@ export function StreamOverlayPage() {
   useEffect(() => {
     document.title = printer ? `${printer.name} - ${t('streamOverlay.title')}` : t('streamOverlay.title');
     return () => {
-      document.title = 'Bambuddy';
+      document.title = 'PrintLab';
     };
   }, [printer, t]);
 
@@ -411,16 +411,16 @@ export function StreamOverlayPage() {
         />
       )}
 
-      {/* Bambuddy logo - top right */}
+      {/* PrintLab logo - top right */}
       <a
-        href="https://github.com/maziggy/bambuddy"
+        href="https://github.com/Luk1236/printlab"
         target="_blank"
         rel="noopener noreferrer"
         className="absolute top-4 right-4 z-10"
       >
         <img
-          src="/img/bambuddy_logo_dark_transparent.png"
-          alt="Bambuddy"
+          src="/img/printlab_dark.png"
+          alt="PrintLab"
           className={`${sizes.logoHeight} object-contain drop-shadow-lg hover:scale-105 transition-transform`}
         />
       </a>

@@ -106,7 +106,7 @@ const FIELD_LABELS: Record<SpoolLabelField, { i18nKey: string; fallback: string 
 
 // Remembered per browser. Printing only needs inventory access, and a server
 // setting would need settings access to save.
-const PREFS_STORAGE_KEY = 'bambuddy-label-print-options';
+const PREFS_STORAGE_KEY = 'printlab-label-print-options';
 
 interface LabelPrefs {
   template: SpoolLabelTemplate;
@@ -174,7 +174,7 @@ function openBlobInNewTab(blob: Blob): void {
   // `if (!win)` popup-block fallback below fire on EVERY click — so the blob
   // tab opened (downloading a random-named PDF on systems without an inline
   // viewer) AND the `<a download>` fallback fired (downloading a second copy
-  // named bambuddy-labels.pdf). Two identical PDFs per click — issue #1628.
+  // named printlab-labels.pdf). Two identical PDFs per click — issue #1628.
   // The blob is same-origin, the destination is a passive PDF tab with no
   // script context, and `noreferrer` is a no-op for blob URLs, so dropping
   // these flags has no security impact.
@@ -182,7 +182,7 @@ function openBlobInNewTab(blob: Blob): void {
   if (!win) {
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'bambuddy-labels.pdf';
+    a.download = 'printlab-labels.pdf';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -195,7 +195,7 @@ function downloadBlob(blob: Blob, template: SpoolLabelTemplate): void {
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `bambuddy-labels-${template}.${blob.type === 'application/zip' ? 'zip' : 'png'}`;
+  a.download = `printlab-labels-${template}.${blob.type === 'application/zip' ? 'zip' : 'png'}`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

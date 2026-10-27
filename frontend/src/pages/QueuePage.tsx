@@ -924,7 +924,7 @@ function SortableQueueItem({
                     name of a dispatch mode the user may well not have picked -- ASAP and
                     Queue differ only in insert position, and neither is stored on the
                     item, so the two are indistinguishable here. Someone who chose Queue
-                    saw their row labelled ASAP and read it as Bambuddy overriding them
+                    saw their row labelled ASAP and read it as PrintLab overriding them
                     (#2557, #3018). This column answers "when does it run", so it now says
                     that instead of borrowing a mode name. */}
                 {item.scheduled_time
@@ -1717,7 +1717,7 @@ export function QueuePage() {
   // History tab renders unconditionally so this no longer drives the UI.
   // Tabbed page structure: Active queue stays as the main view; History
   // and Timeline split off. Persists per-user via localStorage.
-  // /queue?batch=<id>: a link to one batch (e.g. from Bambuddy Orders), read once.
+  // /queue?batch=<id>: a link to one batch (e.g. from PrintLab Orders), read once.
   const [focusBatchId] = useState<number | null>(() => {
     const id = Number(new URLSearchParams(window.location.search).get('batch'));
     return Number.isInteger(id) && id > 0 ? id : null;

@@ -68,7 +68,7 @@ describe('SystemHealthPanel', () => {
     const link = screen.getByRole('link', { name: /How to fix/i });
     expect(link).toHaveAttribute(
       'href',
-      'https://wiki.bambuddy.cool/reference/troubleshooting/#wrong-access-code',
+      'https://github.com/Luk1236/printlab/blob/bambu-monitor-port/docs/HILFE.md#fehlerbehebung-allgemein',
     );
   });
 });

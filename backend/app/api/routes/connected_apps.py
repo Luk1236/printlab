@@ -1,9 +1,9 @@
-"""Connected apps: sign users in to external applications with Bambuddy.
+"""Connected apps: sign users in to external applications with PrintLab.
 
 A minimal OAuth 2.0 authorization-code flow with PKCE (S256 only):
 
 1. The app sends the user's browser to the SPA page ``/connect/authorize``.
-   The page, running with the user's normal Bambuddy session, calls
+   The page, running with the user's normal PrintLab session, calls
    ``GET /connect/authorize/info`` to show who is asking and, after consent,
    ``POST /connect/authorize`` for a code. It then sends the browser back to
    the app's registered callback URL with that code.
@@ -11,12 +11,12 @@ A minimal OAuth 2.0 authorization-code flow with PKCE (S256 only):
    secret and the PKCE verifier, and receives the user's identity and
    permissions.
 
-What the app never gets is the user's Bambuddy login token. What a code is
+What the app never gets is the user's PrintLab login token. What a code is
 worth is deliberately small: single use, 60 seconds, bound to one app, its
 exact callback URL and the PKCE challenge, and only redeemable with the app's
 secret.
 
-Sign-in through an app only exists while Bambuddy authentication is enabled.
+Sign-in through an app only exists while PrintLab authentication is enabled.
 With it disabled there are no users to sign in, and both authorize and token
 answer ``auth_disabled`` so the app can fall back to its own login rather
 than let everyone in.
@@ -134,7 +134,7 @@ async def create_connected_app(
     """Register an app. The client secret is in this response and nowhere else."""
     if not await is_auth_enabled(db):
         # Nobody could sign in through it, and an admin who set one up would
-        # reasonably assume the app is now protected by Bambuddy's login.
+        # reasonably assume the app is now protected by PrintLab's login.
         raise HTTPException(400, "Connected apps require authentication to be enabled")
     client_id, client_secret = _new_client_credentials()
     app = ConnectedApp(
@@ -217,7 +217,7 @@ async def require_signed_in_user(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security)] = None,
     db: AsyncSession = Depends(get_db),
 ) -> User:
-    """The user behind a Bambuddy login token. API keys are refused.
+    """The user behind a PrintLab login token. API keys are refused.
 
     An API key would let a script sign its owner in to an app without the
     owner ever seeing a consent screen; only a person's own session may do

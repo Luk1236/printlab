@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 #
-# BamBuddy Native Installation Script
+# PrintLab Native Installation Script
 # Supports: Debian/Ubuntu, RHEL/Fedora/CentOS, Arch Linux, macOS
 #
 # Usage:
-#   Interactive:  curl -fsSL https://raw.githubusercontent.com/maziggy/bambuddy/main/install/install.sh -o install.sh && chmod +x install.sh && ./install.sh
-#   Unattended:   ./install.sh --path /opt/bambuddy --port 8000 --yes
+#   Interactive:  curl -fsSL https://raw.githubusercontent.com/Luk1236/printlab/main/install/install.sh -o install.sh && chmod +x install.sh && ./install.sh
+#   Unattended:   ./install.sh --path /opt/printlab --port 8000 --yes
 #
 # Options:
-#   --path PATH        Installation directory (default: /opt/bambuddy)
+#   --path PATH        Installation directory (default: /opt/printlab)
 #   --port PORT        Port to listen on (default: 8000)
 #   --bind ADDRESS     Bind address: 0.0.0.0 (network) or 127.0.0.1 (local only)
 #   --tz TIMEZONE      Timezone (default: system timezone or UTC)
@@ -35,7 +35,7 @@ NC='\033[0m' # No Color
 BOLD='\033[1m'
 
 # Default values
-DEFAULT_INSTALL_PATH="/opt/bambuddy"
+DEFAULT_INSTALL_PATH="/opt/printlab"
 DEFAULT_PORT="8000"
 DEFAULT_BIND_ADDRESS="0.0.0.0"
 DEFAULT_LOG_LEVEL="INFO"
@@ -57,7 +57,7 @@ OS_TYPE=""
 PKG_MANAGER=""
 PYTHON_CMD=""
 BRANCH=""
-SERVICE_USER="bambuddy"
+SERVICE_USER="printlab"
 
 # -----------------------------------------------------------------------------
 # Helper Functions
@@ -145,12 +145,12 @@ prompt_yes_no() {
 }
 
 show_help() {
-    echo "BamBuddy Native Installation Script"
+    echo "PrintLab Native Installation Script"
     echo ""
     echo "Usage: $0 [OPTIONS]"
     echo ""
     echo "Options:"
-    echo "  --path PATH        Installation directory (default: /opt/bambuddy)"
+    echo "  --path PATH        Installation directory (default: /opt/printlab)"
     echo "  --port PORT        Port to listen on (default: 8000)"
     echo "  --bind ADDRESS     Bind address: 0.0.0.0 (network) or 127.0.0.1 (local only)"
     echo "  --tz TIMEZONE      Timezone (default: system timezone or UTC)"
@@ -169,7 +169,7 @@ show_help() {
     echo "    ./install.sh"
     echo ""
     echo "  Unattended installation with custom settings:"
-    echo "    ./install.sh --path /srv/bambuddy --port 3000 --tz America/New_York --yes"
+    echo "    ./install.sh --path /srv/printlab --port 3000 --tz America/New_York --yes"
     echo ""
     echo "  Minimal unattended installation:"
     echo "    ./install.sh -y"
@@ -352,14 +352,14 @@ ensure_user_owned_dir() {
     sudo chown "$(id -un):$(id -gn)" "$dir"
 }
 
-download_bambuddy() {
-    log_info "Downloading BamBuddy..."
+download_printlab() {
+    log_info "Downloading PrintLab..."
 
     # Validate branch exists on remote before proceeding
-    if ! git ls-remote --exit-code --heads https://github.com/maziggy/bambuddy.git "$BRANCH" &>/dev/null; then
-        log_error "Branch '$BRANCH' not found in the BamBuddy repository."
+    if ! git ls-remote --exit-code --heads https://github.com/Luk1236/printlab.git "$BRANCH" &>/dev/null; then
+        log_error "Branch '$BRANCH' not found in the PrintLab repository."
         log_info "Available branches:"
-        git ls-remote --heads https://github.com/maziggy/bambuddy.git | sed 's|.*refs/heads/|  - |'
+        git ls-remote --heads https://github.com/Luk1236/printlab.git | sed 's|.*refs/heads/|  - |'
         exit 1
     fi
 
@@ -377,7 +377,7 @@ download_bambuddy() {
             git checkout "$BRANCH" 2>/dev/null || git checkout -b "$BRANCH" "origin/$BRANCH"
             git reset --hard "origin/$BRANCH"
         else
-            git clone --branch "$BRANCH" https://github.com/maziggy/bambuddy.git "$INSTALL_PATH"
+            git clone --branch "$BRANCH" https://github.com/Luk1236/printlab.git "$INSTALL_PATH"
         fi
     elif [[ -d "$INSTALL_PATH/.git" ]]; then
         log_info "Existing installation found, updating..."
@@ -393,13 +393,13 @@ download_bambuddy() {
         # Clone as root so we have write access regardless of the installing user,
         # then hand ownership to the service user. Previously we chown'd the empty
         # dir to the service user before the clone, which left the install-running
-        # user (not root, not bambuddy) unable to write .git into it.
+        # user (not root, not printlab) unable to write .git into it.
         sudo mkdir -p "$INSTALL_PATH"
-        sudo git clone --branch "$BRANCH" https://github.com/maziggy/bambuddy.git "$INSTALL_PATH"
+        sudo git clone --branch "$BRANCH" https://github.com/Luk1236/printlab.git "$INSTALL_PATH"
         sudo chown -R "$SERVICE_USER:$SERVICE_USER" "$INSTALL_PATH" 2>/dev/null || true
     fi
 
-    log_success "BamBuddy downloaded to $INSTALL_PATH (branch: $BRANCH)"
+    log_success "PrintLab downloaded to $INSTALL_PATH (branch: $BRANCH)"
 }
 
 setup_virtualenv() {
@@ -486,7 +486,7 @@ sign_python_for_tcc() {
             signed_any=1
         else
             log_warn "Could not sign $target"
-            log_info "Bambuddy may be unable to reach the printer. Run this by hand:"
+            log_info "PrintLab may be unable to reach the printer. Run this by hand:"
             log_info "  codesign --force --sign - \"$target\""
         fi
     done
@@ -601,8 +601,8 @@ create_env_file() {
 
     # Note: Only include settings recognized by the app's pydantic Settings class
     # Other settings (PORT, BIND_ADDRESS, DATA_DIR, LOG_DIR, TZ) are set in systemd service
-    cat > /tmp/bambuddy.env << EOF
-# BamBuddy Configuration
+    cat > /tmp/printlab.env << EOF
+# PrintLab Configuration
 # Generated by install.sh on $(date)
 
 # Debug mode (true = verbose logging)
@@ -618,10 +618,10 @@ EOF
 
     if [[ "$OS_TYPE" == "macos" ]]; then
         # Rootless: install path is user-owned, so write it directly.
-        mv /tmp/bambuddy.env "$env_file"
+        mv /tmp/printlab.env "$env_file"
         chmod 600 "$env_file"
     else
-        sudo mv /tmp/bambuddy.env "$env_file"
+        sudo mv /tmp/printlab.env "$env_file"
         sudo chown "$SERVICE_USER:$SERVICE_USER" "$env_file"
         sudo chmod 600 "$env_file"
     fi
@@ -645,13 +645,13 @@ create_systemd_service() {
         protect_home="read-only"
     fi
 
-    # This function overwrites /etc/systemd/system/bambuddy.service outright. Any
+    # This function overwrites /etc/systemd/system/printlab.service outright. Any
     # ReadWritePaths the operator added by hand — a NAS share for Scheduled
     # Backups, typically — used to disappear with it, and the next backup failed
     # with EROFS ("Read-only file system"), which reads like a permission problem
     # and is not one (issue #2544). Back the old unit up and carry those paths
     # forward.
-    local existing_unit="/etc/systemd/system/bambuddy.service"
+    local existing_unit="/etc/systemd/system/printlab.service"
     local extra_rw=""
     if [[ -f "$existing_unit" ]]; then
         local backup_unit="${existing_unit}.bak-$(date +%Y%m%d-%H%M%S)"
@@ -672,10 +672,10 @@ create_systemd_service() {
         fi
     fi
 
-    cat > /tmp/bambuddy.service << EOF
+    cat > /tmp/printlab.service << EOF
 [Unit]
-Description=BamBuddy - Bambu Lab Print Management
-Documentation=https://github.com/maziggy/bambuddy
+Description=PrintLab - Bambu Lab Print Management
+Documentation=https://github.com/Luk1236/printlab
 After=network.target
 
 [Service]
@@ -718,7 +718,7 @@ ProtectHome=$protect_home
 # own shell. If you point Scheduled Backups at such a directory, add it here, or
 # better in a drop-in that survives a reinstall (#2544):
 #
-#   sudo systemctl edit bambuddy
+#   sudo systemctl edit printlab
 #   [Service]
 #   ReadWritePaths=/mnt/your-nas-share
 #
@@ -728,23 +728,23 @@ ReadWritePaths=$DATA_DIR $LOG_DIR $INSTALL_PATH$extra_rw
 WantedBy=multi-user.target
 EOF
 
-    sudo mv /tmp/bambuddy.service /etc/systemd/system/bambuddy.service
+    sudo mv /tmp/printlab.service /etc/systemd/system/printlab.service
     sudo systemctl daemon-reload
 
     log_success "Systemd service created"
 
-    if prompt_yes_no "Enable BamBuddy to start on boot?" "y"; then
-        sudo systemctl enable bambuddy
+    if prompt_yes_no "Enable PrintLab to start on boot?" "y"; then
+        sudo systemctl enable printlab
         log_success "Service enabled"
     fi
 
-    if prompt_yes_no "Start BamBuddy now?" "y"; then
-        sudo systemctl start bambuddy
+    if prompt_yes_no "Start PrintLab now?" "y"; then
+        sudo systemctl start printlab
         sleep 2
-        if sudo systemctl is-active --quiet bambuddy; then
-            log_success "BamBuddy is running"
+        if sudo systemctl is-active --quiet printlab; then
+            log_success "PrintLab is running"
         else
-            log_warn "Service may have failed to start. Check: sudo journalctl -u bambuddy -f"
+            log_warn "Service may have failed to start. Check: sudo journalctl -u printlab -f"
         fi
     fi
 }
@@ -756,7 +756,7 @@ create_launchd_service() {
 
     log_info "Creating launchd service..."
 
-    local plist_path="$HOME/Library/LaunchAgents/com.bambuddy.app.plist"
+    local plist_path="$HOME/Library/LaunchAgents/com.printlab.app.plist"
 
     cat > "$plist_path" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -764,7 +764,7 @@ create_launchd_service() {
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.bambuddy.app</string>
+    <string>com.printlab.app</string>
     <key>ProgramArguments</key>
     <array>
         <string>$INSTALL_PATH/venv/bin/uvicorn</string>
@@ -802,22 +802,22 @@ create_launchd_service() {
     <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>$LOG_DIR/bambuddy.log</string>
+    <string>$LOG_DIR/printlab.log</string>
     <key>StandardErrorPath</key>
-    <string>$LOG_DIR/bambuddy.error.log</string>
+    <string>$LOG_DIR/printlab.error.log</string>
 </dict>
 </plist>
 EOF
 
     log_success "Launchd plist created at $plist_path"
 
-    if prompt_yes_no "Load BamBuddy service now?" "y"; then
+    if prompt_yes_no "Load PrintLab service now?" "y"; then
         launchctl load "$plist_path"
         sleep 2
-        if launchctl list | grep -q "com.bambuddy.app"; then
-            log_success "BamBuddy is running"
+        if launchctl list | grep -q "com.printlab.app"; then
+            log_success "PrintLab is running"
         else
-            log_warn "Service may have failed to start. Check: cat $LOG_DIR/bambuddy.error.log"
+            log_warn "Service may have failed to start. Check: cat $LOG_DIR/printlab.error.log"
         fi
     fi
 }
@@ -1025,8 +1025,8 @@ main() {
         fi
         # /opt requires sudo to create and would leave a root-owned tree; default
         # macOS installs to a user-owned location so the whole flow stays rootless.
-        if [[ "$DEFAULT_INSTALL_PATH" == "/opt/bambuddy" ]]; then
-            DEFAULT_INSTALL_PATH="$HOME/bambuddy"
+        if [[ "$DEFAULT_INSTALL_PATH" == "/opt/printlab" ]]; then
+            DEFAULT_INSTALL_PATH="$HOME/printlab"
         fi
     fi
 
@@ -1064,7 +1064,7 @@ main() {
         SERVICE_USER="$USER"
     fi
 
-    download_bambuddy
+    download_printlab
     setup_virtualenv
     sign_python_for_tcc
     build_frontend
@@ -1089,33 +1089,33 @@ main() {
     if [[ "$BIND_ADDRESS" == "0.0.0.0" ]]; then
         local ip_addr
         ip_addr=$(hostname -I 2>/dev/null | awk '{print $1}') || ip_addr="<your-ip>"
-        echo -e "  ${BOLD}Access BamBuddy:${NC}  ${CYAN}http://localhost:$PORT${NC}"
+        echo -e "  ${BOLD}Access PrintLab:${NC}  ${CYAN}http://localhost:$PORT${NC}"
         echo -e "                    ${CYAN}http://$ip_addr:$PORT${NC} (from other devices)"
     else
-        echo -e "  ${BOLD}Access BamBuddy:${NC}  ${CYAN}http://localhost:$PORT${NC}"
+        echo -e "  ${BOLD}Access PrintLab:${NC}  ${CYAN}http://localhost:$PORT${NC}"
     fi
     echo ""
     if [[ "$OS_TYPE" == "macos" ]]; then
         echo -e "  ${BOLD}Manage service:${NC}"
-        echo -e "    Start:   launchctl load ~/Library/LaunchAgents/com.bambuddy.app.plist"
-        echo -e "    Stop:    launchctl unload ~/Library/LaunchAgents/com.bambuddy.app.plist"
-        echo -e "    Logs:    tail -f $LOG_DIR/bambuddy.log"
+        echo -e "    Start:   launchctl load ~/Library/LaunchAgents/com.printlab.app.plist"
+        echo -e "    Stop:    launchctl unload ~/Library/LaunchAgents/com.printlab.app.plist"
+        echo -e "    Logs:    tail -f $LOG_DIR/printlab.log"
     else
         echo -e "  ${BOLD}Manage service:${NC}"
-        echo -e "    Status:  sudo systemctl status bambuddy"
-        echo -e "    Start:   sudo systemctl start bambuddy"
-        echo -e "    Stop:    sudo systemctl stop bambuddy"
-        echo -e "    Logs:    sudo journalctl -u bambuddy -f"
+        echo -e "    Status:  sudo systemctl status printlab"
+        echo -e "    Start:   sudo systemctl start printlab"
+        echo -e "    Stop:    sudo systemctl stop printlab"
+        echo -e "    Logs:    sudo journalctl -u printlab -f"
     fi
     echo ""
-    echo -e "  ${BOLD}Update BamBuddy:${NC}"
+    echo -e "  ${BOLD}Update PrintLab:${NC}"
     echo -e "    cd $INSTALL_PATH && git pull && source venv/bin/activate"
     echo -e "    pip install -r requirements.txt && cd frontend && npm ci && npm run build"
     if [[ "$OS_TYPE" != "macos" ]]; then
-        echo -e "    sudo systemctl restart bambuddy"
+        echo -e "    sudo systemctl restart printlab"
     fi
     echo ""
-    echo -e "  ${BOLD}Documentation:${NC}  ${CYAN}https://wiki.bambuddy.cool${NC}"
+    echo -e "  ${BOLD}Documentation:${NC}  ${CYAN}https://github.com/Luk1236/printlab/blob/bambu-monitor-port/docs/HILFE.md"
     echo ""
 }
 

@@ -77,7 +77,7 @@ async function fillRequiredFields() {
 }
 
 describe('OIDC group sync form', () => {
-  it('adds a mapping row, fills the IdP name and picks a Bambuddy group', async () => {
+  it('adds a mapping row, fills the IdP name and picks a PrintLab group', async () => {
     mockCreate();
     render(<OIDCProviderSettings />);
     await openCreateForm();
@@ -87,7 +87,7 @@ describe('OIDC group sync form', () => {
     const idpInput = screen.getByPlaceholderText(/Identity provider group name/i);
     await userEvent.type(idpInput, 'idp-ops');
 
-    const selects = screen.getAllByDisplayValue(/Select Bambuddy group/i);
+    const selects = screen.getAllByDisplayValue(/Select PrintLab group/i);
     await userEvent.selectOptions(selects[0], 'Operators');
 
     await userEvent.click(screen.getByRole('button', { name: /^Save$/i }));
@@ -134,7 +134,7 @@ describe('OIDC group sync form', () => {
     expect(savedPayload!.group_mapping).toEqual({});
   });
 
-  it('flags a row with no Bambuddy group and keeps Save disabled instead of dropping it', async () => {
+  it('flags a row with no PrintLab group and keeps Save disabled instead of dropping it', async () => {
     mockCreate();
     render(<OIDCProviderSettings />);
     await openCreateForm();
@@ -143,11 +143,11 @@ describe('OIDC group sync form', () => {
     await userEvent.click(screen.getByRole('button', { name: /Add Mapping/i }));
     await userEvent.type(screen.getByPlaceholderText(/Identity provider group name/i), 'idp-ops');
 
-    expect(screen.getByText(/pick a Bambuddy group, or remove this mapping/i)).toBeInTheDocument();
+    expect(screen.getByText(/pick a PrintLab group, or remove this mapping/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Save$/i })).toBeDisabled();
 
-    await userEvent.selectOptions(screen.getAllByDisplayValue(/Select Bambuddy group/i)[0], 'Operators');
-    expect(screen.queryByText(/pick a Bambuddy group, or remove this mapping/i)).not.toBeInTheDocument();
+    await userEvent.selectOptions(screen.getAllByDisplayValue(/Select PrintLab group/i)[0], 'Operators');
+    expect(screen.queryByText(/pick a PrintLab group, or remove this mapping/i)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Save$/i })).toBeEnabled();
   });
 
@@ -162,7 +162,7 @@ describe('OIDC group sync form', () => {
     const idpInputs = screen.getAllByPlaceholderText(/Identity provider group name/i);
     await userEvent.type(idpInputs[0], 'Admins');
     await userEvent.type(idpInputs[1], 'admins');
-    const selects = screen.getAllByDisplayValue(/Select Bambuddy group/i);
+    const selects = screen.getAllByDisplayValue(/Select PrintLab group/i);
     await userEvent.selectOptions(selects[0], 'Administrators');
     await userEvent.selectOptions(selects[1], 'Operators');
 

@@ -110,7 +110,7 @@ class OIDCProvider(Base):
     # but some setups ship "roles" or a custom claim), so it is configurable
     # like email_claim. Same character rules enforced by _validate_email_claim_name.
     group_claim: Mapped[str] = mapped_column(String(64), default="groups", server_default="groups")
-    # #3107 — mapping of IdP group value -> Bambuddy group name. Empty dict
+    # #3107 — mapping of IdP group value -> PrintLab group name. Empty dict
     # (the default) disables group sync entirely: the provider behaves exactly
     # as it did before the column existed. Only groups named in the values are
     # managed by the sync; everything else on the user is a manual assignment
@@ -139,9 +139,9 @@ class OIDCProvider(Base):
     # carry this flag at a time; setting it on a new provider clears it on the
     # previous one. The frontend always falls back to the local form if the
     # authorize-URL fetch fails or times out, and ``/login?fallback=local``
-    # plus ``BAMBUDDY_LOCAL_LOGIN=true`` provide a documented recovery path.
+    # plus ``PRINTLAB_LOCAL_LOGIN=true`` provide a documented recovery path.
     is_autologin: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
-    # Marks the single provider defined by BAMBUDDY_OIDC_* env vars. Upserted on
+    # Marks the single provider defined by PRINTLAB_OIDC_* env vars. Upserted on
     # startup; UI/API writes to it are rejected. Never delete-recreated (user_oidc_links
     # FK is ON DELETE CASCADE).
     is_env_managed: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
@@ -168,7 +168,7 @@ class OIDCProvider(Base):
 
 
 class UserOIDCLink(Base):
-    """Links a local Bambuddy user account to an identity at an OIDC provider."""
+    """Links a local PrintLab user account to an identity at an OIDC provider."""
 
     __tablename__ = "user_oidc_links"
     __table_args__ = (

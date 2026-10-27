@@ -1,6 +1,6 @@
 """Database-side timestamps are UTC on both dialects (#2855).
 
-Bambuddy stores naive datetimes that hold UTC, and the frontend's
+PrintLab stores naive datetimes that hold UTC, and the frontend's
 ``parseUTCDate()`` reads a timestamp with no offset as UTC. #504 swept the
 Python side onto ``datetime.now(timezone.utc)``, but roughly 96 columns take
 their value from ``server_default=func.now()`` and the migration DDL carries

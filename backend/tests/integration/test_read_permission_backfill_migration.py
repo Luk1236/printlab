@@ -1,4 +1,4 @@
-"""Migration tests for maziggy/bambuddy-security #2 — read permission OWN/ALL backfill.
+"""Migration tests for the security review #2 — read permission OWN/ALL backfill.
 
 Pre-fix, ARCHIVES_READ / LIBRARY_READ / QUEUE_READ were flat "read all" flags.
 Post-fix they split into OWN/ALL. The migration in seed_default_groups must:
@@ -223,7 +223,7 @@ class TestReadPermissionMigration:
     async def test_administrators_printer_sensor_history_read_backfilled(self, async_client: AsyncClient):
         """Admin without `printer_sensor_history:read` (older custom edit or
         a DB seeded before that permission existed) gets it backfilled —
-        regression for the gap maziggy hit on a live install where the
+        regression for the gap hit on a live install where the
         per-permission admin backfills missed it."""
         await seed_default_groups()
         async with _database_module.async_session() as session:

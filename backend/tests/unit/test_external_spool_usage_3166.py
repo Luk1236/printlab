@@ -54,7 +54,7 @@ class TestResolvingTheExternalSpool:
 
     def test_single_nozzle_external_is_254_whatever_the_wire_says(self):
         # BambuStudio always sends ams_id 255 for the one external spool of a
-        # single-nozzle printer; Bambuddy knows that spool as global tray 254.
+        # single-nozzle printer; PrintLab knows that spool as global tray 254.
         assert resolve_external_spools_in_mapping([-1], [EXT_RIGHT], is_dual_nozzle=False) == [254]
 
     def test_mixed_mapping_only_the_external_entry_changes(self):

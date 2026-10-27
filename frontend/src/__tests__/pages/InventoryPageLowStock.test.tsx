@@ -220,7 +220,7 @@ describe('InventoryPage - Low Stock Threshold', () => {
 
     it('does not use localStorage for threshold', async () => {
       // Set a value in localStorage that should be ignored
-      localStorage.setItem('bambuddy-low-stock-threshold', '50');
+      localStorage.setItem('printlab-low-stock-threshold', '50');
 
       render(<InventoryPageRouter />);
 

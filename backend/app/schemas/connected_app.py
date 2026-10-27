@@ -16,7 +16,7 @@ def _validate_redirect_uri(value: str) -> str:
     """Accept only an absolute http(s) URL without a fragment.
 
     Plain http is allowed: connected apps typically run on the same LAN as
-    Bambuddy, often without TLS. What matters is that codes can only ever be
+    PrintLab, often without TLS. What matters is that codes can only ever be
     delivered to the one URL an admin registered, and that is enforced by an
     exact match at authorize and token time.
     """

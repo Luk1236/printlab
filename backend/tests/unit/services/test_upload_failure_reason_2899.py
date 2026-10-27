@@ -5,7 +5,7 @@ file to printer. Check if SD card is inserted and properly formatted
 (FAT32/exFAT)." The reporter got it after a TLS handshake failure and restarted
 the printer on the strength of it. That could not have helped -- the handshake
 never reached the printer's filesystem, and the cool-off that produced the
-repeat failure lives in Bambuddy's own memory, where power-cycling a printer
+repeat failure lives in PrintLab's own memory, where power-cycling a printer
 does not reach.
 
 #2780 had already removed operator advice from this failure's *log* line, for
@@ -241,7 +241,7 @@ class TestTheWording:
             (FtpFailureKind.AUTH, "access code"),
             (FtpFailureKind.TIMEOUT, "did not respond in time"),
             (FtpFailureKind.STORAGE, "FAT32"),
-            (FtpFailureKind.NOT_FOUND, "Bambuddy-side"),
+            (FtpFailureKind.NOT_FOUND, "PrintLab-side"),
             (FtpFailureKind.NETWORK, "server log"),
             (FtpFailureKind.UNKNOWN, "server log"),
         ],

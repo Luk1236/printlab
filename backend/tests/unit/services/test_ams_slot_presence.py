@@ -16,7 +16,7 @@ class TestSpoolPresent:
 
     def test_the_bit_answers_over_a_contradicting_state(self):
         # The #3084 slot: non-Bambu spool swapped in, so the bit is set, while
-        # the 9 Bambuddy stamped on the slot when it was briefly empty is still
+        # the 9 PrintLab stamped on the slot when it was briefly empty is still
         # sitting there.
         assert spool_present({"id": 0, "exists": True, "state": 9}) is True
         # And the converse — a spool pulled from a slot the firmware last

@@ -4,7 +4,7 @@
 
 | Version | Quelle | Bedeutung |
 |---|---|---|
-| `1.2.5.7` | `backend/app/core/config.py` → `APP_VERSION` | Upstream-Bambuddy-Stand (maziggy/bambuddy), Basis dieses Forks. Wird für Update-Vergleiche des Upstreams genutzt — **nicht** anfassen. |
+| `1.2.1` | `backend/app/core/config.py` → `PRINTLAB_VERSION` (= `APP_VERSION`) | Einzige Versionsquelle von PrintLab. Wird in der Oberfläche angezeigt und für die Update-Prüfung gegen `Luk1236/printlab` benutzt; bei jedem Release zusammen mit dem Git-Tag erhöhen. Der Basisstand der Herkunft (Bambuddy 1.2.5.7) steht in `NOTICE`. |
 | Fork-Version `1.0.0` | Git-Tags (`v1.0.0`) + Git-Hub-Releases | Eigene Version des Forks; wächst unabhängig vom Upstream. |
 
 ## Schema
@@ -18,7 +18,7 @@
 ## Wie eine Version angelegt wird
 
 ```powershell
-# 1. Commits fertig und getestet (Build, relevante Tests)
+# 1. Commits fertig und getestet (Build, relevante Tests); PRINTLAB_VERSION in config.py erhöhen
 # 2. Tag setzen (annotated)
 git tag v1.1.0 -a -m "PrintLab v1.1.0 — Kurzbeschreibung"
 # 3. Branch und Tag hochladen

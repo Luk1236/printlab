@@ -131,7 +131,7 @@ def normalize_str_setting(key: str, value: object) -> str:
 
 
 async def get_external_base_url(db: AsyncSession) -> str:
-    """Base URL for links Bambuddy hands to the outside world (no trailing slash).
+    """Base URL for links PrintLab hands to the outside world (no trailing slash).
 
     ``external_url`` is optional and has no default, so anything that must be
     absolute — a login link in an e-mail, the one-tap outcome verdict links
@@ -351,7 +351,7 @@ async def update_settings(
     #   2. The caller has no UserOIDCLink — they would lock themselves out
     #      even if other admins are linked.
     # Either case returns HTTP 400 instead of silently saving. The
-    # ``BAMBUDDY_LOCAL_LOGIN=true`` env-var bypass on /auth/login is a
+    # ``PRINTLAB_LOCAL_LOGIN=true`` env-var bypass on /auth/login is a
     # separate recovery path; the refusals here protect the *default*
     # configuration where the env var is absent.
     if update_data.get("local_login_enabled") is False:
@@ -410,7 +410,7 @@ async def update_settings(
                 "mqtt_port": int(await get_setting(db, "mqtt_port") or "1883"),
                 "mqtt_username": await get_setting(db, "mqtt_username") or "",
                 "mqtt_password": await get_setting(db, "mqtt_password") or "",
-                "mqtt_topic_prefix": await get_setting(db, "mqtt_topic_prefix") or "bambuddy",
+                "mqtt_topic_prefix": await get_setting(db, "mqtt_topic_prefix") or "printlab",
                 "mqtt_use_tls": (await get_setting(db, "mqtt_use_tls") or "false") == "true",
             }
             await mqtt_relay.configure(mqtt_settings)
@@ -752,7 +752,7 @@ async def create_backup_zip(output_path: Path | None = None) -> tuple[Path, str]
     from backend.app.core.db_dialect import is_sqlite
 
     base_dir = app_settings.base_dir
-    filename = f"bambuddy-backup-{datetime.now().strftime('%Y%m%d-%H%M%S')}.zip"
+    filename = f"printlab-backup-{datetime.now().strftime('%Y%m%d-%H%M%S')}.zip"
 
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
@@ -879,7 +879,7 @@ async def create_backup_zip(output_path: Path | None = None) -> tuple[Path, str]
         if output_path is not None:
             zip_file = (
                 output_path / filename
-            )  # SEC-PATH-OK: filename = f"bambuddy-backup-{datetime.now()...}.zip" generated in create_backup_zip itself
+            )  # SEC-PATH-OK: filename = f"printlab-backup-{datetime.now()...}.zip" generated in create_backup_zip itself
         else:
             fd, tmp = tempfile.mkstemp(suffix=".zip")
             os.close(fd)
@@ -1007,9 +1007,9 @@ def check_backup_schema_compatible(sqlite_path: Path, backup_version: str | None
     if not problems:
         return
 
-    made_by = f"The backup was made by Bambuddy {backup_version}, " if backup_version else "The backup "
+    made_by = f"The backup was made by PrintLab {backup_version}, " if backup_version else "The backup "
     raise BackupSchemaIncompatible(
-        "This backup cannot be restored by this version of Bambuddy. It carries no value for "
+        "This backup cannot be restored by this version of PrintLab. It carries no value for "
         f"{len(problems)} column(s) this version requires and cannot default: {', '.join(sorted(problems))}. "
         f"{made_by}and this install runs {APP_VERSION}. Restore it on the version that made it, or "
         "upgrade this install to that version. Nothing has been changed."
@@ -1368,7 +1368,7 @@ async def restore_backup(
         manifest = _read_backup_manifest(temp_path)
         backup_version = manifest.get("app_version")
         if backup_version:
-            logger.info("Backup was created by Bambuddy %s; this install runs %s", backup_version, APP_VERSION)
+            logger.info("Backup was created by PrintLab %s; this install runs %s", backup_version, APP_VERSION)
         if not is_sqlite():
             try:
                 check_backup_schema_compatible(backup_db, backup_version)
@@ -1568,7 +1568,7 @@ async def restore_backup(
             await init_db()
 
             logger.info("Restore complete - restart required")
-            message = "Backup restored successfully. Please restart Bambuddy for changes to take effect."
+            message = "Backup restored successfully. Please restart PrintLab for changes to take effect."
             if skipped_dirs:
                 message += f" Note: Some directories could not be restored ({', '.join(skipped_dirs)})."
             return {

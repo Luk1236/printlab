@@ -6,10 +6,20 @@ from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
-# Application version - single source of truth
-APP_VERSION = "1.2.5.7"
-GITHUB_REPO = "maziggy/bambuddy"
-BUG_REPORT_RELAY_URL = os.environ.get("BUG_REPORT_RELAY_URL", "https://bambuddy.cool/api/bug-report")
+# Ältere Installationen setzen noch die früheren BAMBUDDY_*-Variablen. Sie gelten weiter und werden auf die
+# neuen PRINTLAB_*-Namen abgebildet (eine bereits gesetzte PRINTLAB_*-Variable hat Vorrang).
+for _legacy_key, _legacy_value in list(os.environ.items()):
+    if _legacy_key.startswith("BAMBUDDY_"):
+        os.environ.setdefault("PRINTLAB_" + _legacy_key[len("BAMBUDDY_"):], _legacy_value)
+
+# Eigene Version von PrintLab (Git-Tags vX.Y.Z). Einzige Versionsquelle: Oberfläche, Backups, Support-Infos
+# und die Update-Prüfung gegen das eigene Repo benutzen sie. Bei jedem Release erhöhen (docs/VERSIONING.md).
+PRINTLAB_VERSION = "1.2.1"
+APP_VERSION = PRINTLAB_VERSION
+# Fork: Updates kommen aus dem eigenen Repo, nie aus dem Upstream (PRINTLAB_GITHUB_REPO überschreibt).
+GITHUB_REPO = os.environ.get("PRINTLAB_GITHUB_REPO", "Luk1236/printlab")
+# Fork: kein Fehlerbericht-Relay beim Upstream; leer = Fehlerberichte aus, BUG_REPORT_RELAY_URL setzt eines.
+BUG_REPORT_RELAY_URL = os.environ.get("BUG_REPORT_RELAY_URL", "")
 
 # App directory - where the application is installed (for static files)
 _app_dir = Path(__file__).resolve().parent.parent.parent.parent
@@ -30,23 +40,26 @@ _log_dir = Path(_log_dir_env) if _log_dir_env else _app_dir / "logs"
 
 
 def _migrate_database() -> Path:
-    """Migrate database from old name to new name if needed."""
-    old_db = _data_dir / "bambutrack.db"
-    new_db = _data_dir / "bambuddy.db"
-
-    # If old database exists and new one doesn't, rename it
-    if old_db.exists() and not new_db.exists():
+    """Datenbank auf den aktuellen Dateinamen ``printlab.db`` umziehen (aus ``bambuddy.db`` / ``bambutrack.db``)."""
+    new_db = _data_dir / "printlab.db"
+    if new_db.exists():
+        return new_db
+    for old_name in ("bambuddy.db", "bambutrack.db"):
+        old_db = _data_dir / old_name
+        if not old_db.exists():
+            continue
         try:
             old_db.rename(new_db)
+            for suffix in ("-wal", "-shm"):  # SQLite-Begleitdateien gehören dazu
+                sidecar = _data_dir / (old_name + suffix)
+                if sidecar.exists():
+                    sidecar.rename(_data_dir / ("printlab.db" + suffix))
             logging.info("Migrated database: %s -> %s", old_db, new_db)
+            return new_db
         except Exception as e:
             logging.warning("Could not migrate database: %s. Using old location.", e)
             return old_db
-
-    # If old database exists (and new one now exists too), it was migrated
-    # If only new exists, use new
-    # If neither exists, use new (will be created)
-    return new_db if new_db.exists() or not old_db.exists() else old_db
+    return new_db
 
 
 # External DATABASE_URL takes priority (PostgreSQL support)
@@ -57,7 +70,7 @@ _db_path = _migrate_database() if not _external_db_url else None
 
 
 class Settings(BaseSettings):
-    app_name: str = "Bambuddy"
+    app_name: str = "PrintLab"
     debug: bool = False  # Default to production mode
 
     # Paths
@@ -93,7 +106,7 @@ class Settings(BaseSettings):
     # Logging
     log_level: str = "INFO"  # Override with LOG_LEVEL env var or DEBUG=true
     log_to_file: bool = True  # Set to false to disable file logging
-    # Rotation for bambuddy.log. Read by main.py (which owns the handler) and by
+    # Rotation for printlab.log. Read by main.py (which owns the handler) and by
     # the support bundle (which harvests the backups as well as the live file);
     # they must agree on the backup count or the bundle silently skips history.
     # Bounded: RotatingFileHandler treats maxBytes=0 as "never rotate", so a
@@ -124,7 +137,7 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-# S6: Warn on unknown MFA_*/BAMBUDDY_* env vars so typos like MFA_ENCYPTION_KEY
+# S6: Warn on unknown MFA_*/PRINTLAB_* env vars so typos like MFA_ENCYPTION_KEY
 # are not silently swallowed by ``extra = "ignore"``. The original Pydantic
 # behaviour rejected them outright and broke startup (#1219); we now accept
 # them but log every unrecognised one at INFO so operators can spot mistakes.
@@ -135,33 +148,35 @@ _INTENTIONAL_UNSETTINGS = {
     "LOG_DIR",  # config.py (above)
     "LOG_LEVEL",  # main.py logging setup
     "BUG_REPORT_RELAY_URL",  # config.py (above)
+    "ANNOUNCEMENTS_FEED_URL",  # services/announcements.py
+    "PRINTLAB_GITHUB_REPO",  # config.py (above)
     # #1589 — api/routes/auth.py reads this on the login path. Unregistered it
     # logged "possible typo" at every boot, telling an operator who is locked
     # out and following the documented recovery that the variable is not real.
-    "BAMBUDDY_LOCAL_LOGIN",
+    "PRINTLAB_LOCAL_LOGIN",
     # #2593 — core/oidc_env.py reads these directly; they are not Settings
     # fields because they map to an OIDCProvider row, not to app config.
-    "BAMBUDDY_OIDC_NAME",
-    "BAMBUDDY_OIDC_ISSUER_URL",
-    "BAMBUDDY_OIDC_CLIENT_ID",
-    "BAMBUDDY_OIDC_CLIENT_SECRET",
-    "BAMBUDDY_OIDC_SCOPES",
-    "BAMBUDDY_OIDC_ENABLED",
-    "BAMBUDDY_OIDC_AUTO_CREATE_USERS",
-    "BAMBUDDY_OIDC_AUTO_LINK_EXISTING",
-    "BAMBUDDY_OIDC_EMAIL_CLAIM",
-    "BAMBUDDY_OIDC_REQUIRE_EMAIL_VERIFIED",
-    "BAMBUDDY_OIDC_GROUP_CLAIM",
-    "BAMBUDDY_OIDC_GROUP_MAPPING",
-    "BAMBUDDY_OIDC_ICON_URL",
-    "BAMBUDDY_OIDC_AUTOLOGIN",
-    "BAMBUDDY_OIDC_DEFAULT_GROUP",
+    "PRINTLAB_OIDC_NAME",
+    "PRINTLAB_OIDC_ISSUER_URL",
+    "PRINTLAB_OIDC_CLIENT_ID",
+    "PRINTLAB_OIDC_CLIENT_SECRET",
+    "PRINTLAB_OIDC_SCOPES",
+    "PRINTLAB_OIDC_ENABLED",
+    "PRINTLAB_OIDC_AUTO_CREATE_USERS",
+    "PRINTLAB_OIDC_AUTO_LINK_EXISTING",
+    "PRINTLAB_OIDC_EMAIL_CLAIM",
+    "PRINTLAB_OIDC_REQUIRE_EMAIL_VERIFIED",
+    "PRINTLAB_OIDC_GROUP_CLAIM",
+    "PRINTLAB_OIDC_GROUP_MAPPING",
+    "PRINTLAB_OIDC_ICON_URL",
+    "PRINTLAB_OIDC_AUTOLOGIN",
+    "PRINTLAB_OIDC_DEFAULT_GROUP",
 }
 
 _known_settings_fields = {f.upper() for f in settings.model_fields}
 
 for _env_key in os.environ:
-    if _re.match(r"^(MFA_|BAMBUDDY_)", _env_key, _re.IGNORECASE):
+    if _re.match(r"^(MFA_|PRINTLAB_)", _env_key, _re.IGNORECASE):
         _norm = _env_key.upper()
         if _norm not in _known_settings_fields and _norm not in _INTENTIONAL_UNSETTINGS:
             logging.info(

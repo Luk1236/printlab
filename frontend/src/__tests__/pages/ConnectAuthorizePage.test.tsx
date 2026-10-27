@@ -1,5 +1,5 @@
 /**
- * "Sign in with Bambuddy" consent page.
+ * "Sign in with PrintLab" consent page.
  *
  * The assertions that carry weight: the page never redirects before the
  * backend has vouched for the callback URL, and when it does redirect it uses
@@ -74,7 +74,7 @@ describe('ConnectAuthorizePage', () => {
     renderAt(query());
 
     expect(await screen.findByText('Order Desk wants to sign you in')).toBeInTheDocument();
-    expect(screen.getByText('Signed in to Bambuddy as martin')).toBeInTheDocument();
+    expect(screen.getByText('Signed in to PrintLab as martin')).toBeInTheDocument();
     expect(replace).not.toHaveBeenCalled();
 
     await userEvent.click(screen.getByRole('button', { name: 'Allow' }));
@@ -142,7 +142,7 @@ describe('ConnectAuthorizePage', () => {
 
     renderAt(query());
 
-    expect(await screen.findByText(/Bambuddy authentication is turned off/)).toBeInTheDocument();
+    expect(await screen.findByText(/PrintLab authentication is turned off/)).toBeInTheDocument();
     expect(info).not.toHaveBeenCalled();
     expect(replace).not.toHaveBeenCalled();
   });

@@ -1,7 +1,7 @@
 """Integration tests for OIDC group sync (#3107).
 
 Same regression contract as the LDAP group sync (test_ldap_group_sync.py,
-#1292): the sync manages only the Bambuddy groups named in the provider's
+#1292): the sync manages only the PrintLab groups named in the provider's
 group_mapping values, and every login replaces exactly that slice. Manual
 assignments to groups outside the mapping survive; revocation at the IdP
 propagates on the next login.
@@ -122,7 +122,7 @@ class TestResolveMapping:
     def test_empty_mapping_disables(self):
         assert resolve_oidc_group_mapping(["idp-staff"], {}) == []
 
-    def test_two_idp_groups_to_one_bambuddy_group(self):
+    def test_two_idp_groups_to_one_printlab_group(self):
         mapping = {"staff": "Operators", "admins": "Operators"}
         assert resolve_oidc_group_mapping(["admins", "staff"], mapping) == ["Operators"]
 
@@ -167,7 +167,7 @@ class TestSyncOidcUserGroups:
 
     @pytest.mark.asyncio
     async def test_revocation_at_idp_propagates(self, db_session: AsyncSession):
-        """Losing the IdP group must remove the mapped Bambuddy group on the
+        """Losing the IdP group must remove the mapped PrintLab group on the
         next login — otherwise IdP-side revocation would be decorative."""
         operators = await _make_group(db_session, "Operators")
         user = await _make_user(db_session, "bob", [operators])

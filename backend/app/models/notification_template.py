@@ -57,7 +57,7 @@ DEFAULT_TEMPLATES = [
     },
     {
         # Post-print outcome confirmation (#1898). The body carries
-        # {confirm_url}, which only opens the archive in Bambuddy: anything
+        # {confirm_url}, which only opens the archive in PrintLab: anything
         # that walks a URL out of a message body — a preview card, a mail
         # gateway, a proxy — then reaches a page that changes nothing.
         # {good_url} / {reject_url} are the single-use capability links and
@@ -172,7 +172,7 @@ DEFAULT_TEMPLATES = [
     {
         "event_type": "test",
         "name": "Test Notification",
-        "title_template": "Bambuddy Test",
+        "title_template": "PrintLab Test",
         "body_template": "This is a test notification. If you see this, notifications are working!",
     },
     # Queue notifications

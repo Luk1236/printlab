@@ -262,7 +262,7 @@ describe('AssignToAmsModal', () => {
     expect(screen.queryByLabelText(/color name/i)).not.toBeInTheDocument();
   });
 
-  it('names the spool by Bambuddy\'s catalog-resolved colour in the header (#3090)', async () => {
+  it('names the spool by PrintLab\'s catalog-resolved colour in the header (#3090)', async () => {
     setColorCatalog({ d02727: 'Candy Red' });
 
     render(

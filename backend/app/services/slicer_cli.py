@@ -1,6 +1,6 @@
 """Bambu-Studio-CLI als Dienst: Datei + Profile -> druckfertige 3MF.
 
-Portiert aus dem Bambu-Monitor (`slicer.py`) für den PC-Slicer, der Bambuddys
+Portiert aus dem Bambu-Monitor (`slicer.py`) für den PC-Slicer, der PrintLabs
 vorhandene Sidecar-Schnittstelle bedient.
 """
 from __future__ import annotations

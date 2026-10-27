@@ -168,7 +168,7 @@ class TestLDAPEscape:
 
 
 class TestResolveGroupMapping:
-    """Verify LDAP group DN to BamBuddy group name resolution."""
+    """Verify LDAP group DN to PrintLab group name resolution."""
 
     def test_empty_mapping(self):
         assert resolve_group_mapping(["cn=admins,dc=example"], {}) == []
@@ -417,7 +417,7 @@ class TestAuthenticateLdapUserGroups:
     def test_primary_gidnumber_group_found(self, mock_ldap):
         """Regression: POSIX primary group (gidNumber match) must be included in the result."""
         user_entry = _MockEntry("cn=mz,dc=test,dc=com", uid="mz", gidNumber=10002)
-        operators_group = _MockEntry("cn=bambuddy-operators,ou=groups,dc=test,dc=com")
+        operators_group = _MockEntry("cn=printlab-operators,ou=groups,dc=test,dc=com")
 
         mock_ldap._search_fixture = {
             "(uid=mz)": [user_entry],
@@ -428,12 +428,12 @@ class TestAuthenticateLdapUserGroups:
         info = authenticate_ldap_user(_base_config(), "mz", "password")
 
         assert info is not None
-        assert info.groups == ["cn=bambuddy-operators,ou=groups,dc=test,dc=com"]
+        assert info.groups == ["cn=printlab-operators,ou=groups,dc=test,dc=com"]
 
     def test_dedupes_group_found_via_both_memberuid_and_primary_gid(self, mock_ldap):
         """A user in the same group via BOTH memberUid and primary gidNumber should appear once."""
         user_entry = _MockEntry("cn=mz,dc=test,dc=com", uid="mz", gidNumber=10002)
-        group_entry = _MockEntry("cn=bambuddy-operators,ou=groups,dc=test,dc=com")
+        group_entry = _MockEntry("cn=printlab-operators,ou=groups,dc=test,dc=com")
 
         mock_ldap._search_fixture = {
             "(uid=mz)": [user_entry],
@@ -443,13 +443,13 @@ class TestAuthenticateLdapUserGroups:
 
         info = authenticate_ldap_user(_base_config(), "mz", "password")
 
-        assert info.groups == ["cn=bambuddy-operators,ou=groups,dc=test,dc=com"]
+        assert info.groups == ["cn=printlab-operators,ou=groups,dc=test,dc=com"]
 
     def test_case_insensitive_dedupe(self, mock_ldap):
         """DNs differing only in case should collapse to a single entry (LDAP DNs are case-insensitive)."""
         user_entry = _MockEntry("cn=mz,dc=test,dc=com", uid="mz", gidNumber=10002)
-        upper_dn = _MockEntry("CN=Bambuddy-Operators,OU=Groups,DC=Test,DC=Com")
-        lower_dn = _MockEntry("cn=bambuddy-operators,ou=groups,dc=test,dc=com")
+        upper_dn = _MockEntry("CN=PrintLab-Operators,OU=Groups,DC=Test,DC=Com")
+        lower_dn = _MockEntry("cn=printlab-operators,ou=groups,dc=test,dc=com")
 
         mock_ldap._search_fixture = {
             "(uid=mz)": [user_entry],
@@ -461,12 +461,12 @@ class TestAuthenticateLdapUserGroups:
 
         assert len(info.groups) == 1
         # The first-seen casing (memberUid result) is kept.
-        assert info.groups[0] == "CN=Bambuddy-Operators,OU=Groups,DC=Test,DC=Com"
+        assert info.groups[0] == "CN=PrintLab-Operators,OU=Groups,DC=Test,DC=Com"
 
     def test_no_gidnumber_skips_primary_search(self, mock_ldap):
         """User entries without a gidNumber attribute should not crash and should not issue the primary-gid query."""
         user_entry = _MockEntry("cn=tester,dc=test,dc=com", uid="tester")  # no gidNumber
-        viewers_group = _MockEntry("cn=bambuddy-viewers,ou=groups,dc=test,dc=com")
+        viewers_group = _MockEntry("cn=printlab-viewers,ou=groups,dc=test,dc=com")
 
         mock_ldap._search_fixture = {
             "(uid=tester)": [user_entry],
@@ -476,7 +476,7 @@ class TestAuthenticateLdapUserGroups:
         info = authenticate_ldap_user(_base_config(), "tester", "password")
 
         assert info is not None
-        assert info.groups == ["cn=bambuddy-viewers,ou=groups,dc=test,dc=com"]
+        assert info.groups == ["cn=printlab-viewers,ou=groups,dc=test,dc=com"]
         # Ensure the primary-gidNumber search was never issued — verifying the guard works.
         service_conn = _MockConnection._instances[0]
         gidnumber_searches = [call for call in service_conn.search_calls if "gidNumber=" in call]
@@ -544,8 +544,8 @@ class TestDirectoryWithoutPosixGroupClass:
         """The guard must not cost a normal directory its POSIX groups — both
         searches still run and both results still land."""
         user_entry = _MockEntry("cn=mz,dc=test,dc=com", uid="mz", gidNumber=10002)
-        supplementary = _MockEntry("cn=bambuddy-viewers,ou=groups,dc=test,dc=com")
-        primary = _MockEntry("cn=bambuddy-operators,ou=groups,dc=test,dc=com")
+        supplementary = _MockEntry("cn=printlab-viewers,ou=groups,dc=test,dc=com")
+        primary = _MockEntry("cn=printlab-operators,ou=groups,dc=test,dc=com")
 
         mock_ldap._search_fixture = {
             "(uid=mz)": [user_entry],
@@ -556,8 +556,8 @@ class TestDirectoryWithoutPosixGroupClass:
         info = authenticate_ldap_user(_base_config(), "mz", "password")
 
         assert info.groups == [
-            "cn=bambuddy-viewers,ou=groups,dc=test,dc=com",
-            "cn=bambuddy-operators,ou=groups,dc=test,dc=com",
+            "cn=printlab-viewers,ou=groups,dc=test,dc=com",
+            "cn=printlab-operators,ou=groups,dc=test,dc=com",
         ]
 
 
@@ -751,7 +751,7 @@ class TestLookupLdapUser:
 # ---------------------------------------------------------------------------
 
 _USER_DN = "uid=tofm,ou=people,dc=example,dc=com"
-_ADMINS_DN = "cn=bambuddy-admins,ou=groups,dc=example,dc=com"
+_ADMINS_DN = "cn=printlab-admins,ou=groups,dc=example,dc=com"
 _PEOPLE_BASE = "ou=people,dc=example,dc=com"
 
 
@@ -805,7 +805,7 @@ class TestMemberOfIsRequestedByName:
             object_classes=["groupOfNames", "groupOfUniqueNames"],
             naming_contexts=["dc=example,dc=com"],
         )
-        operators_dn = "cn=bambuddy-operators,ou=groups,dc=example,dc=com"
+        operators_dn = "cn=printlab-operators,ou=groups,dc=example,dc=com"
         mock_ldap._search_fixture = {
             "(uid=tofm)": [_MockEntry(_USER_DN, uid="tofm", memberOf=[operators_dn])],
             f"(member={_USER_DN})": [_MockEntry(_ADMINS_DN), _MockEntry(operators_dn)],

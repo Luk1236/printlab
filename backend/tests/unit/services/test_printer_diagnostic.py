@@ -209,7 +209,7 @@ class TestSameSubnet:
 
 
 class TestHostSourceIp:
-    """#3092: which of Bambuddy's own addresses the comparison is made against."""
+    """#3092: which of PrintLab's own addresses the comparison is made against."""
 
     def test_the_route_is_probed_toward_the_printer(self):
         """Not toward a fixed far-away address.
@@ -707,7 +707,7 @@ class TestExternalStorageCheck:
 
     async def test_the_file_being_there_outranks_the_toggle(self):
         """Same printer with the toggle off. The check exists to say whether
-        Bambuddy can read the print file, and the probe just proved it can --
+        PrintLab can read the print file, and the probe just proved it can --
         telling this user to switch something on would be advice for a problem
         they do not have.
         """

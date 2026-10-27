@@ -10,6 +10,7 @@ import { useToast } from '../contexts/ToastContext';
 import { copyTextToClipboard, downloadTextFile } from '../utils/clipboard';
 import { VirtualPrinterCard } from './VirtualPrinterCard';
 import { VirtualPrinterAddDialog } from './VirtualPrinterAddDialog';
+import { helpLink, HELP_ANCHORS } from '../utils/docsLinks';
 
 export function VirtualPrinterList() {
   const { t } = useTranslation();
@@ -65,7 +66,7 @@ export function VirtualPrinterList() {
 
   const handleDownloadCert = () => {
     if (!caCert) return;
-    downloadTextFile(caCert.pem, 'bambuddy-virtual-printer-ca.crt', 'application/x-pem-file');
+    downloadTextFile(caCert.pem, 'printlab-virtual-printer-ca.crt', 'application/x-pem-file');
   };
 
   if (isLoading) {
@@ -93,7 +94,7 @@ export function VirtualPrinterList() {
                 <p className="text-white font-medium">{t('virtualPrinter.setupRequired.title')}</p>
                 <p className="text-bambu-gray mt-1">{t('virtualPrinter.setupRequired.description')}</p>
                 <a
-                  href="https://wiki.bambuddy.cool/features/virtual-printer/"
+                  href={helpLink(HELP_ANCHORS.virtualPrinter)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 bg-yellow-100 dark:bg-yellow-500/20 border border-yellow-500/50 rounded text-yellow-700 dark:text-yellow-400 hover:bg-yellow-500/30 transition-colors text-xs"

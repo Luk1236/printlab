@@ -1,4 +1,4 @@
-"""Read the single OIDC provider defined by BAMBUDDY_OIDC_* env vars (#2593).
+"""Read the single OIDC provider defined by PRINTLAB_OIDC_* env vars (#2593).
 
 A declarative deployment (compose, Helm, GitOps) has no way to click through
 the settings UI, so one provider can be configured entirely from the
@@ -24,10 +24,10 @@ logger = logging.getLogger(__name__)
 # database and then fail at authorize time, long after the operator could
 # connect the failure to a typo in their compose file.
 _REQUIRED = (
-    "BAMBUDDY_OIDC_NAME",
-    "BAMBUDDY_OIDC_ISSUER_URL",
-    "BAMBUDDY_OIDC_CLIENT_ID",
-    "BAMBUDDY_OIDC_CLIENT_SECRET",
+    "PRINTLAB_OIDC_NAME",
+    "PRINTLAB_OIDC_ISSUER_URL",
+    "PRINTLAB_OIDC_CLIENT_ID",
+    "PRINTLAB_OIDC_CLIENT_SECRET",
 )
 
 _TRUTHY = {"true", "1", "yes"}
@@ -35,7 +35,7 @@ _FALSY = {"false", "0", "no"}
 
 
 def _env_group_mapping() -> dict[str, str]:
-    """#3107 — parse BAMBUDDY_OIDC_GROUP_MAPPING as a JSON object.
+    """#3107 — parse PRINTLAB_OIDC_GROUP_MAPPING as a JSON object.
 
     Unset or blank -> {} (sync off). Invalid JSON or a non-object raises
     EnvOIDCConfigError so the config is refused loudly at boot instead of
@@ -43,15 +43,15 @@ def _env_group_mapping() -> dict[str, str]:
     same disposition as a bad boolean. Key/value contents are validated by
     the OIDCProviderCreate schema like every other field.
     """
-    raw = (os.environ.get("BAMBUDDY_OIDC_GROUP_MAPPING") or "").strip()
+    raw = (os.environ.get("PRINTLAB_OIDC_GROUP_MAPPING") or "").strip()
     if not raw:
         return {}
     try:
         parsed = json.loads(raw)
     except json.JSONDecodeError as exc:
-        raise EnvOIDCConfigError(f"BAMBUDDY_OIDC_GROUP_MAPPING is not valid JSON ({exc.lineno}:{exc.colno})") from exc
+        raise EnvOIDCConfigError(f"PRINTLAB_OIDC_GROUP_MAPPING is not valid JSON ({exc.lineno}:{exc.colno})") from exc
     if not isinstance(parsed, dict):
-        raise EnvOIDCConfigError("BAMBUDDY_OIDC_GROUP_MAPPING must be a JSON object")
+        raise EnvOIDCConfigError("PRINTLAB_OIDC_GROUP_MAPPING must be a JSON object")
     # Shape-checked here, before apply looks the values up as group names: a
     # null or a number would otherwise reach that query and surface only as
     # "could not be applied: TypeError", naming neither the variable nor why.
@@ -61,11 +61,11 @@ def _env_group_mapping() -> dict[str, str]:
     try:
         return _validate_group_mapping(parsed)
     except ValueError as exc:
-        raise EnvOIDCConfigError(f"BAMBUDDY_OIDC_GROUP_MAPPING is invalid: {exc}") from exc
+        raise EnvOIDCConfigError(f"PRINTLAB_OIDC_GROUP_MAPPING is invalid: {exc}") from exc
 
 
 class EnvOIDCConfigError(Exception):
-    """A BAMBUDDY_OIDC_* value the reader cannot interpret. Only ever carries a
+    """A PRINTLAB_OIDC_* value the reader cannot interpret. Only ever carries a
     boolean variable's name and value, or a GROUP_MAPPING problem (a JSON parse
     position, or the IdP group names involved) -- none of it is secret, so the
     message is safe to log in full (unlike client_secret, which never reaches
@@ -97,7 +97,7 @@ def env_bool(key: str, default: bool, *, strict: bool = True) -> bool:
 def read_env_oidc_config() -> dict | None:
     """The provider's fields from the environment, or None if it isn't configured.
 
-    An empty required var counts as unset -- `BAMBUDDY_OIDC_CLIENT_SECRET=` in
+    An empty required var counts as unset -- `PRINTLAB_OIDC_CLIENT_SECRET=` in
     a compose file is a forgotten value, not an intentional empty secret. Blank
     means blank *after* stripping, and the surviving value is stripped too: a
     Kubernetes Secret written as a block scalar (``stringData: secret: |``) or
@@ -112,29 +112,29 @@ def read_env_oidc_config() -> dict | None:
         return None
 
     return {
-        "name": required["BAMBUDDY_OIDC_NAME"],
-        "issuer_url": required["BAMBUDDY_OIDC_ISSUER_URL"],
-        "client_id": required["BAMBUDDY_OIDC_CLIENT_ID"],
-        "client_secret": required["BAMBUDDY_OIDC_CLIENT_SECRET"],
-        "scopes": (os.environ.get("BAMBUDDY_OIDC_SCOPES") or "").strip() or "openid email profile",
-        "is_enabled": env_bool("BAMBUDDY_OIDC_ENABLED", True),
-        "auto_create_users": env_bool("BAMBUDDY_OIDC_AUTO_CREATE_USERS", False),
-        "auto_link_existing_accounts": env_bool("BAMBUDDY_OIDC_AUTO_LINK_EXISTING", False),
-        "email_claim": (os.environ.get("BAMBUDDY_OIDC_EMAIL_CLAIM") or "").strip() or "email",
-        "require_email_verified": env_bool("BAMBUDDY_OIDC_REQUIRE_EMAIL_VERIFIED", True),
-        # #3107 — group sync. The mapping is JSON: {"IdP group": "Bambuddy group"}.
+        "name": required["PRINTLAB_OIDC_NAME"],
+        "issuer_url": required["PRINTLAB_OIDC_ISSUER_URL"],
+        "client_id": required["PRINTLAB_OIDC_CLIENT_ID"],
+        "client_secret": required["PRINTLAB_OIDC_CLIENT_SECRET"],
+        "scopes": (os.environ.get("PRINTLAB_OIDC_SCOPES") or "").strip() or "openid email profile",
+        "is_enabled": env_bool("PRINTLAB_OIDC_ENABLED", True),
+        "auto_create_users": env_bool("PRINTLAB_OIDC_AUTO_CREATE_USERS", False),
+        "auto_link_existing_accounts": env_bool("PRINTLAB_OIDC_AUTO_LINK_EXISTING", False),
+        "email_claim": (os.environ.get("PRINTLAB_OIDC_EMAIL_CLAIM") or "").strip() or "email",
+        "require_email_verified": env_bool("PRINTLAB_OIDC_REQUIRE_EMAIL_VERIFIED", True),
+        # #3107 — group sync. The mapping is JSON: {"IdP group": "PrintLab group"}.
         # Blank/unset means "no mapping", which leaves sync off — the same
         # default the UI path has. Values are group *names* (not ids), resolved
         # against the database below alongside DEFAULT_GROUP.
-        "group_claim": (os.environ.get("BAMBUDDY_OIDC_GROUP_CLAIM") or "").strip() or "groups",
+        "group_claim": (os.environ.get("PRINTLAB_OIDC_GROUP_CLAIM") or "").strip() or "groups",
         "group_mapping": _env_group_mapping(),
-        "icon_url": (os.environ.get("BAMBUDDY_OIDC_ICON_URL") or "").strip() or None,
-        "is_autologin": env_bool("BAMBUDDY_OIDC_AUTOLOGIN", False),
+        "icon_url": (os.environ.get("PRINTLAB_OIDC_ICON_URL") or "").strip() or None,
+        "is_autologin": env_bool("PRINTLAB_OIDC_AUTOLOGIN", False),
         # A name, not an id: ids are assigned per install, so the same compose
         # file would point at a different group on every deployment. Resolved
         # against the database in apply_env_oidc_provider -- the reader has no
         # session and stays dumb.
-        "default_group": (os.environ.get("BAMBUDDY_OIDC_DEFAULT_GROUP") or "").strip() or None,
+        "default_group": (os.environ.get("PRINTLAB_OIDC_DEFAULT_GROUP") or "").strip() or None,
     }
 
 
@@ -175,7 +175,7 @@ async def apply_env_oidc_provider(db: AsyncSession) -> None:
         await _apply_env_oidc_provider(db)
     except Exception as exc:  # noqa: BLE001 -- startup must survive any failure here
         # Never str(exc): a DB error message can echo a configured value. Class only.
-        logger.error("BAMBUDDY_OIDC_* could not be applied: %s", type(exc).__name__)
+        logger.error("PRINTLAB_OIDC_* could not be applied: %s", type(exc).__name__)
         # A commit may have half-applied; roll back so the shared session is
         # left clean for the rest of startup. Suppressed because rollback on a
         # wedged connection can itself raise -- and the whole point here is that
@@ -198,7 +198,7 @@ async def _apply_env_oidc_provider(db: AsyncSession) -> None:
         # Same disposition as a ValidationError or an unmatched DEFAULT_GROUP:
         # log clearly and leave any running provider as it was. Safe to log the
         # full message -- EnvOIDCConfigError never carries a secret (see its docstring).
-        logger.error("BAMBUDDY_OIDC_* config rejected, provider not applied: %s", exc)
+        logger.error("PRINTLAB_OIDC_* config rejected, provider not applied: %s", exc)
         return
 
     if config is None:
@@ -225,7 +225,7 @@ async def _apply_env_oidc_provider(db: AsyncSession) -> None:
             # would silently make it the autologin target again.
             released.is_autologin = False
             logger.info(
-                "BAMBUDDY_OIDC_* is unset -- provider %r disabled and released to the UI.",
+                "PRINTLAB_OIDC_* is unset -- provider %r disabled and released to the UI.",
                 released.name,
             )
         if released_rows:
@@ -252,14 +252,14 @@ async def _apply_env_oidc_provider(db: AsyncSession) -> None:
             # boot nothing is created at all and the login page has no SSO
             # button until the name matches.
             logger.error(
-                "BAMBUDDY_OIDC_DEFAULT_GROUP=%r matches no group, provider not applied (%s).",
+                "PRINTLAB_OIDC_DEFAULT_GROUP=%r matches no group, provider not applied (%s).",
                 group_name,
                 "previous config left running" if existing is not None else "no provider created",
             )
             return
         config["default_group_id"] = group.id
 
-    # #3107 — mapping values are Bambuddy group *names* (the sync resolves them
+    # #3107 — mapping values are PrintLab group *names* (the sync resolves them
     # per login, same as the LDAP mapping stores names). Names, not ids, for the
     # same reason as DEFAULT_GROUP: ids differ per install, so a shared compose
     # file would point somewhere else on every deployment. Every value must
@@ -275,7 +275,7 @@ async def _apply_env_oidc_provider(db: AsyncSession) -> None:
                 missing.append(target)
         if missing:
             logger.error(
-                "BAMBUDDY_OIDC_GROUP_MAPPING values match no group (%s), provider not applied (%s).",
+                "PRINTLAB_OIDC_GROUP_MAPPING values match no group (%s), provider not applied (%s).",
                 ", ".join(sorted(set(missing))),
                 "previous config left running" if existing is not None else "no provider created",
             )
@@ -287,9 +287,9 @@ async def _apply_env_oidc_provider(db: AsyncSession) -> None:
         validated = OIDCProviderCreate(**config)
     except ValidationError as exc:
         # errors(include_input=False) strips the submitted values -- str(exc)
-        # embeds input_value=... and would leak BAMBUDDY_OIDC_CLIENT_SECRET.
+        # embeds input_value=... and would leak PRINTLAB_OIDC_CLIENT_SECRET.
         logger.error(
-            "BAMBUDDY_OIDC_* config rejected, provider not applied: %s",
+            "PRINTLAB_OIDC_* config rejected, provider not applied: %s",
             exc.errors(include_input=False),
         )
         return
@@ -297,7 +297,7 @@ async def _apply_env_oidc_provider(db: AsyncSession) -> None:
         # Log only the exception class, never str(exc): an unexpected error here
         # could carry a configured value in its message. Structural guarantee,
         # not one contingent on which exceptions the schema validators raise.
-        logger.error("BAMBUDDY_OIDC_* config could not be applied: %s", type(exc).__name__)
+        logger.error("PRINTLAB_OIDC_* config could not be applied: %s", type(exc).__name__)
         return
 
     # Computed before `existing` is reassigned below: a freshly-created row is
@@ -314,7 +314,7 @@ async def _apply_env_oidc_provider(db: AsyncSession) -> None:
     existing.is_env_managed = True
     await db.flush()  # the id is needed by the sweeps below
 
-    # Renaming BAMBUDDY_OIDC_NAME matches nothing, so the row managed until now
+    # Renaming PRINTLAB_OIDC_NAME matches nothing, so the row managed until now
     # stays behind. Left flagged it would keep a stale issuer and secret on the
     # login page while the API refuses every edit, disable and delete on it
     # (409) -- the dead end reachable only through the database that the release
@@ -337,7 +337,7 @@ async def _apply_env_oidc_provider(db: AsyncSession) -> None:
     if adopted_ui_provider:
         logger.warning(
             "Env-managed OIDC provider %r adopted an existing UI-created provider of the "
-            "same name; its issuer, client and secret are now managed by BAMBUDDY_OIDC_*.",
+            "same name; its issuer, client and secret are now managed by PRINTLAB_OIDC_*.",
             existing.name,
         )
     else:

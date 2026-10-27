@@ -74,7 +74,7 @@ describe('slotPresetDescribesTray', () => {
     });
 
     it('drops it once the slicer\'s Device tab re-configured the slot', () => {
-      // The reporter's case: Bambuddy's row said Generic PVA while the slot
+      // The reporter's case: PrintLab's row said Generic PVA while the slot
       // held the Orca filament OrcaSlicer had just written.
       expect(slotPresetDescribesTray('GFSS99', 'Pfc74047', 'GFS99')).toBe(false);
       expect(slotPresetDescribesTray('local_68', 'GFA00', 'P56e1be0')).toBe(false);

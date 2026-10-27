@@ -43,7 +43,7 @@ def _register_all_models():
 @pytest.fixture
 async def engine_with_legacy_spool_table():
     """create_all builds the current schema; dropping the column afterwards
-    reproduces a database from a Bambuddy version that predates #2870."""
+    reproduces a database from a PrintLab version that predates #2870."""
     from backend.app.core.database import Base
 
     _register_all_models()

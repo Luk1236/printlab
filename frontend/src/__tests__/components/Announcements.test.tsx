@@ -1,5 +1,5 @@
 /**
- * Announcements from the Bambuddy maintainers: the sidebar entry above System,
+ * Announcements from the PrintLab maintainers: the sidebar entry above System,
  * the slide-over list, and the banner for unread important/critical messages.
  */
 
@@ -102,7 +102,7 @@ describe('AnnouncementsPanel', () => {
         onClose={() => {}}
         markRead={() => {}}
         announcements={[
-          announcement({ id: 'ok', link_url: 'https://wiki.bambuddy.cool/x/', texts: { en: { title: 'A', body: 'b', link_label: 'Details' } } }),
+          announcement({ id: 'ok', link_url: 'https://github.com/Luk1236/printlab/blob/bambu-monitor-port/docs/HILFE.md', texts: { en: { title: 'A', body: 'b', link_label: 'Details' } } }),
           announcement({ id: 'bad', link_url: 'https://evil.example/x', texts: { en: { title: 'B', body: 'b', link_label: 'Phish' } } }),
         ]}
       />
@@ -110,7 +110,7 @@ describe('AnnouncementsPanel', () => {
     fireEvent.click(screen.getByText('A'));
     fireEvent.click(screen.getByText('B'));
     const link = screen.getByRole('link', { name: /Details/ });
-    expect(link).toHaveAttribute('href', 'https://wiki.bambuddy.cool/x/');
+    expect(link).toHaveAttribute('href', 'https://github.com/Luk1236/printlab/blob/bambu-monitor-port/docs/HILFE.md');
     expect(link).toHaveAttribute('rel', 'noopener noreferrer');
     expect(screen.queryByRole('link', { name: /Phish/ })).not.toBeInTheDocument();
   });

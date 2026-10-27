@@ -1,4 +1,4 @@
-"""Every launcher must be able to shut Bambuddy down gracefully.
+"""Every launcher must be able to shut PrintLab down gracefully.
 
 Two defects, found together, both invisible until you look for them:
 
@@ -86,12 +86,12 @@ class TestDockerImage:
 
 
 class TestSystemdUnits:
-    @pytest.mark.parametrize("unit", ["deploy/bambuddy.service"])
+    @pytest.mark.parametrize("unit", ["deploy/printlab.service"])
     def test_execstart_bounds_the_graceful_shutdown(self, unit):
         exec_start = next(line for line in _read(unit).splitlines() if line.startswith("ExecStart="))
         assert FLAG in exec_start, exec_start
 
-    @pytest.mark.parametrize("unit", ["deploy/bambuddy.service"])
+    @pytest.mark.parametrize("unit", ["deploy/printlab.service"])
     def test_stop_timeout_leaves_room_for_the_teardown(self, unit):
         """systemd's timer is the backstop, not the mechanism — but it still has
         to outlast uvicorn's own 5s wait plus the app's ~1-2s of teardown.
@@ -126,7 +126,7 @@ class TestInstallScript:
 class TestWindowsService:
     def test_nssm_registration_bounds_the_shutdown(self):
         bat = _read("installers/windows/service/install-service.bat")
-        install_line = next(line for line in _uvicorn_lines(bat) if "install Bambuddy" in line)
+        install_line = next(line for line in _uvicorn_lines(bat) if "install PrintLab" in line)
         assert FLAG in install_line, install_line
 
     def test_nssm_waits_long_enough_for_the_ctrl_c_stop(self):

@@ -91,7 +91,7 @@ describe('ConnectedAppsSection', () => {
 
     render(<ConnectedAppsSection />);
 
-    expect(screen.getByText(/need Bambuddy authentication/)).toBeInTheDocument();
+    expect(screen.getByText(/need PrintLab authentication/)).toBeInTheDocument();
     expect(list).not.toHaveBeenCalled();
   });
 });

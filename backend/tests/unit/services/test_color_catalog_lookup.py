@@ -187,7 +187,7 @@ class TestProductLineRank:
     """The three spellings a Bambu filament's name can take, ranked, and nothing else."""
 
     def test_the_sub_brand_is_the_strongest(self):
-        """What Bambuddy names the filaments it creates."""
+        """What PrintLab names the filaments it creates."""
         assert product_line_rank("PLA Matte", "Charcoal", "PLA Matte", "PLA") == 0
         assert product_line_rank("pla matte", None, "PLA Matte", "PLA") == 0
 

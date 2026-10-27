@@ -1,8 +1,8 @@
 /**
  * Settings → API Keys → Connected apps.
  *
- * Registers external applications that sign users in with their Bambuddy
- * account ("Sign in with Bambuddy"). The client secret is shown exactly once,
+ * Registers external applications that sign users in with their PrintLab
+ * account ("Sign in with PrintLab"). The client secret is shown exactly once,
  * at creation or rotation; the list only ever shows the client ID.
  */
 import { useState } from 'react';

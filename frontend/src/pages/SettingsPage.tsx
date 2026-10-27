@@ -1,5 +1,5 @@
 import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Plug, AlertTriangle, RotateCcw, Bell, Download, RefreshCw, ExternalLink, Globe, Droplets, Thermometer, FileText, Edit2, Pencil, Send, CheckCircle, XCircle, History, Trash2, Zap, TrendingUp, Calendar, DollarSign, Power, PowerOff, Key, Copy, Database, X, Shield, Printer, Cylinder, Wifi, Home, Video, Users, Lock, Unlock, ChevronDown, Save, Mail, Flame, Layers, ListOrdered, Code, Search, Scale, Settings as SettingsIcon, ScanEye, Cog, QrCode, Heart, Briefcase, Workflow, UploadCloud, MonitorPlay } from 'lucide-react';
+import { Loader2, Plus, Plug, AlertTriangle, RotateCcw, Bell, Download, RefreshCw, ExternalLink, Globe, Droplets, Thermometer, FileText, Edit2, Pencil, Send, CheckCircle, XCircle, History, Trash2, Zap, TrendingUp, Calendar, DollarSign, Power, PowerOff, Key, Copy, Database, X, Shield, Printer, Cylinder, Wifi, Home, Video, Users, Lock, Unlock, ChevronDown, Save, Mail, Flame, Layers, ListOrdered, Code, Search, Scale, Settings as SettingsIcon, ScanEye, Cog, QrCode, Workflow, UploadCloud, MonitorPlay } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
@@ -7,7 +7,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { formatDateOnly } from '../utils/date';
 import { getCurrencySymbol, SUPPORTED_CURRENCIES } from '../utils/currency';
 import { checkPasswordComplexity } from '../utils/password';
-import { fleetAudience, sponsorHref } from '../utils/fleetAudience';
 import { PRESET_CATEGORIES, parsePresetTriple } from '../utils/temperatureFanPresets';
 import { CALIBRATION_MODES, CALIBRATION_MODE_ACTIVE, CALIBRATION_MODE_INACTIVE } from '../utils/calibrationMode';
 import { inventoryLocationsQueryKey } from '../utils/inventoryQueries';
@@ -65,6 +64,7 @@ import { registerSettingsSearch, getSettingsSearchEntries } from '../lib/setting
 import type { UsersSubTab } from '../lib/settingsSearch';
 import { availableEngines, hasEngineChoice, resolveEngine, type SliceEngineId } from '../lib/sliceEngines';
 import { NumberInput } from '../components/NumberInput';
+import { helpLink, HELP_ANCHORS } from '../utils/docsLinks';
 
 const validTabs = ['general', 'plugs', 'sensors', 'notifications', 'queue', 'filament', 'network', 'apikeys', 'virtual-printer', 'spoolbuddy', 'failure-detection', 'users', 'backup'] as const;
 type TabType = typeof validTabs[number];
@@ -573,7 +573,6 @@ export function SettingsPage() {
   });
 
   // A business-sized fleet gets the commercial ask instead of the donation ask.
-  const sponsorAudience = fleetAudience(printers?.length ?? 0);
 
   const { data: notificationTemplates, isLoading: templatesLoading } = useQuery({
     queryKey: ['notification-templates'],
@@ -1547,7 +1546,7 @@ export function SettingsPage() {
             <SettingsIcon className="w-7 h-7 text-bambu-green" />
             {t('settings.title')}
           </h1>
-          <p className="text-bambu-gray mt-1">{t('settings.configureBambuddy')}</p>
+          <p className="text-bambu-gray mt-1">{t('settings.configurePrintLab')}</p>
         </div>
         {/* Cross-tab search */}
         <div className="relative sm:w-72">
@@ -1776,46 +1775,6 @@ export function SettingsPage() {
       <div className="flex-1 min-w-0">
       {activeTab === 'general' && (
       <>
-      {/* Sponsor banner — independence callout, or the commercial ask on a
-          business-sized fleet (see utils/fleetAudience). */}
-      <a
-        href={sponsorHref(sponsorAudience, 'app-settings')}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="group block mb-4 lg:mb-6 rounded-xl border border-bambu-green/30 bg-gradient-to-br from-bambu-green/15 via-bambu-green/5 to-transparent hover:border-bambu-green/50 hover:from-bambu-green/20 transition-colors"
-      >
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-4 p-4 md:p-5">
-          <div className="p-3 rounded-lg bg-bambu-green/20 text-bambu-green flex-shrink-0">
-            {sponsorAudience === 'business' ? <Briefcase className="w-6 h-6" /> : <Heart className="w-6 h-6" />}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-base font-semibold text-white">
-              {sponsorAudience === 'business'
-                ? t('sponsors.businessTitle', 'Bambuddy for business')
-                : t('sponsors.sectionTitle', 'Independent & community-funded')}
-            </p>
-            <p className="text-sm text-bambu-gray mt-0.5">
-              {sponsorAudience === 'business'
-                ? t(
-                    'sponsors.businessTagline',
-                    "You're running {{count}} printers. Priority support, commercial licensing and invoicing are available for teams and print farms.",
-                    { count: printers?.length ?? 0 }
-                  )
-                : t(
-                    'sponsors.tagline',
-                    'Bambuddy is free and stays that way because people choose to support it. No VC, no cloud lock-in.'
-                  )}
-            </p>
-          </div>
-          <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-bambu-green/20 text-bambu-green group-hover:bg-bambu-green/30 text-sm font-medium whitespace-nowrap self-start md:self-auto">
-            {sponsorAudience === 'business'
-              ? t('sponsors.businessCta', 'Bambuddy for business')
-              : t('sponsors.viewSupporters', 'View supporters')}
-            <ExternalLink className="w-4 h-4" />
-          </div>
-        </div>
-      </a>
-
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
         {/* Left Column - General Settings */}
         <div className="space-y-3 flex-1 lg:max-w-xl">
@@ -3076,7 +3035,7 @@ export function SettingsPage() {
                           {t('settings.updateViaWindowsInstaller')}
                         </p>
                         <a
-                          href={updateCheck.installer_download_url || updateCheck.release_url || `https://github.com/maziggy/bambuddy/releases/tag/v${updateCheck.latest_version}`}
+                          href={updateCheck.installer_download_url || updateCheck.release_url || `https://github.com/Luk1236/printlab/releases/tag/v${updateCheck.latest_version}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-bambu-dark disabled:opacity-50 bg-bambu-green hover:bg-bambu-green-light text-white focus:ring-bambu-green px-4 py-2 text-sm gap-2 min-h-[44px] md:min-h-0"
@@ -3119,7 +3078,7 @@ export function SettingsPage() {
                   <p className="text-sm text-bambu-gray">
                     {t('settings.announcementsEnabledDesc')}{' '}
                     <a
-                      href="https://wiki.bambuddy.cool/features/announcements/"
+                      href={helpLink(HELP_ANCHORS.announcements)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-bambu-green hover:underline"
@@ -3570,13 +3529,13 @@ export function SettingsPage() {
                     </label>
                     <input
                       type="text"
-                      value={localSettings.mqtt_topic_prefix ?? 'bambuddy'}
+                      value={localSettings.mqtt_topic_prefix ?? 'printlab'}
                       onChange={(e) => updateSetting('mqtt_topic_prefix', e.target.value)}
-                      placeholder="bambuddy"
+                      placeholder="printlab"
                       className="w-full px-3 py-2 bg-bambu-dark border border-bambu-dark-tertiary rounded-lg text-white focus:border-bambu-green focus:outline-none"
                     />
                     <p className="text-xs text-bambu-gray mt-1">
-                      {t('settings.topicPrefixHint', { prefix: localSettings.mqtt_topic_prefix || 'bambuddy' })}
+                      {t('settings.topicPrefixHint', { prefix: localSettings.mqtt_topic_prefix || 'printlab' })}
                     </p>
                   </div>
 
@@ -3652,12 +3611,12 @@ export function SettingsPage() {
                   <div className="pt-2 border-t border-bambu-dark-tertiary">
                     <p className="text-sm text-white mb-2">{t('settings.availableMetrics')}</p>
                     <div className="text-xs text-bambu-gray space-y-1">
-                      <p><code className="text-orange-700 dark:text-orange-400">bambuddy_printer_connected</code> - {t('settings.metricsConnectionStatus')}</p>
-                      <p><code className="text-orange-700 dark:text-orange-400">bambuddy_printer_state</code> - {t('settings.metricsPrinterState')}</p>
-                      <p><code className="text-orange-700 dark:text-orange-400">bambuddy_print_progress</code> - {t('settings.metricsPrintProgress')}</p>
-                      <p><code className="text-orange-700 dark:text-orange-400">bambuddy_bed_temp_celsius</code> - {t('settings.metricsBedTemp')}</p>
-                      <p><code className="text-orange-700 dark:text-orange-400">bambuddy_nozzle_temp_celsius</code> - {t('settings.metricsNozzleTemp')}</p>
-                      <p><code className="text-orange-700 dark:text-orange-400">bambuddy_prints_total</code> - {t('settings.metricsPrintsTotal')}</p>
+                      <p><code className="text-orange-700 dark:text-orange-400">printlab_printer_connected</code> - {t('settings.metricsConnectionStatus')}</p>
+                      <p><code className="text-orange-700 dark:text-orange-400">printlab_printer_state</code> - {t('settings.metricsPrinterState')}</p>
+                      <p><code className="text-orange-700 dark:text-orange-400">printlab_print_progress</code> - {t('settings.metricsPrintProgress')}</p>
+                      <p><code className="text-orange-700 dark:text-orange-400">printlab_bed_temp_celsius</code> - {t('settings.metricsBedTemp')}</p>
+                      <p><code className="text-orange-700 dark:text-orange-400">printlab_nozzle_temp_celsius</code> - {t('settings.metricsNozzleTemp')}</p>
+                      <p><code className="text-orange-700 dark:text-orange-400">printlab_prints_total</code> - {t('settings.metricsPrintsTotal')}</p>
                       <p className="text-bambu-gray/70 italic">{t('settings.metricsMore')}</p>
                     </div>
                   </div>
@@ -4871,7 +4830,7 @@ export function SettingsPage() {
             </Card>
             </>}
 
-            {/* Connected apps: "Sign in with Bambuddy" for external applications.
+            {/* Connected apps: "Sign in with PrintLab" for external applications.
                 Admin-only, like the settings it sits between. */}
             {hasPermission('settings:update') && (
               <Card className="mt-6">
@@ -5073,15 +5032,15 @@ export function SettingsPage() {
                   )}
                 </div>
               ))}
-              {/* Prints Bambuddy only archived, never dispatched, carry no
+              {/* Prints PrintLab only archived, never dispatched, carry no
                   queue item to read the ask-for-outcome flag from (#1898). */}
               <div className="flex items-center justify-between">
                 <div className="flex-1 mr-4">
                   <p className="text-sm text-white">
-                    {t('settings.confirmOutcomeExternalPrints', 'Also ask for prints started outside Bambuddy')}
+                    {t('settings.confirmOutcomeExternalPrints', 'Also ask for prints started outside PrintLab')}
                   </p>
                   <p className="text-xs text-bambu-gray mt-0.5">
-                    {t('settings.confirmOutcomeExternalPrintsDesc', 'Prints started at the printer, in Bambu Studio or in the Handy app are archived by Bambuddy too. With this on, they get the same outcome prompt as queued prints.')}
+                    {t('settings.confirmOutcomeExternalPrintsDesc', 'Prints started at the printer, in Bambu Studio or in the Handy app are archived by PrintLab too. With this on, they get the same outcome prompt as queued prints.')}
                   </p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer shrink-0">
@@ -5277,7 +5236,7 @@ export function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-xs text-bambu-gray">
-                {t('settings.concurrentUploadsDescription', 'How many printers the queue may send files to at the same time. Printers receive files slowly (a large print can take several minutes), and each one waits its turn — so on a bigger fleet, raising this is what stops the last printer in a batch from waiting out every transfer before it. Lower it if your network or Bambuddy host struggles with parallel transfers.')}
+                {t('settings.concurrentUploadsDescription', 'How many printers the queue may send files to at the same time. Printers receive files slowly (a large print can take several minutes), and each one waits its turn — so on a bigger fleet, raising this is what stops the last printer in a batch from waiting out every transfer before it. Lower it if your network or PrintLab host struggles with parallel transfers.')}
               </p>
               <div className="w-full sm:w-1/2">
                 <label className="block text-xs text-bambu-gray mb-1">
@@ -5439,7 +5398,7 @@ export function SettingsPage() {
                   </button>
                 </div>
                 <p className="text-xs text-bambu-gray mb-2">
-                  {t('settings.preheatFilamentTargetsHint', 'Bambuddy picks the highest target across the loaded AMS slots; PLA-only prints derive 0 and skip the chamber phase automatically.')}
+                  {t('settings.preheatFilamentTargetsHint', 'PrintLab picks the highest target across the loaded AMS slots; PLA-only prints derive 0 and skip the chamber phase automatically.')}
                 </p>
                 <PreheatFilamentTargetsEditor
                   value={localSettings.preheat_filament_targets ?? ''}

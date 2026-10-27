@@ -60,7 +60,7 @@ class TestConfigureWithOrcaProfile:
     @pytest.mark.integration
     async def test_the_profiles_own_filament_id_goes_to_the_slot(self, async_client: AsyncClient, printer_factory):
         """The id OrcaSlicer itself sends from its Device tab: Pfc74047 in the
-        reporter's log, where Bambuddy sent GFL99 for the same profile."""
+        reporter's log, where PrintLab sent GFL99 for the same profile."""
         printer = await printer_factory(name="H2D")
         client = _client()
         lookup = AsyncMock(return_value=OrcaFilamentLookup("Pfc74047", source="own"))

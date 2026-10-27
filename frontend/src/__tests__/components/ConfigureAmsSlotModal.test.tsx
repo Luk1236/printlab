@@ -734,7 +734,7 @@ describe('ConfigureAmsSlotModal', () => {
     // Reporter's printer: nine Flow-Dynamics entries, every one of them
     // calibrated against Generic PLA (filament_id GFL99) and named after the
     // spool's colour rather than its material. Bambu Studio lists all nine for
-    // a Generic PLA slot; Bambuddy showed only the one already bound to the
+    // a Generic PLA slot; PrintLab showed only the one already bound to the
     // slot via cali_idx.
     const genericPlaProfiles = [
       'Black PLA+', 'Dark Brown', 'Glow', 'Gray', 'Lt Brown',

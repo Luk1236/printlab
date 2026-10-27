@@ -1,7 +1,7 @@
 """The "Check printer firmware" setting is enforced by the API, not only the UI.
 
 The printers page asked before its settings had loaded, so with the check
-switched off Bambuddy still went out to bambulab.com once per printer on every
+switched off PrintLab still went out to bambulab.com once per printer on every
 page load. Off has to mean no request at all.
 """
 

@@ -5,9 +5,9 @@ and the schema. This file covers the three gaps from PR #3122 review:
 
 1. The public provider list must not leak group sync config — an anonymous
    visitor who can reach the login page must not learn which IdP group name
-   maps to which Bambuddy group (the review's blocker).
+   maps to which PrintLab group (the review's blocker).
 2. The 422s on create/update when a mapping value names no existing group.
-3. The env path: BAMBUDDY_OIDC_GROUP_CLAIM / BAMBUDDY_OIDC_GROUP_MAPPING
+3. The env path: PRINTLAB_OIDC_GROUP_CLAIM / PRINTLAB_OIDC_GROUP_MAPPING
    applied at startup, refused on unknown group names, refused on bad JSON.
 4. oidc_callback end to end with a mapping configured: the auto-created
    user lands in the mapped group, and a second login applies revocation.
@@ -209,13 +209,13 @@ class TestEnvGroupMapping:
     async def test_env_mapping_applied(self, db_session: AsyncSession, monkeypatch):
         await _get_or_make_group(db_session, "Operators")
         await db_session.commit()
-        monkeypatch.setenv("BAMBUDDY_OIDC_NAME", "EnvIdP")
-        monkeypatch.setenv("BAMBUDDY_OIDC_ISSUER_URL", "https://env.test.example.com")
-        monkeypatch.setenv("BAMBUDDY_OIDC_CLIENT_ID", "env-client")
-        monkeypatch.setenv("BAMBUDDY_OIDC_CLIENT_SECRET", "env-secret")
-        monkeypatch.setenv("BAMBUDDY_OIDC_GROUP_CLAIM", "roles")
-        monkeypatch.setenv("BAMBUDDY_OIDC_GROUP_MAPPING", '{"idp-ops": "Operators"}')
-        for key in ("BAMBUDDY_OIDC_DEFAULT_GROUP", "BAMBUDDY_OIDC_SCOPES", "BAMBUDDY_OIDC_ENABLED"):
+        monkeypatch.setenv("PRINTLAB_OIDC_NAME", "EnvIdP")
+        monkeypatch.setenv("PRINTLAB_OIDC_ISSUER_URL", "https://env.test.example.com")
+        monkeypatch.setenv("PRINTLAB_OIDC_CLIENT_ID", "env-client")
+        monkeypatch.setenv("PRINTLAB_OIDC_CLIENT_SECRET", "env-secret")
+        monkeypatch.setenv("PRINTLAB_OIDC_GROUP_CLAIM", "roles")
+        monkeypatch.setenv("PRINTLAB_OIDC_GROUP_MAPPING", '{"idp-ops": "Operators"}')
+        for key in ("PRINTLAB_OIDC_DEFAULT_GROUP", "PRINTLAB_OIDC_SCOPES", "PRINTLAB_OIDC_ENABLED"):
             monkeypatch.delenv(key, raising=False)
 
         await apply_env_oidc_provider(db_session)
@@ -228,16 +228,16 @@ class TestEnvGroupMapping:
     async def test_env_mapping_unknown_group_refuses_provider(self, db_session: AsyncSession, monkeypatch, caplog):
         """Unknown names must refuse the whole config (matching DEFAULT_GROUP):
         no provider row may be created carrying a mapping that never resolves."""
-        monkeypatch.setenv("BAMBUDDY_OIDC_NAME", "EnvIdP-Refused")
-        monkeypatch.setenv("BAMBUDDY_OIDC_ISSUER_URL", "https://env2.test.example.com")
-        monkeypatch.setenv("BAMBUDDY_OIDC_CLIENT_ID", "env-client")
-        monkeypatch.setenv("BAMBUDDY_OIDC_CLIENT_SECRET", "env-secret")
-        monkeypatch.setenv("BAMBUDDY_OIDC_GROUP_MAPPING", '{"idp-ops": "NoSuchGroup"}')
+        monkeypatch.setenv("PRINTLAB_OIDC_NAME", "EnvIdP-Refused")
+        monkeypatch.setenv("PRINTLAB_OIDC_ISSUER_URL", "https://env2.test.example.com")
+        monkeypatch.setenv("PRINTLAB_OIDC_CLIENT_ID", "env-client")
+        monkeypatch.setenv("PRINTLAB_OIDC_CLIENT_SECRET", "env-secret")
+        monkeypatch.setenv("PRINTLAB_OIDC_GROUP_MAPPING", '{"idp-ops": "NoSuchGroup"}')
         for key in (
-            "BAMBUDDY_OIDC_DEFAULT_GROUP",
-            "BAMBUDDY_OIDC_SCOPES",
-            "BAMBUDDY_OIDC_ENABLED",
-            "BAMBUDDY_OIDC_GROUP_CLAIM",
+            "PRINTLAB_OIDC_DEFAULT_GROUP",
+            "PRINTLAB_OIDC_SCOPES",
+            "PRINTLAB_OIDC_ENABLED",
+            "PRINTLAB_OIDC_GROUP_CLAIM",
         ):
             monkeypatch.delenv(key, raising=False)
 
@@ -250,16 +250,16 @@ class TestEnvGroupMapping:
     @pytest.mark.asyncio
     @pytest.mark.integration
     async def test_env_mapping_bad_json_refuses_provider(self, db_session: AsyncSession, monkeypatch):
-        monkeypatch.setenv("BAMBUDDY_OIDC_NAME", "EnvIdP-BadJson")
-        monkeypatch.setenv("BAMBUDDY_OIDC_ISSUER_URL", "https://env3.test.example.com")
-        monkeypatch.setenv("BAMBUDDY_OIDC_CLIENT_ID", "env-client")
-        monkeypatch.setenv("BAMBUDDY_OIDC_CLIENT_SECRET", "env-secret")
-        monkeypatch.setenv("BAMBUDDY_OIDC_GROUP_MAPPING", "{not json")
+        monkeypatch.setenv("PRINTLAB_OIDC_NAME", "EnvIdP-BadJson")
+        monkeypatch.setenv("PRINTLAB_OIDC_ISSUER_URL", "https://env3.test.example.com")
+        monkeypatch.setenv("PRINTLAB_OIDC_CLIENT_ID", "env-client")
+        monkeypatch.setenv("PRINTLAB_OIDC_CLIENT_SECRET", "env-secret")
+        monkeypatch.setenv("PRINTLAB_OIDC_GROUP_MAPPING", "{not json")
         for key in (
-            "BAMBUDDY_OIDC_DEFAULT_GROUP",
-            "BAMBUDDY_OIDC_SCOPES",
-            "BAMBUDDY_OIDC_ENABLED",
-            "BAMBUDDY_OIDC_GROUP_CLAIM",
+            "PRINTLAB_OIDC_DEFAULT_GROUP",
+            "PRINTLAB_OIDC_SCOPES",
+            "PRINTLAB_OIDC_ENABLED",
+            "PRINTLAB_OIDC_GROUP_CLAIM",
         ):
             monkeypatch.delenv(key, raising=False)
 
@@ -279,16 +279,16 @@ class TestEnvGroupMapping:
     ):
         """A malformed value is refused by name, not as a bare TypeError from
         the group lookup it would otherwise reach."""
-        monkeypatch.setenv("BAMBUDDY_OIDC_NAME", "EnvIdP-BadValue")
-        monkeypatch.setenv("BAMBUDDY_OIDC_ISSUER_URL", "https://env5.test.example.com")
-        monkeypatch.setenv("BAMBUDDY_OIDC_CLIENT_ID", "env-client")
-        monkeypatch.setenv("BAMBUDDY_OIDC_CLIENT_SECRET", "env-secret")
-        monkeypatch.setenv("BAMBUDDY_OIDC_GROUP_MAPPING", mapping)
+        monkeypatch.setenv("PRINTLAB_OIDC_NAME", "EnvIdP-BadValue")
+        monkeypatch.setenv("PRINTLAB_OIDC_ISSUER_URL", "https://env5.test.example.com")
+        monkeypatch.setenv("PRINTLAB_OIDC_CLIENT_ID", "env-client")
+        monkeypatch.setenv("PRINTLAB_OIDC_CLIENT_SECRET", "env-secret")
+        monkeypatch.setenv("PRINTLAB_OIDC_GROUP_MAPPING", mapping)
         for key in (
-            "BAMBUDDY_OIDC_DEFAULT_GROUP",
-            "BAMBUDDY_OIDC_SCOPES",
-            "BAMBUDDY_OIDC_ENABLED",
-            "BAMBUDDY_OIDC_GROUP_CLAIM",
+            "PRINTLAB_OIDC_DEFAULT_GROUP",
+            "PRINTLAB_OIDC_SCOPES",
+            "PRINTLAB_OIDC_ENABLED",
+            "PRINTLAB_OIDC_GROUP_CLAIM",
         ):
             monkeypatch.delenv(key, raising=False)
 
@@ -299,7 +299,7 @@ class TestEnvGroupMapping:
             await db_session.execute(select(OIDCProvider).where(OIDCProvider.name == "EnvIdP-BadValue"))
         ).scalar_one_or_none()
         assert row is None
-        assert "BAMBUDDY_OIDC_GROUP_MAPPING is invalid" in caplog.text
+        assert "PRINTLAB_OIDC_GROUP_MAPPING is invalid" in caplog.text
         assert "TypeError" not in caplog.text
 
     @pytest.mark.asyncio
@@ -310,26 +310,26 @@ class TestEnvGroupMapping:
         await _get_or_make_group(db_session, "Operators")
         await db_session.commit()
         env = {
-            "BAMBUDDY_OIDC_NAME": "EnvIdP-Clear",
-            "BAMBUDDY_OIDC_ISSUER_URL": "https://env4.test.example.com",
-            "BAMBUDDY_OIDC_CLIENT_ID": "env-client",
-            "BAMBUDDY_OIDC_CLIENT_SECRET": "env-secret",
+            "PRINTLAB_OIDC_NAME": "EnvIdP-Clear",
+            "PRINTLAB_OIDC_ISSUER_URL": "https://env4.test.example.com",
+            "PRINTLAB_OIDC_CLIENT_ID": "env-client",
+            "PRINTLAB_OIDC_CLIENT_SECRET": "env-secret",
         }
         for key in (
-            "BAMBUDDY_OIDC_DEFAULT_GROUP",
-            "BAMBUDDY_OIDC_SCOPES",
-            "BAMBUDDY_OIDC_ENABLED",
-            "BAMBUDDY_OIDC_GROUP_CLAIM",
+            "PRINTLAB_OIDC_DEFAULT_GROUP",
+            "PRINTLAB_OIDC_SCOPES",
+            "PRINTLAB_OIDC_ENABLED",
+            "PRINTLAB_OIDC_GROUP_CLAIM",
         ):
             monkeypatch.delenv(key, raising=False)
         for k, v in env.items():
             monkeypatch.setenv(k, v)
-        monkeypatch.setenv("BAMBUDDY_OIDC_GROUP_MAPPING", '{"idp-ops": "Operators"}')
+        monkeypatch.setenv("PRINTLAB_OIDC_GROUP_MAPPING", '{"idp-ops": "Operators"}')
         await apply_env_oidc_provider(db_session)
         row = (await db_session.execute(select(OIDCProvider).where(OIDCProvider.name == "EnvIdP-Clear"))).scalar_one()
         assert row.group_mapping == {"idp-ops": "Operators"}
 
-        monkeypatch.delenv("BAMBUDDY_OIDC_GROUP_MAPPING")
+        monkeypatch.delenv("PRINTLAB_OIDC_GROUP_MAPPING")
         await apply_env_oidc_provider(db_session)
         await db_session.refresh(row)
         assert row.group_mapping == {}

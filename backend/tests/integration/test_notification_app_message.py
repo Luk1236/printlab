@@ -53,7 +53,7 @@ async def _user_id(db: AsyncSession, username: str) -> int:
     return (await db.execute(select(User).where(User.username == username))).scalar_one().id
 
 
-async def _key(db: AsyncSession, *, owner_id: int | None, allowed: bool, name: str = "Bambuddy Orders") -> str:
+async def _key(db: AsyncSession, *, owner_id: int | None, allowed: bool, name: str = "PrintLab Orders") -> str:
     full_key, key_hash, key_prefix = generate_api_key()
     db.add(
         APIKey(name=name, key_hash=key_hash, key_prefix=key_prefix, user_id=owner_id, can_send_notifications=allowed)
@@ -106,7 +106,7 @@ class TestAppMessage:
         _, title, body = send.await_args_list[0].args[:3]
         assert title == "3 orders need you"
         assert body == "#1004, #1009, #1010\nhttp://orders.lan:8090/todo"
-        assert send.await_args_list[0].kwargs["event_type"] == "app:Bambuddy Orders"
+        assert send.await_args_list[0].kwargs["event_type"] == "app:PrintLab Orders"
 
     @pytest.mark.asyncio
     @pytest.mark.integration

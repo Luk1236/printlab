@@ -642,7 +642,7 @@ describe('choosing what the label shows (#2981)', () => {
 
   it('ignores remembered options it does not recognise', () => {
     localStorage.setItem(
-      'bambuddy-label-print-options',
+      'printlab-label-print-options',
       JSON.stringify({ template: 'gone', fields: { box_40x30: ['brand', 'bogus'] }, format: 'tiff', dpi: 1 }),
     );
     openModal();
@@ -758,7 +758,7 @@ describe('PNG output (#2981)', () => {
         printRequest({ spool_ids: [1], template: 'box_40x30', format: 'png', dpi: 203 }),
       );
     });
-    await waitFor(() => expect(downloads).toEqual(['bambuddy-labels-box_40x30.png']));
+    await waitFor(() => expect(downloads).toEqual(['printlab-labels-box_40x30.png']));
     expect(window.open).not.toHaveBeenCalled();
   });
 
@@ -778,7 +778,7 @@ describe('PNG output (#2981)', () => {
     fireEvent.click(screen.getByTestId('label-format-png'));
     clickPrint();
 
-    await waitFor(() => expect(downloads).toEqual(['bambuddy-labels-box_40x30.zip']));
+    await waitFor(() => expect(downloads).toEqual(['printlab-labels-box_40x30.zip']));
   });
 
   it('only offers a resolution for PNG', () => {

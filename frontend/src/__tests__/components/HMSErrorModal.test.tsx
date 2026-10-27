@@ -218,7 +218,7 @@ describe('HMSErrorModal', () => {
       description: 'MQTT Command verification failed. Please update Studio (including the network plugin) or Handy.',
     };
 
-    it('surfaces the error in Bambuddy\'s words, not Bambu\'s', () => {
+    it('surfaces the error in PrintLab\'s words, not Bambu\'s', () => {
       render(<HMSErrorModal {...defaultProps} errors={[verifyFailedError]} />);
       expect(screen.queryByText('No errors')).not.toBeInTheDocument();
       expect(screen.getByText(/could not verify it/i)).toBeInTheDocument();

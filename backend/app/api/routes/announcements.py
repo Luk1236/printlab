@@ -1,8 +1,8 @@
-"""Announcements from the Bambuddy maintainers (services/announcements.py).
+"""Announcements from the PrintLab maintainers (services/announcements.py).
 
 Shown to administrators, and to every signed-in user when the
 ``announcements_all_users`` setting is on. With authentication off whoever opens
-Bambuddy runs it, so they see them. Anyone else gets ``visible: false`` and an
+PrintLab runs it, so they see them. Anyone else gets ``visible: false`` and an
 empty list rather than a 403. ``visible`` is separate from the list because the
 sidebar entry is there for whoever may see announcements, also while nothing is
 published, and hidden for everyone else.

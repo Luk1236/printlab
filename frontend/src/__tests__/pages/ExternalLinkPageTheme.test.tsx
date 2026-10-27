@@ -1,6 +1,6 @@
 /**
- * The external-link page tells the framed app which theme Bambuddy shows, so
- * an app made for the sidebar (Bambuddy Orders) can match it.
+ * The external-link page tells the framed app which theme PrintLab shows, so
+ * an app made for the sidebar (PrintLab Orders) can match it.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

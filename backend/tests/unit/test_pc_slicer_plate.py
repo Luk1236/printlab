@@ -3,8 +3,8 @@
 import zipfile
 from pathlib import Path
 
-from backend.app.services.slicer_cli import build_command
 from backend.app.pc_slicer import app as slicer_app
+from backend.app.services.slicer_cli import build_command
 
 
 class TestBuildCommand:
@@ -23,9 +23,9 @@ class TestBuildCommand:
 
 class TestSliceRoutePlate:
     async def test_rejects_bad_plate_value(self):
-        from httpx import AsyncClient, ASGITransport
-
         import io
+
+        from httpx import ASGITransport, AsyncClient
 
         async with AsyncClient(transport=ASGITransport(app=slicer_app), base_url="http://test") as client:
             resp = await client.post(
@@ -38,11 +38,12 @@ class TestSliceRoutePlate:
 
     async def test_gcode_extraction_prefers_chosen_plate(self, tmp_path, monkeypatch):
         """With plate=2 the route reads Metadata/plate_2.gcode, not plate_1."""
-        from fastapi import HTTPException
-        from backend.app.services import slicer_cli
         import io
 
-        from httpx import AsyncClient, ASGITransport
+        from fastapi import HTTPException
+        from httpx import ASGITransport, AsyncClient
+
+        from backend.app.services import slicer_cli
 
         def fake_slice_file(source, name, printer_json=None, process_json=None,
                             filament_jsons=None, arrange=False, orient=False,

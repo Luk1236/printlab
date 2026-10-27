@@ -263,7 +263,7 @@ describe('SettingsPage', () => {
       });
     });
 
-    it('hides a Bambuddy sidebar page from Sidebar', async () => {
+    it('hides a PrintLab sidebar page from Sidebar', async () => {
       const user = userEvent.setup();
       render(<SettingsPage />);
 
@@ -277,7 +277,7 @@ describe('SettingsPage', () => {
       expect(screen.getByText('Hidden from sidebar')).toBeInTheDocument();
     });
 
-    it('shows a previously hidden Bambuddy sidebar page from Sidebar', async () => {
+    it('shows a previously hidden PrintLab sidebar page from Sidebar', async () => {
       vi.mocked(localStorage.getItem).mockImplementation((key) => {
         if (key === SIDEBAR_HIDDEN_SYSTEM_ITEMS_KEY) return JSON.stringify(['printers']);
         return null;
@@ -307,7 +307,7 @@ describe('SettingsPage', () => {
       expect(screen.getByText('Required in sidebar')).toBeInTheDocument();
     });
 
-    it('presents external links and Bambuddy pages in saved sidebar order', async () => {
+    it('presents external links and PrintLab pages in saved sidebar order', async () => {
       vi.mocked(localStorage.getItem).mockImplementation((key) => {
         if (key === SIDEBAR_ORDER_KEY) return JSON.stringify(['ext-7', 'printers', 'settings']);
         return null;
@@ -647,14 +647,14 @@ describe('SettingsPage', () => {
 
     it('shows the installer-download link for Windows installer installs', async () => {
       const downloadUrl =
-        'https://github.com/maziggy/bambuddy/releases/download/v0.2.5/bambuddy-0.2.5-windows-x64-setup.exe';
+        'https://github.com/Luk1236/printlab/releases/download/v0.2.5/bambuddy-0.2.5-windows-x64-setup.exe';
       await renderWithUpdateCheck({
         update_available: true,
         current_version: '0.2.4',
         latest_version: '0.2.5',
         release_name: '0.2.5',
         release_notes: '',
-        release_url: 'https://github.com/maziggy/bambuddy/releases/tag/v0.2.5',
+        release_url: 'https://github.com/Luk1236/printlab/releases/tag/v0.2.5',
         published_at: '2099-01-01T00:00:00Z',
         is_docker: false,
         is_ha_addon: false,
@@ -1731,10 +1731,10 @@ describe('SettingsPage', () => {
   });
 
   // --------------------------------------------------------------------
-  // Ask for the outcome of prints Bambuddy did not start (#1898)
+  // Ask for the outcome of prints PrintLab did not start (#1898)
   // --------------------------------------------------------------------
   describe('outcome prompt for external prints (#1898)', () => {
-    const externalLabel = 'Also ask for prints started outside Bambuddy';
+    const externalLabel = 'Also ask for prints started outside PrintLab';
 
     const openDefaultPrintOptions = async () => {
       render(<SettingsPage />);
@@ -2044,56 +2044,19 @@ describe('SettingsPage — location sensor reachability', () => {
 });
 
 /**
- * Sponsor banner on Settings -> General.
- *
- * Below the fleet threshold it makes the community/donation ask; at or above it
- * the same slot makes the commercial ask and points at business.html. A print
- * farm asked to chip in $5 is a wasted impression, and a hobbyist pitched a
- * support contract is an annoyed user — so both directions are pinned.
+ * Fork: the upstream sponsor/commercial banner was removed from Settings -> General.
+ * Pin that no link to a sponsor page comes back.
  */
-describe('SettingsPage — sponsor banner audience', () => {
+describe('SettingsPage — no sponsor banner', () => {
   beforeEach(() => {
-    // BrowserRouter shares window.location across tests and the banner only
-    // renders on the General tab — without this reset a prior test's ?tab=queue
-    // leaks in and the banner never mounts.
     window.history.replaceState({}, '', '/');
   });
 
-  const fleet = (count: number) =>
-    server.use(
-      http.get('/api/v1/printers/', () =>
-        HttpResponse.json(
-          Array.from({ length: count }, (_, i) => ({
-            id: i + 1,
-            name: `Printer ${i + 1}`,
-            serial_number: `SN${i + 1}`,
-            ip_address: '192.168.1.10',
-            model: 'X1C',
-            is_active: true,
-          })),
-        ),
-      ),
-    );
-
-  it('shows the community ask for a small fleet', async () => {
-    fleet(2);
+  it('shows no sponsor or business link on the General tab', async () => {
     render(<SettingsPage />);
-
-    const banner = await screen.findByRole('link', { name: /Independent & community-funded/i });
-    expect(banner).toHaveAttribute('href', 'https://bambuddy.cool/sponsors.html?from=app-settings');
-    expect(screen.queryByText(/Bambuddy for business/i)).not.toBeInTheDocument();
-  });
-
-  it('shows the commercial ask for a business-sized fleet', async () => {
-    fleet(6);
-    render(<SettingsPage />);
-
-    const banner = await screen.findByRole('link', { name: /Bambuddy for business/i });
-    expect(banner).toHaveAttribute('href', 'https://bambuddy.cool/business.html?from=app-settings');
-    // The donation copy is replaced, not merely supplemented.
-    expect(screen.queryByText(/Independent & community-funded/i)).not.toBeInTheDocument();
-    // The ask names the fleet back to them.
-    expect(screen.getByText(/6 printers/i)).toBeInTheDocument();
+    await screen.findAllByText(/General/i);
+    expect(screen.queryByRole('link', { name: /community-funded|for business/i })).not.toBeInTheDocument();
+    expect(document.querySelector('a[href*="sponsors"], a[href*="business.html"]')).toBeNull();
   });
 });
 

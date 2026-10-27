@@ -96,7 +96,7 @@ export function StreamOverlayBuilder() {
   const copyUrl = async () => {
     try {
       // Same fallback as the token dialog: the clipboard API needs a secure
-      // context, and plenty of Bambuddy installs are plain HTTP on a LAN.
+      // context, and plenty of PrintLab installs are plain HTTP on a LAN.
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(url);
       } else {

@@ -1,4 +1,4 @@
-"""Restoring a backup made by a different version of Bambuddy.
+"""Restoring a backup made by a different version of PrintLab.
 
 A backup carries the schema of the install that made it, and the Postgres
 restore path does NOT use that schema: it drops every table, recreates them

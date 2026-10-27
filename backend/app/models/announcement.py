@@ -1,4 +1,4 @@
-"""Announcements from the Bambuddy maintainers, and who has read them.
+"""Announcements from the PrintLab maintainers, and who has read them.
 
 Fetched from a signed feed on GitHub (services/announcements.py). Only the ones
 that target this install are stored, and the feed is authoritative: a message
@@ -31,7 +31,7 @@ class Announcement(Base):
     # uniformity; the service serialises with json.dumps.
     texts: Mapped[str] = mapped_column(Text)
     link_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    # Naive UTC, like every other timestamp in Bambuddy.
+    # Naive UTC, like every other timestamp in PrintLab.
     published_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

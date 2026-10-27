@@ -105,3 +105,82 @@ describe('MaintenanceProgramsCard hardware section', () => {
     expect(screen.getByRole('button', { name: 'Emergency stop' })).toBeDisabled();
   });
 });
+
+describe('MaintenanceProgramsCard safety states and automation controls', () => {
+  it('shows the emergency-stop latch and lifts it', async () => {
+    const calls: string[] = [];
+    useHardware(hardware({ estop: true }), calls);
+    server.use(
+      http.post('/api/v1/printers/:id/hardware/emergency-stop/reset', () => {
+        calls.push('unlock');
+        return HttpResponse.json({ success: true, message: 'ok', ...hardware() });
+      }),
+    );
+    render(<MaintenanceProgramsCard canControl />);
+    expect(await screen.findByText(/Emergency stop active/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Lift lock' }));
+    await waitFor(() => expect(calls).toContain('unlock'));
+  });
+
+  it('shows an incomplete plate change and confirms it after checking', async () => {
+    const calls: string[] = [];
+    useHardware(hardware({ incomplete: { step: 'Tür schließen', plate_swapped: true, job: 'x' } }), calls);
+    server.use(
+      http.post('/api/v1/printers/:id/hardware/incomplete/resolve', () => {
+        calls.push('resolve');
+        return HttpResponse.json({ success: true, message: 'ok', ...hardware() });
+      }),
+    );
+    render(<MaintenanceProgramsCard canControl />);
+    expect(await screen.findByText(/Plate change incomplete \(Tür schließen\)/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Change checked' }));
+    await waitFor(() => expect(calls).toContain('resolve'));
+  });
+
+  it('shows neither banner when everything is fine', async () => {
+    useHardware(hardware());
+    render(<MaintenanceProgramsCard canControl />);
+    await screen.findByRole('button', { name: 'Enable automation' });
+    expect(screen.queryByText(/Emergency stop active/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Plate change incomplete/)).not.toBeInTheDocument();
+  });
+
+  it('saves the queue gate and the camera confirmation as separate settings', async () => {
+    const calls: string[] = [];
+    useHardware(hardware(), calls);
+    render(<MaintenanceProgramsCard canControl />);
+    await userEvent.click(await screen.findByLabelText('Only when a job is waiting'));
+    await waitFor(() => expect(calls).toContain('auto:{"only_with_queue":true}'));
+    await userEvent.click(screen.getByLabelText('Confirm plate clear automatically (camera)'));
+    await waitFor(() => expect(calls).toContain('auto:{"auto_confirm_plate_clear":true}'));
+  });
+
+  it('cancels a waiting automatic change', async () => {
+    const calls: string[] = [];
+    useHardware(hardware(), calls);
+    server.use(
+      http.post('/api/v1/printers/:id/hardware/auto-plate-change/cancel', () => {
+        calls.push('cancel');
+        return HttpResponse.json({ success: true, cancelled: 1 });
+      }),
+    );
+    render(<MaintenanceProgramsCard canControl />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Cancel change' }));
+    await waitFor(() => expect(calls).toContain('cancel'));
+  });
+
+  it('deletes the camera calibration', async () => {
+    const calls: string[] = [];
+    useHardware(hardware(), calls);
+    server.use(
+      http.get('/api/v1/printers/:id/plate-calibration', () => HttpResponse.json({ calibrated: true, points: [] })),
+      http.delete('/api/v1/printers/:id/plate-calibration', () => {
+        calls.push('clear');
+        return HttpResponse.json({ calibrated: false, points: [] });
+      }),
+    );
+    render(<MaintenanceProgramsCard canControl />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Delete calibration' }));
+    await waitFor(() => expect(calls).toContain('clear'));
+  });
+});

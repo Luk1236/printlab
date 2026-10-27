@@ -26,7 +26,7 @@ Proxy mode now requires two additional ports:
 | 322 | TCP | RTSP camera streaming (transparent proxy, end-to-end TLS) |
 
 These ports are proxied automatically — no iptables rules needed. If you have
-a firewall, ensure these ports are open between the slicer and Bambuddy.
+a firewall, ensure these ports are open between the slicer and PrintLab.
 
 ## Migration Steps
 
@@ -50,9 +50,9 @@ a firewall, ensure these ports are open between the slicer and Bambuddy.
    ```
    If missing, add it to the `[Service]` section.
 
-4. **Restart Bambuddy.** Verify FTP binds to port 990:
+4. **Restart PrintLab.** Verify FTP binds to port 990:
    ```bash
-   grep "FTPS on" logs/bambuddy.log
+   grep "FTPS on" logs/printlab.log
    # Should show: Starting virtual printer implicit FTPS on <IP>:990
    ```
 
@@ -90,6 +90,6 @@ sudo iptables -t nat -L PREROUTING -n | grep 9990
 
 Check the FTP server is binding correctly:
 ```bash
-grep "FTPS on" logs/bambuddy.log
+grep "FTPS on" logs/printlab.log
 # Should show port 990, not 9990
 ```

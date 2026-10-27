@@ -1,6 +1,6 @@
 """Where a library file's user photos live on disk (#3077).
 
-Photos are Bambuddy-side metadata, so they sit inside the library data dir
+Photos are PrintLab-side metadata, so they sit inside the library data dir
 regardless of whether the file itself is managed or external:
 ``<archive_dir>/library/photos/<file_id>/``. The routes, the trash sweeper,
 the external-folder scan and the dispatch cleanup all derive the directory

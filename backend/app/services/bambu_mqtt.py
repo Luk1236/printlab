@@ -90,7 +90,7 @@ def is_printer_status_frame(print_data: dict) -> bool:
     """True when a ``print`` payload is the printer reporting its own state.
 
     Bambu firmware echoes a command's fields back in its acknowledgement, so a
-    `project_file` ack carries whatever Bambuddy put on the wire — including
+    `project_file` ack carries whatever PrintLab put on the wire — including
     the `cfg` bitmask and the per-job `timelapse` flag. Ingesting those as
     telemetry means reading our own request back as the printer's state
     (#3040). Only `push_status` (and the odd firmware that omits `command`
@@ -141,7 +141,7 @@ def wire_tray_color(tray_color: str | None) -> str:
         sent 090000FF  ->  AMS reports 090000FF
 
     A mangled colour is not merely cosmetic. The auto-unlink sweep compares the
-    tray against the spool it is assigned to, so the tray Bambuddy just wrote no
+    tray against the spool it is assigned to, so the tray PrintLab just wrote no
     longer matches the spool that asked for it and the assignment is deleted
     seconds after being made -- and re-assigning through the slot modal writes
     the mangled colour back, because the modal seeds itself from the tray.
@@ -190,7 +190,7 @@ def resolve_external_spools_in_mapping(ams_mapping: object, ams_mapping2: object
     usage then lands on whatever tray the fallback guesses.
 
     Each -1 whose ``ams_mapping2`` entry names an external spool becomes the
-    global tray the rest of Bambuddy uses: the ams_id itself on dual-nozzle
+    global tray the rest of PrintLab uses: the ams_id itself on dual-nozzle
     printers (254 = left/deputy, 255 = right/main), 254 on single-nozzle
     printers, which have one external spool that the wire always calls 255.
     ``{255, 255}`` is the unmapped marker and stays -1. Every other entry is
@@ -227,13 +227,13 @@ def apply_tray_exist_bits(
     (BambuStudio uses it too). For every slot whose bit is 0, promote the tray
     `state` to 9 (firmware's "no spool" code) and clear `tray_type` / `tray_color`
     / `tray_info_idx` / `tag_uid` / `tray_uuid` / `remain` etc so downstream
-    readers (Bambuddy's AMS card, the VP slicer-facing cache, inventory short-
+    readers (PrintLab's AMS card, the VP slicer-facing cache, inventory short-
     circuits keyed on `state in {9, 10}`) all see one canonical empty-slot signal
     instead of guessing from payload shape (#1322, #147).
 
     Two callers share this helper to keep their views consistent:
 
-    1. ``_handle_ams_data`` for Bambuddy's internal AMS state (printer card).
+    1. ``_handle_ams_data`` for PrintLab's internal AMS state (printer card).
     2. ``virtual_printer.mqtt_bridge._on_printer_raw`` for the cached slicer-
        facing push_status (#1726 — without this the VP would forward stale
        per-tray fields for empty slots, and BambuStudio's Sync would render
@@ -264,7 +264,7 @@ def apply_tray_exist_bits(
     ``annotate_exists`` writes a per-tray ``exists`` bool (from the bitmask) on
     every processed slot. This is firmware's authoritative "spool physically
     present" signal — the same one BambuStudio uses to draw a ``?`` for a
-    non-RFID spool in an otherwise-unidentified slot. Bambuddy's AMS card keys
+    non-RFID spool in an otherwise-unidentified slot. PrintLab's AMS card keys
     empty-vs-unknown off it so a non-Bambu spool shows ``?`` instead of "Empty"
     (#2527). Only the internal (printer-card) caller sets this; the VP bridge
     leaves it False so the ``exists`` key never reaches the slicer wire format.
@@ -914,7 +914,7 @@ class PrinterState:
     #
     # Two fields, because the two readers need different guarantees.
     # ``current_project_url`` belongs to the print now running and is cleared
-    # when that print ends, so a print Bambuddy saw no dispatch for reads as
+    # when that print ends, so a print PrintLab saw no dispatch for reads as
     # "unknown" rather than inheriting the previous job's answer. That matters:
     # 18% of the print starts in #2780's bundle had no dispatch on the request
     # topic at all (touchscreen reprints, restart recovery), and a stale
@@ -994,11 +994,11 @@ class PrinterState:
     # series). Empty elsewhere, which every reader has to tolerate — see
     # ExtruderSlot for why tray_now cannot stand in for it.
     extruder_slots: dict = field(default_factory=dict)
-    # Plate dispatched by Bambuddy for the current print. Some firmware versions
+    # Plate dispatched by PrintLab for the current print. Some firmware versions
     # (P1S 01.10.00.00) only put the .3mf filename in print.gcode_file, so the
     # regex used to derive the plate number from the path always falls back to
     # plate 1 — and the printer card shows the wrong thumbnail (#1166). When
-    # Bambuddy dispatches the print itself we know the plate authoritatively;
+    # PrintLab dispatches the print itself we know the plate authoritatively;
     # we record it here and prefer it over the gcode_file regex. The subtask
     # field guards against staleness: if the printer is currently running a
     # different subtask (e.g. a Studio-direct dispatch), these values are
@@ -1156,7 +1156,7 @@ def get_stage_name(stage: int) -> str:
 # A1, A1 Mini, H2C, H2D, P1S, P2S, X1C, X2D — all of them the FINISH fallback).
 #
 # We can't design a replacement from bundles we already have, because out of
-# this window Bambuddy only ever parses ``stg_cur`` and ``mc_print_sub_stage``;
+# this window PrintLab only ever parses ``stg_cur`` and ``mc_print_sub_stage``;
 # every other stage/action field is dropped unread. The obvious candidates
 # (``print_real_action``, ``mc_action``, ``mc_stage``) are also absent from
 # A1/A1 Mini/P1S payloads, so none of them can be the universal answer on its
@@ -1273,7 +1273,7 @@ class BambuMQTTClient:
         # Receives the AMS id of the unit that finished drying.
         self.on_drying_complete = on_drying_complete
         # #1485 follow-up: fired the first time we see RUNNING state in a
-        # session WHEN on_print_start was suppressed (Bambuddy started mid-
+        # session WHEN on_print_start was suppressed (PrintLab started mid-
         # print, the #1304 first-push guard skipped the start event). Lets
         # main.py capture a fresh timelapse baseline at restart-recovery
         # time so the completion-time snapshot-diff still works. Receives
@@ -1452,7 +1452,7 @@ class BambuMQTTClient:
         self._last_load_tray_id: int | None = None
 
         # Captured ams_mapping from print commands on the request topic
-        # Intercepts slicer/Bambuddy print commands to get the slot-to-tray mapping
+        # Intercepts slicer/PrintLab print commands to get the slot-to-tray mapping
         self._captured_ams_mapping: list[int] | None = None
 
         # True once we've seen (and normalised 16->6) an A2L AMS-Lite unit in the
@@ -1632,7 +1632,7 @@ class BambuMQTTClient:
                     "[%s] Connected and subscribed, but the printer has sent zero "
                     "status reports. The most common cause is a wrong or mis-cased "
                     "serial number — the device/<serial>/report MQTT topic is "
-                    "case-sensitive. Verify the serial number configured in Bambuddy "
+                    "case-sensitive. Verify the serial number configured in PrintLab "
                     "exactly matches the printer.",
                     self.serial_number,
                 )
@@ -1972,7 +1972,7 @@ class BambuMQTTClient:
             self._last_message_time = time.time()
             self.state.connected = True
 
-            # Intercept request-topic messages (print commands from slicer/Bambuddy)
+            # Intercept request-topic messages (print commands from slicer/PrintLab)
             if msg.topic == self.topic_publish:
                 # Record it before returning. This topic carries every command
                 # travelling *to* the printer, including the ones Bambu Studio
@@ -2001,7 +2001,7 @@ class BambuMQTTClient:
             if msg.topic == self.topic_subscribe:
                 self._report_messages_since_connect += 1
                 # Only report-topic traffic proves the *printer* is alive — the
-                # request topic also carries slicer/Bambuddy commands.
+                # request topic also carries slicer/PrintLab commands.
                 if self._state_before_power_off is not None:
                     if self._restore_state_after_false_power_off() and self.on_state_change:
                         self.on_state_change(self.state)
@@ -2049,7 +2049,7 @@ class BambuMQTTClient:
             #
             # This used to read `sequence_id != "20000"`, on the belief that
             # 20000 was ours alone. It is not: 20000 is the slicer convention
-            # Bambuddy adopted -- bind_server documents the slicer sending it
+            # PrintLab adopted -- bind_server documents the slicer sending it
             # during detect, and measured on the wire OrcaSlicer dispatched
             # 20000 then 20001 while BambuStudio was on 20009/20010, both
             # counting up from the same base. So the test swallowed whichever
@@ -2089,7 +2089,7 @@ class BambuMQTTClient:
         project_file payload" diagnostic: our own dispatch is echoed on *both*
         topics, the request-topic echo arrives first and clears
         ``_own_project_file_key``, so by the time this frame lands the key is
-        already None and every Bambuddy-started print would log itself as
+        already None and every PrintLab-started print would log itself as
         someone else's.
         """
         # Same shape as _handle_request_message: the frame is whatever the
@@ -3270,7 +3270,7 @@ class BambuMQTTClient:
                     # AMS-only mappings are NOT overridden — there's no
                     # evidence the firmware misreports in those cases. Prints
                     # started without a captured mapping (printer-screen start,
-                    # or before Bambuddy connected) fall through unchanged.
+                    # or before PrintLab connected) fall through unchanged.
                     captured = self._captured_ams_mapping
                     if captured and all(s in (-1, 254, 255) for s in captured):
                         if self.state.tray_now != 254:
@@ -3520,7 +3520,7 @@ class BambuMQTTClient:
 
         # Empty-slot cleanup via tray_exist_bits (#147, #1322, #765, #1365).
         # Shared with the VP bridge cache so the slicer-facing view stays in
-        # sync with Bambuddy's AMS card (#1726). See the helper's docstring
+        # sync with PrintLab's AMS card (#1726). See the helper's docstring
         # for the full rationale and the printer-shutdown guard.
         if isinstance(ams_data, dict):
             apply_tray_exist_bits(
@@ -3773,7 +3773,7 @@ class BambuMQTTClient:
         A cycle that reaches its configured duration needs no explanation and
         keeps the one-line "drying complete" it has always had. One that ends
         with most of its countdown left was ended by somebody, and there are
-        only two candidates: a stop Bambuddy sent — the print-takes-priority
+        only two candidates: a stop PrintLab sent — the print-takes-priority
         stop, or the user's Stop button — which is named as such, or the
         firmware.
 
@@ -3797,7 +3797,7 @@ class BambuMQTTClient:
         if ams_id in self._drying_stops_sent:
             self._drying_stops_sent.discard(ams_id)
             logger.info(
-                "[%s] AMS %d drying stopped by Bambuddy (dry_time %d → 0, %s)",
+                "[%s] AMS %d drying stopped by PrintLab (dry_time %d → 0, %s)",
                 self.serial_number,
                 ams_id,
                 remaining,
@@ -3824,7 +3824,7 @@ class BambuMQTTClient:
 
         logger.info(
             "[%s] AMS %d drying ended early — %d of %s minutes still on the clock. "
-            "Bambuddy sent no stop command, so the firmware ended this cycle: "
+            "PrintLab sent no stop command, so the firmware ended this cycle: "
             "dry_status=%s dry_sub_status=%s dry_sf_reason=%s hms=%s %s",
             self.serial_number,
             ams_id,
@@ -4256,7 +4256,7 @@ class BambuMQTTClient:
                 if (
                     isinstance(new_stg, int)
                     and not isinstance(new_stg, bool)
-                    # -1 is Bambuddy's own "not in a stage" sentinel and the
+                    # -1 is PrintLab's own "not in a stage" sentinel and the
                     # initial value of the field, not something the firmware
                     # reports; every print would otherwise report it on the way
                     # out of its last real stage.
@@ -5371,7 +5371,7 @@ class BambuMQTTClient:
         current_file = self.state.gcode_file or self.state.current_print
         is_new_print = (
             self.state.state == "RUNNING"
-            and self._previous_gcode_state is not None  # #1304: skip on first push after Bambuddy startup
+            and self._previous_gcode_state is not None  # #1304: skip on first push after PrintLab startup
             and self._previous_gcode_state != "RUNNING"
             and current_file
             and not self._was_running  # Prevent duplicates when resuming from PAUSE
@@ -5397,7 +5397,7 @@ class BambuMQTTClient:
                 # If is_new_print also fires below, on_print_start handles
                 # baseline capture and we suppress on_print_running_observed
                 # to avoid double-capture. If is_new_print does NOT fire
-                # (Bambuddy started mid-print — the #1304 guard suppressed
+                # (PrintLab started mid-print — the #1304 guard suppressed
                 # it), main.py needs this hook to catch the restart-recovery
                 # case (#1485 follow-up).
                 running_first_observed = True
@@ -5483,7 +5483,7 @@ class BambuMQTTClient:
                 }
             )
         elif running_first_observed and self.on_print_running_observed:
-            # Restart-recovery hook (#1485 follow-up): Bambuddy started mid-
+            # Restart-recovery hook (#1485 follow-up): PrintLab started mid-
             # print, so the #1304 first-push guard suppressed on_print_start,
             # but we still need main.py to capture a fresh timelapse baseline
             # before the printer uploads the in-flight MP4. Same payload
@@ -5843,7 +5843,7 @@ class BambuMQTTClient:
         """
         self._loop = loop
         BambuMQTTClient._client_instance_counter += 1
-        client_id = f"bambuddy_{self.serial_number}_{os.getpid()}_{BambuMQTTClient._client_instance_counter}"
+        client_id = f"printlab_{self.serial_number}_{os.getpid()}_{BambuMQTTClient._client_instance_counter}"
         self._client = mqtt.Client(
             callback_api_version=mqtt.CallbackAPIVersion.VERSION2,
             client_id=client_id,
@@ -6647,7 +6647,7 @@ class BambuMQTTClient:
         else:
             self._drying_targets.pop(ams_id, None)
             # Remember that this cycle's end is ours, so the cycle-end log
-            # attributes it to Bambuddy instead of to the firmware (#2770). A
+            # attributes it to PrintLab instead of to the firmware (#2770). A
             # stop always ends the cycle far short of its duration, which is
             # otherwise indistinguishable from the firmware abandoning it.
             self._drying_stops_sent.add(ams_id)
@@ -8304,7 +8304,7 @@ class BambuMQTTClient:
             # what the "Ignore this and Resume" button actually publishes.
             # Distinct from `idle_ignore`: this command has the firmware
             # suppress the next re-check of the named fault AND resume the
-            # paused print in a single operation. The previous Bambuddy code
+            # paused print in a single operation. The previous PrintLab code
             # redirected IGNORE_RESUME to a plain `resume`, which is why the
             # wrong-plate HMS came back 1-2 s later: `resume` means "I fixed
             # the problem, re-check normally" so the firmware re-detected the

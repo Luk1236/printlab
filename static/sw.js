@@ -1,6 +1,6 @@
-// Bambuddy Service Worker
-const CACHE_NAME = 'bambuddy-v30';
-const STATIC_CACHE = 'bambuddy-static-v29';
+// PrintLab Service Worker
+const CACHE_NAME = 'printlab-v31';
+const STATIC_CACHE = 'printlab-static-v30';
 
 // Static assets to cache on install
 const STATIC_ASSETS = [
@@ -12,7 +12,7 @@ const STATIC_ASSETS = [
   '/img/android-chrome-192x192.png',
   '/img/android-chrome-512x512.png',
   '/img/apple-touch-icon.png',
-  '/img/bambuddy_logo_dark.png',
+  '/img/printlab_dark.png',
   // Self-hosted Inter font (#1460) - cached so the UI renders offline.
   '/fonts/inter-latin.woff2',
   '/fonts/inter-latin-ext.woff2',
@@ -38,7 +38,7 @@ self.addEventListener('install', (event) => {
 // `controllerchange` listener, gated on whether the page already had a SW
 // controller at load time. That gate distinguishes first-install (where a
 // reload would race the in-flight React mount — observed on every fresh
-// *.demo.bambuddy.cool subdomain, and in Firefox the activate's waitUntil
+// a demo subdomain, and in Firefox the activate's waitUntil
 // hung on `client.navigate` until the document load was aborted with a
 // Corrupted-Content error) from upgrade-on-existing-client (where the reload
 // is wanted).

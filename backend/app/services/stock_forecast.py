@@ -165,7 +165,7 @@ def delta_rate(spools: Sequence[StockSpool], now: datetime) -> float | None:
     """Daily rate from consumption since baseline over the age of the oldest spool.
 
     The fallback when there is not enough usage history, which is always the
-    case in Spoolman mode: Spoolman owns the usage there and Bambuddy's own
+    case in Spoolman mode: Spoolman owns the usage there and PrintLab's own
     ``spool_usage_history`` table holds nothing for those spools. Returns None
     with nothing consumed, or with under a day of age to divide by.
     """

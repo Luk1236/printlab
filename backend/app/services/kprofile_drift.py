@@ -9,7 +9,7 @@ that, and two queued jobs went out on the default K.
 This module re-selects the stored profile for such a slot. It acts only when
 the selection is *lost* (``cali_idx`` -1 or missing), never when the slot
 holds a different real profile: that one was picked on purpose, in Bambu
-Studio for example. A profile picked in Bambuddy's Configure Slot dialog is
+Studio for example. A profile picked in PrintLab's Configure Slot dialog is
 saved as the spool's stored profile anyway, but a "Default" pick there is not
 saved anywhere, so it is recorded through ``note_slot_configured`` and left
 alone too.
@@ -63,7 +63,7 @@ _running: set[int] = set()
 
 
 def note_slot_configured(printer_id: int, ams_id: int, tray_id: int, cali_idx: int) -> None:
-    """Record a K-profile picked for a slot in Bambuddy's Configure Slot dialog.
+    """Record a K-profile picked for a slot in PrintLab's Configure Slot dialog.
 
     A default pick (-1) is respected until the slot is emptied or configured
     again. It is not cleared by the slot reporting a real profile, because the

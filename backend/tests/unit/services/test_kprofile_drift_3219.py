@@ -113,7 +113,7 @@ async def test_missing_cali_idx_counts_as_lost(env):
 
 @pytest.mark.asyncio
 async def test_a_different_real_profile_is_left_alone(env):
-    # Picked on purpose, in Bambu Studio or Bambuddy's Configure Slot dialog.
+    # Picked on purpose, in Bambu Studio or PrintLab's Configure Slot dialog.
     env.state = _state([_tray(0, cali_idx=5)])
     env.stored[(0, 0)] = _profile(9354)
 

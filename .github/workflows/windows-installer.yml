@@ -102,7 +102,7 @@ jobs:
       - name: Compile installer (ISCC)
         working-directory: installers/windows
         run: |
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" bambuddy.iss
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" printlab.iss
         shell: pwsh
 
       # SignPath signs a *GitHub artifact*, not a workspace path: the connector
@@ -115,7 +115,7 @@ jobs:
         id: upload_unsigned
         uses: actions/upload-artifact@v7
         with:
-          name: bambuddy-windows-installer-unsigned
+          name: printlab-windows-installer-unsigned
           path: installers/windows/build/output/*.exe
           if-no-files-found: error
           # Only needed while SignPath fetches it during this run; the default
@@ -140,7 +140,7 @@ jobs:
       - name: Download unsigned installer
         uses: actions/download-artifact@v7
         with:
-          name: bambuddy-windows-installer-unsigned
+          name: printlab-windows-installer-unsigned
           path: installers/windows/build/output
 
       # The artifact arrives at SignPath as a .zip (that is simply what
@@ -160,7 +160,7 @@ jobs:
           # Not a credential -- the organization ID appears in ordinary SignPath
           # URLs and is useless without the API token above.
           organization-id: '4d7e5b59-d0fb-4a6b-b385-b861e18c6386'
-          project-slug: 'bambuddy'
+          project-slug: 'printlab'
           signing-policy-slug: 'test-signing'
           github-artifact-id: ${{ needs.build.outputs.artifact-id }}
           wait-for-completion: true
@@ -206,7 +206,7 @@ jobs:
       # wiki, newsletters) can link to a stable URL that survives version
       # bumps:
       #
-      #   https://github.com/maziggy/bambuddy/releases/latest/download/bambuddy-windows-x64-setup.exe
+      #   https://github.com/Luk1236/printlab/releases/latest/download/printlab-windows-x64-setup.exe
       #
       # GitHub's `latest` redirect excludes prereleases, so this URL always
       # points at whatever was released as a full release. Daily prereleases
@@ -227,15 +227,15 @@ jobs:
         shell: pwsh
         working-directory: installers/windows/build/output
         run: |
-          $versioned = Get-ChildItem -Filter "bambuddy-*-windows-x64-setup.exe" | Select-Object -First 1
+          $versioned = Get-ChildItem -Filter "printlab-*-windows-x64-setup.exe" | Select-Object -First 1
           if (-not $versioned) { throw "no versioned installer .exe found" }
-          Copy-Item $versioned.FullName "bambuddy-windows-x64-setup.exe"
-          Write-Host "alias: bambuddy-windows-x64-setup.exe -> $($versioned.Name)"
+          Copy-Item $versioned.FullName "printlab-windows-x64-setup.exe"
+          Write-Host "alias: printlab-windows-x64-setup.exe -> $($versioned.Name)"
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v7
         with:
-          name: bambuddy-windows-installer
+          name: printlab-windows-installer
           path: installers/windows/build/output/*.exe
           if-no-files-found: error
           # Release tags attach the installer to the release below; the run

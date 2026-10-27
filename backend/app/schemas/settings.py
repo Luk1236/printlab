@@ -9,7 +9,7 @@ from backend.app.utils.printer_models import MAX_CHAMBER_TEMP_C
 # Outbound service URLs validated on save, so a bad value is rejected at
 # configuration time with a clear message rather than failing opaquely at
 # request time. Every one of these services is commonly self-hosted on the same
-# host or LAN as Bambuddy, so the LAN-service policy applies: loopback and
+# host or LAN as PrintLab, so the LAN-service policy applies: loopback and
 # RFC-1918 stay permitted, while cloud-metadata endpoints, numeric-encoded IPs,
 # IPv4-mapped IPv6 and non-HTTP schemes are rejected. See
 # ``_url_safety.assert_safe_lan_service_url``.
@@ -21,9 +21,9 @@ from backend.app.utils.printer_models import MAX_CHAMBER_TEMP_C
 LAN_SERVICE_URL_SETTINGS = ("ha_url", "obico_ml_url", "orcaslicer_api_url", "bambu_studio_api_url")
 
 # ``docker_compose_dir`` is unusual among the string settings: it is not
-# consumed by Bambuddy at all, it is interpolated into a shell command that
+# consumed by PrintLab at all, it is interpolated into a shell command that
 # the Settings page invites the user to copy and paste into a root-capable
-# terminal (#2664). A value like ``/opt/bambuddy; rm -rf /`` would render as a
+# terminal (#2664). A value like ``/opt/printlab; rm -rf /`` would render as a
 # perfectly plausible-looking update command, so anyone with settings:update
 # could hand every admin a destructive one-liner to run. Restricting the field
 # to characters that occur in real paths removes that entirely; the frontend
@@ -41,7 +41,7 @@ class AppSettings(BaseModel):
     capture_finish_photo: bool = Field(
         default=True,
         description=(
-            "Capture photo from printer camera when print completes. Bambuddy records a "
+            "Capture photo from printer camera when print completes. PrintLab records a "
             "brief timelapse during the print so the photo can be sourced from the moment "
             "before the bed drops; the timelapse file is kept if you enabled timelapse for "
             "this print, otherwise it is deleted automatically after the photo is captured."
@@ -52,7 +52,7 @@ class AppSettings(BaseModel):
         description=(
             "Raise the build plate back into camera framing before taking the finish photo. "
             "Bambu's end G-code drops the plate ~100mm as the last thing it does, leaving the "
-            "finished print far below the camera's natural framing. Bambuddy moves it back to "
+            "finished print far below the camera's natural framing. PrintLab moves it back to "
             "just above the last printed layer, takes the photo, then lowers it again. Skipped "
             "when the print height is unknown or another job is queued for the printer."
         ),
@@ -100,7 +100,7 @@ class AppSettings(BaseModel):
     check_printer_firmware: bool = Field(default=True, description="Check for printer firmware updates from Bambu Lab")
     include_beta_updates: bool = Field(default=False, description="Include beta/prerelease versions in update checks")
     announcements_enabled: bool = Field(
-        default=True, description="Fetch announcements from the Bambuddy maintainers (a signed file on GitHub)"
+        default=True, description="Fetch announcements from the PrintLab maintainers (a signed file on GitHub)"
     )
     announcements_all_users: bool = Field(
         default=False, description="Show announcements to every signed-in user, not only administrators"
@@ -256,12 +256,12 @@ class AppSettings(BaseModel):
     mqtt_port: int = Field(default=1883, description="MQTT broker port (default 1883, TLS typically 8883)")
     mqtt_username: str = Field(default="", description="MQTT username for authentication (optional)")
     mqtt_password: str = Field(default="", description="MQTT password for authentication (optional)")
-    mqtt_topic_prefix: str = Field(default="bambuddy", description="Topic prefix for all published messages")
+    mqtt_topic_prefix: str = Field(default="printlab", description="Topic prefix for all published messages")
     mqtt_use_tls: bool = Field(default=False, description="Use TLS/SSL encryption for MQTT connection")
 
     # External URL for notifications
     external_url: str = Field(
-        default="", description="External URL where Bambuddy is accessible (for notification images)"
+        default="", description="External URL where PrintLab is accessible (for notification images)"
     )
 
     # Directory holding the user's docker-compose.yml, shown in the update
@@ -333,7 +333,7 @@ class AppSettings(BaseModel):
     # Slicer dispatch mode: when True, "Slice" actions open the in-app
     # SliceModal and call the slicer-API sidecar. When False (default), they
     # hand off to the user's local desktop slicer via URI scheme — preserving
-    # the original Bambuddy behavior for users who don't run a sidecar.
+    # the original PrintLab behavior for users who don't run a sidecar.
     use_slicer_api: bool = Field(
         default=False,
         description="Use the slicer-API sidecar for slicing instead of the desktop slicer URI scheme",
@@ -423,7 +423,7 @@ class AppSettings(BaseModel):
     confirm_outcome_external_prints: bool = Field(
         default=False,
         description=(
-            "Also ask for the outcome of prints Bambuddy archived but did not dispatch — started at "
+            "Also ask for the outcome of prints PrintLab archived but did not dispatch — started at "
             "the printer, in Bambu Studio or in the Handy app (#1898)"
         ),
     )
@@ -450,7 +450,7 @@ class AppSettings(BaseModel):
     )
     printer_kill_switch_enabled: bool = Field(
         default=False,
-        description="Immediately stop printer jobs that start without Bambuddy authorization",
+        description="Immediately stop printer jobs that start without PrintLab authorization",
     )
     finance_budget_reset_day: int = Field(
         default=1,
@@ -479,7 +479,7 @@ class AppSettings(BaseModel):
         description=(
             "How many printers the queue may upload to at the same time. Printers are independent "
             "machines, so raising this starts a multi-printer batch proportionally sooner; each "
-            "concurrent upload costs one connection and one thread on the Bambuddy host."
+            "concurrent upload costs one connection and one thread on the PrintLab host."
         ),
     )
 
@@ -581,14 +581,14 @@ class AppSettings(BaseModel):
     # credentials with HTTP 403 and the login page hides the credentials form,
     # leaving only the OIDC SSO provider buttons. LDAP is governed by its own
     # `ldap_enabled` toggle and is not affected. The env-var
-    # ``BAMBUDDY_LOCAL_LOGIN=true`` bypasses this gate at the route level so a
+    # ``PRINTLAB_LOCAL_LOGIN=true`` bypasses this gate at the route level so a
     # server admin can recover an install whose SSO provider is unreachable
     # without editing the DB.
     local_login_enabled: bool = Field(
         default=True,
         description=(
             "Allow username + password login on /auth/login. Disable when only SSO should be usable. "
-            "BAMBUDDY_LOCAL_LOGIN=true on the server overrides this to keep a recovery path open."
+            "PRINTLAB_LOCAL_LOGIN=true on the server overrides this to keep a recovery path open."
         ),
     )
 
@@ -605,15 +605,15 @@ class AppSettings(BaseModel):
     ldap_security: str = Field(default="starttls", description="LDAP security: 'starttls' or 'ldaps'")
     ldap_group_mapping: str = Field(
         default="",
-        description="JSON: LDAP group to BamBuddy group mapping {ldap_group_dn: bambuddy_group_name}",
+        description="JSON: LDAP group to PrintLab group mapping {ldap_group_dn: printlab_group_name}",
     )
     ldap_auto_provision: bool = Field(
         default=False,
-        description="Auto-create BamBuddy user on first successful LDAP login",
+        description="Auto-create PrintLab user on first successful LDAP login",
     )
     ldap_default_group: str = Field(
         default="",
-        description="Fallback BamBuddy group name assigned when an LDAP user authenticates but has no mapped groups. Empty = no fallback.",
+        description="Fallback PrintLab group name assigned when an LDAP user authenticates but has no mapped groups. Empty = no fallback.",
     )
 
     # Obico AI failure detection (#172)
@@ -929,7 +929,7 @@ class AppSettingsUpdate(BaseModel):
         except json.JSONDecodeError:
             raise ValueError("ldap_group_mapping must be valid JSON or empty")
         if not isinstance(parsed, dict):
-            raise ValueError("ldap_group_mapping must be a JSON object mapping LDAP group DNs to BamBuddy group names")
+            raise ValueError("ldap_group_mapping must be a JSON object mapping LDAP group DNs to PrintLab group names")
         return v
 
     @field_validator("obico_enabled_printers")

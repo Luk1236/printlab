@@ -12,14 +12,14 @@ Preisliste: stehende Materialtarife aus ``data/price_list.json`` (siehe
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.api.routes.settings import DEFAULT_SETTINGS, get_setting
 from backend.app.core.auth import RequirePermissionIfAuthEnabled
 from backend.app.core.database import get_db
 from backend.app.core.permissions import Permission
-from backend.app.services import price_list
+from backend.app.services import price_list, quote_history
 
 router = APIRouter(prefix="/quote", tags=["quote"])
 
@@ -45,6 +45,37 @@ async def set_price_list(
     _=RequirePermissionIfAuthEnabled(Permission.SETTINGS_UPDATE),
 ):
     return price_list.write_list(entries)
+
+
+@router.get("/history")
+async def get_quote_history(
+    customer: str | None = Query(None, max_length=80),
+    limit: int = Query(100, ge=1, le=1000),
+    _=RequirePermissionIfAuthEnabled(Permission.ARCHIVES_READ),
+):
+    """Gespeicherte Angebote (neueste zuerst), optional nach Kunde gefiltert, plus Summen je Kunde."""
+    return {"entries": quote_history.entries(customer, limit), "customers": quote_history.totals_by_customer()}
+
+
+@router.post("/history")
+async def save_quote(
+    payload: dict,
+    _=RequirePermissionIfAuthEnabled(Permission.ARCHIVES_UPDATE_ALL),
+):
+    try:
+        return quote_history.add(payload)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@router.delete("/history/{entry_id}")
+async def delete_quote(
+    entry_id: str,
+    _=RequirePermissionIfAuthEnabled(Permission.ARCHIVES_DELETE_ALL),
+):
+    if not quote_history.delete(entry_id):
+        raise HTTPException(404, "Angebot nicht gefunden.")
+    return {"success": True}
 
 
 @router.get("/for-archive/{archive_id}")

@@ -226,7 +226,7 @@ export function SpoolFormModal({
       };
       fetchData();
       // Fetched in Spoolman mode too: the empty spool weight picker is shown
-      // there now, and its catalogue is Bambuddy's own either way (#2908).
+      // there now, and its catalogue is PrintLab's own either way (#2908).
       api.getSpoolCatalog().then(setSpoolCatalog).catch(console.error);
       api.getColorCatalog().then(setColorCatalog).catch(console.error);
       api.getLocalPresets().then(r => setLocalPresets(r.filament)).catch(console.error);
@@ -838,7 +838,7 @@ export function SpoolFormModal({
 
   const saveSupplierLinks = async (spoolId: number): Promise<boolean> => {
     if (!shouldSaveSupplierLinks) return true;
-    // Spoolman parity (#2988): the assignment rows live Bambuddy-side either
+    // Spoolman parity (#2988): the assignment rows live PrintLab-side either
     // way; only the endpoint differs (twin table keyed by the remote id).
     const save = spoolmanMode ? api.setSpoolmanSpoolSuppliers : api.setSpoolSuppliers;
     try {
@@ -1210,7 +1210,7 @@ export function SpoolFormModal({
               </div>
 
               {/* Suppliers (#2988) — both inventories: the assignments live
-                  Bambuddy-side either way (Spoolman's vendor is the
+                  PrintLab-side either way (Spoolman's vendor is the
                   manufacturer, not the seller), so the same section renders
                   in Spoolman mode and saves to the twin endpoint. */}
               <div>

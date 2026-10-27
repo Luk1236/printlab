@@ -9,11 +9,11 @@ used to read it off the tray's ``state`` field. That field cannot carry it.
 
 ``state`` is firmware-variant. The A1 Mini BMCU and the P1S Standard AMS report
 3 for a loaded slot and never emit 11; the AMS-HT's codes differ again (#2670).
-Bambuddy already works around that on the printer card, where
+PrintLab already works around that on the printer card, where
 ``getEmptySlotKind`` (``PrintersPage.tsx``) reads the presence bit first and
 only falls back to the 9/10 heuristic when there is no bit to read.
 
-Worse, ``state`` is partly Bambuddy's own writing. ``apply_tray_exist_bits``
+Worse, ``state`` is partly PrintLab's own writing. ``apply_tray_exist_bits``
 sets ``state = 9`` on every slot whose presence bit is 0 -- and when the bit
 comes back it leaves the 9 exactly where it was, because the "slot occupied"
 branch only annotates ``exists`` and moves on. So a slot the firmware says is

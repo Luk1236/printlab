@@ -1,5 +1,5 @@
 {
- "_comment": "print_error texts Bambu Studio does not ship, kept from the ha-bambulab table Bambuddy used before #2728. scripts/generate_hms_catalog.py adds them only where Studio has no entry. Keys are the 8-hex print_error value.",
+ "_comment": "print_error texts Bambu Studio does not ship, kept from the ha-bambulab table PrintLab used before #2728. scripts/generate_hms_catalog.py adds them only where Studio has no entry. Keys are the 8-hex print_error value.",
  "error": {
   "03008002": "First layer defects were detected by the Micro Lidar. Please check the quality of the printed model before continuing your print.",
   "03008004": "Filament ran out. Please load new filament.",

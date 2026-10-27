@@ -1,6 +1,6 @@
 """Integration tests for the manual LDAP user provisioning routes (#1298).
 
-Reporter @Fuechslein noted that BamBuddy forced admins to leave auto-provision
+Reporter @Fuechslein noted that PrintLab forced admins to leave auto-provision
 on because there was no UI path to create an LDAP user by hand. The new
 endpoints are GET /auth/ldap/search (admin types a partial name, picks a
 candidate) and POST /auth/ldap/provision (server re-resolves and creates the
@@ -479,7 +479,7 @@ class TestLdapFirstLoginProvisionsOnce:
             db_session,
             ldap_auto_provision="true",
             ldap_default_group=default_group,
-            ldap_group_mapping='{"cn=bambuddy-admins,ou=groups,dc=test,dc=com": "Administrators"}',
+            ldap_group_mapping='{"cn=printlab-admins,ou=groups,dc=test,dc=com": "Administrators"}',
         )
         fake_ldap = LDAPUserInfo(username="tofm", email="tofm@test.com", display_name=None, groups=groups)
         with patch("backend.app.services.ldap_service.authenticate_ldap_user", return_value=fake_ldap):
@@ -502,7 +502,7 @@ class TestLdapFirstLoginProvisionsOnce:
     async def test_new_user_gets_mapped_group_and_finance_defaults(
         self, async_client: AsyncClient, db_session: AsyncSession
     ):
-        response = await self._login(async_client, db_session, groups=["CN=Bambuddy-Admins,OU=Groups,DC=Test,DC=Com"])
+        response = await self._login(async_client, db_session, groups=["CN=PrintLab-Admins,OU=Groups,DC=Test,DC=Com"])
 
         assert response.status_code == 200
         body = response.json()["user"]

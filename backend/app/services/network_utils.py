@@ -34,7 +34,7 @@ def _psutil_ipv4_entries(exclude_by_name: bool = False) -> list[dict]:
     Linux-specific. On macOS/BSD ``fcntl`` still imports, so those ioctls
     don't raise ImportError — they raise ``OSError`` per interface and the
     Linux path silently returns an empty list (no VP bind interfaces).
-    Windows has no ``fcntl``/``ip`` at all. psutil is already a Bambuddy dep
+    Windows has no ``fcntl``/``ip`` at all. psutil is already a PrintLab dep
     (``psutil>=6.0.0``) and gives cross-platform name + IPv4 + netmask in one
     call, so we use it for everything that isn't Linux.
 

@@ -392,7 +392,7 @@ class TestLabelFieldsAndFormats:
         )
         assert resp.status_code == 200
         assert resp.headers["content-type"] == "image/png"
-        assert "bambuddy-labels-box_40x30.png" in resp.headers["content-disposition"]
+        assert "printlab-labels-box_40x30.png" in resp.headers["content-disposition"]
         assert resp.content.startswith(b"\x89PNG")
 
     @pytest.mark.asyncio

@@ -2,7 +2,7 @@
 
 Baut aus einer vorhandenen, gültigen P2S-3MF eine neue Datei, deren G-code nur
 das Schmierprogramm ausführt. Am Bambu-Monitor am P2S getestet; hier als
-Dienst im Bambuddy-Fork, damit die erzeugte Datei über den Dateimanager oder
+Dienst im PrintLab-Fork, damit die erzeugte Datei über den Dateimanager oder
 die Warteschlange gestartet werden kann.
 """
 from __future__ import annotations

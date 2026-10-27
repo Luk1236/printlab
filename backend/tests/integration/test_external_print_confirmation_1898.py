@@ -1,4 +1,4 @@
-"""Ask for the outcome of prints Bambuddy did not start (#1898 follow-up).
+"""Ask for the outcome of prints PrintLab did not start (#1898 follow-up).
 
 The ask-for-outcome flag rides from a queue item onto the archive at dispatch.
 On a farm where most jobs are started at the printer's screen, in Bambu Studio
@@ -325,12 +325,12 @@ class TestAQueuedPrintStillDecidesForItself:
         """A queue item that deliberately has the ask-for-outcome flag off must
         stay off. A restart mid-print empties the expected-print registry, so
         the queue row — which the scheduler commits to "printing" before the
-        MQTT send — is the durable record that Bambuddy started this."""
+        MQTT send — is the durable record that PrintLab started this."""
         printer = await printer_factory()
         # Dispatched but not yet reported as started: the archive the scheduler
         # attached to the row only turns "printing" once on_print_start runs, so
         # the name-match resume above cannot find it and the queue row is the
-        # only record that Bambuddy sent this print.
+        # only record that PrintLab sent this print.
         source = await archive_factory(printer.id, filename=f"{SUBTASK}.gcode.3mf", status="pending", with_run=False)
         db_session.add(
             PrintQueueItem(
@@ -420,7 +420,7 @@ class TestSettingsRoundTrip:
 
 
 class TestAStrandedQueueRowDoesNotMuteTheSetting:
-    """A ``printing`` row is not proof that Bambuddy started what is printing now.
+    """A ``printing`` row is not proof that PrintLab started what is printing now.
 
     ``_completion_belongs_to_queue_item`` deliberately leaves a row open when a
     completion's subtask name disagrees with the file it was dispatched with,

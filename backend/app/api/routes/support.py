@@ -194,7 +194,7 @@ async def clear_logs(
     _: User | None = RequirePermissionIfAuthEnabled(Permission.SETTINGS_UPDATE),
 ):
     """Clear the application log file."""
-    log_file = settings.log_dir / "bambuddy.log"
+    log_file = settings.log_dir / "printlab.log"
 
     if log_file.exists():
         try:
@@ -309,7 +309,7 @@ _GC_CENSUS_RSS_LIMIT = 2 * 1024**3
 def _collect_process_info() -> dict:
     """Snapshot this process's resource usage, for reports about it growing.
 
-    Bundles used to carry nothing about Bambuddy's own footprint, which made
+    Bundles used to carry nothing about PrintLab's own footprint, which made
     "memory climbs over days until the OOM killer fires" impossible to triage
     from a bundle alone — the reporter of #2734 had to be asked to run commands
     by hand, and the numbers that would have identified the mechanism could not
@@ -818,7 +818,7 @@ async def _collect_support_info() -> dict:
         "database": {},
         "printers": [],
         "settings": {},
-        # Bambuddy's own footprint. Cheap to collect and the only thing that
+        # PrintLab's own footprint. Cheap to collect and the only thing that
         # makes a "memory grows over days" report triageable from the bundle
         # rather than a round trip of shell commands (#2734). Off the event
         # loop: the heap census walks every tracked object, and a bundle
@@ -1035,9 +1035,9 @@ async def _collect_support_info() -> dict:
                 result = await db.execute(text("PRAGMA quick_check"))
                 quick_check = result.scalar()
 
-                db_path = settings.base_dir / "bambuddy.db"
+                db_path = settings.base_dir / "printlab.db"
                 db_size = db_path.stat().st_size if db_path.exists() else 0
-                wal_path = settings.base_dir / "bambuddy.db-wal"
+                wal_path = settings.base_dir / "printlab.db-wal"
                 wal_size = wal_path.stat().st_size if wal_path.exists() else 0
 
                 info["database_health"] = {
@@ -1213,7 +1213,7 @@ async def _collect_support_info() -> dict:
 
     # Log file info
     try:
-        log_file = settings.log_dir / "bambuddy.log"
+        log_file = settings.log_dir / "printlab.log"
         if log_file.exists():
             size = log_file.stat().st_size
             info["log_file"] = {
@@ -1246,7 +1246,7 @@ async def _collect_support_info() -> dict:
     # Active diagnostics — per-printer connection check, per-VP setup check,
     # and the log-health scan. These all surface in the UI today (System page +
     # bug-report bubble) but were never persisted into what the maintainer
-    # receives, so a "looks broken in bambuddy" report arrived with no
+    # receives, so a "looks broken in printlab" report arrived with no
     # actionable signal beyond raw logs. The snapshot helper is fail-soft per
     # probe and bounded by a per-probe wall-clock cap, so a hung interface
     # adds at most ~15 s to bundle generation regardless of fleet size (probes
@@ -1265,7 +1265,7 @@ async def _collect_support_info() -> dict:
 def _get_log_content(max_bytes: int = 10 * 1024 * 1024, sensitive_strings: dict[str, str] | None = None) -> bytes:
     """Get recent log content, limited to max_bytes from the end.
 
-    Spans the rotated files as well as the live one. ``bambuddy.log`` is capped
+    Spans the rotated files as well as the live one. ``printlab.log`` is capped
     at 5 MB by the RotatingFileHandler, and the bundle used to ship only that
     file — so on a large fleet with debug logging on, the window we ask a
     reporter for was far shorter than anyone realised. The 19-printer farm in
@@ -1276,7 +1276,7 @@ def _get_log_content(max_bytes: int = 10 * 1024 * 1024, sensitive_strings: dict[
     Reads oldest -> newest so the result is chronological, then takes the last
     ``max_bytes``, which is where the budget was all along.
     """
-    log_file = settings.log_dir / "bambuddy.log"
+    log_file = settings.log_dir / "printlab.log"
     if not log_file.exists():
         return b"Log file not found"
 
@@ -1406,7 +1406,7 @@ async def _get_recent_sanitized_logs(max_lines: int = 200) -> str:
     async with async_session() as db:
         sensitive_strings = await collect_sensitive_strings(db)
 
-    log_file = settings.log_dir / "bambuddy.log"
+    log_file = settings.log_dir / "printlab.log"
     if not log_file.exists():
         return ""
 
@@ -1488,11 +1488,11 @@ async def generate_support_bundle(
         # with the number of printers (4 redaction patterns each) — i.e. it is
         # worst on exactly the fleet size this change was written for.
         log_content = await asyncio.to_thread(_get_log_content, sensitive_strings=sensitive_strings)
-        zf.writestr("bambuddy.log", log_content)
+        zf.writestr("printlab.log", log_content)
 
     zip_buffer.seek(0)
 
-    filename = f"bambuddy-support-{timestamp}.zip"
+    filename = f"printlab-support-{timestamp}.zip"
     logger.info("Generated support bundle: %s", filename)
 
     return StreamingResponse(

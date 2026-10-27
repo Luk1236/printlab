@@ -109,9 +109,9 @@ class SpoolSupplier(Base):
 class SpoolmanSpoolSupplier(Base):
     """``SpoolSupplier`` for a Spoolman-managed spool.
 
-    Mirrors ``SpoolmanKProfile``: Spoolman owns the spool, Bambuddy owns the
+    Mirrors ``SpoolmanKProfile``: Spoolman owns the spool, PrintLab owns the
     supplier assignment, so the row is local and keyed by the remote spool id
-    with no foreign key to enforce it. Suppliers are Bambuddy-side on purpose —
+    with no foreign key to enforce it. Suppliers are PrintLab-side on purpose —
     Spoolman's ``vendor`` is the manufacturer, not the seller.
     """
 

@@ -10,7 +10,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from backend.app import pc_slicer
-from backend.app.services.slicer_cli import SliceOutput, _read_slice_info, build_command, slice_file
+from backend.app.services.slicer_cli import SliceOutput, SlicerCliError, _read_slice_info, build_command, slice_file
 
 
 def make_3mf() -> bytes:
@@ -50,13 +50,13 @@ class TestCli:
 
     def test_fehlendes_programm(self, tmp_path, monkeypatch):
         monkeypatch.setenv("BAMBU_STUDIO", str(tmp_path / "fehlt.exe"))
-        with pytest.raises(Exception):
+        with pytest.raises(SlicerCliError):
             slice_file(tmp_path / "m.3mf", "out.gcode.3mf")
 
 
 class TestApi:
     def client(self):
-        return TestClient(pc_slicer.app)
+        return TestClient(pc_slicer.app, client=("127.0.0.1", 50000))
 
     def test_health(self):
         data = self.client().get("/health").json()

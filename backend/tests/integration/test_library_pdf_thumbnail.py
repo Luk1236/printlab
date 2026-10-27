@@ -28,7 +28,7 @@ def _pdf_bytes() -> bytes:
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
     c.rect(0, A4[1] - 200, 200, 200, fill=1, stroke=0)
-    c.drawString(72, 72, "Bambuddy")
+    c.drawString(72, 72, "PrintLab")
     c.showPage()
     c.save()
     return buf.getvalue()
@@ -39,7 +39,7 @@ def isolated_storage(monkeypatch, tmp_path):
     """Point library and thumbnail storage at a throwaway directory.
 
     A subdirectory, so an external share created beside it in ``tmp_path``
-    is not inside the Bambuddy-managed tree (which the mount refuses).
+    is not inside the PrintLab-managed tree (which the mount refuses).
     """
     base = tmp_path / "data"
     base.mkdir()
@@ -105,7 +105,7 @@ async def test_zip_extraction_renders_pdf_thumbnail(async_client: AsyncClient, d
 async def test_external_scan_renders_pdf_thumbnail(
     async_client: AsyncClient, db_session, isolated_storage, tmp_path, monkeypatch
 ):
-    monkeypatch.setenv("BAMBUDDY_EXTERNAL_ROOTS", str(tmp_path.parent))
+    monkeypatch.setenv("PRINTLAB_EXTERNAL_ROOTS", str(tmp_path.parent))
     share = tmp_path / "nas_share"
     share.mkdir()
     (share / "manual.pdf").write_bytes(_pdf_bytes())

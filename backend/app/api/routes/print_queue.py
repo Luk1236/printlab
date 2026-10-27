@@ -165,7 +165,7 @@ def _assert_can_queue_archive(archive: PrintArchive, current_user: User | None) 
 
     Two separate checks:
 
-    * IDOR fix (maziggy/bambuddy-security #2): without this, a caller with
+    * IDOR fix (the security review #2): without this, a caller with
       QUEUE_CREATE could queue any user's archive even without ARCHIVES_READ on
       it — Landon's PoC enumerated this on admin's archives as operator1. Gate
       on ARCHIVES_READ_ALL OR ownership. 404 (not 403) so we don't leak "this

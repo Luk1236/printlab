@@ -11,7 +11,7 @@ from backend.app.schemas.settings import AppSettings as AppSettingsSchema
 async def resolve_configured_currency(db: AsyncSession) -> str:
     """The currency this install reports balances in.
 
-    Every other surface in Bambuddy renders the ``currency`` app setting.
+    Every other surface in PrintLab renders the ``currency`` app setting.
     Finance used to answer from ``user_wallets.currency``, which three of its
     four writers filled with a hardcoded "EUR", so an install configured for
     AUD reported a euro balance (#3123). That column is gone; this is the one

@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 // Hosts a message may link to. The backend already drops any other link; this
 // is the second check, so a bad link never becomes a clickable one.
-const LINK_HOSTS = ['github.com', 'bambuddy.cool'];
+const LINK_HOSTS = ['github.com'];
 
 export function isAllowedAnnouncementLink(url: string | null | undefined): url is string {
   if (!url) return false;
@@ -36,7 +36,7 @@ export function announcementText(announcement: Announcement, language: string): 
 const SEVERITY: Record<Announcement['level'], number> = { critical: 2, important: 1, info: 0 };
 
 /**
- * Announcements from the Bambuddy maintainers, for whoever may see them.
+ * Announcements from the PrintLab maintainers, for whoever may see them.
  *
  * The backend says whether this user may see them at all (`visible`: switched
  * on, and admin or "show to all users"), so there is no separate permission

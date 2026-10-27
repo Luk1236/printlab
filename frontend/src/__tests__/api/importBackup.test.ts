@@ -41,7 +41,7 @@ describe('api.importBackup', () => {
 
   it('turns a refusal into a failure carrying the reason', async () => {
     const detail =
-      'This backup cannot be restored by this version of Bambuddy. It carries no value for ' +
+      'This backup cannot be restored by this version of PrintLab. It carries no value for ' +
       '1 column(s) this version requires and cannot default: cost_centers.name.';
     server.use(http.post('*/settings/restore', () => HttpResponse.json({ detail }, { status: 400 })));
 

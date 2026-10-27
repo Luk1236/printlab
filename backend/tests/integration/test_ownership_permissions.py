@@ -1373,14 +1373,14 @@ class TestUserItemsCountAndDeletion(TestOwnershipPermissionsSetup):
 
 
 class TestReadIDORClosure(TestOwnershipPermissionsSetup):
-    """Regression tests pinning maziggy/bambuddy-security #2 — IDOR on
+    """Regression tests pinning the security review #2 — IDOR on
     archives / library / queue read paths.
 
     Before the fix, ARCHIVES_READ / LIBRARY_READ / QUEUE_READ were flat
     "see everything" permissions even though the write side was split into
     OWN/ALL. An operator with only ARCHIVES_READ could read, download, and
     queue any user's archive via direct id reference. These tests pin the
-    bambuddy_archive_idor.py and bambuddy_archive_viewer_idor.py PoC paths
+    printlab_archive_idor.py and printlab_archive_viewer_idor.py PoC paths
     so the IDOR can't regress silently.
     """
 
@@ -1514,7 +1514,7 @@ class TestReadIDORClosure(TestOwnershipPermissionsSetup):
         self, async_client: AsyncClient, auth_setup, db_session
     ):
         """Library IDOR closure (same shape as archives — closed in the same PR
-        per maziggy/bambuddy-security #2)."""
+        per the security review #2)."""
         from backend.app.models.library import LibraryFile
 
         admin_file = LibraryFile(
@@ -1673,7 +1673,7 @@ _WRITE_SUBRESOURCE_ROUTES = [
 class TestWriteSubResourceIDORClosure(TestOwnershipPermissionsSetup):
     """Regression tests for the archive write SUB-RESOURCE IDOR.
 
-    The read sub-resource routes were closed under maziggy/bambuddy-security #2
+    The read sub-resource routes were closed under the security review #2
     via ``_ensure_archive_visible``, but the *write* sub-resource routes
     (favorite, timelapse, photos, project-page, source, f3d) were left gating
     on the bare ``RequirePermissionIfAuthEnabled(ARCHIVES_*_OWN)`` scope and

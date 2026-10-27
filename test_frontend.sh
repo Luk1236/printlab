@@ -5,9 +5,9 @@
 
 cd frontend || exit 1
 
-npm run typecheck > /tmp/bambuddy-typecheck.$$ 2>&1 &
+npm run typecheck > /tmp/printlab-typecheck.$$ 2>&1 &
 typecheck_pid=$!
-npm run lint > /tmp/bambuddy-lint.$$ 2>&1 &
+npm run lint > /tmp/printlab-lint.$$ 2>&1 &
 lint_pid=$!
 
 wait $typecheck_pid
@@ -15,8 +15,8 @@ typecheck_rc=$?
 wait $lint_pid
 lint_rc=$?
 
-cat /tmp/bambuddy-typecheck.$$ /tmp/bambuddy-lint.$$
-rm -f /tmp/bambuddy-typecheck.$$ /tmp/bambuddy-lint.$$
+cat /tmp/printlab-typecheck.$$ /tmp/printlab-lint.$$
+rm -f /tmp/printlab-typecheck.$$ /tmp/printlab-lint.$$
 
 npm run test:run
 test_rc=$?

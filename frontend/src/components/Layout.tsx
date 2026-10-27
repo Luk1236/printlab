@@ -7,11 +7,10 @@ import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
 import { InstallAppButton } from './InstallAppButton';
 import { SwitchbarPopover } from './SwitchbarPopover';
 import { useQuery, useQueries } from '@tanstack/react-query';
-import { api, supportApi, pendingUploadsApi, type Permission } from '../api/client';
+import { api, supportApi, pendingUploadsApi, bugReportApi, type Permission } from '../api/client';
 import { getIconByName } from './IconPicker';
 import { useIsSidebarCompact } from '../hooks/useIsSidebarCompact';
 import { useColorCatalogVersion } from '../hooks/useColorCatalogVersion';
-import { useSponsorPrompt } from '../hooks/useSponsorPrompt';
 import { useUnknownTagPrompt } from '../hooks/useUnknownTagPrompt';
 import { UnknownSpoolModal } from './UnknownSpoolModal';
 import { ConfirmOutcomeDialog } from './ConfirmOutcomeDialog';
@@ -133,6 +132,14 @@ export function Layout() {
   const [confirmOutcomeArchiveId, setConfirmOutcomeArchiveId] = useState<number | null>(null);
 
   // Check for updates
+  // Fork: Fehlerberichte gehen nur an ein eingerichtetes Relay; ohne Relay verschwindet der Knopf.
+  const { data: bugReportStatus } = useQuery({
+    queryKey: ['bug-report-status'],
+    queryFn: bugReportApi.status,
+    staleTime: Infinity,
+  });
+  const bugReportEnabled = bugReportStatus?.enabled !== false;
+
   const { data: versionInfo } = useQuery({
     queryKey: ['version'],
     queryFn: api.getVersion,
@@ -152,7 +159,7 @@ export function Layout() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Announcements from the Bambuddy maintainers: the sidebar entry above System,
+  // Announcements from the PrintLab maintainers: the sidebar entry above System,
   // the slide-over list, and the banner for unread important/critical ones. The
   // entry is there for whoever may see announcements, also with none published.
   const {
@@ -172,7 +179,7 @@ export function Layout() {
   const closeAnnouncements = useCallback(() => setAnnouncementsOpen(false), []);
 
   // Sponsor-prompt toast — fires once per session post-auth if a milestone is eligible.
-  useSponsorPrompt(uiFlags?.currency ?? 'USD');
+  // Fork: keine Spenden-Aufforderung.
 
   // Unknown-spool prompt — surfaces a confirmation modal when the AMS reports a
   // tag with no inventory match (only when `auto_add_unknown_rfid` is off).
@@ -592,6 +599,7 @@ export function Layout() {
             className="h-8 ml-3"
           />
           {/* Bug report — the compact-layout home of the floating bubble. */}
+          {bugReportEnabled && (
           <button
             onClick={() => setBugReportOpen(true)}
             className={`ml-auto p-2 -mr-2 rounded-lg hover:bg-bambu-dark-tertiary transition-colors ${
@@ -602,6 +610,7 @@ export function Layout() {
           >
             <Bug className={`w-5 h-5 ${bugReportLogging ? 'animate-pulse' : ''}`} />
           </button>
+          )}
         </header>
       )}
 
@@ -816,7 +825,7 @@ export function Layout() {
                 )}
                 <InstallAppButton />
                 <a
-                  href="https://github.com/maziggy/bambuddy"
+                  href="https://github.com/Luk1236/printlab"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-2 rounded-lg hover:bg-bambu-dark-tertiary transition-colors text-bambu-gray-light hover:text-white"
@@ -938,7 +947,7 @@ export function Layout() {
               )}
               <InstallAppButton />
               <a
-                href="https://github.com/maziggy/bambuddy"
+                href="https://github.com/Luk1236/printlab"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 rounded-lg hover:bg-bambu-dark-tertiary transition-colors text-bambu-gray-light hover:text-white"
@@ -1293,12 +1302,12 @@ export function Layout() {
           `fixed z-40` and so its own stacking context, which would cap the
           z-50 panel at the header's level and bury it under every ordinary
           modal in the app. */}
-      <BugReportBubble
+      {bugReportEnabled && <BugReportBubble
         showTrigger={!isSidebarCompact}
         open={bugReportOpen}
         onOpenChange={setBugReportOpen}
         onLoggingChange={setBugReportLogging}
-      />
+      />}
     </div>
   );
 }

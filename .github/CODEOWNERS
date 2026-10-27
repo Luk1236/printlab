@@ -2,19 +2,19 @@
 # See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
 # Default owner for everything
-* @maziggy
+* @Luk1236
 
 # Backend code
-/backend/ @maziggy
+/backend/ @Luk1236
 
 # Frontend code
-/frontend/ @maziggy
+/frontend/ @Luk1236
 
 # Infrastructure and deployment
-/Dockerfile* @maziggy
-/docker-compose*.yml @maziggy
-/.github/ @maziggy
+/Dockerfile* @Luk1236
+/docker-compose*.yml @Luk1236
+/.github/ @Luk1236
 
 # Documentation
-/*.md @maziggy
-/docs/ @maziggy
+/*.md @Luk1236
+/docs/ @Luk1236

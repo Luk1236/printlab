@@ -1,6 +1,6 @@
 """MakerWorld integration routes.
 
-User pastes a model URL (MakerWorld or other supported host) → Bambuddy resolves
+User pastes a model URL (MakerWorld or other supported host) → PrintLab resolves
 it → shows plate list → one-click import/print. The URL-paste flow covers the
 actual discovery pattern (Reddit/YouTube/shared links) without needing to
 replicate the host's whole search UI.
@@ -259,7 +259,7 @@ async def resolve_url(
     # Strategy pattern: select provider based on URL instead of hardcoding.
     # Routing runs before the permission check because the permission *is* the
     # provider's; all an unpermitted caller learns from the ordering is which
-    # hosts Bambuddy supports, which the UI states anyway.
+    # hosts PrintLab supports, which the UI states anyway.
     provider = _provider_for_url(body.url)
     current_user = await _authorize_for_provider(provider, provider.view_permission, credentials, x_api_key)
     try:

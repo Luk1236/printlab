@@ -137,3 +137,182 @@ class TestEmergencyStop:
         ok, message = hw.emergency_stop()
         assert not ok
         assert "Kein Befehl" in message
+
+
+PY = f'"{sys.executable}"'
+
+
+class TestEmergencyStopLatch:
+    def test_after_estop_everything_is_locked_until_reload(self, tmp_path):
+        hw = make(tmp_path)
+        ok, _ = hw.emergency_stop()
+        assert ok
+        assert hw.status()["estop"] is True
+        for action in (hw.open_door, hw.close_door, hw.change_plate):
+            ok, message = action()
+            assert not ok and "Not-Halt" in message
+        hw.reload_config()
+        assert hw.status()["estop"] is False
+        assert hw.open_door()[0]
+
+    def test_refill_also_lifts_the_latch(self, tmp_path):
+        hw = make(tmp_path)
+        hw.emergency_stop()
+        hw.refill_magazine()
+        assert hw.status()["estop"] is False
+
+    def test_estop_kills_the_running_command(self, tmp_path):
+        import threading
+        import time
+
+        hw = make(
+            tmp_path,
+            mode="command",
+            timeout_seconds=30,
+            door_open_command=[sys.executable, "-c", "import time; time.sleep(20)"],
+            emergency_stop_command=f'{PY} -c "print(1)"',
+        )
+        result = {}
+        thread = threading.Thread(target=lambda: result.update(r=hw.open_door()))
+        thread.start()
+        for _ in range(100):
+            if hw._proc is not None:
+                break
+            time.sleep(0.05)
+        started = time.time()
+        assert hw.emergency_stop()[0]
+        thread.join(10)
+        assert not thread.is_alive()
+        assert time.time() - started < 10  # nicht erst nach 20 s Befehlsdauer
+        assert result["r"][0] is False
+
+
+class TestIncompleteChange:
+    def _cmd(self, code: int) -> str:
+        return f'{PY} -c "import sys; sys.exit({code})"'
+
+    def test_door_close_failure_tracks_magazine_and_blocks(self, tmp_path):
+        hw = make(
+            tmp_path,
+            mode="command",
+            door_open_command=self._cmd(0),
+            plate_change_command=self._cmd(0),
+            door_close_command=self._cmd(3),
+        )
+        ok, message = hw.change_plate("Teil")
+        assert not ok and "unvollständig" in message
+        status = hw.status()
+        assert status["incomplete"]["step"] == "Tür schließen"
+        assert status["supply_ready"] == 2  # Platte ist mechanisch getauscht, Magazin nachgeführt
+        assert status["door"] == "unknown"
+        ok, message = hw.change_plate("Nochmal")
+        assert not ok and "unvollständig" in message
+
+    def test_plate_change_failure_does_not_touch_magazine(self, tmp_path):
+        hw = make(
+            tmp_path,
+            mode="command",
+            door_open_command=self._cmd(0),
+            plate_change_command=self._cmd(2),
+            door_close_command=self._cmd(0),
+        )
+        assert not hw.change_plate("Teil")[0]
+        assert hw.status()["supply_ready"] == 3
+        assert hw.status()["incomplete"]["step"] == "Plattenwechsel"
+
+    def test_door_open_failure_is_a_plain_error(self, tmp_path):
+        hw = make(tmp_path, mode="command", door_open_command=self._cmd(1))
+        assert not hw.change_plate("Teil")[0]
+        assert hw.status()["incomplete"] is None
+
+    def test_resolve_clears_the_block(self, tmp_path):
+        hw = make(
+            tmp_path,
+            mode="command",
+            door_open_command=self._cmd(0),
+            plate_change_command=self._cmd(2),
+            door_close_command=self._cmd(0),
+        )
+        hw.change_plate("Teil")
+        assert hw.resolve_incomplete()[0]
+        assert hw.status()["incomplete"] is None
+        assert not hw.resolve_incomplete()[0]
+
+    def test_closing_the_door_resolves_a_door_close_failure(self, tmp_path):
+        hw = make(
+            tmp_path,
+            mode="command",
+            door_open_command=self._cmd(0),
+            plate_change_command=self._cmd(0),
+            door_close_command=self._cmd(3),
+        )
+        hw.change_plate("Teil")
+        hw._config["door_close_command"] = self._cmd(0)
+        assert hw.close_door()[0]
+        assert hw.status()["incomplete"] is None
+
+
+class TestCommandLists:
+    def test_list_command_runs_without_shell(self):
+        ok, output = _run([sys.executable, "-c", "print('a b')"], 10)
+        assert ok and output == "a b"
+
+    def test_list_arguments_are_not_shell_interpreted(self):
+        ok, output = _run([sys.executable, "-c", "import sys; print(sys.argv[1])", "x && echo hacked"], 10)
+        assert ok and output == "x && echo hacked"
+
+    def test_config_accepts_lists_and_rejects_other_types(self, tmp_path):
+        hw = make(tmp_path)
+        assert hw.update_config({"door_open_command": ["tool", "--open"]})[0]
+        assert hw.config()["door_open_command"] == ["tool", "--open"]
+        assert not hw.update_config({"door_open_command": 5})[0]
+        assert not hw.update_config({"door_open_command": ["ok", 3]})[0]
+
+
+class TestPerPrinterHardware:
+    @staticmethod
+    def _isolate(tmp_path, monkeypatch):
+        from backend.app.services import hardware_extension as he
+
+        monkeypatch.setattr(he, "CONFIG_PATH", tmp_path / "hardware.json")
+        monkeypatch.setattr(he, "MAGAZINE_PATH", tmp_path / "magazine.json")
+        monkeypatch.setattr(he, "_per_printer", {})
+        return he
+
+    def test_each_printer_has_its_own_magazine(self, tmp_path, monkeypatch):
+        he = self._isolate(tmp_path, monkeypatch)
+        first, second = he.get_hardware(1), he.get_hardware(2)
+        assert first is not second and first is he.get_hardware(1)
+        assert first.change_plate("A")[0]
+        assert first.status()["supply_ready"] == 2
+        assert second.status()["supply_ready"] == 3
+
+    def test_emergency_stop_only_locks_that_printer(self, tmp_path, monkeypatch):
+        he = self._isolate(tmp_path, monkeypatch)
+        he.get_hardware(1).emergency_stop()
+        assert he.get_hardware(1).status()["estop"] is True
+        assert he.get_hardware(2).status()["estop"] is False
+        assert he.get_hardware(2).open_door()[0]
+
+    def test_first_printer_adopts_the_legacy_magazine_and_config(self, tmp_path, monkeypatch):
+        he = self._isolate(tmp_path, monkeypatch)
+        legacy = HardwareExtension(tmp_path / "hardware.json", tmp_path / "magazine.json")
+        legacy.change_plate("alt")
+        legacy.update_config({"timeout_seconds": 33})
+        assert (tmp_path / "magazine.json").exists()
+        first = he.get_hardware(7)
+        assert first.status()["supply_ready"] == 2  # bisheriger Stand übernommen
+        assert first.config()["timeout_seconds"] == 33.0  # Vorlage kopiert
+        assert not (tmp_path / "magazine.json").exists()
+        assert he.get_hardware(8).status()["supply_ready"] == 3  # weitere Drucker beginnen neu
+
+    def test_per_printer_state_survives_a_restart(self, tmp_path, monkeypatch):
+        he = self._isolate(tmp_path, monkeypatch)
+        he.get_hardware(3).change_plate("x")
+        monkeypatch.setattr(he, "_per_printer", {})
+        assert he.get_hardware(3).status()["supply_ready"] == 2
+
+    def test_without_printer_id_the_shared_instance_is_used(self, tmp_path, monkeypatch):
+        he = self._isolate(tmp_path, monkeypatch)
+        monkeypatch.setattr(he, "_hardware", None)
+        assert he.get_hardware() is he.get_hardware()

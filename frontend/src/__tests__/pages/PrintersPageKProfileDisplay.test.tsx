@@ -144,7 +144,7 @@ describe('PrintersPage - K-profile always-visible display (#2532)', () => {
   });
 
   it('does not show a fabricated K-value on a loaded slot with no reported K (review #2854)', async () => {
-    // Regression test for maziggy's review on #2854: a slot can be loaded
+    // Regression test for the maintainer's review on #2854: a slot can be loaded
     // (tray_type present) while the printer has simply never reported a K
     // value for it — k is null, not merely absent. This is common on X1C,
     // where K comes from a cali_idx lookup that can legitimately miss.
@@ -186,7 +186,7 @@ describe('PrintersPage - K-profile always-visible display (#2532)', () => {
   });
 
   it('does not show a K-value when the printer reports exactly 0 (review #2854, round 2)', async () => {
-    // maziggy's round-2 question: does tray.k != null let a real firmware "0"
+    // the maintainer's round-2 question: does tray.k != null let a real firmware "0"
     // through as a misleading "K 0.000"? It does -- printer_manager.py assigns
     // the tray's own reported k verbatim and only filters falsy values when
     // falling back to a stored K-profile, so a 0 does reach this component.

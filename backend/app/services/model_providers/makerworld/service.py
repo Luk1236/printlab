@@ -1,14 +1,14 @@
 """MakerWorld API service.
 
 Thin async client for MakerWorld's ``/api/v1/design-service/*`` endpoints.
-Lets Bambuddy resolve a MakerWorld URL, enumerate plate/profile metadata, and
+Lets PrintLab resolve a MakerWorld URL, enumerate plate/profile metadata, and
 download the 3MF bundle so users can import and print MakerWorld models
 without leaving the app.
 
 The endpoints and header set were reverse-engineered from the
 `kloshi-io/makerworld-api-reverse` TypeScript project (Apache-2.0) and
 cross-validated against live MakerWorld traffic. Authenticated calls reuse
-Bambuddy's existing Bambu Cloud bearer token (same SSO backend — no separate
+PrintLab's existing Bambu Cloud bearer token (same SSO backend — no separate
 OAuth flow needed; see ``model_providers/makerworld/auth.py``).
 
 Implements the :class:`ProviderService` interface — the route layer drives it

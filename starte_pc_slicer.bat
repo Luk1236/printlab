@@ -2,7 +2,7 @@
 chcp 65001 >nul
 cd /d "%~dp0"
 echo ========================================================
-echo   Bambu Studio PC-Slicer fuer Bambuddy  (Port 3001)
+echo   Bambu Studio PC-Slicer fuer PrintLab  (Port 3001)
 echo ========================================================
 echo.
 if not exist ".venv\Scripts\python.exe" (

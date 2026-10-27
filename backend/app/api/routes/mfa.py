@@ -701,7 +701,7 @@ async def setup_totp(
 
     secret = pyotp.random_base32()
     totp = pyotp.TOTP(secret)
-    provisioning_uri = totp.provisioning_uri(name=current_user.username, issuer_name="Bambuddy")
+    provisioning_uri = totp.provisioning_uri(name=current_user.username, issuer_name="PrintLab")
     qr_b64 = _generate_totp_qr_b64(provisioning_uri)
 
     if existing:
@@ -713,7 +713,7 @@ async def setup_totp(
 
     await db.commit()
 
-    return TOTPSetupResponse(secret=secret, qr_code_b64=qr_b64, issuer="Bambuddy")
+    return TOTPSetupResponse(secret=secret, qr_code_b64=qr_b64, issuer="PrintLab")
 
 
 @router.post("/2fa/totp/enable", response_model=TOTPEnableResponse)
@@ -937,14 +937,14 @@ async def enable_email_otp(
         send_email(
             smtp_settings=smtp_settings,
             to_email=current_user.email,
-            subject="Verify your Bambuddy email address for 2FA",
+            subject="Verify your PrintLab email address for 2FA",
             body_text=(
-                f"Your Bambuddy email 2FA setup code is: {code}\n\n"
+                f"Your PrintLab email 2FA setup code is: {code}\n\n"
                 "Enter this code to confirm email-based two-factor authentication.\n"
                 "The code expires in 10 minutes."
             ),
             body_html=(
-                "<p>To enable <strong>email-based two-factor authentication</strong> on your Bambuddy account, "
+                "<p>To enable <strong>email-based two-factor authentication</strong> on your PrintLab account, "
                 "enter the code below:</p>"
                 f"<h2 style='letter-spacing:4px'>{code}</h2>"
                 "<p>The code expires in <strong>10 minutes</strong>. "
@@ -1101,10 +1101,10 @@ async def send_email_otp(
         send_email(
             smtp_settings=smtp_settings,
             to_email=user.email,
-            subject="Your Bambuddy verification code",
-            body_text=f"Your Bambuddy login code is: {code}\n\nThis code expires in {UserOTPCode.OTP_TTL_MINUTES} minutes and can only be used once.",
+            subject="Your PrintLab verification code",
+            body_text=f"Your PrintLab login code is: {code}\n\nThis code expires in {UserOTPCode.OTP_TTL_MINUTES} minutes and can only be used once.",
             body_html=(
-                f"<p>Your <strong>Bambuddy</strong> login verification code is:</p>"
+                f"<p>Your <strong>PrintLab</strong> login verification code is:</p>"
                 f"<h2 style='letter-spacing:4px'>{code}</h2>"
                 f"<p>This code expires in <strong>{UserOTPCode.OTP_TTL_MINUTES} minutes</strong> and can only be used once.</p>"
                 f"<p>If you did not request this code, you can safely ignore this email.</p>"
@@ -1334,7 +1334,7 @@ async def list_oidc_providers(
     has_icon and is_autologin; the full response (scopes, claims, and now
     group_claim / group_mapping) is served by the permission-gated
     /oidc/providers/all below, so an unauthenticated caller cannot learn
-    which IdP group name maps to which Bambuddy group.
+    which IdP group name maps to which PrintLab group.
     """
     result = await db.execute(select(OIDCProvider).where(OIDCProvider.is_enabled.is_(True)))
     providers = result.scalars().all()
@@ -1372,7 +1372,7 @@ async def create_oidc_provider(
                 detail="default_group_id references a non-existent group",
             )
 
-    # #3107 — every mapping value must reference an existing Bambuddy group,
+    # #3107 — every mapping value must reference an existing PrintLab group,
     # same answer default_group_id gets. Checked as a set: a mapping with three
     # entries naming the same group is one lookup, not three.
     if body.group_mapping:
@@ -1425,9 +1425,9 @@ async def create_oidc_provider(
 
 
 def _refuse_if_env_managed(provider: OIDCProvider) -> None:
-    """Startup rewrites this provider from BAMBUDDY_OIDC_* on every boot, so an
+    """Startup rewrites this provider from PRINTLAB_OIDC_* on every boot, so an
     edit here would be accepted and then silently reverted at the next restart.
-    BAMBUDDY_LOCAL_LOGIN (#1589) remains the recovery path if it becomes
+    PRINTLAB_LOCAL_LOGIN (#1589) remains the recovery path if it becomes
     unusable, so refusing outright cannot lock anyone out."""
     if provider.is_env_managed:
         raise HTTPException(
@@ -1437,7 +1437,7 @@ def _refuse_if_env_managed(provider: OIDCProvider) -> None:
 
 
 async def _missing_group_names(db: AsyncSession, names: set[str]) -> set[str]:
-    """#3107 — names from a group_mapping with no matching Bambuddy group.
+    """#3107 — names from a group_mapping with no matching PrintLab group.
 
     Exact match only, same as the sync's own ``Group.name.in_()`` lookup and
     the env path's ``Group.name == target``: the sync resolves names exactly,
@@ -1651,7 +1651,7 @@ async def refresh_oidc_provider_icon(
     """Refetch the icon from the stored `icon_url` (admin only).
 
     Used when:
-    - The IdP changed its icon and the admin wants Bambuddy to pick up the
+    - The IdP changed its icon and the admin wants PrintLab to pick up the
       new bytes.
     - An upgrade left the provider with an `icon_url` but no cached bytes
       (covered automatically by `update_oidc_provider` too, but this gives

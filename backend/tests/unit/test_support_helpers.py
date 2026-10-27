@@ -633,7 +633,7 @@ class TestCollectSupportInfo:
 
         with tempfile.TemporaryDirectory() as tmpdir:
             log_dir = Path(tmpdir)
-            log_file = log_dir / "bambuddy.log"
+            log_file = log_dir / "printlab.log"
             log_file.write_text("some log content\n" * 100)
 
             with (
@@ -1513,7 +1513,7 @@ class TestSanitizePushStatusValues:
 
 
 class TestProcessInfo:
-    """Bambuddy's own footprint in the bundle (#2734).
+    """PrintLab's own footprint in the bundle (#2734).
 
     Bundles carried nothing about the process itself, so "memory climbs over
     days until the OOM killer fires" could not be triaged from a bundle — the

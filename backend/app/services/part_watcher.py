@@ -1,6 +1,6 @@
 """Bauteil-Wächter: erkennt, ob sich der Druck zwischen zwei Schichten verändert.
 
-Port aus dem Bambu-Monitor, hier auf Bambuddys Kamera-Snapshots. Beim Schicht-
+Port aus dem Bambu-Monitor, hier auf PrintLabs Kamera-Snapshots. Beim Schicht-
 wechsel wird bei Schicht 2 ein Referenzbild gespeichert und etwa bei der Hälfte
 des Drucks mit einem neuen Bild verglichen. Kaum Unterschied = Warnung
 (möglicherweise kein Materialauftrag / Fehldruck).

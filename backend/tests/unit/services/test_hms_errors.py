@@ -51,7 +51,7 @@ class TestCatalogFile:
 
     def test_every_extra_code_is_in_the_catalogue(self):
         """The hand-kept extras are merged in where Studio has no entry, so a
-        regeneration cannot drop the texts Bambuddy already had."""
+        regeneration cannot drop the texts PrintLab already had."""
         for code in EXTRA["error"]:
             assert code in CATALOG["error"], code
 

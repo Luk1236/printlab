@@ -1,6 +1,6 @@
-"""A stage number Bambuddy cannot name reads as "Preparing" on the card.
+"""A stage number PrintLab cannot name reads as "Preparing" on the card.
 
-New printers report stages before Bambuddy learns their names -- the H2C still
+New printers report stages before PrintLab learns their names -- the H2C still
 has several -- and until now those reached the card as ``Unknown stage (72)``.
 The number means nothing to the person reading it, and the card is not where it
 belongs: every stage that has turned out to be unnamed so far was part of the

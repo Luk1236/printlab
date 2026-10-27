@@ -6,6 +6,8 @@ from unittest.mock import AsyncMock, MagicMock, mock_open, patch
 import pytest
 from httpx import AsyncClient
 
+from backend.app.core.config import GITHUB_REPO
+
 
 class TestUpdatesAPI:
     @pytest.fixture(autouse=True)
@@ -204,7 +206,7 @@ class TestUpdatesAPI:
         """#1420: once GitHub returns 403 with X-RateLimit-Remaining=0, the
         next call must short-circuit on the backoff window instead of hitting
         api.github.com again. Otherwise the user's logs flood with rate-limit
-        errors and Bambuddy keeps adding to whatever throttle GitHub applies."""
+        errors and PrintLab keeps adding to whatever throttle GitHub applies."""
         import time
 
         import httpx as _httpx
@@ -277,25 +279,25 @@ class TestUpdatesAPI:
         it as 'reset to expected URL'."""
         from backend.app.api.routes.updates import _parse_github_remote
 
-        assert _parse_github_remote("git@github.com:maziggy/bambuddy.git") == (
-            "maziggy",
-            "bambuddy",
+        assert _parse_github_remote("git@github.com:Luk1236/printlab.git") == (
+            "Luk1236",
+            "printlab",
         )
-        assert _parse_github_remote("git@github.com:maziggy/bambuddy") == (
-            "maziggy",
-            "bambuddy",
+        assert _parse_github_remote("git@github.com:Luk1236/printlab") == (
+            "Luk1236",
+            "printlab",
         )
-        assert _parse_github_remote("https://github.com/maziggy/bambuddy.git") == (
-            "maziggy",
-            "bambuddy",
+        assert _parse_github_remote("https://github.com/Luk1236/printlab.git") == (
+            "Luk1236",
+            "printlab",
         )
-        assert _parse_github_remote("https://github.com/maziggy/bambuddy") == (
-            "maziggy",
-            "bambuddy",
+        assert _parse_github_remote("https://github.com/Luk1236/printlab") == (
+            "Luk1236",
+            "printlab",
         )
         # Non-GitHub host → None (we don't claim ownership over arbitrary
         # forge URLs).
-        assert _parse_github_remote("git@gitlab.com:maziggy/bambuddy.git") is None
+        assert _parse_github_remote("git@gitlab.com:Luk1236/printlab.git") is None
         # Empty / malformed → None.
         assert _parse_github_remote("") is None
         assert _parse_github_remote("not-a-url") is None
@@ -304,7 +306,7 @@ class TestUpdatesAPI:
     @pytest.mark.asyncio
     async def test_perform_update_preserves_ssh_origin_when_pointing_at_correct_repo(self, tmp_path):
         """Regression for the developer-checkout footgun: if origin already
-        points at github.com/maziggy/bambuddy via SSH, the updater must
+        points at github.com/Luk1236/printlab via SSH, the updater must
         leave it alone instead of clobbering it with HTTPS. Pre-fix, every
         Apply Update click rewrote `git@github.com:...` to `https://...`,
         breaking subsequent `git push` for any developer testing the
@@ -326,7 +328,7 @@ class TestUpdatesAPI:
             # SSH URL. Every other subprocess returns successfully with no
             # output.
             if "get-url" in args and "origin" in args:
-                proc.communicate = AsyncMock(return_value=(b"git@github.com:maziggy/bambuddy.git\n", b""))
+                proc.communicate = AsyncMock(return_value=(f"git@github.com:{GITHUB_REPO}.git\n".encode(), b""))
             else:
                 proc.communicate = AsyncMock(return_value=(b"", b""))
             proc.returncode = 0
@@ -425,7 +427,7 @@ class TestUpdatesAPI:
             calls.append({"args": args, "cwd": kwargs.get("cwd")})
             proc = MagicMock()
             if "get-url" in args and "origin" in args:
-                proc.communicate = AsyncMock(return_value=(b"git@github.com:maziggy/bambuddy.git\n", b""))
+                proc.communicate = AsyncMock(return_value=(f"git@github.com:{GITHUB_REPO}.git\n".encode(), b""))
             else:
                 proc.communicate = AsyncMock(return_value=(b"", b""))
             proc.returncode = 0
@@ -544,7 +546,7 @@ class TestUpdatesAPI:
         from backend.app.api.routes import updates as updates_module
 
         # Set up fake install layout: app_dir has requirements.txt, data_dir is
-        # a sibling (mirroring `INSTALL_PATH=/opt/bambuddy`, `DATA_DIR=/opt/bambuddy/data`).
+        # a sibling (mirroring `INSTALL_PATH=/opt/printlab`, `DATA_DIR=/opt/printlab/data`).
         app_dir = tmp_path / "app"
         data_dir = tmp_path / "app" / "data"
         app_dir.mkdir()
@@ -617,7 +619,7 @@ class TestUpdatesAPI:
             calls.append({"args": args, "cwd": kwargs.get("cwd")})
             proc = MagicMock()
             if "get-url" in args and "origin" in args:
-                proc.communicate = AsyncMock(return_value=(b"git@github.com:maziggy/bambuddy.git\n", b""))
+                proc.communicate = AsyncMock(return_value=(f"git@github.com:{GITHUB_REPO}.git\n".encode(), b""))
             else:
                 proc.communicate = AsyncMock(return_value=(b"", b""))
             proc.returncode = 0
@@ -696,8 +698,8 @@ class TestUpdatesAPI:
 
         release = {
             "assets": [
-                {"name": "bambuddy-0.2.5b1-windows-x64-setup.exe", "browser_download_url": "https://x/v.exe"},
-                {"name": "bambuddy-windows-x64-setup.exe", "browser_download_url": "https://x/alias.exe"},
+                {"name": "printlab-0.2.5b1-windows-x64-setup.exe", "browser_download_url": "https://x/v.exe"},
+                {"name": "printlab-windows-x64-setup.exe", "browser_download_url": "https://x/alias.exe"},
                 {"name": "checksums.txt", "browser_download_url": "https://x/c.txt"},
             ],
         }
@@ -708,7 +710,7 @@ class TestUpdatesAPI:
 
         release = {
             "assets": [
-                {"name": "bambuddy-windows-x64-setup.exe", "browser_download_url": "https://x/alias.exe"},
+                {"name": "printlab-windows-x64-setup.exe", "browser_download_url": "https://x/alias.exe"},
             ],
         }
         assert _find_windows_installer_asset(release) == "https://x/alias.exe"
@@ -752,12 +754,12 @@ class TestUpdatesAPI:
             "tag_name": "v999.9.9",
             "name": "v999.9.9",
             "body": "",
-            "html_url": "https://github.com/maziggy/bambuddy/releases/tag/v999.9.9",
+            "html_url": "https://github.com/Luk1236/printlab/releases/tag/v999.9.9",
             "published_at": "2099-01-01T00:00:00Z",
             "assets": [
                 {
-                    "name": "bambuddy-999.9.9-windows-x64-setup.exe",
-                    "browser_download_url": "https://github.com/maziggy/bambuddy/releases/download/v999.9.9/bambuddy-999.9.9-windows-x64-setup.exe",
+                    "name": "printlab-999.9.9-windows-x64-setup.exe",
+                    "browser_download_url": "https://github.com/Luk1236/printlab/releases/download/v999.9.9/printlab-999.9.9-windows-x64-setup.exe",
                 },
             ],
         }
@@ -795,7 +797,7 @@ class TestUpdatesAPI:
         assert "update_method" in body, f"unexpected response shape: {body}"
         assert body["update_method"] == "windows_installer"
         assert body["is_windows_installer"] is True
-        assert body["installer_download_url"].endswith("bambuddy-999.9.9-windows-x64-setup.exe")
+        assert body["installer_download_url"].endswith("printlab-999.9.9-windows-x64-setup.exe")
 
     # --- Compose directory detection (#2664, reporter pchulpjoost) ---
     # `docker compose pull` only works from the directory holding the compose
@@ -822,13 +824,13 @@ class TestUpdatesAPI:
 
     def test_compose_dir_none_for_named_volume(self):
         """The shipped compose file uses named volumes, which resolve to
-        /var/lib/docker/volumes/<project>_bambuddy_data/_data. That names the
+        /var/lib/docker/volumes/<project>_printlab_data/_data. That names the
         compose *project* and reveals nothing about where the file lives, so
         the correct answer is "don't know" rather than a plausible guess."""
         from backend.app.api.routes.updates import _compose_dir_from_mountinfo
 
         with self._mountinfo(
-            "1290 2246 0:65 /var/lib/docker/volumes/bambuddy_bambuddy_data/_data /app/data rw - ext4 /dev/sda1 rw",
+            "1290 2246 0:65 /var/lib/docker/volumes/printlab_printlab_data/_data /app/data rw - ext4 /dev/sda1 rw",
         ):
             assert _compose_dir_from_mountinfo() is None
 
@@ -848,7 +850,7 @@ class TestUpdatesAPI:
         from backend.app.api.routes.updates import _compose_dir_from_mountinfo
 
         with self._mountinfo(
-            "1290 2246 0:65 /var/lib/docker/volumes/bambuddy_bambuddy_data/_data /app/data rw - ext4 /dev/sda1 rw",
+            "1290 2246 0:65 /var/lib/docker/volumes/printlab_printlab_data/_data /app/data rw - ext4 /dev/sda1 rw",
             "1441 2244 0:48 /srv/bambuddy/logs /app/logs rw,relatime - ext4 /dev/sda1 rw",
         ):
             assert _compose_dir_from_mountinfo() == "/srv/bambuddy"
@@ -861,12 +863,12 @@ class TestUpdatesAPI:
             assert _compose_dir_from_mountinfo() is None
 
     def test_detect_compose_dir_prefers_env_var(self):
-        """BAMBUDDY_COMPOSE_DIR is stated rather than inferred, so it wins over
+        """PRINTLAB_COMPOSE_DIR is stated rather than inferred, so it wins over
         a mountinfo guess that would otherwise point somewhere else."""
         from backend.app.api.routes import updates as updates_module
 
         with (
-            patch.dict("os.environ", {"BAMBUDDY_COMPOSE_DIR": "/srv/stacks/bambuddy"}),
+            patch.dict("os.environ", {"PRINTLAB_COMPOSE_DIR": "/srv/stacks/bambuddy"}),
             patch.object(updates_module, "_compose_dir_from_mountinfo", return_value="/opt/wrong"),
         ):
             assert updates_module._detect_compose_dir() == "/srv/stacks/bambuddy"
@@ -877,7 +879,7 @@ class TestUpdatesAPI:
         from backend.app.api.routes import updates as updates_module
 
         with (
-            patch.dict("os.environ", {"BAMBUDDY_COMPOSE_DIR": ""}),
+            patch.dict("os.environ", {"PRINTLAB_COMPOSE_DIR": ""}),
             patch.object(updates_module, "_is_docker_environment", return_value=False),
             patch.object(updates_module, "_compose_dir_from_mountinfo", return_value="/opt/wrong"),
         ):

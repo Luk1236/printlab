@@ -244,7 +244,7 @@ export function AddNotificationModal({ provider, onClose }: AddNotificationModal
       case 'ntfy':
         return [
           { key: 'server', label: 'Server URL', placeholder: 'https://ntfy.sh', type: 'text', required: false },
-          { key: 'topic', label: 'Topic', placeholder: 'my-bambuddy', type: 'text', required: true },
+          { key: 'topic', label: 'Topic', placeholder: 'my-printlab', type: 'text', required: true },
           { key: 'auth_token', label: 'Auth Token', placeholder: 'Optional authentication', type: 'password', required: false },
         ];
       case 'pushover':
@@ -335,7 +335,7 @@ export function AddNotificationModal({ provider, onClose }: AddNotificationModal
         return [
           { key: 'device_key', label: 'Device Key', placeholder: 'Your Bark device key', type: 'text', required: true },
           { key: 'server', label: 'Server URL', placeholder: 'https://api.day.app', type: 'text', required: false },
-          { key: 'group', label: 'Group', placeholder: 'Bambuddy', type: 'text', required: false },
+          { key: 'group', label: 'Group', placeholder: 'PrintLab', type: 'text', required: false },
           { key: 'sound', label: 'Sound', placeholder: 'minuet', type: 'text', required: false },
           { key: 'level', label: 'Interruption Level', type: 'select', required: false, options: [
             { value: '', label: 'Default' },

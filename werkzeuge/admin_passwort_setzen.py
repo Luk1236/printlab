@@ -1,11 +1,11 @@
-r"""Aktiviert die Bambuddy-Anmeldung und setzt ein Admin-Passwort.
+r"""Aktiviert die PrintLab-Anmeldung und setzt ein Admin-Passwort.
 
 Aufruf im Projektordner:
 
     .venv\Scripts\python.exe werkzeuge\admin_passwort_setzen.py
 
 Das Passwort wird mit getpass abgefragt (keine Anzeige, nicht im Verlauf) und
-nur als PBKDF2-Hash in ``bambuddy.db`` gespeichert. Es erfüllt Bambuddys
+nur als PBKDF2-Hash in ``bambuddy.db`` gespeichert. Es erfüllt PrintLabs
 Komplexitätsregel (Groß-/Kleinbuchstaben, Ziffer, Sonderzeichen, mind. 8 Zeichen).
 
 Notfall (Anmeldung wieder aus):
@@ -85,7 +85,7 @@ def setzen(benutzer: str) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Bambuddy-Adminpasswort setzen oder Anmeldung deaktivieren.")
+    parser = argparse.ArgumentParser(description="PrintLab-Adminpasswort setzen oder Anmeldung deaktivieren.")
     parser.add_argument("--benutzer", default="lukas", help="Benutzername (Standard: lukas)")
     parser.add_argument("--deaktivieren", action="store_true", help="Anmeldung wieder ausschalten")
     args = parser.parse_args()

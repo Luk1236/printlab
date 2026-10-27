@@ -540,7 +540,7 @@ class TestSupplierLifecycle:
     async def test_deleting_a_spoolman_spool_drops_the_twin_rows(
         self, async_client: AsyncClient, supplier_factory, spoolman_settings, mock_spoolman_client, db_session
     ):
-        """Spoolman owns the spool, Bambuddy owns the assignment, and nothing
+        """Spoolman owns the spool, PrintLab owns the assignment, and nothing
         in the database can cascade it. A leaked row keeps the supplier's
         reference count non-zero, so the delete guard would answer 409 for a
         spool the user can no longer see (#2988)."""
@@ -586,7 +586,7 @@ class TestSupplierLifecycle:
     async def test_delete_reconciles_a_spool_deleted_in_spoolman_itself(
         self, async_client: AsyncClient, supplier_factory, spoolman_settings, mock_spoolman_client, db_session
     ):
-        """Spoolman is a separate application with its own UI, and Bambuddy
+        """Spoolman is a separate application with its own UI, and PrintLab
         only hears about the deletes it performs itself. A spool removed over
         there leaves its assignment behind, and that phantom reference used to
         make the supplier permanently undeletable with nothing on any screen
@@ -597,7 +597,7 @@ class TestSupplierLifecycle:
         ).status_code == 200
         assert (await async_client.delete(f"/api/v1/inventory/suppliers/{supplier.id}")).status_code == 409
 
-        # Spool 7 disappears from Spoolman without Bambuddy doing anything.
+        # Spool 7 disappears from Spoolman without PrintLab doing anything.
         mock_spoolman_client.get_all_spools = AsyncMock(return_value=[])
 
         assert (await async_client.delete(f"/api/v1/inventory/suppliers/{supplier.id}")).status_code == 200

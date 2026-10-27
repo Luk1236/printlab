@@ -213,7 +213,7 @@ async def apply_spool_to_slot_via_mqtt(
             and not current_tray_info_idx.startswith("PFUS")
             and not current_tray_info_idx.startswith("PFCN")
             # Shares the resolver's reading of what counts as a material
-            # name, product lines included: a slot written by a Bambuddy from
+            # name, product lines included: a slot written by a PrintLab from
             # before #2902 can be holding "PLA+" in this field, and reusing
             # that would carry the bad id forward instead of replacing it.
             and not is_material_name(current_tray_info_idx)
@@ -830,11 +830,11 @@ async def _supplier_reference_counts(db: AsyncSession) -> dict[int, int]:
 async def _prune_orphaned_spoolman_supplier_rows(db: AsyncSession) -> int:
     """Drop twin rows whose Spoolman spool no longer exists (#2988).
 
-    ``_purge_local_rows_for_spool`` covers the deletes Bambuddy performs, but
+    ``_purge_local_rows_for_spool`` covers the deletes PrintLab performs, but
     Spoolman is a separate application with its own UI: a spool deleted there
     — or a Spoolman instance that was rebuilt or replaced — leaves
     ``spoolman_spool_suppliers`` rows behind that keep the supplier's
-    reference count non-zero, and nothing in Bambuddy can show or remove the
+    reference count non-zero, and nothing in PrintLab can show or remove the
     phantom reference. Without this, that 409 is permanent.
 
     Reconciled on the delete attempt rather than on every listing: it costs
@@ -953,7 +953,7 @@ async def delete_supplier(
 
     if (await _supplier_reference_counts(db)).get(supplier_id, 0) > 0:
         # Last chance before refusing: the reference may be a Spoolman spool
-        # that was deleted in Spoolman itself, which Bambuddy never hears about.
+        # that was deleted in Spoolman itself, which PrintLab never hears about.
         await _prune_orphaned_spoolman_supplier_rows(db)
         if (await _supplier_reference_counts(db)).get(supplier_id, 0) > 0:
             raise HTTPException(status_code=409, detail="Supplier has spools assigned and cannot be deleted")
@@ -1278,12 +1278,12 @@ async def sync_from_filamentcolors(
         total_available = 0
 
         try:
-            # Identify honestly as Bambuddy rather than leaking httpx's
+            # Identify honestly as PrintLab rather than leaking httpx's
             # default "python-httpx/x.y" UA — consistent with every other
             # outbound client (bambu_cloud, makerworld, firmware_check).
             async with httpx.AsyncClient(
                 timeout=120.0,
-                headers={"User-Agent": "Bambuddy/1.0 (+https://github.com/maziggy/bambuddy)"},
+                headers={"User-Agent": "PrintLab/1.0 (+https://github.com/Luk1236/printlab)"},
             ) as client:
                 page = 1
                 while True:
@@ -1418,7 +1418,7 @@ async def export_spools_csv(
     content = serialize(spools)
     # Date-stamp the filename so repeat exports don't overwrite each other in
     # the browser's default download folder.
-    filename = f"bambuddy_inventory_{datetime.now(timezone.utc).strftime('%Y%m%d')}.csv"
+    filename = f"printlab_inventory_{datetime.now(timezone.utc).strftime('%Y%m%d')}.csv"
     return Response(
         content=content,
         media_type="text/csv",

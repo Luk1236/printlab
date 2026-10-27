@@ -1,6 +1,6 @@
 """``docker_compose_dir`` validation (#2664, reporter pchulpjoost).
 
-This setting is not consumed by Bambuddy at all — it is interpolated into a
+This setting is not consumed by PrintLab at all — it is interpolated into a
 shell command that the Settings page invites the user to copy and paste into a
 root-capable terminal. That inverts the usual threat model for a string
 setting: the danger is not what the server does with the value, it is what the

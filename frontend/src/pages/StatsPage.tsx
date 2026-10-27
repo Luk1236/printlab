@@ -45,6 +45,7 @@ import { getCurrencySymbol } from '../utils/currency';
 import { formatWeight } from '../utils/weight';
 import { parseUTCDate, formatDuration } from '../utils/date';
 import { MetricToggle, type Metric } from '../components/MetricToggle';
+import { buildStatsDocument } from '../utils/statsDocument';
 
 // Timeframe types and helpers
 type TimeframePreset = 'today' | 'this-week' | 'this-month' | 'last-7' | 'last-30' | 'last-90' | 'this-year' | 'all-time' | 'custom';
@@ -1102,6 +1103,41 @@ export function StatsPage() {
     return users?.find(u => u.id === selectedUserId)?.username ?? '?';
   }, [selectedUserId, users, t]);
 
+  // Kennzahlen des gewählten Zeitraums als Druckfenster öffnen („Als PDF speichern“ im Druckdialog).
+  const handlePrintReport = () => {
+    setShowExportMenu(false);
+    if (!stats) return;
+    const periodText = [effectiveDateRange.dateFrom, effectiveDateRange.dateTo].filter(Boolean).join(' – ') || t('stats.allTime', 'All time');
+    const html = buildStatsDocument(
+      stats,
+      {
+        title: t('stats.reportTitle'),
+        period: t('stats.reportPeriod'),
+        prints: t('stats.totalPrints'),
+        successful: t('stats.reportSuccessful'),
+        failed: t('stats.reportFailed'),
+        time: t('stats.printTime'),
+        filament: t('stats.filamentUsed'),
+        filamentCost: t('stats.filamentCost'),
+        energy: t('stats.energyUsed'),
+        energyCost: t('stats.energyCost'),
+      },
+      periodText,
+      currency,
+      new Date()
+    );
+    const win = window.open('', '_blank', 'width=800,height=900');
+    if (!win) {
+      showToast(t('stats.exportFailed'), 'error');
+      return;
+    }
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    win.print();
+  };
+
   const handleExport = async (format: 'csv' | 'xlsx') => {
     setShowExportMenu(false);
     setIsExporting(true);
@@ -1304,11 +1340,18 @@ export function StatsPage() {
                   {t('stats.exportAsCsv')}
                 </button>
                 <button
-                  className="w-full px-4 py-2 text-left text-white hover:bg-bambu-dark-tertiary transition-colors flex items-center gap-2 rounded-b-lg"
+                  className="w-full px-4 py-2 text-left text-white hover:bg-bambu-dark-tertiary transition-colors flex items-center gap-2"
                   onClick={() => handleExport('xlsx')}
                 >
                   <FileSpreadsheet className="w-4 h-4" />
                   {t('stats.exportAsExcel')}
+                </button>
+                <button
+                  className="w-full px-4 py-2 text-left text-white hover:bg-bambu-dark-tertiary transition-colors flex items-center gap-2 rounded-b-lg"
+                  onClick={handlePrintReport}
+                >
+                  <FileText className="w-4 h-4" />
+                  {t('stats.exportAsPdf')}
                 </button>
               </div>
             )}

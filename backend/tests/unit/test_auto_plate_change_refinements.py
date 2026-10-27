@@ -13,6 +13,14 @@ def isolated_config(tmp_path, monkeypatch):
     cfg = tmp_path / "hardware.json"
     monkeypatch.setattr(hardware_extension, "CONFIG_PATH", cfg)
     monkeypatch.setattr(auto_plate_change, "_config_path", lambda: cfg)
+    from backend.app.services import audit_log
+
+    monkeypatch.setattr(audit_log, "LOG_PATH", tmp_path / "audit_log.jsonl")
+
+    async def _no_notify(printer_id, entry):
+        return None
+
+    monkeypatch.setattr(auto_plate_change, "_notify", _no_notify)
     monkeypatch.setattr(auto_plate_change, "_broadcast", lambda payload: None)
     auto_plate_change._TASKS.clear()
     auto_plate_change._LAST.clear()
@@ -63,7 +71,7 @@ def _patch_runtime(monkeypatch, state, hw):
         "backend.app.services.printer_manager.printer_manager",
         SimpleNamespace(get_status=lambda pid: state),
     )
-    monkeypatch.setattr("backend.app.services.hardware_extension.get_hardware", lambda: hw)
+    monkeypatch.setattr("backend.app.services.hardware_extension.get_hardware", lambda *a, **k: hw)
 
 
 class FakeHardware:
@@ -126,3 +134,147 @@ class TestRunChange:
     def test_cancel_ignores_other_printers_and_finished_tasks(self):
         assert auto_plate_change.cancel(99) == 0
         assert auto_plate_change.cancel() == 0
+
+
+class TestWriteValidation:
+    def test_invalid_numbers_are_ignored_and_do_not_reset_the_config(self):
+        auto_plate_change.write_config({"enabled": True, "cooldown_bed_temp": 38.0})
+        cfg = auto_plate_change.write_config({"cooldown_bed_temp": "heiß", "poll_seconds": None})
+        assert cfg["enabled"] is True
+        assert cfg["cooldown_bed_temp"] == 38.0
+
+    def test_numeric_strings_are_coerced(self):
+        cfg = auto_plate_change.write_config({"max_wait_seconds": "600"})
+        assert cfg["max_wait_seconds"] == 600
+
+
+class TestQueueProbe:
+    def test_non_sqlite_database_is_not_probed(self, monkeypatch, tmp_path):
+        from backend.app.services import hardware_extension
+
+        monkeypatch.setattr(
+            hardware_extension.settings, "database_url", "postgresql+asyncpg://u:p@host/db", raising=False
+        )
+        monkeypatch.chdir(tmp_path)
+        assert auto_plate_change._has_pending_queue_item(1) is None
+        assert list(tmp_path.iterdir()) == []
+
+
+class TestAuditAndNotify:
+    def _run(self, monkeypatch, state, hw, **cfg_over):
+        sent = []
+
+        async def fake_notify(printer_id, entry):
+            sent.append(entry)
+
+        monkeypatch.setattr(auto_plate_change, "_notify", fake_notify)
+        _patch_runtime(monkeypatch, state, hw)
+        cfg = dict(auto_plate_change.DEFAULTS, enabled=True, **cfg_over)
+        asyncio.run(auto_plate_change._run_change(1, "job", cfg))
+        return sent
+
+    def test_result_is_written_to_the_audit_log_and_survives_a_restart(self, monkeypatch):
+        state = SimpleNamespace(connected=True, state="FINISH", temperatures={"bed_temp": 30.0})
+        self._run(monkeypatch, state, FakeHardware(supply=3))
+        auto_plate_change._LAST.clear()  # wie nach einem Neustart
+        restored = auto_plate_change.last_run(1)
+        assert restored["ok"] is True
+        assert restored["job"] == "job"
+
+    def test_failure_is_notified(self, monkeypatch):
+        state = SimpleNamespace(connected=True, state="RUNNING", temperatures={"bed_temp": 80.0})
+        sent = self._run(monkeypatch, state, FakeHardware())
+        assert len(sent) == 1 and sent[0]["ok"] is False
+
+    def test_low_supply_warning_is_notified_even_on_success(self, monkeypatch):
+        state = SimpleNamespace(connected=True, state="FINISH", temperatures={"bed_temp": 30.0})
+        sent = self._run(monkeypatch, state, FakeHardware(supply=1))
+        assert len(sent) == 1 and sent[0]["ok"] is True and "warning" in sent[0]
+
+    def test_clean_success_is_silent(self, monkeypatch):
+        state = SimpleNamespace(connected=True, state="FINISH", temperatures={"bed_temp": 30.0})
+        assert self._run(monkeypatch, state, FakeHardware(supply=3)) == []
+
+    def test_notify_can_be_switched_off(self, monkeypatch):
+        state = SimpleNamespace(connected=True, state="RUNNING", temperatures={"bed_temp": 80.0})
+        assert self._run(monkeypatch, state, FakeHardware(), notify=False) == []
+
+
+class TestAutoConfirmPlateClear:
+    """Fail-closed: only a confident 'empty' from the camera may lift the plate-clear gate."""
+
+    def _setup(self, monkeypatch, result, awaiting=True, printer=True):
+        gate = {"awaiting": awaiting}
+        pm = SimpleNamespace(
+            is_awaiting_plate_clear=lambda pid: gate["awaiting"],
+            set_awaiting_plate_clear=lambda pid, value: gate.update(awaiting=value),
+        )
+        monkeypatch.setattr("backend.app.services.printer_manager.printer_manager", pm)
+
+        async def fake_check(**kwargs):
+            if isinstance(result, Exception):
+                raise result
+            return result
+
+        monkeypatch.setattr("backend.app.services.plate_detection.check_plate_empty", fake_check)
+        fake_printer = SimpleNamespace(
+            ip_address="1.2.3.4", access_code="x", model="P2S", external_camera_url=None,
+            external_camera_type=None, external_camera_enabled=False, external_camera_snapshot_url=None,
+        )
+
+        async def fake_load(pid):
+            return fake_printer if printer else None
+
+        monkeypatch.setattr(auto_plate_change, "_load_printer", fake_load)
+        return gate
+
+    def _result(self, **kw):
+        base = {"is_empty": True, "confidence": 0.9, "needs_calibration": False}
+        base.update(kw)
+        return SimpleNamespace(**base)
+
+    def test_confident_empty_bed_confirms(self, monkeypatch):
+        gate = self._setup(monkeypatch, self._result())
+        ok, note = asyncio.run(auto_plate_change._confirm_plate_clear(1, 0.6))
+        assert ok and "90%" in note
+        assert gate["awaiting"] is False
+
+    @pytest.mark.parametrize(
+        "result",
+        [
+            SimpleNamespace(is_empty=False, confidence=0.95, needs_calibration=False),
+            SimpleNamespace(is_empty=True, confidence=0.3, needs_calibration=False),
+            SimpleNamespace(is_empty=True, confidence=0.0, needs_calibration=False),  # Kamera/OpenCV-Fehler
+            SimpleNamespace(is_empty=True, confidence=0.9, needs_calibration=True),
+            RuntimeError("camera down"),
+        ],
+    )
+    def test_anything_doubtful_keeps_the_gate(self, monkeypatch, result):
+        gate = self._setup(monkeypatch, result)
+        ok, note = asyncio.run(auto_plate_change._confirm_plate_clear(1, 0.6))
+        assert not ok and "von Hand" in note
+        assert gate["awaiting"] is True
+
+    def test_unknown_printer_keeps_the_gate(self, monkeypatch):
+        gate = self._setup(monkeypatch, self._result(), printer=False)
+        assert not asyncio.run(auto_plate_change._confirm_plate_clear(1, 0.6))[0]
+        assert gate["awaiting"] is True
+
+    def test_off_by_default_and_wired_into_the_run(self, monkeypatch):
+        assert auto_plate_change.DEFAULTS["auto_confirm_plate_clear"] is False
+        calls = []
+
+        async def fake_confirm(pid, minc):
+            calls.append(pid)
+            return True, "Platte frei automatisch bestätigt."
+
+        monkeypatch.setattr(auto_plate_change, "_confirm_plate_clear", fake_confirm)
+        state = SimpleNamespace(connected=True, state="FINISH", temperatures={"bed_temp": 30.0})
+        _patch_runtime(monkeypatch, state, FakeHardware(supply=3))
+        asyncio.run(auto_plate_change._run_change(1, "job", dict(auto_plate_change.DEFAULTS)))
+        assert calls == []
+        asyncio.run(
+            auto_plate_change._run_change(1, "job", dict(auto_plate_change.DEFAULTS, auto_confirm_plate_clear=True))
+        )
+        assert calls == [1]
+        assert "automatisch bestätigt" in auto_plate_change.last_run(1)["message"]

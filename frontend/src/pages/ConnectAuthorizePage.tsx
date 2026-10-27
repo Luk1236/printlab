@@ -1,5 +1,5 @@
 /**
- * "Sign in with Bambuddy" for connected apps.
+ * "Sign in with PrintLab" for connected apps.
  *
  * An app sends the browser here with its client_id, callback URL, PKCE
  * challenge and state. The page runs with the user's normal session: it asks

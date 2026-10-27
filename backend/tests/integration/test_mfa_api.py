@@ -132,7 +132,7 @@ class TestTOTPSetup:
         assert "secret" in data
         assert len(data["secret"]) > 0
         assert "qr_code_b64" in data
-        assert data["issuer"] == "Bambuddy"
+        assert data["issuer"] == "PrintLab"
 
     @pytest.mark.asyncio
     @pytest.mark.integration
@@ -3180,7 +3180,7 @@ class TestOIDCExpiredTokenRejection:
 class TestOIDCIssuerUrlTrailingSlash:
     """Providers like Authentik use issuer URLs with a trailing slash.
 
-    BamBuddy must strip the slash before appending /.well-known/openid-configuration
+    PrintLab must strip the slash before appending /.well-known/openid-configuration
     to avoid a double-slash that results in a 404.
     """
 

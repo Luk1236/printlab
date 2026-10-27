@@ -1,7 +1,7 @@
 """Schicht-Hinweise: bei einer Zielschicht pausieren (Port aus dem Bambu-Monitor).
 
 Der Bambu-Monitor konnte pro Auftrag eine Schicht setzen, an der der Druck
-anhält (z.B. zum Einlegen von Magneten). Hier als Bambuddy-Erweiterung pro
+anhält (z.B. zum Einlegen von Magneten). Hier als PrintLab-Erweiterung pro
 Drucker, konfiguriert in ``data/layer_alerts.json``.
 
 Der Dienst läuft im vorhandenen Layer-Callback mit und pausiert höchstens

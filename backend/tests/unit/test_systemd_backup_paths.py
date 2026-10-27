@@ -1,7 +1,7 @@
 """Reinstalling must not silently take away a writable path (#2544).
 
 ``ProtectSystem=strict`` means the unit's ``ReadWritePaths`` is the *complete*
-list of places Bambuddy can write. An operator who backs up to a NAS adds their
+list of places PrintLab can write. An operator who backs up to a NAS adds their
 share to it by hand — and both installers overwrite the unit file wholesale, so
 that line used to vanish on the next install. The backups then failed with EROFS
 every night, which looks like a NAS permission problem and is not one.
@@ -40,7 +40,7 @@ def _read(rel: str) -> str:
 
 class TestUnitTemplate:
     def test_readwritepaths_still_grants_the_three_app_dirs(self):
-        unit = _read("deploy/bambuddy.service")
+        unit = _read("deploy/printlab.service")
         line = next(line for line in unit.splitlines() if line.startswith("ReadWritePaths="))
         assert "DATA_DIR" in line and "LOG_DIR" in line and "INSTALL_PATH" in line
 
@@ -48,7 +48,7 @@ class TestUnitTemplate:
         """Whoever reads this unit next has to be able to work out why their NAS
         is read-only for the service but not for their shell.
         """
-        unit = _read("deploy/bambuddy.service")
+        unit = _read("deploy/printlab.service")
         assert "systemctl edit" in unit, "the unit should show how to add a writable path via a drop-in"
 
 

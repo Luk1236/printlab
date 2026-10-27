@@ -53,7 +53,7 @@ class FakeSpoolman:
             "extra": {},
         }
         # What a real instance looks like before this feature runs: the keys
-        # Bambuddy already writes are registered, all of them text, and
+        # PrintLab already writes are registered, all of them text, and
         # bambu_weight_used_baseline is not registered at all.
         self.fields: dict[str, str] = {
             "tag": "text",
@@ -150,7 +150,7 @@ async def test_reset_does_not_touch_any_native_spoolman_field(client, fake):
     """initial, remaining and used all survive — the point of using extra.
 
     The rejected alternative rewrote initial_weight to the current remaining,
-    which repairs Bambuddy's display by overwriting a field the user owns:
+    which repairs PrintLab's display by overwriting a field the user owns:
     it ratchets down on every reset and Spoolman's own views then show the
     spool as full.
     """

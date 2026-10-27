@@ -1,6 +1,6 @@
 """Tür- und Plattenwechsler-Steuerung (Port aus dem Bambu-Monitor).
 
-Bambuddy steuert den Drucker, aber nicht die eigene Mechanik. Dieser Dienst
+PrintLab steuert den Drucker, aber nicht die eigene Mechanik. Dieser Dienst
 ergänzt Tür-Servo, Endschalter und Magazin/Plattenwechsler. Er läuft in zwei
 Modi:
 
@@ -17,8 +17,10 @@ import json
 import logging
 import os
 import shlex
+import shutil
 import subprocess
 import threading
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -50,6 +52,22 @@ DEFAULT_SLOTS: list[dict[str, Any]] = [
     {"id": 6, "type": "storage", "status": "empty", "label": "Fach 3"},
 ]
 
+COMMAND_KEYS = (
+    "door_open_command",
+    "door_close_command",
+    "door_status_command",
+    "plate_change_command",
+    "emergency_stop_command",
+)
+
+
+def _valid_command(value: Any) -> bool:
+    """Ein Befehl ist ein String oder eine Liste von Strings (Programm + Argumente)."""
+    if isinstance(value, str):
+        return True
+    return isinstance(value, list) and all(isinstance(part, str) for part in value)
+
+
 VALID_SLOT_STATUSES = frozenset({"ready", "used", "empty", "occupied"})
 
 
@@ -67,23 +85,47 @@ def _write_json(path: Path, data: Any) -> None:
     tmp.replace(path)
 
 
-def _run(command: str, timeout: float) -> tuple[bool, str]:
-    """Führt einen lokalen Hardware-Befehl aus (Konfiguration ist vertrauenswürdig)."""
-    if not command.strip():
-        return False, "Kein Befehl konfiguriert."
+def _run(command: str | list[str], timeout: float, on_start: Callable[[subprocess.Popen], None] | None = None
+         ) -> tuple[bool, str]:
+    """Führt einen lokalen Hardware-Befehl aus (Konfiguration ist vertrauenswürdig).
+
+    Eine **Liste** (``["programm", "arg1", ...]``) läuft ohne Shell und ist damit frei von
+    Shell-Auswertung; ein **String** läuft wie bisher (unter Windows über die Shell, sonst per
+    ``shlex``). ``on_start`` bekommt den Prozess, damit der Not-Halt ihn beenden kann.
+    """
+    if isinstance(command, (list, tuple)):
+        args: list[str] | str = [str(part) for part in command]
+        if not args or not args[0].strip():
+            return False, "Kein Befehl konfiguriert."
+        use_shell = False
+    else:
+        text = str(command or "")
+        if not text.strip():
+            return False, "Kein Befehl konfiguriert."
+        use_shell = os.name == "nt"
+        try:
+            args = text if use_shell else shlex.split(text, posix=True)
+        except ValueError as exc:
+            return False, f"Befehl fehlgeschlagen: {exc}"
     try:
-        if os.name == "nt":
-            result = subprocess.run(command, capture_output=True, text=True,
-                                    timeout=timeout, check=False, shell=True)
-        else:
-            args = shlex.split(command, posix=True)
-            result = subprocess.run(args, capture_output=True, text=True,
-                                    timeout=timeout, check=False)
-    except (OSError, subprocess.SubprocessError, ValueError) as exc:
+        proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=use_shell)
+    except (OSError, ValueError) as exc:
         return False, f"Befehl fehlgeschlagen: {exc}"
-    output = (result.stdout or "").strip()
-    if result.returncode != 0:
-        return False, output or f"Befehl endete mit Code {result.returncode}."
+    if on_start is not None:
+        on_start(proc)
+    try:
+        stdout, _stderr = proc.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.communicate()
+        return False, f"Befehl fehlgeschlagen: Zeitlimit von {timeout:g} s überschritten."
+    except (OSError, subprocess.SubprocessError) as exc:
+        return False, f"Befehl fehlgeschlagen: {exc}"
+    output = (stdout or "").strip()
+    if proc.returncode != 0:
+        if proc.returncode < 0:
+            return False, output or "Befehl wurde abgebrochen."
+        return False, output or f"Befehl endete mit Code {proc.returncode}."
     return True, output
 
 
@@ -110,6 +152,9 @@ class HardwareExtension:
         self._last_error: str | None = None
         self._door = "closed"
         self._plate_on_bed = True
+        self._proc: subprocess.Popen | None = None
+        self._estop = False  # nach Not-Halt gesperrt, bis Konfiguration neu geladen / Magazin aufgefüllt wird
+        self._incomplete: dict[str, Any] | None = None  # Wechsel mitten im Ablauf gescheitert
         self._config = self._load_config()
         self._magazine = self._load_magazine()
         self._plate_on_bed = bool(self._magazine.get("plate_on_bed", True))
@@ -123,6 +168,9 @@ class HardwareExtension:
             config.update({key: data[key] for key in DEFAULT_CONFIG if key in data})
         if config.get("mode") not in ("simulated", "command"):
             config["mode"] = "simulated"
+        for key in COMMAND_KEYS:
+            if not _valid_command(config.get(key)):
+                config[key] = ""
         try:
             config["timeout_seconds"] = max(1.0, float(config.get("timeout_seconds") or TIMEOUT))
         except (TypeError, ValueError):
@@ -134,6 +182,7 @@ class HardwareExtension:
     def reload_config(self) -> dict[str, Any]:
         with self._lock:
             self._config = self._load_config()
+            self._estop = False
             return dict(self._config)
 
     def _load_magazine(self) -> dict[str, Any]:
@@ -167,6 +216,8 @@ class HardwareExtension:
                 "plate_on_bed": self._plate_on_bed,
                 "busy": self._busy,
                 "error": self._last_error,
+                "estop": self._estop,
+                "incomplete": dict(self._incomplete) if self._incomplete else None,
                 "slots": slots,
                 "supply_ready": sum(1 for s in slots if s.get("type") == "supply" and s.get("status") == "ready"),
                 "storage_empty": sum(1 for s in slots if s.get("type") == "storage" and s.get("status") == "empty"),
@@ -177,14 +228,34 @@ class HardwareExtension:
     # --- Tür ---------------------------------------------------------------
 
     def _command(self, key: str) -> tuple[bool, str]:
-        return _run(str(self._config.get(key, "")), float(self._config["timeout_seconds"]))
+        return _run(self._config.get(key, ""), float(self._config["timeout_seconds"]), self._set_proc)
 
-    def open_door(self) -> tuple[bool, str]:
+    def _set_proc(self, proc: subprocess.Popen | None) -> None:
+        with self._lock:
+            self._proc = proc
+
+    def _set_door(self, state: str) -> None:
+        with self._lock:
+            self._door = state
+
+    def _enter(self, *, allow_incomplete: bool = False) -> str | None:
+        """Vorgang beginnen: gibt eine Fehlermeldung zurück oder markiert die Hardware als beschäftigt."""
         with self._lock:
             if self._busy:
-                return False, "Es läuft bereits ein Hardware-Vorgang."
+                return "Es läuft bereits ein Hardware-Vorgang."
+            if self._estop:
+                return "Not-Halt aktiv — Hardware-Konfiguration neu laden oder Magazin auffüllen, um fortzufahren."
+            if self._incomplete and not allow_incomplete:
+                return (f"Letzter Wechsel unvollständig ({self._incomplete.get('step')}) — "
+                        "Mechanik prüfen, dann den Wechsel als geprüft bestätigen.")
             self._busy = True
             self._last_error = None
+            return None
+
+    def open_door(self) -> tuple[bool, str]:
+        refusal = self._enter(allow_incomplete=True)
+        if refusal:
+            return False, refusal
         try:
             if self._config["mode"] == "simulated":
                 self._door = "open"
@@ -200,18 +271,16 @@ class HardwareExtension:
             if reported == "closed":
                 self._last_error = "Tür ist nach dem Öffnen noch geschlossen."
                 return False, self._last_error
-            self._door = "open"
+            self._set_door("open")
             return True, "Tür geöffnet."
         finally:
             with self._lock:
                 self._busy = False
 
     def close_door(self) -> tuple[bool, str]:
-        with self._lock:
-            if self._busy:
-                return False, "Es läuft bereits ein Hardware-Vorgang."
-            self._busy = True
-            self._last_error = None
+        refusal = self._enter(allow_incomplete=True)
+        if refusal:
+            return False, refusal
         try:
             if self._config["mode"] == "simulated":
                 self._door = "closed"
@@ -227,7 +296,10 @@ class HardwareExtension:
             if reported == "open":
                 self._last_error = "Tür ist nach dem Schließen noch offen."
                 return False, self._last_error
-            self._door = "closed"
+            self._set_door("closed")
+            with self._lock:
+                if self._incomplete and self._incomplete.get("step") == "Tür schließen":
+                    self._incomplete = None  # Tür ist zu, der Wechsel war sonst vollständig
             return True, "Tür geschlossen."
         finally:
             with self._lock:
@@ -236,11 +308,9 @@ class HardwareExtension:
     # --- Plattenwechsel ----------------------------------------------------
 
     def change_plate(self, job_name: str = "") -> tuple[bool, str]:
-        with self._lock:
-            if self._busy:
-                return False, "Es läuft bereits ein Hardware-Vorgang."
-            self._busy = True
-            self._last_error = None
+        refusal = self._enter()
+        if refusal:
+            return False, refusal
         try:
             slots = self._magazine["slots"]
             supply = next((s for s in slots if s.get("type") == "supply" and s.get("status") == "ready"), None)
@@ -250,31 +320,55 @@ class HardwareExtension:
             if storage is None:
                 return False, "Kein freies Ablagefach."
             if self._config["mode"] == "simulated":
-                supply["status"] = "used"
-                storage["status"] = "occupied"
-                storage["print"] = job_name or None
-                self._plate_on_bed = True
-                self._door = "closed"
-                self._register_change(supply, storage)
+                self._apply_change(supply, storage, job_name)
+                self._set_door("closed")
                 return True, f"Platte aus Fach {supply['id']} eingesetzt (Simulation)."
             # Echter Ablauf: Tür auf -> Wechsel -> Tür zu; jeder Schritt muss gelingen.
             for key, label in (("door_open_command", "Tür öffnen"),
                                ("plate_change_command", "Plattenwechsel"),
                                ("door_close_command", "Tür schließen")):
                 ok, output = self._command(key)
-                if not ok:
-                    self._last_error = f"{label}: {output}"
-                    return False, self._last_error
-            supply["status"] = "used"
-            storage["status"] = "occupied"
-            storage["print"] = job_name or None
-            self._plate_on_bed = True
-            self._door = "closed"
-            self._register_change(supply, storage)
+                if ok:
+                    continue
+                self._last_error = f"{label}: {output}"
+                if key == "door_open_command":
+                    return False, self._last_error  # nichts bewegt, nichts zu korrigieren
+                # Ab hier ist die Mechanik möglicherweise halb durch: Zustand merken und sperren.
+                plate_swapped = key == "door_close_command"
+                if plate_swapped:
+                    self._apply_change(supply, storage, job_name)  # Platte ist mechanisch getauscht
+                self._set_door("unknown")
+                with self._lock:
+                    self._incomplete = {"step": label, "plate_swapped": plate_swapped, "job": job_name}
+                note = " (Platte getauscht, Magazin nachgeführt)" if plate_swapped else ""
+                return False, f"{self._last_error} — Wechsel unvollständig{note}; Mechanik prüfen."
+            self._apply_change(supply, storage, job_name)
+            self._set_door("closed")
             return True, f"Platte aus Fach {supply['id']} eingesetzt."
         finally:
             with self._lock:
                 self._busy = False
+                self._proc = None
+
+    def _apply_change(self, supply: dict[str, Any], storage: dict[str, Any], job_name: str) -> None:
+        supply["status"] = "used"
+        storage["status"] = "occupied"
+        storage["print"] = job_name or None
+        self._plate_on_bed = True
+        self._register_change(supply, storage)
+
+    def resolve_incomplete(self) -> tuple[bool, str]:
+        """Nach Prüfung der Mechanik bestätigen: der unvollständige Wechsel ist erledigt."""
+        with self._lock:
+            if self._incomplete is None:
+                return False, "Es gibt keinen unvollständigen Wechsel."
+            if self._busy:
+                return False, "Es läuft bereits ein Hardware-Vorgang."
+            self._incomplete = None
+            self._last_error = None
+            if self._door == "unknown":
+                self._door = "closed"
+            return True, "Unvollständiger Wechsel bestätigt."
 
     def _register_change(self, supply: dict[str, Any], storage: dict[str, Any]) -> None:
         self._magazine["changes"] += 1
@@ -288,6 +382,8 @@ class HardwareExtension:
                 return False, "Es läuft bereits ein Hardware-Vorgang."
             self._magazine["slots"] = [dict(slot) for slot in DEFAULT_SLOTS]
             self._magazine["plate_on_bed"] = True
+            self._estop = False
+            self._incomplete = None
             self._save_magazine()
             return True, "Magazin aufgefüllt, Ablage geleert."
 
@@ -349,6 +445,9 @@ class HardwareExtension:
                 merged.update({key: data[key] for key in DEFAULT_CONFIG if key in data})
                 if merged.get("mode") not in ("simulated", "command"):
                     return False, "Modus nur 'simulated' oder 'command'."
+                for key in COMMAND_KEYS:
+                    if not _valid_command(merged.get(key)):
+                        return False, f"{key} muss ein Text oder eine Liste von Texten sein."
                 try:
                     merged["timeout_seconds"] = max(1.0, float(merged.get("timeout_seconds") or TIMEOUT))
                 except (TypeError, ValueError):
@@ -360,32 +459,70 @@ class HardwareExtension:
                 return False, f"Konfiguration nicht gespeichert: {exc}"
 
     def emergency_stop(self) -> tuple[bool, str]:
-        """Not-Halt: bricht den laufenden Vorgang ab und fährt die Mechanik in den sicheren Zustand.
+        """Not-Halt: beendet den laufenden Befehl, sperrt die Hardware und fährt in den sicheren Zustand.
 
-        Im Simulationsmodus wird nur der Zustand geführt. Im Befehlsmodus läuft der
-        konfigurierte Not-Halt-Befehl; der Vorgang bleibt danach gesperrt, bis die
+        Im Simulationsmodus wird nur der Zustand geführt. Im Befehlsmodus läuft zusätzlich der
+        konfigurierte Not-Halt-Befehl. Danach bleibt jeder weitere Vorgang gesperrt, bis die
         Hardware-Konfiguration neu geladen oder das Magazin aufgefüllt wird.
         """
         with self._lock:
             self._last_error = None
             self._door = "unknown"
-            self._busy = False
-            if self._config["mode"] == "simulated":
-                return True, "Not-Halt ausgelöst (Simulation)."
-            ok, output = self._command("emergency_stop_command")
-            if not ok:
+            self._estop = True
+            proc = self._proc
+        if proc is not None and proc.poll() is None:
+            try:
+                proc.kill()  # laufenden Hardware-Befehl hart beenden
+            except OSError:
+                pass
+        if self._config["mode"] == "simulated":
+            return True, "Not-Halt ausgelöst (Simulation)."
+        ok, output = _run(self._config.get("emergency_stop_command", ""), float(self._config["timeout_seconds"]))
+        if not ok:
+            with self._lock:
                 self._last_error = output
-                return False, output
-            logger.warning("[Hardware] Not-Halt ausgelöst: %s", output or "Befehl ausgeführt")
-            return True, "Not-Halt ausgelöst."
+            return False, output
+        logger.warning("[Hardware] Not-Halt ausgelöst: %s", output or "Befehl ausgeführt")
+        return True, "Not-Halt ausgelöst."
 
 
 _hardware: HardwareExtension | None = None
+_per_printer: dict[int, HardwareExtension] = {}
+_per_printer_lock = threading.Lock()
 
 
-def get_hardware() -> HardwareExtension:
-    """Einmalige Instanz; erst beim ersten Zugriff angelegt (keine Dateien beim Import)."""
+def _printer_paths(printer_id: int) -> tuple[Path, Path]:
+    return (CONFIG_PATH.with_name(f"hardware_{printer_id}.json"),
+            MAGAZINE_PATH.with_name(f"magazine_{printer_id}.json"))
+
+
+def get_hardware(printer_id: int | None = None) -> HardwareExtension:
+    """Hardware-Instanz; mit ``printer_id`` hat jeder Drucker sein eigenes Magazin und seine eigene Konfiguration.
+
+    Beim ersten Zugriff eines Druckers wird die bisherige gemeinsame Konfiguration (``hardware.json``) als
+    Vorlage kopiert, und das bisherige gemeinsame Magazin (``magazine.json``) geht an diesen ersten Drucker
+    über; weitere Drucker beginnen mit einem frisch gefüllten Magazin. Ohne ``printer_id`` gilt die alte,
+    gemeinsame Instanz (nur noch für Altcode und Tests).
+    """
     global _hardware
-    if _hardware is None:
-        _hardware = HardwareExtension()
-    return _hardware
+    if printer_id is None:
+        if _hardware is None:
+            _hardware = HardwareExtension()
+        return _hardware
+    with _per_printer_lock:
+        instance = _per_printer.get(printer_id)
+        if instance is None:
+            config_path, magazine_path = _printer_paths(printer_id)
+            if not config_path.exists() and CONFIG_PATH.exists():
+                try:
+                    shutil.copyfile(CONFIG_PATH, config_path)
+                except OSError as exc:
+                    logger.warning("[Hardware] Vorlage nicht kopiert: %s", exc)
+            if not magazine_path.exists() and MAGAZINE_PATH.exists():
+                try:
+                    MAGAZINE_PATH.replace(magazine_path)  # erster Drucker übernimmt den bisherigen Magazinstand
+                except OSError as exc:
+                    logger.warning("[Hardware] Magazinstand nicht übernommen: %s", exc)
+            instance = HardwareExtension(config_path, magazine_path)
+            _per_printer[printer_id] = instance
+        return instance

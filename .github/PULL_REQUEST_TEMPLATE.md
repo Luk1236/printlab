@@ -19,8 +19,6 @@ See CONTRIBUTING.md → Documentation Requirements for the full rules.
 -->
 
 **Companion docs PRs** (delete lines that don't apply):
-- Wiki: maziggy/bambuddy-wiki#___
-- Website: maziggy/bambuddy-website#___
 
 **Pick one**:
 - [ ] Docs PR(s) linked above

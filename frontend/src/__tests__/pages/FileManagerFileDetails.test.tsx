@@ -129,7 +129,7 @@ describe('FileManagerPage — file details (#3077)', () => {
 
     it('opens the stored link without handing the new tab a window.opener', async () => {
       // The URL comes from whoever owns the file, so the page it opens must
-      // not get a handle back on Bambuddy's window.
+      // not get a handle back on PrintLab's window.
       const open = vi.spyOn(window, 'open').mockReturnValue(null);
       const user = userEvent.setup();
       render(<FileManagerPage />);

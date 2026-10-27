@@ -1,0 +1,19 @@
+PrintLab
+========
+
+PrintLab is a modified version of Bambuddy (https://github.com/maziggy/bambuddy),
+based on Bambuddy 1.2.5.7. Bambuddy is copyright (C) its authors and contributors
+and is licensed under the GNU Affero General Public License v3.0 (see LICENSE).
+
+Modifications (2026, Luk1236): rebranding as PrintLab, German default UI and
+Prusa-style theme, maintenance programs, door and plate changer, camera
+calibration and image checks, quote calculator, PC slicer service, access guard.
+The full list is in FORK-CHANGELOG.md; the Git history shows every change.
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version. It is distributed WITHOUT ANY WARRANTY. Original copyright and
+license notices in the source files are kept unchanged.
+
+PrintLab is not affiliated with Bambu Lab.

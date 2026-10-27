@@ -97,7 +97,7 @@ export function useWebSocket() {
     // minted by POST /api/v1/auth/ws-token. We use the shared ``api.request``
     // helper (via ``api.getWebSocketToken``) so the JWT Authorization header
     // is attached — a raw ``fetch()`` with ``credentials: 'include'`` would
-    // miss it (Bambuddy uses Bearer tokens, not cookies, for JWT auth).
+    // miss it (PrintLab uses Bearer tokens, not cookies, for JWT auth).
     // Auth-disabled deployments accept connections without a token.
     let token: string | undefined;
     try {

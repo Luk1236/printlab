@@ -185,7 +185,7 @@ class TestSpoolmanClient:
             call_kwargs = mock_update.call_args.kwargs
             # remaining_weight should be None (not updated)
             assert call_kwargs.get("remaining_weight") is None
-            # location must never be written by Bambuddy — user-managed in Spoolman
+            # location must never be written by PrintLab — user-managed in Spoolman
             assert "location" not in call_kwargs
 
     @pytest.mark.asyncio
@@ -249,7 +249,7 @@ class TestSpoolmanClient:
             await client.sync_ams_tray(sample_tray, "My Printer", _NoCatalog(), disable_weight_sync=True)
 
             call_kwargs = mock_update.call_args.kwargs
-            # Bambuddy must never auto-set spool.location — it is user-managed in Spoolman
+            # PrintLab must never auto-set spool.location — it is user-managed in Spoolman
             assert "location" not in call_kwargs
 
     # ========================================================================
@@ -670,7 +670,7 @@ class TestInitSpoolmanClientSSRFGuard:
 
     Scope: cloud metadata endpoints, multicast, unspecified, non-http(s) schemes,
     and numeric-encoded IP bypasses. Loopback and RFC-1918 private ranges are
-    explicitly allowed — Bambuddy's primary deployment is LAN-local Spoolman.
+    explicitly allowed — PrintLab's primary deployment is LAN-local Spoolman.
     """
 
     @pytest.mark.asyncio
@@ -813,7 +813,7 @@ class TestFindOrCreateFilament:
         only field on a Spoolman filament that carries the product line, so it is
         now part of the match.
 
-        Named for the sub-brand here because that is what Bambuddy has been calling
+        Named for the sub-brand here because that is what PrintLab has been calling
         its own creations (``name=tray.tray_sub_brands``) — which is what stops this
         change minting a duplicate filament for every spool on an existing instance.
         """

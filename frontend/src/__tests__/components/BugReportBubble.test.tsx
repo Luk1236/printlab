@@ -154,7 +154,7 @@ describe('BugReportBubble', () => {
         return HttpResponse.json({
           success: true,
           message: 'Bug report submitted successfully!',
-          issue_url: 'https://github.com/maziggy/bambuddy/issues/42',
+          issue_url: 'https://github.com/Luk1236/printlab/issues/42',
           issue_number: 42,
         });
       })
@@ -328,7 +328,7 @@ describe('BugReportBubble', () => {
      *  the theme context among them -- so only answer for our own key. */
     const storeSession = (session: Record<string, unknown>) => {
       vi.mocked(localStorage.getItem).mockImplementation((key: string) =>
-        key === 'bambuddy-bug-report-session' ? JSON.stringify(session) : null
+        key === 'printlab-bug-report-session' ? JSON.stringify(session) : null
       );
     };
 

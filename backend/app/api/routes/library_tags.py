@@ -4,7 +4,7 @@ Tags are global cross-cutting labels for library files — one catalog per
 install, no per-user partitioning. Designed as the orthogonal complement to
 folders: folders express hierarchy, tags express attributes ("toy",
 "kid-safe", "petg-only"). The reporter (#1268) and at least one upvoter
-asked for them; the design decisions were locked with @maziggy:
+asked for them; the design decisions were locked with the maintainer:
 
 * tags apply to files only (folders already express hierarchy)
 * the tag filter on the file list intentionally IGNORES the selected folder

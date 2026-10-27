@@ -1,4 +1,4 @@
-"""Logging filters and redaction helpers for the Bambuddy log pipeline.
+"""Logging filters and redaction helpers for the PrintLab log pipeline.
 
 Holds two filters: ``WriteRequestsOnlyFilter`` keeps the file-side
 uvicorn access log focused on state-changing HTTP methods, and
@@ -49,7 +49,7 @@ def redact_url_credentials(text: str | None) -> str | None:
     Subprocesses echo their input URL back at us — ffmpeg prints the RTSP
     input in its ``Input #0`` line, so logging its stderr verbatim publishes
     the printer access code (or an external camera's password) into
-    ``bambuddy.log``, which users routinely attach to public issues.
+    ``printlab.log``, which users routinely attach to public issues.
 
     The username, host, port and path survive so the line stays useful for
     diagnosis; only the secret is replaced. Returns *text* unchanged when
@@ -67,7 +67,7 @@ class WriteRequestsOnlyFilter(logging.Filter):
 
         ``<client_addr> - "<METHOD> <path> HTTP/<ver>" <status>``
 
-    On a typical Bambuddy install the bulk of that traffic is GETs — the
+    On a typical PrintLab install the bulk of that traffic is GETs — the
     frontend status-polling loop, the camera stream, snapshots, websocket
     upgrades. None of those can change server state on their own, so for
     incident triage ("who hit ``/print/stop`` at 09:23?") they're noise that

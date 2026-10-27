@@ -352,7 +352,7 @@ export interface LongLivedCameraToken {
   token: string | null;
 }
 
-// An external application that signs users in with their Bambuddy account.
+// An external application that signs users in with their PrintLab account.
 // `client_secret` is present only in the create / rotate responses.
 export interface ConnectedApp {
   id: number;
@@ -1387,11 +1387,11 @@ export interface AppSettings {
   check_updates: boolean;
   check_printer_firmware: boolean;
   include_beta_updates: boolean;
-  // Announcements from the Bambuddy maintainers (a signed file on GitHub).
+  // Announcements from the PrintLab maintainers (a signed file on GitHub).
   announcements_enabled?: boolean;
   announcements_all_users?: boolean;
   // #1589: false hides the local username/password form on the login page;
-  // BAMBUDDY_LOCAL_LOGIN=true on the server flips the reported value back to
+  // PRINTLAB_LOCAL_LOGIN=true on the server flips the reported value back to
   // true so the env-var recovery path is visible to the SPA.
   local_login_enabled: boolean;
   language: string;
@@ -1508,7 +1508,7 @@ export interface AppSettings {
   default_nozzle_offset_cali: CalibrationMode;
   // Default for the per-job "ask for outcome afterwards" toggle (#1898)
   default_confirm_outcome: boolean;
-  // Also ask for prints Bambuddy archived but did not dispatch (#1898)
+  // Also ask for prints PrintLab archived but did not dispatch (#1898)
   confirm_outcome_external_prints: boolean;
   // Count unanswered outcome prompts as "good" when the plate is released (#1898)
   confirm_default_good_on_plate_clear: boolean;
@@ -1811,8 +1811,8 @@ export interface PresetRef {
  * Why a preset's effective values are unavailable.
  *
  * `sidecar_outdated` is the one that matters in practice: an install pulls its
- * sidecar as `SIDECAR_TAG:-latest` regardless of which Bambuddy channel it is
- * on, so a user can perfectly well be running a current Bambuddy against a
+ * sidecar as `SIDECAR_TAG:-latest` regardless of which PrintLab channel it is
+ * on, so a user can perfectly well be running a current PrintLab against a
  * sidecar that predates this endpoint. That has a one-line fix, and saying so
  * beats a generic "could not read the values".
  */
@@ -4164,6 +4164,8 @@ export interface HardwareStatus {
   storage_empty: number;
   changes: number;
   last_change: string | null;
+  estop?: boolean;
+  incomplete?: { step: string; plate_swapped: boolean; job: string } | null;
   auto_plate_change?: AutoPlateChange;
 }
 
@@ -4175,6 +4177,9 @@ export interface AutoPlateChange {
   skip_if_offline: boolean;
   only_with_queue?: boolean;
   low_supply_warning?: number;
+  notify?: boolean;
+  auto_confirm_plate_clear?: boolean;
+  plate_clear_min_confidence?: number;
   last_run: {
     printer_id: number;
     job: string;
@@ -4218,6 +4223,27 @@ export interface SpaghettiCheckStatus {
   min_changed_percent: number;
 }
 
+export interface QuoteHistoryEntry {
+  id: string;
+  ts: string;
+  customer: string;
+  description: string;
+  currency: string;
+  material: number;
+  energy: number;
+  labor: number;
+  subtotal: number;
+  markup: number;
+  total: number;
+}
+
+export interface QuoteCustomerTotal {
+  customer: string;
+  currency: string;
+  count: number;
+  total: number;
+}
+
 export interface PriceListEntry {
   material: string;
   rate_per_kg: number;
@@ -4235,11 +4261,11 @@ export interface AuditEntry {
 
 export interface HardwareConfig {
   mode: 'simulated' | 'command' | string;
-  door_open_command: string;
-  door_close_command: string;
-  door_status_command: string;
-  plate_change_command: string;
-  emergency_stop_command: string;
+  door_open_command: string | string[];
+  door_close_command: string | string[];
+  door_status_command: string | string[];
+  plate_change_command: string | string[];
+  emergency_stop_command: string | string[];
   timeout_seconds: number;
   auto_plate_change?: AutoPlateChange;
 }
@@ -4699,7 +4725,7 @@ export interface OIDCProvider {
   // #1589: when true, the LoginPage redirects unauthenticated visitors
   // straight to this provider on mount. At most one provider may carry this.
   is_autologin: boolean;
-  // #2593: defined by BAMBUDDY_OIDC_* and rewritten from the environment on
+  // #2593: defined by PRINTLAB_OIDC_* and rewritten from the environment on
   // every boot. The API answers 409 to any write, so the settings UI must not
   // offer edit/delete controls that cannot succeed. Optional so a response
   // from an older backend still type-checks.
@@ -4746,7 +4772,7 @@ export interface AdvancedAuthStatus {
   advanced_auth_enabled: boolean;
   smtp_configured: boolean;
   // #1589: false hides the username/password form on the LoginPage; the env
-  // var BAMBUDDY_LOCAL_LOGIN=true on the server flips this back to true so
+  // var PRINTLAB_LOCAL_LOGIN=true on the server flips this back to true so
   // the recovery path remains visible.
   local_login_enabled: boolean;
   // #1589: when set, LoginPage redirects to this provider's authorize URL
@@ -6159,7 +6185,7 @@ export const api = {
 
     // Get filename from Content-Disposition header
     const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = 'bambuddy-backup.zip';
+    let filename = 'printlab-backup.zip';
     if (contentDisposition) {
       const match = contentDisposition.match(/filename=([^;]+)/);
       if (match) filename = match[1].trim().replace(/^"(.*)"$/, '$1');
@@ -6889,7 +6915,7 @@ export const api = {
       throw new Error(error.detail || `HTTP ${response.status}`);
     }
     const disposition = response.headers.get('Content-Disposition');
-    const filename = parseContentDispositionFilename(disposition) || 'bambuddy_inventory.csv';
+    const filename = parseContentDispositionFilename(disposition) || 'printlab_inventory.csv';
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -7005,7 +7031,7 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(links),
     }),
-  // Spoolman parity: the assignment rows live Bambuddy-side, keyed by the
+  // Spoolman parity: the assignment rows live PrintLab-side, keyed by the
   // remote spool id — same request/response shape as the built-in inventory.
   setSpoolmanSpoolSuppliers: (spoolmanSpoolId: number, links: SpoolSupplierLinkInput[]) =>
     request<SpoolSupplierLink[]>(`/spoolman/inventory/spools/${spoolmanSpoolId}/suppliers`, {
@@ -7313,6 +7339,14 @@ export const api = {
     request<HardwareActionResponse>(`/printers/${printerId}/hardware/magazine/refill`, { method: 'POST' }),
   emergencyStopHardware: (printerId: number) =>
     request<HardwareActionResponse>(`/printers/${printerId}/hardware/emergency-stop`, { method: 'POST' }),
+  resetEmergencyStop: (printerId: number) =>
+    request<HardwareActionResponse>(`/printers/${printerId}/hardware/emergency-stop/reset`, { method: 'POST' }),
+  resolveIncompleteChange: (printerId: number) =>
+    request<HardwareActionResponse>(`/printers/${printerId}/hardware/incomplete/resolve`, { method: 'POST' }),
+  cancelAutoPlateChange: (printerId: number) =>
+    request<{ success: boolean; cancelled: number }>(`/printers/${printerId}/hardware/auto-plate-change/cancel`, {
+      method: 'POST',
+    }),
   updateAutoPlateChange: (printerId: number, payload: Partial<AutoPlateChange>) =>
     request<{ auto_plate_change: AutoPlateChange }>(`/printers/${printerId}/hardware/auto-plate-change`, {
       method: 'PUT',
@@ -7424,7 +7458,7 @@ export const api = {
   getWebSocketToken: () =>
     request<{ token: string }>('/auth/ws-token', { method: 'POST' }),
 
-  // Connected apps: sign-in to external applications with Bambuddy
+  // Connected apps: sign-in to external applications with PrintLab
   listConnectedApps: () => request<ConnectedApp[]>('/connect/apps'),
   createConnectedApp: (payload: { name: string; redirect_uri: string }) =>
     request<ConnectedApp>('/connect/apps', { method: 'POST', body: JSON.stringify(payload) }),
@@ -7513,6 +7547,13 @@ export const api = {
     request<QuoteResponse & { archive_id: number; grams: number; duration_minutes: number }>(
       `/quote/for-archive/${archiveId}?labor_minutes=${laborMinutes}`
     ),
+  getQuoteHistory: (customer?: string) =>
+    request<{ entries: QuoteHistoryEntry[]; customers: QuoteCustomerTotal[] }>(
+      `/quote/history${customer ? `?customer=${encodeURIComponent(customer)}` : ''}`
+    ),
+  saveQuote: (payload: Record<string, unknown>) =>
+    request<QuoteHistoryEntry>('/quote/history', { method: 'POST', body: JSON.stringify(payload) }),
+  deleteQuote: (id: string) => request<{ success: boolean }>(`/quote/history/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   getPriceList: () => request<{ entries: PriceListEntry[] }>('/quote/price-list'),
   setPriceList: (entries: PriceListEntry[]) =>
     request<{ entries: PriceListEntry[] }>('/quote/price-list', {
@@ -8217,7 +8258,7 @@ export const api = {
     }>(`/library/files/${fileId}/filament-requirements${qs.toString() ? `?${qs}` : ''}`);
   },
 
-  /** Poll the sidecar's per-request progress snapshot via the Bambuddy
+  /** Poll the sidecar's per-request progress snapshot via the PrintLab
    * proxy. Used by the SliceModal's filament-discovery path so the inline
    * spinner + persistent toast can show "Generating G-code (45%)" while
    * the preview slice runs. Returns null on 404 (sidecar doesn't yet
@@ -9369,7 +9410,7 @@ export const supportApi = {
     }
     // Get filename from Content-Disposition header or use default
     const disposition = response.headers.get('Content-Disposition');
-    const filename = parseContentDispositionFilename(disposition) || 'bambuddy-support.zip';
+    const filename = parseContentDispositionFilename(disposition) || 'printlab-support.zip';
 
     // Download the blob
     const blob = await response.blob();
@@ -9541,6 +9582,7 @@ export interface BugReportResponse {
 }
 
 export const bugReportApi = {
+  status: () => request<{ enabled: boolean }>('/bug-report/status'),
   submit: (data: BugReportRequest) =>
     request<BugReportResponse>('/bug-report/submit', {
       method: 'POST',
@@ -9564,7 +9606,7 @@ export interface AnnouncementText {
   link_label?: string;
 }
 
-// One message from the Bambuddy maintainers. `texts` holds every language the
+// One message from the PrintLab maintainers. `texts` holds every language the
 // message was written in; English is always there.
 export interface Announcement {
   id: string;
@@ -9592,19 +9634,3 @@ export const announcementsApi = {
     request<void>(`/announcements/${encodeURIComponent(id)}/read`, { method: 'POST' }),
 };
 
-export interface SponsorPromptCheckResponse {
-  show: boolean;
-  milestone?: string;
-  family?: 'prints' | 'cost' | 'archives' | 'anniversary' | 'version-update';
-  threshold?: number;
-  payload?: Record<string, unknown>;
-}
-
-export const sponsorPromptApi = {
-  check: () => request<SponsorPromptCheckResponse>('/sponsor-prompt/check'),
-  dismiss: (milestone: string) =>
-    request<void>('/sponsor-prompt/dismiss', {
-      method: 'POST',
-      body: JSON.stringify({ milestone }),
-    }),
-};

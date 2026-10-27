@@ -6,6 +6,7 @@ import { api, virtualPrinterApi } from '../api/client';
 import { Card, CardContent, CardHeader } from './Card';
 import { Button } from './Button';
 import { useToast } from '../contexts/ToastContext';
+import { helpLink, HELP_ANCHORS } from '../utils/docsLinks';
 
 type LocalMode = 'archive' | 'review' | 'queue' | 'proxy';
 
@@ -484,7 +485,7 @@ export function VirtualPrinterSettings() {
                   {t('virtualPrinter.setupRequired.description')}
                 </p>
                 <a
-                  href="https://wiki.bambuddy.cool/features/virtual-printer/"
+                  href={helpLink(HELP_ANCHORS.virtualPrinter)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-100 dark:bg-yellow-500/20 border border-yellow-500/50 rounded-md text-yellow-700 dark:text-yellow-400 hover:bg-yellow-500/30 transition-colors"

@@ -15,11 +15,11 @@ Most texts are the same on every model, but not all: 0300_8001 means "paused by
 the user" on some models and "paused by a pause command in the file" on others.
 So the output holds one merged table plus, per model, only the entries that
 differ from it. A code listed with empty text stays in as "" -- Bambu keeping a
-code but publishing nothing for it is what Bambuddy uses to leave it out of the
+code but publishing nothing for it is what PrintLab uses to leave it out of the
 fault count (#2728), so it must not be dropped or filled in.
 
 backend/app/data/hms_catalog_extra.json holds `print_error` texts Bambu Studio does not
-ship (they came from the ha-bambulab table Bambuddy used before). They are
+ship (they came from the ha-bambulab table PrintLab used before). They are
 merged in only where Studio has no entry, so Studio always wins.
 
 Run it by hand when Bambu Studio updates its HMS files, and review the diff:

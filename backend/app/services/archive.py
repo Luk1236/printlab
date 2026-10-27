@@ -1775,7 +1775,7 @@ class ArchiveService:
                 # directory; assert_under then narrows it to *this* archive's
                 # own directory, because a row whose timelapse_path names
                 # another archive's file must not take it with this delete.
-                # The column is written by Bambuddy from a filename the printer
+                # The column is written by PrintLab from a filename the printer
                 # supplied over FTP, so it is not a trusted constant.
                 candidate = safe_join_under(settings.base_dir, recorded, http=False)
                 assert_under(directory, candidate, http=False)

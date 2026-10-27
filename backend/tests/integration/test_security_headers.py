@@ -120,7 +120,7 @@ async def test_overlay_route_allows_same_origin_framing(async_client: AsyncClien
 
     'none' blocks that too, which is why the preview showed Firefox's "will not
     allow Firefox to display the page if another site has embedded it". 'self'
-    permits only a framer on this origin — Bambuddy's own UI — so a
+    permits only a framer on this origin — PrintLab's own UI — so a
     clickjacking page on another host is refused exactly as before.
     """
     from backend.app import main as main_module
@@ -138,9 +138,9 @@ async def test_overlay_route_allows_same_origin_framing(async_client: AsyncClien
 @pytest.mark.asyncio
 @pytest.mark.integration
 async def test_connect_authorize_allows_same_origin_framing(async_client: AsyncClient, monkeypatch):
-    """A connected app opened from the sidebar signs in inside Bambuddy's iframe.
+    """A connected app opened from the sidebar signs in inside PrintLab's iframe.
 
-    Its "Sign in with Bambuddy" navigates that iframe to /connect/authorize;
+    Its "Sign in with PrintLab" navigates that iframe to /connect/authorize;
     with 'none' the browser refused to render the consent page there. 'self'
     still refuses any foreign framer.
     """
@@ -218,7 +218,7 @@ async def test_trusted_origins_applies_to_docs_branch(async_client: AsyncClient,
 async def test_default_block_img_src_excludes_https(async_client: AsyncClient, monkeypatch):
     """#1333 regression guard: the default SPA CSP must NOT allow img-src https:.
 
-    Bambuddy's policy for external images is a backend proxy (see
+    PrintLab's policy for external images is a backend proxy (see
     /api/v1/makerworld/thumbnail and /api/v1/auth/oidc/providers/{id}/icon),
     not a CSP relaxation. If a future change adds ``https:`` to img-src to
     "fix" a broken-image, the proxy pattern silently degrades into a

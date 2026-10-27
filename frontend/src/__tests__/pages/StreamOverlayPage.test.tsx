@@ -142,7 +142,7 @@ describe('StreamOverlayPage', () => {
 
     it.each(['', '?artwork=other', '?artwork=updated'])('retains the original renderer for %s', async (query) => {
       const { container } = renderOverlayPage(1, query);
-      await screen.findByAltText('Bambuddy');
+      await screen.findByAltText('PrintLab');
       expect(container.querySelector('.updated-overlay')).not.toBeInTheDocument();
       expect(screen.getByAltText('Camera stream')).toHaveClass('object-contain');
     });
@@ -201,7 +201,7 @@ describe('StreamOverlayPage', () => {
     });
     it('hides all unselected information, including idle status', async () => {
       const { container } = renderOverlayPage(1, '?artwork=2&show=&camera=false');
-      await screen.findByAltText('Bambuddy');
+      await screen.findByAltText('PrintLab');
       expect(screen.queryByText('Printer is idle')).not.toBeInTheDocument();
       expect(screen.queryByAltText('Camera stream')).not.toBeInTheDocument();
       expect(container.querySelector('.updated-overlay__panel')).not.toBeInTheDocument();
@@ -230,11 +230,11 @@ describe('StreamOverlayPage', () => {
       });
     });
 
-    it('shows Bambuddy logo', async () => {
+    it('shows PrintLab logo', async () => {
       renderOverlayPage(1);
 
       await waitFor(() => {
-        expect(screen.getByAltText('Bambuddy')).toBeInTheDocument();
+        expect(screen.getByAltText('PrintLab')).toBeInTheDocument();
       });
     });
 
@@ -242,9 +242,9 @@ describe('StreamOverlayPage', () => {
       renderOverlayPage(1);
 
       await waitFor(() => {
-        const logo = screen.getByAltText('Bambuddy');
+        const logo = screen.getByAltText('PrintLab');
         const link = logo.closest('a');
-        expect(link).toHaveAttribute('href', 'https://github.com/maziggy/bambuddy');
+        expect(link).toHaveAttribute('href', 'https://github.com/Luk1236/printlab');
       });
     });
   });
@@ -361,7 +361,7 @@ describe('StreamOverlayPage', () => {
 
       await waitFor(() => {
         // Just verify it renders without error
-        expect(screen.getByAltText('Bambuddy')).toBeInTheDocument();
+        expect(screen.getByAltText('PrintLab')).toBeInTheDocument();
       });
     });
 

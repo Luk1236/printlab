@@ -1287,7 +1287,7 @@ class TestBarkProvider:
             config = {
                 "device_key": "abc123",
                 "server": "https://bark.example.com/",
-                "group": "Bambuddy",
+                "group": "PrintLab",
                 "sound": "minuet",
                 "level": "timeSensitive",
             }
@@ -1297,7 +1297,7 @@ class TestBarkProvider:
         call_args = mock_client.post.call_args
         assert call_args[0][0] == "https://bark.example.com/push"
         payload = call_args.kwargs.get("json")
-        assert payload["group"] == "Bambuddy"
+        assert payload["group"] == "PrintLab"
         assert payload["sound"] == "minuet"
         assert payload["level"] == "timeSensitive"
 
@@ -2594,11 +2594,11 @@ class TestNtfyOutbound:
     @pytest.mark.asyncio
     async def test_notification_client_sets_honest_user_agent(self, service):
         """Default httpx UA leaks `python-httpx/<version>` — every other
-        outbound client in the codebase identifies as Bambuddy. The
+        outbound client in the codebase identifies as PrintLab. The
         notification client must too."""
         client = await service._get_client()
         try:
-            assert client.headers.get("user-agent") == "Bambuddy/1.0 (+https://github.com/maziggy/bambuddy)"
+            assert client.headers.get("user-agent") == "PrintLab/1.0 (+https://github.com/Luk1236/printlab)"
         finally:
             await service.close()
 

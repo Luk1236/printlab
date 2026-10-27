@@ -70,7 +70,7 @@ def _resolve_pool_kwargs() -> dict:
 def _resolve_connect_args() -> dict:
     """Connect args that pin a PostgreSQL session to UTC (issue #2855).
 
-    Bambuddy's ``DateTime`` columns are naive and hold UTC, and the frontend's
+    PrintLab's ``DateTime`` columns are naive and hold UTC, and the frontend's
     ``parseUTCDate()`` reads a timestamp with no offset as UTC. Python-side
     writes honour that (``utcnow_naive()``), but ~96 columns take their value
     from ``server_default=func.now()`` and the migration DDL has ~49 more on
@@ -394,7 +394,7 @@ async def check_pool_fits_server() -> None:
     with — and ``engine`` / ``async_session`` are imported by name in ~150 places,
     so swapping the engine afterwards would leave stale references. The correct
     ceiling also depends on the worker count and on anything else sharing the
-    server, neither of which Bambuddy can see. So this reports the mismatch with
+    server, neither of which PrintLab can see. So this reports the mismatch with
     both numbers and the knobs to fix it, and leaves the choice to the operator.
     """
     global _server_connection_limits
@@ -435,7 +435,7 @@ async def check_pool_fits_server() -> None:
     _server_connection_limits = {
         "max_connections": max_conn,
         "superuser_reserved_connections": reserved,
-        "available_to_bambuddy": available,
+        "available_to_printlab": available,
         "client_backends_at_startup": in_use,
         "pool_ceiling_per_worker": ceiling,
     }
@@ -604,7 +604,7 @@ async def _migrate_encrypt_legacy_secrets() -> None:
 # We classify on these rather than on the error text because the server renders
 # messages in its own ``lc_messages`` locale: a Russian-locale server answers a
 # duplicate ADD COLUMN with "уже существует", which no English substring check can
-# recognise. That made Bambuddy unstartable on every non-English PostgreSQL server,
+# recognise. That made PrintLab unstartable on every non-English PostgreSQL server,
 # fresh or existing — create_all() runs before run_migrations(), so on a new database
 # essentially every ADD COLUMN below is expected to come back as a duplicate (#2949).
 _PG_ALREADY_APPLIED = frozenset(
@@ -899,7 +899,7 @@ async def _reclassify_sliced_3mf_library_files(conn) -> None:
     not a rare shape: a plate exported from Studio, or a print dispatched
     through the cloud, reaches the archive as ``Foo.3mf`` with its G-code
     intact, and downloading one and re-importing it produced a library file
-    Bambuddy refused to offer a Print button for. The forward fix classifies on
+    PrintLab refused to offer a Print button for. The forward fix classifies on
     content; this pass reaches the rows already stored.
 
     One-shot, for the same reason the #2614 backfill is: a genuine source 3MF
@@ -3210,7 +3210,7 @@ async def run_migrations(conn):
                                  NULL, :remote_iface, '391800001', 0)
                         """),
                         {
-                            "name": "Bambuddy",
+                            "name": "PrintLab",
                             "enabled": old_enabled,
                             "mode": old_mode or "archive",
                             "model": old_model,
@@ -3720,8 +3720,8 @@ async def run_migrations(conn):
         "CREATE INDEX IF NOT EXISTS ix_print_archives_deleted_at ON print_archives (deleted_at)",
     )
 
-    # Migration: Add bambuddy_forced_timelapse to print_archives (#1397)
-    # Tracks prints where Bambuddy forced the firmware to record a timelapse
+    # Migration: Add printlab_forced_timelapse to print_archives (#1397)
+    # Tracks prints where PrintLab forced the firmware to record a timelapse
     # so the finish-photo extractor could pull the post-park-pre-drop frame.
     # The cleanup path uses this to delete the timelapse both locally and on
     # the printer's SD after extraction — the user didn't opt in to a
@@ -3730,7 +3730,7 @@ async def run_migrations(conn):
     _bool_false_literal = "0" if is_sqlite() else "FALSE"
     await _safe_execute(
         conn,
-        f"ALTER TABLE print_archives ADD COLUMN bambuddy_forced_timelapse BOOLEAN DEFAULT {_bool_false_literal}",
+        f"ALTER TABLE print_archives ADD COLUMN printlab_forced_timelapse BOOLEAN DEFAULT {_bool_false_literal}",
     )
 
     # Migration: Create smart_plug_energy_snapshots table (#941)
@@ -4827,7 +4827,7 @@ async def run_migrations(conn):
         await _safe_execute(conn, "ALTER TABLE oidc_providers ADD COLUMN is_autologin BOOLEAN DEFAULT false")
 
     # Migration: Add is_env_managed column to oidc_providers (#2593). Marks the
-    # provider upserted from BAMBUDDY_OIDC_* env vars on startup. Postgres
+    # provider upserted from PRINTLAB_OIDC_* env vars on startup. Postgres
     # rejects ``DEFAULT 0`` for BOOLEAN columns.
     if is_sqlite():
         await _safe_execute(conn, "ALTER TABLE oidc_providers ADD COLUMN is_env_managed BOOLEAN DEFAULT 0")
@@ -4925,7 +4925,7 @@ async def run_migrations(conn):
 
     # Migration: real filesystem mtime for library files/folders (#2680). The
     # folder tree's "sort by recent activity" and the file pane's date sort must
-    # track the on-disk mtime (``ls -t``), not Bambuddy's DB ``updated_at`` — for
+    # track the on-disk mtime (``ls -t``), not PrintLab's DB ``updated_at`` — for
     # a bulk external scan every row's ``updated_at`` is the same scan instant, so
     # ordering was arbitrary. Nullable; the timestamp type differs by dialect
     # (SQLite DATETIME vs Postgres TIMESTAMP) so an existing-DB upgrade doesn't hit
@@ -5014,7 +5014,7 @@ async def run_migrations(conn):
     await _safe_execute(conn, "ALTER TABLE notification_providers ADD COLUMN on_ha_sensor_alert BOOLEAN DEFAULT FALSE")
 
     # Migration: auto-drying-suspended notification opt-in (#2770). Defaults ON:
-    # it fires at most once per AMS unit, and only to say Bambuddy has STOPPED
+    # it fires at most once per AMS unit, and only to say PrintLab has STOPPED
     # doing something it was doing before — silence there reads as "still
     # drying" and is exactly how the reporter lost two days to a re-arm loop.
     await _safe_execute(
@@ -5152,7 +5152,7 @@ async def run_migrations(conn):
     # whatever this database actually holds.
     await _migrate_repair_rfid_core_weight(conn)
 
-    # Migration: drop the AMS slot markers an older Bambuddy wrote into
+    # Migration: drop the AMS slot markers an older PrintLab wrote into
     # Spoolman and the location sync then imported as storage locations.
     await _migrate_drop_ams_slot_locations(conn)
 
@@ -5212,7 +5212,7 @@ async def _migrate_confirm_prompt_body_template(conn) -> None:
     into the message body, where a link unfurler, a mail gateway or a proxy
     reaches them and spends the single-use token before the operator has read
     the question. The body now carries ``{confirm_url}``, which only opens the
-    archive in Bambuddy; the capability links travel in the ntfy action buttons
+    archive in PrintLab; the capability links travel in the ntfy action buttons
     and the Telegram inline keyboard instead.
 
     Rewrites only a body that is still the old default verbatim — an admin who
@@ -5506,7 +5506,7 @@ async def _migrate_location_ha_sensor_unique_binding(conn) -> None:
 async def _migrate_drop_ams_slot_locations(conn) -> None:
     """Remove imported AMS slot markers from the storage-location catalogue.
 
-    Bambuddy used to record which slot a spool was loaded into by writing
+    PrintLab used to record which slot a spool was loaded into by writing
     "<printer> - AMS A1" into Spoolman's ``location`` field. That writer went
     away when Storage Location became something the user picks (#1114), but the
     strings stayed on people's Spoolman spools, and
@@ -5708,7 +5708,7 @@ async def _migrate_backfill_variant_groups(conn) -> None:
     since those features shipped, and until now nothing ever read it back — the
     link existed but was inert. This promotes it to real group membership so an
     existing library arrives with its slice sets already grouped instead of
-    requiring the user to re-declare by hand what Bambuddy itself recorded.
+    requiring the user to re-declare by hand what PrintLab itself recorded.
 
     Only sources with **two or more** sliced children carrying **distinct**
     ``sliced_for_model`` values produce a group:
@@ -5895,7 +5895,7 @@ async def seed_default_groups():
     # `_own` — that closes the IDOR (operators with a custom `archives:read`
     # row can no longer read cross-user data) and the UI gates degrade to
     # disabled-button state until the frontend is migrated to also accept
-    # `_own` (separate change). See maziggy/bambuddy-security #2.
+    # `_own` (separate change). See the security review #2.
     PERMISSION_MIGRATION_ALL = {
         "queue:update": "queue:update_all",
         "queue:delete": "queue:delete_all",

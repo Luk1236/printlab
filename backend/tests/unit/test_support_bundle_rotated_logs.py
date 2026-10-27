@@ -1,6 +1,6 @@
 """The support bundle must span the rotated logs, not just the live file (#2555).
 
-``bambuddy.log`` is capped at 5 MB by the RotatingFileHandler, and the bundle
+``printlab.log`` is capped at 5 MB by the RotatingFileHandler, and the bundle
 used to ship only that one file — the three rotated backups sat on disk unread.
 
 That cap is invisible on a single printer and brutal on a farm. The 19-printer
@@ -17,14 +17,14 @@ from backend.app.api.routes.support import _get_log_content
 
 
 def _write_rotation(log_dir, live: str, backups: list[str]):
-    """Lay out a RotatingFileHandler set: bambuddy.log plus .log.1 .. .log.N.
+    """Lay out a RotatingFileHandler set: printlab.log plus .log.1 .. .log.N.
 
     ``backups[0]`` becomes ``.log.1``, which the handler defines as the *newest*
     backup — i.e. the one immediately preceding the live file.
     """
-    (log_dir / "bambuddy.log").write_text(live, encoding="utf-8")
+    (log_dir / "printlab.log").write_text(live, encoding="utf-8")
     for index, text in enumerate(backups, start=1):
-        (log_dir / f"bambuddy.log.{index}").write_text(text, encoding="utf-8")
+        (log_dir / f"printlab.log.{index}").write_text(text, encoding="utf-8")
 
 
 def test_reads_rotated_backups_as_well_as_the_live_file(tmp_path):
@@ -75,7 +75,7 @@ def test_byte_budget_is_spent_on_the_newest_history(tmp_path):
 
 def test_partial_line_at_the_truncation_point_is_discarded(tmp_path):
     """Seeking into the middle of a line must not emit a mangled fragment."""
-    (tmp_path / "bambuddy.log").write_text("aaaaaaaaaa\nbbbbbbbbbb\n", encoding="utf-8")
+    (tmp_path / "printlab.log").write_text("aaaaaaaaaa\nbbbbbbbbbb\n", encoding="utf-8")
 
     with (
         patch("backend.app.api.routes.support.settings.log_dir", tmp_path),
@@ -88,8 +88,8 @@ def test_partial_line_at_the_truncation_point_is_discarded(tmp_path):
 
 def test_missing_backups_are_skipped_not_fatal(tmp_path):
     """A fresh install has no .log.N yet; a gap must not abort the bundle."""
-    (tmp_path / "bambuddy.log").write_text("live only\n", encoding="utf-8")
-    (tmp_path / "bambuddy.log.2").write_text("older\n", encoding="utf-8")  # .log.1 absent
+    (tmp_path / "printlab.log").write_text("live only\n", encoding="utf-8")
+    (tmp_path / "printlab.log.2").write_text("older\n", encoding="utf-8")  # .log.1 absent
 
     with (
         patch("backend.app.api.routes.support.settings.log_dir", tmp_path),

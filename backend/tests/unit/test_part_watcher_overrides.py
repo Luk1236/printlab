@@ -46,8 +46,8 @@ class TestOverrides:
         watcher.configure(1, enabled=True, overrides=[
             {"key_contains": "big", "threshold": 3.0},
         ])
-        blank = b"\x00" * 100  # compare_images decodes; pass a real image instead
-        import cv2, numpy as np
+        import cv2
+        import numpy as np
         arr = np.full((100, 100), 200, dtype=np.uint8)
         ok, buf = cv2.imencode(".jpg", arr)
         ref = buf.tobytes()

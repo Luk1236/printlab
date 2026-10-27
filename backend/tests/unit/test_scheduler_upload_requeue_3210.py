@@ -323,7 +323,7 @@ class TestTheQueueIsNotDrained:
 
         item = await _item(farm, item_id)
         assert item.status == "pending"
-        assert item.waiting_reason == "P2S-8 is not accepting files — Bambuddy will retry automatically"
+        assert item.waiting_reason == "P2S-8 is not accepting files — PrintLab will retry automatically"
 
     @pytest.mark.asyncio
     async def test_the_printer_is_tried_again_once_the_backoff_ends(self, farm):

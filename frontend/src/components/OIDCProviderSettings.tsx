@@ -47,15 +47,15 @@ function ProviderForm({
   const { t } = useTranslation();
   const [form, setForm] = useState<OIDCProviderCreate>(initial);
   const [secretChanged, setSecretChanged] = useState(false);
-  // #3107 — each row is an { idpGroup -> bambuddyGroup } pair, edited directly
-  // instead of as JSON. The Bambuddy side is a <select> sourced from `groups`,
+  // #3107 — each row is an { idpGroup -> printlabGroup } pair, edited directly
+  // instead of as JSON. The PrintLab side is a <select> sourced from `groups`,
   // so an invalid group name can't be entered in the first place.
-  const [mappingRows, setMappingRows] = useState<{ idpGroup: string; bambuddyGroup: string }[]>(() =>
-    Object.entries(initial.group_mapping ?? {}).map(([idpGroup, bambuddyGroup]) => ({ idpGroup, bambuddyGroup }))
+  const [mappingRows, setMappingRows] = useState<{ idpGroup: string; printlabGroup: string }[]>(() =>
+    Object.entries(initial.group_mapping ?? {}).map(([idpGroup, printlabGroup]) => ({ idpGroup, printlabGroup }))
   );
-  const addMappingRow = () => setMappingRows((prev) => [...prev, { idpGroup: '', bambuddyGroup: '' }]);
+  const addMappingRow = () => setMappingRows((prev) => [...prev, { idpGroup: '', printlabGroup: '' }]);
   const removeMappingRow = (i: number) => setMappingRows((prev) => prev.filter((_, idx) => idx !== i));
-  const updateMappingRow = (i: number, patch: Partial<{ idpGroup: string; bambuddyGroup: string }>) =>
+  const updateMappingRow = (i: number, patch: Partial<{ idpGroup: string; printlabGroup: string }>) =>
     setMappingRows((prev) => prev.map((row, idx) => (idx === i ? { ...row, ...patch } : row)));
   const set = (key: keyof OIDCProviderCreate, value: unknown) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -74,13 +74,13 @@ function ProviderForm({
     if (!payload.group_claim || !payload.group_claim.trim()) {
       payload.group_claim = 'groups';
     }
-    // #3107 — blank IdP-group name or unselected Bambuddy group means the row
+    // #3107 — blank IdP-group name or unselected PrintLab group means the row
     // isn't finished yet; drop it rather than saving a half-filled mapping.
     const mapping: Record<string, string> = {};
     for (const row of mappingRows) {
       const idpGroup = row.idpGroup.trim();
-      if (idpGroup && row.bambuddyGroup) {
-        mapping[idpGroup] = row.bambuddyGroup;
+      if (idpGroup && row.printlabGroup) {
+        mapping[idpGroup] = row.printlabGroup;
       }
     }
     payload.group_mapping = mapping;
@@ -97,8 +97,8 @@ function ProviderForm({
   // A row with both sides empty is a fresh "Add Mapping" and is just skipped.
   const mappingRowErrors = mappingRows.map((row, i) => {
     const idpGroup = row.idpGroup.trim();
-    if (!idpGroup && !row.bambuddyGroup) return null;
-    if (!idpGroup || !row.bambuddyGroup) return 'incomplete' as const;
+    if (!idpGroup && !row.printlabGroup) return null;
+    if (!idpGroup || !row.printlabGroup) return 'incomplete' as const;
     const key = idpGroup.toLowerCase();
     if (mappingRows.slice(0, i).some((prev) => prev.idpGroup.trim().toLowerCase() === key)) return 'duplicate' as const;
     return null;
@@ -256,7 +256,7 @@ function ProviderForm({
             // Injecting the stale name as its own (disabled) option keeps it
             // visibly selected, and the row is flagged red until the admin
             // repoints it or removes it.
-            const isOrphaned = row.bambuddyGroup !== '' && !groupNames.has(row.bambuddyGroup);
+            const isOrphaned = row.printlabGroup !== '' && !groupNames.has(row.printlabGroup);
             return (
               <div key={i}>
                 <div className="flex items-center gap-2">
@@ -269,13 +269,13 @@ function ProviderForm({
                   <span className="text-bambu-gray text-sm shrink-0">&rarr;</span>
                   <select
                     className={`${inputCls} ${isOrphaned ? 'border-red-700 dark:border-red-400 text-red-700 dark:text-red-400' : ''}`}
-                    value={row.bambuddyGroup}
-                    onChange={(e) => updateMappingRow(i, { bambuddyGroup: e.target.value })}
+                    value={row.printlabGroup}
+                    onChange={(e) => updateMappingRow(i, { printlabGroup: e.target.value })}
                   >
                     <option value="">{t('settings.oidc.form.groupMappingSelectGroup')}</option>
                     {isOrphaned && (
-                      <option value={row.bambuddyGroup}>
-                        {t('settings.oidc.form.groupMappingDeletedGroupOption', { group: row.bambuddyGroup })}
+                      <option value={row.printlabGroup}>
+                        {t('settings.oidc.form.groupMappingDeletedGroupOption', { group: row.printlabGroup })}
                       </option>
                     )}
                     {groups.map((g) => (
@@ -519,7 +519,7 @@ export function OIDCProviderSettings() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {/* #2593: startup rewrites the env-managed row from BAMBUDDY_OIDC_*
+                {/* #2593: startup rewrites the env-managed row from PRINTLAB_OIDC_*
                     and the API answers 409, so offering any of these would promise
                     a change that cannot land -- the icon routes included, where the
                     click only ever produced an error toast. */}

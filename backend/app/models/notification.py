@@ -84,7 +84,7 @@ class NotificationProvider(Base):
     on_ams_humidity_high = Column(Boolean, default=False)  # AMS humidity above threshold
     on_ams_temperature_high = Column(Boolean, default=False)  # AMS temperature above threshold
     # Auto-drying gave up on a unit (#2770). Defaults True: it reports that
-    # Bambuddy has stopped acting, which nothing else in the UI would say.
+    # PrintLab has stopped acting, which nothing else in the UI would say.
     on_ams_drying_suspended = Column(Boolean, default=True)
 
     # Event triggers - AMS-HT environmental alarms (single slot heated AMS)
@@ -120,8 +120,8 @@ class NotificationProvider(Base):
     # Event triggers - Bed cooled after print
     on_bed_cooled = Column(Boolean, default=False)  # Bed cooled below threshold after print
     on_first_layer_complete = Column(Boolean, default=False)  # First layer finished printing
-    # Messages another application sends through Bambuddy (POST /notifications/app-message),
-    # e.g. Bambuddy Orders' "an order needs you". Off by default: nothing new arrives on upgrade.
+    # Messages another application sends through PrintLab (POST /notifications/app-message),
+    # e.g. PrintLab Orders' "an order needs you". Off by default: nothing new arrives on upgrade.
     on_app_message = Column(Boolean, default=False)
 
     # Event triggers - Inventory stock alerts

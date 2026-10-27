@@ -290,7 +290,7 @@ def _write_model(out, loaded: list[_LoadedPart], owners: list[int], offsets: lis
         (
             '<?xml version="1.0" encoding="UTF-8"?>\n'
             f'<model unit="millimeter" xml:lang="en-US" xmlns="{_CORE_NS}">'
-            '<metadata name="Application">Bambuddy</metadata>'
+            '<metadata name="Application">PrintLab</metadata>'
             "<resources>"
         ).encode()
     )

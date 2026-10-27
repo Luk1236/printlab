@@ -88,7 +88,7 @@ def _get_database_paths() -> list[Path]:
 
     if not is_sqlite():
         return []  # PostgreSQL — no local DB files
-    candidates = [settings.base_dir / "bambuddy.db", settings.base_dir / "bambutrack.db"]
+    candidates = [settings.base_dir / "printlab.db", settings.base_dir / "bambuddy.db", settings.base_dir / "bambutrack.db"]
     return [path for path in candidates if path.exists()]
 
 
@@ -485,7 +485,7 @@ async def get_system_info(
 
             result = await db.execute(text("SELECT sqlite_version()"))
             sqlite_ver = result.scalar() or "unknown"
-            db_path = settings.base_dir / "bambuddy.db"
+            db_path = settings.base_dir / "printlab.db"
             db_size = db_path.stat().st_size if db_path.exists() else 0
             db_engine_info = {
                 "engine": "SQLite",
@@ -587,7 +587,7 @@ async def get_storage_usage(
     max_age_seconds: int = STORAGE_USAGE_CACHE_SECONDS,
     _: User | None = RequirePermissionIfAuthEnabled(Permission.SYSTEM_READ),
 ):
-    """Get storage usage breakdown for Bambuddy data directories."""
+    """Get storage usage breakdown for PrintLab data directories."""
     max_age_seconds = max(0, min(max_age_seconds, 3600))
     return await _get_storage_usage_cached(refresh=refresh, max_age_seconds=max_age_seconds)
 
@@ -630,9 +630,9 @@ async def get_appliance_defaults():
 
     Two file sources, both optional and silently degraded when absent:
 
-    - ``/etc/bambuddy/local.toml`` — hostname / timezone / locale the
+    - ``/etc/printlab/local.toml`` — hostname / timezone / locale the
       firstboot wizard collected.
-    - ``/run/bambuddy/time-synced`` — chrony NTP gate state. The RPi 5 has
+    - ``/run/printlab/time-synced`` — chrony NTP gate state. The RPi 5 has
       no battery-backed RTC, so on a fresh boot the clock is wrong until
       ntp-gate.sh writes "ok" (or "warning" if 3-minute timeout elapsed).
       A warning state means JWT expiries and TLS validity windows may be

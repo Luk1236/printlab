@@ -87,6 +87,16 @@ async def stop_logging(
     return StopLoggingResponse(logs=logs)
 
 
+@router.get("/status")
+async def bug_report_status(
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.SETTINGS_READ),
+):
+    """Ob Fehlerberichte eingerichtet sind (BUG_REPORT_RELAY_URL); sonst blendet die UI den Knopf aus."""
+    from backend.app.core.config import BUG_REPORT_RELAY_URL
+
+    return {"enabled": bool(BUG_REPORT_RELAY_URL)}
+
+
 @router.post("/submit", response_model=BugReportResponse)
 async def submit_bug_report(
     report: BugReportRequest,

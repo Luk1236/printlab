@@ -21,7 +21,7 @@ interface AnnouncementsPanelProps {
 }
 
 /**
- * Slide-over list of announcements from the Bambuddy maintainers.
+ * Slide-over list of announcements from the PrintLab maintainers.
  *
  * Each message is one row -- level, date, title -- and opens in place. Unread
  * ones carry a dot and a "New" chip until opened; opening is what marks a

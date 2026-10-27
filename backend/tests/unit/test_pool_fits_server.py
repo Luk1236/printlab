@@ -122,7 +122,7 @@ async def test_both_sides_are_recorded_for_the_support_bundle():
     assert limits == {
         "max_connections": 100,
         "superuser_reserved_connections": 3,
-        "available_to_bambuddy": 97,
+        "available_to_printlab": 97,
         "client_backends_at_startup": 41,
         "pool_ceiling_per_worker": 100,
     }

@@ -112,7 +112,7 @@ def product_line_rank(
 
     Three spellings count, ranked by how much of the line they carry:
 
-    0. the sub-brand itself ("PLA Matte") -- what Bambuddy names the filaments
+    0. the sub-brand itself ("PLA Matte") -- what PrintLab names the filaments
        it creates, and has since before this fix;
     1. the line folded into the colour ("Matte Charcoal", "Tough+ Black",
        "Brown Galaxy") -- how SpoolmanDB names every Bambu Lab entry outside PLA

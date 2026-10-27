@@ -132,7 +132,7 @@ describe('InventoryPage material-number filter', () => {
       ),
     );
     vi.mocked(localStorage.getItem).mockImplementation((key) =>
-      key === 'bambuddy-inventory-sort' ? '{"column":"material_number","direction":"asc"}' : null,
+      key === 'printlab-inventory-sort' ? '{"column":"material_number","direction":"asc"}' : null,
     );
     render(<InventoryPageRouter />);
 

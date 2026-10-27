@@ -230,7 +230,7 @@ class CertificateService:
         # DN matches and fails the chain if that one did not sign the
         # certificate, rather than trying the next match. So while every
         # install signed as plain "CN=Virtual Printer CA", a user who imported
-        # the CAs of two Bambuddy instances broke one of them — each worked on
+        # the CAs of two PrintLab instances broke one of them — each worked on
         # its own, together whichever landed second in the file lost, with the
         # same generic connection error an unimported CA gives (#3014).
         # Distinct DNs mean both are found and both verify.

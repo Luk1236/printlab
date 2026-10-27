@@ -40,7 +40,7 @@ def _blocked_host_reason(hostname: str) -> str | None:
     Camera URLs are user-supplied and reach the network — over aiohttp for the
     HTTP types, and as an ``ffmpeg -i`` argument for RTSP — so this is where the
     SSRF boundary sits. LAN addresses are deliberately allowed: cameras live on
-    the same network as Bambuddy, and blocking RFC-1918 would remove the feature
+    the same network as PrintLab, and blocking RFC-1918 would remove the feature
     rather than protect it. What is left to refuse is the host talking to
     itself, the unspecified address, link-local (which is where the cloud
     metadata endpoint lives), and the metadata hostnames.

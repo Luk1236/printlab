@@ -75,7 +75,6 @@ from backend.app.api.routes import (
     slicer_pipelines,
     slicer_presets,
     smart_plugs,
-    sponsor_prompt,
     spoolbuddy,
     spoolman,
     spoolman_inventory,
@@ -178,7 +177,7 @@ def _start_error_server(missing_packages: list):
     html = f"""<!DOCTYPE html>
 <html>
 <head>
-    <title>Bambuddy - Setup Required</title>
+    <title>PrintLab - Setup Required</title>
     <style>
         body {{
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -215,8 +214,8 @@ def _start_error_server(missing_packages: list):
         <div class="command">pip install -r requirements.txt</div>
         <p>Or if using a virtual environment:</p>
         <div class="command">./venv/bin/pip install -r requirements.txt</div>
-        <p class="note">After installing, restart Bambuddy:<br>
-        <code>sudo systemctl restart bambuddy</code></p>
+        <p class="note">After installing, restart PrintLab:<br>
+        <code>sudo systemctl restart printlab</code></p>
     </div>
 </body>
 </html>"""
@@ -311,7 +310,7 @@ root_logger.setLevel(log_level)
 # trace_id injected just before the formatter runs, regardless of which
 # logger created the record. Without this, the formatter raises
 # KeyError on every child-logger record and the record is silently
-# dropped — which is exactly the "logs/bambuddy.log only shows logs
+# dropped — which is exactly the "logs/printlab.log only shows logs
 # partially" bug we hit. See backend/app/core/trace.py for the
 # ContextVar the filter reads.
 from backend.app.core.trace import TraceIDFilter
@@ -327,7 +326,7 @@ root_logger.addHandler(console_handler)
 
 # File handler - only in production or if explicitly enabled
 if app_settings.log_to_file:
-    log_file = app_settings.log_dir / "bambuddy.log"
+    log_file = app_settings.log_dir / "printlab.log"
     file_handler = RotatingFileHandler(
         log_file,
         maxBytes=app_settings.log_max_bytes,
@@ -340,7 +339,7 @@ if app_settings.log_to_file:
     root_logger.addHandler(file_handler)
     logging.info("Logging to file: %s", log_file)
 
-    # Pipe uvicorn's HTTP access log to bambuddy.log too. Uvicorn ships its
+    # Pipe uvicorn's HTTP access log to printlab.log too. Uvicorn ships its
     # access logger with propagate=False by default, so without this attach
     # there is no on-disk record of which endpoint triggered a server-state
     # change — the rogue stop_print mystery on 2026-04-26 was untraceable
@@ -375,7 +374,7 @@ if not app_settings.debug:
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("paho.mqtt").setLevel(logging.WARNING)
 
-logging.info("Bambuddy starting - debug=%s, log_level=%s", app_settings.debug, log_level_str)
+logging.info("PrintLab starting - debug=%s, log_level=%s", app_settings.debug, log_level_str)
 
 
 # Track active prints: {(printer_id, filename): archive_id}
@@ -751,7 +750,7 @@ _ACTIVE_PRINT_STATES: set[str] = {"RUNNING", "PRINTING", "PAUSE"}
 
 
 def _build_status_print_keys(printer_id: int, state: PrinterState) -> list[tuple[int, str]]:
-    """Build filename keys for matching a printer status update to Bambuddy-owned jobs."""
+    """Build filename keys for matching a printer status update to PrintLab-owned jobs."""
 
     possible_keys: list[tuple[int, str]] = []
     filename = (state.gcode_file or state.current_print or "").strip()
@@ -786,7 +785,7 @@ def _build_status_print_keys(printer_id: int, state: PrinterState) -> list[tuple
     return possible_keys
 
 
-def _is_bambuddy_authorized_print_in_memory(printer_id: int, state: PrinterState) -> bool:
+def _is_printlab_authorized_print_in_memory(printer_id: int, state: PrinterState) -> bool:
     """Check the cheap, process-local print ownership signals."""
 
     if printer_manager.get_current_print_user(printer_id):
@@ -815,20 +814,20 @@ async def _is_printer_kill_switch_enabled_cached() -> bool:
     return enabled
 
 
-async def _is_bambuddy_authorized_print(printer_id: int, state: PrinterState, db) -> bool | None:
-    """Resolve whether the current print was started by Bambuddy.
+async def _is_printlab_authorized_print(printer_id: int, state: PrinterState, db) -> bool | None:
+    """Resolve whether the current print was started by PrintLab.
 
     ``None`` means identity is not yet safe to decide. The kill switch must
     defer in that case: stopping a print is irreversible, and the first status
     frames after a restart may arrive before all subtask fields are populated.
     """
 
-    if _is_bambuddy_authorized_print_in_memory(printer_id, state):
+    if _is_printlab_authorized_print_in_memory(printer_id, state):
         return True
 
     possible_keys = _build_status_print_keys(printer_id, state)
 
-    # In-memory ownership is lost on every Bambuddy restart, so fall back to what
+    # In-memory ownership is lost on every PrintLab restart, so fall back to what
     # is on disk. subtask_id is minted per print and pins the answer to the job
     # actually running, rather than to an unrelated one that reuses a filename.
     raw_subtask_id = getattr(state, "subtask_id", None)
@@ -854,7 +853,7 @@ async def _is_bambuddy_authorized_print(printer_id: int, state: PrinterState, db
     # print it observes, including ones started from Bambu Studio or Handy, and
     # stamps them with the same status and subtask_id. Authorizing on its mere
     # existence would disable the kill switch the moment the 3MF finishes
-    # downloading. Only a dispatch marker Bambuddy writes itself counts —
+    # downloading. Only a dispatch marker PrintLab writes itself counts —
     # `billing_run_id` (minted per dispatch in the scheduler) or `created_by_id`
     # (carried over from the queue item that started it).
     if archive is not None and (archive.billing_run_id is not None or archive.created_by_id is not None):
@@ -866,11 +865,11 @@ async def _is_bambuddy_authorized_print(printer_id: int, state: PrinterState, db
         return True
 
     # No dispatch marker. Before calling this someone else's print, check whether
-    # Bambuddy has a job of its own running on this printer: a library-file
+    # PrintLab has a job of its own running on this printer: a library-file
     # dispatch has no archive at send time, and an archive created seconds later
     # by `on_print_start` carries neither marker. The queue row, which the
     # scheduler commits to status="printing" before the MQTT send, is the one
-    # durable record every Bambuddy print has. It cannot be tied to this
+    # durable record every PrintLab print has. It cannot be tied to this
     # subtask_id, so it is grounds to defer, never to authorize — stopping a
     # print is irreversible, and refusing to act costs nothing but a log line.
     from backend.app.models.print_queue import PrintQueueItem
@@ -1562,7 +1561,7 @@ def _progress_milestone_to_notify(printer_id: int, state: PrinterState) -> int |
 async def on_printer_status_change(printer_id: int, state: PrinterState):
     """Handle printer status changes - broadcast via WebSocket."""
     # Connected-edge reconciliation (#1542 follow-up). When the printer
-    # transitions disconnected → connected — which covers both Bambuddy
+    # transitions disconnected → connected — which covers both PrintLab
     # startup (no prior connection) and a mid-session MQTT reconnect — fire
     # `reconcile_stale_active_prints` exactly once for this connection so
     # any archive still in `status="printing"` that can't actually be
@@ -1780,8 +1779,8 @@ async def on_printer_status_change(printer_id: int, state: PrinterState):
         # stop_print() was already sent for this print; avoid all further
         # ownership and settings work until the printer leaves an active state.
         pass
-    elif _is_bambuddy_authorized_print_in_memory(printer_id, state):
-        # Normal Bambuddy-started prints stay entirely on the in-memory path.
+    elif _is_printlab_authorized_print_in_memory(printer_id, state):
+        # Normal PrintLab-started prints stay entirely on the in-memory path.
         _unauthorized_print_kill_sent.discard(printer_id)
     else:
         kill_switch_enabled = False
@@ -1791,7 +1790,7 @@ async def on_printer_status_change(printer_id: int, state: PrinterState):
             kill_switch_enabled = await _is_printer_kill_switch_enabled_cached()
             if kill_switch_enabled:
                 async with async_session() as db:
-                    authorization = await _is_bambuddy_authorized_print(printer_id, state, db)
+                    authorization = await _is_printlab_authorized_print(printer_id, state, db)
         except Exception as e:
             # Fail safe: a database/reconciliation error must never turn into an
             # irreversible stop of a print whose ownership is still unknown.
@@ -2054,7 +2053,7 @@ async def on_fts_inlet_change(printer_id: int, ams_id: int, inlet: str):
     Configuring a slot is a deliberate preparation step, so this re-selects
     rather than re-configures: only the calibration binding moves, and only for
     slots whose spool already has a stored profile for the new nozzle. A slot
-    Bambuddy knows nothing about is left exactly as the operator left it.
+    PrintLab knows nothing about is left exactly as the operator left it.
     """
     logger = logging.getLogger(__name__)
 
@@ -2282,7 +2281,7 @@ async def _unlink_stale_assignments(printer_id: int, ams_data: list, printing_no
                     # tray_type that might survive the relay's auto-clearing.
                     #
                     # tray_exist_bits comes first because that guard cannot tell
-                    # a firmware "empty" from Bambuddy's own: apply_tray_exist_bits
+                    # a firmware "empty" from PrintLab's own: apply_tray_exist_bits
                     # writes state=9 when the bit is 0 and leaves it there when the
                     # bit returns. A non-RFID spool inserted into a pre-assigned
                     # slot brings no tray_type with it, so the stale 9 made this
@@ -2398,7 +2397,7 @@ async def _unlink_stale_assignments(printer_id: int, ams_data: list, printing_no
                         # back as "PLA" and would otherwise fail this check and
                         # be auto-unlinked from the slot it was just assigned to.
                         # Reducing the printer's side too keeps slots configured
-                        # by an older Bambuddy, still reporting "PLA+", matching.
+                        # by an older PrintLab, still reporting "PLA+", matching.
                         spool = assignment.spool
                         if spool:
                             spool_color = (spool.rgba or "FFFFFFFF").upper()
@@ -3019,7 +3018,7 @@ async def on_ams_change(printer_id: int, ams_data: list):
                         # Not during a running print: a slot that empties there
                         # is a filament runout, and the spool is still in the
                         # AMS. `spoolman_slot_assignments` is how a tag-less
-                        # spool assigned through the Bambuddy UI is resolved at
+                        # spool assigned through the PrintLab UI is resolved at
                         # completion (#1459), so deleting the row mid-print
                         # loses the runout segment's usage — the same failure
                         # the internal inventory's auto-unlink had.
@@ -3813,7 +3812,7 @@ def _schedule_fallback_3mf_retry(
 async def _ask_outcome_for_external_print(db, printer_id: int, observed_name: str | None = None) -> bool:
     """Whether an archive created here should ask for the print's outcome (#1898).
 
-    Only a print Bambuddy did not dispatch reaches the archive-*creating*
+    Only a print PrintLab did not dispatch reaches the archive-*creating*
     branches below: a queued job already has its archive and takes the
     expected-print branch, where the queue item's own ``confirm_outcome``
     decides. The queue is still consulted, because a restart mid-print empties
@@ -3822,7 +3821,7 @@ async def _ask_outcome_for_external_print(db, printer_id: int, observed_name: st
     an unwanted prompt is worse than a missing one, and this must never be the
     reason a print goes unarchived.
 
-    A ``printing`` row is not proof on its own, though: Bambuddy deliberately
+    A ``printing`` row is not proof on its own, though: PrintLab deliberately
     leaves one behind when a completion cannot be matched to it
     (``_completion_belongs_to_queue_item``), and the scheduler's stranded sweep
     only takes it back once the printer has sat connected and terminal for
@@ -3871,7 +3870,7 @@ async def _decide_outcome_for_external_print(db, printer_id: int, observed_name:
     if not expected or not observed or _subtask_names_match(expected, observed):
         logger.info(
             "[CALLBACK] Not asking for the outcome on printer %s: queue item %s is still printing, so "
-            "Bambuddy dispatched this run and the item's own ask-for-outcome flag decides.",
+            "PrintLab dispatched this run and the item's own ask-for-outcome flag decides.",
             printer_id,
             dispatched_here.id,
         )
@@ -3926,7 +3925,7 @@ async def dispatch_outcome_confirmation(
 
     Gated on the archive itself: ``confirm_requested`` is the opt-in (from the
     queue item, or from ``confirm_outcome_external_prints`` for a print
-    Bambuddy did not start) and ``user_verdict`` being unset is what makes the
+    PrintLab did not start) and ``user_verdict`` being unset is what makes the
     question still open. Mints the per-archive capability token the one-tap
     verdict links carry.
 
@@ -4006,7 +4005,7 @@ async def on_print_start(printer_id: int, data: dict):
     # A new print starts its milestones from zero (#3211). The status path only
     # resets on progress below 5 while not printing, which a printer that goes
     # from FINISH at 100% straight into a new print at a preparation-phase 85%
-    # never shows. This callback does not fire after a Bambuddy restart (#1304)
+    # never shows. This callback does not fire after a PrintLab restart (#1304)
     # or on resume from pause, so it cannot repeat a milestone mid-print.
     _last_progress_milestone[printer_id] = 0
     _kill_switch_notification_tasks.pop(printer_id, None)
@@ -4019,7 +4018,7 @@ async def on_print_start(printer_id: int, data: dict):
     _inprint_frame_bank.pop(printer_id, None)
     _inprint_frame_bank_ts.pop(printer_id, None)
     # #2547: bind (or clear) the "this print ends with injected End G-code" flag.
-    # Unconditional, so a print Bambuddy didn't dispatch drops the previous
+    # Unconditional, so a print PrintLab didn't dispatch drops the previous
     # print's flag instead of inheriting it.
     print_dispatch_context.adopt(printer_id)
 
@@ -4040,6 +4039,7 @@ async def on_print_start(printer_id: int, data: dict):
     # Leerbett-Prüfung (Monitor-Port P1): Kamera sagt, ob beim Start Material
     # auf der Platte liegt. Nur Warnung; Fehlschläge brechen den Start nicht.
     try:
+        from backend.app.models.printer import Printer
         from backend.app.services import bed_empty_check
 
         if bed_empty_check.read_config()["enabled"]:
@@ -4249,7 +4249,7 @@ async def on_print_start(printer_id: int, data: dict):
 
         if not printer.auto_archive:
             # auto-archive disabled — check if there's an expected print (dispatched
-            # by BamBuddy via queue/reprint) that already has an archive to promote.
+            # by PrintLab via queue/reprint) that already has an archive to promote.
             # If so, fall through to the expected-print handling below so the archive
             # is tracked in _active_prints and usage tracking works at completion.
             _fn = data.get("filename", "")
@@ -4416,10 +4416,10 @@ async def on_print_start(printer_id: int, data: dict):
                 # Persist a restart-stable id so a later restart resumes this
                 # archive by subtask_id instead of name-matching + duplicating
                 # it (#1485). The printer often hasn't echoed subtask_id back
-                # this soon after dispatch, so fall back to the id Bambuddy
+                # this soon after dispatch, so fall back to the id PrintLab
                 # minted when it sent the print command. Scoped to this
                 # expected-print branch on purpose: an expected match means
-                # Bambuddy dispatched this exact print in this process, so the
+                # PrintLab dispatched this exact print in this process, so the
                 # client's last-dispatch id genuinely belongs to it — using it
                 # for an externally-started print could mis-tag the archive.
                 effective_subtask_id = subtask_id
@@ -4547,7 +4547,7 @@ async def on_print_start(printer_id: int, data: dict):
         # across a backend restart for the same print, so this is the most
         # reliable way to reattach. We also accept a previously stale-cancelled
         # archive here so users upgrading mid-print get revived when the row
-        # their earlier Bambuddy version wrongly cancelled reappears (#972).
+        # their earlier PrintLab version wrongly cancelled reappears (#972).
         if subtask_id:
             by_id = await db.execute(
                 select(PrintArchive)
@@ -4835,7 +4835,7 @@ async def on_print_start(printer_id: int, data: dict):
                 storage.reason,
                 "no copy of it on external storage either"
                 if storage.probe_filename
-                else "the print file is not on storage Bambuddy can read over FTPS, so no path would find it",
+                else "the print file is not on storage PrintLab can read over FTPS, so no path would find it",
             )
 
         for try_filename in possible_names if not downloaded_filename and storage.reachable else []:
@@ -5324,7 +5324,7 @@ async def on_print_start(printer_id: int, data: dict):
             )
 
             if archive:
-                # Ask-for-outcome for a print Bambuddy did not dispatch (#1898).
+                # Ask-for-outcome for a print PrintLab did not dispatch (#1898).
                 # Set on the row rather than passed to archive_print, which also
                 # serves the queue dispatcher — there the queue item decides.
                 # Guarded because this branch has no ``except``: an unhandled
@@ -5605,7 +5605,7 @@ async def _capture_timelapse_baseline_at_start(
         if not _timelapse_listing_is_trustworthy(printer):
             # Recorded anyway, deliberately. An empty baseline taken off a card
             # we could not read is not authoritative, but it is still the right
-            # *default*: Bambuddy deletes each video from the printer once it is
+            # *default*: PrintLab deletes each video from the printer once it is
             # attached, so the usual card holds exactly one video at completion
             # and an empty baseline resolves it correctly. Persisting NULL
             # instead would send completion to take its own snapshot, by which
@@ -5663,7 +5663,7 @@ async def _scan_for_timelapse_with_retries(archive_id: int, baseline_names: set[
     the archive at print start, then a snapshot taken now. The last of those is
     a poor substitute — by completion the new video may already be on the card,
     in which case it lands in the "baseline" and no diff can ever match — but it
-    is all that is available for a print that began before Bambuddy started.
+    is all that is available for a print that began before PrintLab started.
 
     On success the video is deleted from the printer, which keeps ``/timelapse``
     down to the unclaimed files and makes the next diff unambiguous.
@@ -6192,10 +6192,10 @@ async def _restore_usage_tracking_session(printer_id: int, state, db, logger) ->
 
 
 async def on_print_running_observed(printer_id: int, data: dict):
-    """Restart-recovery for a print that started before Bambuddy came up.
+    """Restart-recovery for a print that started before PrintLab came up.
 
     bambu_mqtt.py suppresses ``on_print_start`` on the first RUNNING push
-    after Bambuddy startup (#1304 guard, prevents duplicate archive
+    after PrintLab startup (#1304 guard, prevents duplicate archive
     creation). This hook restores the persisted archive into ``_active_prints``
     and captures the timelapse baseline that normally hangs off print start.
 
@@ -6211,9 +6211,9 @@ async def on_print_running_observed(printer_id: int, data: dict):
 
         state = printer_manager.get_status(printer_id)
         if state is not None:
-            authorization = await _is_bambuddy_authorized_print(printer_id, state, db)
+            authorization = await _is_printlab_authorized_print(printer_id, state, db)
             if authorization is True:
-                logger.info("[RESTART] Restored active Bambuddy print for printer %s", printer_id)
+                logger.info("[RESTART] Restored active PrintLab print for printer %s", printer_id)
 
             await _restore_usage_tracking_session(printer_id, state, db, logger)
             await _restore_printable_objects(printer_id, state, db, logger)
@@ -6305,7 +6305,7 @@ async def prime_kprofile_table(printer_id: int) -> int:
     ``state.kprofiles``, and nothing used to fill it on connect. It arrived by
     luck: someone opening the Profiles page or Configure Slot, a nightly GitHub
     backup, or the printer answering a query BambuStudio made on the report
-    topic we share. A Bambuddy that nobody visited showed a card with no K
+    topic we share. A PrintLab that nobody visited showed a card with no K
     values at all.
 
     Only the diameters actually fitted are asked for, which is one request on a
@@ -6353,11 +6353,11 @@ async def reconcile_stale_active_prints(printer_id: int) -> int:
     running on the printer anymore.
 
     Called once per MQTT (re)connection (from on_printer_status_change when
-    the connected edge flips False → True) and at Bambuddy startup (from
+    the connected edge flips False → True) and at PrintLab startup (from
     the FastAPI lifespan). Without this, a print that completes during a
     disconnect window — followed by a smart-plug-driven power cycle — leaves
     the ``.3mf`` on the SD card, the firmware auto-replays it on next boot,
-    and Bambuddy fires a fresh PRINT START for the ghost rather than the
+    and PrintLab fires a fresh PRINT START for the ghost rather than the
     SD cleanup that PRINT COMPLETE was supposed to run. Repeats every
     power cycle until the operator notices (#1542 follow-up). Reconciliation
     closes the loop by faking the missed PRINT COMPLETE — the existing
@@ -6475,7 +6475,7 @@ async def _max_z_for_current_print(printer_id: int, data: dict, logger) -> float
        ``subtask_name``, by equality rather than a ``LIKE``, so "Cube" can never
        resolve to "Cube v2". Matching on "most recent archive for this printer"
        is not good enough — ``on_print_complete`` pops the ``_active_prints``
-       binding concurrently with us, and a print Bambuddy failed to archive
+       binding concurrently with us, and a print PrintLab failed to archive
        would silently resolve to its predecessor.
     2. **Corroboration.** The archive's layer count (parsed from the 3MF) has to
        match the layer count the printer itself reported over MQTT for the print
@@ -6721,7 +6721,7 @@ async def on_finish_photo_moment(printer_id: int, data: dict):
         # On the FINISH-state path the End G-code has already run, and two very
         # different situations arrive here needing opposite answers.
         #
-        # #1867: if Bambuddy injected End G-code into this print, a SwapMod
+        # #1867: if PrintLab injected End G-code into this print, a SwapMod
         # snippet may have ejected the plate — the scene in front of the camera
         # is no longer the finished print, and no amount of moving the plate
         # brings it back. Use the banked in-print frame instead.
@@ -6753,7 +6753,7 @@ async def on_finish_photo_moment(printer_id: int, data: dict):
         # `restore_max_z` is set only once the plate is actually up, because the
         # `finally` reads it to decide whether it owes a move back down.
         #
-        # Never on a print whose End G-code Bambuddy injected, even when the bank
+        # Never on a print whose End G-code PrintLab injected, even when the bank
         # came up empty above: that machine may have just ejected its plate, and
         # driving Z into whatever a swap mechanism is doing is not a risk worth
         # taking for a photo of a bed we already know may be bare.
@@ -6858,7 +6858,7 @@ def _subtask_name_from_filename(filename: str) -> str:
 
     The dispatcher derives the printer-facing subtask name from the archive's
     file name, so stripping the extensions back off gives the value MQTT echoes
-    on completion. Only the two extensions Bambuddy actually stores are removed,
+    on completion. Only the two extensions PrintLab actually stores are removed,
     and in the order they nest (``.gcode.3mf``), so a model whose own name
     contains a dot -- ``My.Model.3mf`` -- keeps it.
     """
@@ -7067,10 +7067,10 @@ async def on_print_complete(printer_id: int, data: dict):
     # twelve-hour print, a printer can self-abort mid-job after a clog, and a
     # touchscreen-stop reports `aborted` rather than `cancelled` because
     # `_user_stopped_printers` is only populated when the user stops via the
-    # Bambuddy queue UI. Earlier code raised the flag only for completed/failed,
+    # PrintLab queue UI. Earlier code raised the flag only for completed/failed,
     # which auto-dispatched the next queued print onto a fouled bed two seconds
     # after a touchscreen-abort (#1171). Persisted to DB so the gate survives
-    # Auto Off power cycles and Bambuddy restarts.
+    # Auto Off power cycles and PrintLab restarts.
     _final_status = data.get("status", "completed")
     if _final_status in ("completed", "failed", "aborted", "cancelled"):
         printer_manager.set_awaiting_plate_clear(printer_id, True)
@@ -7745,7 +7745,7 @@ async def on_print_complete(printer_id: int, data: dict):
 
     # Apply finance wallet charge or release reservations once. For all partial
     # terminal states (failed, aborted at the printer display, or cancelled via
-    # Bambuddy) use this run's measured spool delta, falling back to the last
+    # PrintLab) use this run's measured spool delta, falling back to the last
     # valid printer progress. PrintArchive.filament_used_grams is the slicer
     # estimate and therefore cannot represent an interrupted run.
     try:
@@ -8067,7 +8067,7 @@ async def on_print_complete(printer_id: int, data: dict):
             # would miss (#1397). Skipped for external cameras (those have
             # their own framing and don't see a Bambu timelapse). Only
             # runs when the USER explicitly enabled timelapse for this
-            # print — #1721 removed Bambuddy's force-on at dispatch
+            # print — #1721 removed PrintLab's force-on at dispatch
             # because it caused per-layer nozzle parking on Smooth-mode
             # slicer profiles.
             prefer_timelapse_source = bool(data.get("timelapse_was_active")) and not (
@@ -9650,7 +9650,7 @@ async def lifespan(app: FastAPI):
         logging.warning("Failed to prune stale printer download bundles: %s", exc)
 
     # After migrations, so the is_env_managed column exists. Never raises --
-    # a bad BAMBUDDY_OIDC_* value is logged and skipped rather than blocking
+    # a bad PRINTLAB_OIDC_* value is logged and skipped rather than blocking
     # startup (see apply_env_oidc_provider).
     from backend.app.core.oidc_env import apply_env_oidc_provider
 
@@ -10048,7 +10048,7 @@ async def lifespan(app: FastAPI):
             "mqtt_port": int(await get_setting(db, "mqtt_port") or "1883"),
             "mqtt_username": await get_setting(db, "mqtt_username") or "",
             "mqtt_password": await get_setting(db, "mqtt_password") or "",
-            "mqtt_topic_prefix": await get_setting(db, "mqtt_topic_prefix") or "bambuddy",
+            "mqtt_topic_prefix": await get_setting(db, "mqtt_topic_prefix") or "printlab",
             "mqtt_use_tls": (await get_setting(db, "mqtt_use_tls") or "false") == "true",
         }
         await mqtt_relay.configure(mqtt_settings)
@@ -10389,7 +10389,7 @@ def _parse_trusted_frame_origins() -> tuple[str, ...]:
 
     Used by ``security_headers_middleware`` to relax ``frame-ancestors`` for
     trusted same-LAN deployments (e.g. Home Assistant Webpage panel embedding
-    Bambuddy from a different port). Defaults to empty — strict ``'none'``.
+    PrintLab from a different port). Defaults to empty — strict ``'none'``.
 
     Invalid entries are dropped with a warning rather than failing startup, so
     a typo in one origin doesn't take the whole deployment down.
@@ -10466,7 +10466,7 @@ _PDF_WORKER_ASSET_RE = re.compile(r"^/assets/pdf\.worker\.min-[\w-]+\.js$")
 async def security_headers_middleware(request, call_next):
     """Add standard HTTP security headers to every response."""
     # Per-request nonce stamped into `script-src` (#1460). On its own this
-    # changes nothing for Bambuddy's own pages — index.html has no inline
+    # changes nothing for PrintLab's own pages — index.html has no inline
     # scripts since the SW registration moved to /sw-register.js. The reason
     # it's here is Cloudflare: a CF-fronted deployment has the bot-detection
     # script injected into the HTML on the edge, with a fresh hash on every
@@ -10547,7 +10547,7 @@ async def security_headers_middleware(request, call_next):
         # The streaming overlay is embedded same-origin by the URL builder's
         # preview in Settings (#1422), so this branch allows 'self'.
         # Embedding from anywhere else is still refused: 'self'
-        # only permits a framer on this origin, which is Bambuddy's own UI, so
+        # only permits a framer on this origin, which is PrintLab's own UI, so
         # a clickjacking page on another host is blocked exactly as before.
         # (The overlay draws status over a camera feed and its only interactive
         # element is the logo link, so there is nothing to bait a click into
@@ -10557,9 +10557,9 @@ async def security_headers_middleware(request, call_next):
         # allowlist in.
         #
         # The connected-app consent page (/connect/authorize) gets the same
-        # 'self': an app opened from Bambuddy's sidebar runs in an iframe, and
-        # its "Sign in with Bambuddy" navigates that iframe to this page. With
-        # 'none' the browser refuses to show it even inside Bambuddy. 'self'
+        # 'self': an app opened from PrintLab's sidebar runs in an iframe, and
+        # its "Sign in with PrintLab" navigates that iframe to this page. With
+        # 'none' the browser refuses to show it even inside PrintLab. 'self'
         # requires every ancestor to be this origin, so a foreign page -- a
         # sidebar link's site included -- still cannot frame the consent
         # screen to bait a click.
@@ -10793,7 +10793,6 @@ app.include_router(user_notifications.router, prefix=app_settings.api_prefix)
 app.include_router(spoolman.router, prefix=app_settings.api_prefix)
 app.include_router(spoolman_inventory.router, prefix=app_settings.api_prefix)
 app.include_router(updates.router, prefix=app_settings.api_prefix)
-app.include_router(sponsor_prompt.router, prefix=app_settings.api_prefix)
 app.include_router(announcements.router, prefix=app_settings.api_prefix)
 app.include_router(maintenance.router, prefix=app_settings.api_prefix)
 app.include_router(maintenance_programs.router, prefix=app_settings.api_prefix)
@@ -10889,7 +10888,7 @@ async def serve_frontend():
     if index_file.exists():
         return FileResponse(index_file, headers=_HTML_CACHE_HEADERS)
     return {
-        "message": "Bambuddy API",
+        "message": "PrintLab API",
         "docs": "/docs",
         "frontend": "Build and place React app in /static directory",
     }

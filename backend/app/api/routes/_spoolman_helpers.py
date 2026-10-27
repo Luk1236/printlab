@@ -155,7 +155,7 @@ def spoolman_tare(spool: dict) -> tuple[float, str]:
     filament's ``spool_weight``, then the vendor's ``empty_spool_weight``, and
     its own ``/measure`` endpoint follows that order. Skipping the vendor
     level made a spool whose tare lives only on its vendor weigh against
-    250 g instead (#3195). Every Spoolman-mode tare in Bambuddy goes through
+    250 g instead (#3195). Every Spoolman-mode tare in PrintLab goes through
     here so the weigh endpoints and the displayed core weight cannot drift
     apart again.
 

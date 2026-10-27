@@ -1,6 +1,6 @@
 """Spoolman inventory proxy endpoints.
 
-Translates between Spoolman's data model and Bambuddy's internal
+Translates between Spoolman's data model and PrintLab's internal
 InventorySpool format so the frontend can use a single unified inventory UI
 regardless of whether data comes from the local database or Spoolman.
 """
@@ -488,7 +488,7 @@ async def list_spools(
         for m in mapped:
             m["k_profiles"] = kp_by_spool.get(m["id"], [])
 
-        # Supplier assignments (#2988) live Bambuddy-side even for Spoolman
+        # Supplier assignments (#2988) live PrintLab-side even for Spoolman
         # spools, so the list carries them in both modes identically.
         link_result = await db.execute(
             select(SpoolmanSpoolSupplier)
@@ -894,7 +894,7 @@ async def update_spool(
         new_price = cost_per_kg_to_spoolman_price(cost_per_kg, price_weight)
 
     # Tag removal: clear only the "tag" key so other custom Spoolman extra fields
-    # set outside Bambuddy are preserved.
+    # set outside PrintLab are preserved.
     tag_nulled = (
         ("tag_uid" in data.model_fields_set or "tray_uuid" in data.model_fields_set)
         and _tag_cleared(data.tag_uid)
@@ -975,9 +975,9 @@ async def update_spool(
 
 
 async def _purge_local_rows_for_spool(db: AsyncSession, spool_id: int) -> None:
-    """Drop the Bambuddy-side rows a deleted Spoolman spool leaves behind.
+    """Drop the PrintLab-side rows a deleted Spoolman spool leaves behind.
 
-    Spoolman owns the spool; Bambuddy owns the K profiles, the filament preset
+    Spoolman owns the spool; PrintLab owns the K profiles, the filament preset
     overrides and the supplier assignments, each keyed by the remote id with no
     foreign key that could cascade. The K-profile and preset leaks are inert,
     but a leaked ``spoolman_spool_suppliers`` row keeps the supplier's
@@ -1262,7 +1262,7 @@ def _extra_tag(spool: dict) -> str:
     """The tag stored in a Spoolman spool's ``extra``, normalised for comparison.
 
     Anything that is not a string reads as no tag. ``extra`` is free-form and
-    edited outside Bambuddy, and ``.get("tag", "")`` does not default a key
+    edited outside PrintLab, and ``.get("tag", "")`` does not default a key
     that is present and null -- that returns None, which has no ``.strip``.
     """
     extra = spool.get("extra")
@@ -1301,7 +1301,7 @@ async def link_tag_to_spoolman_spool(
         # first match, so one malformed row after the holder must not be able
         # to take the whole request down: _extra_tag refuses a non-string, and
         # a row without an integer id cannot be named and so is not treated as
-        # a holder. Bambuddy only ever writes a JSON string here; a third party
+        # a holder. PrintLab only ever writes a JSON string here; a third party
         # editing extra.tag in Spoolman is what puts anything else in reach.
         async with _translate_spoolman_errors():
             all_spools = await client.get_all_spools()
@@ -2138,7 +2138,7 @@ async def patch_spoolman_filament(
             if body.keep_existing_spools:
                 # What the inheriting spools weigh against today: the filament's
                 # own value, or when it has none, its vendor's (#3195). With
-                # neither they sit on the 250 g fallback, which is Bambuddy's
+                # neither they sit on the 250 g fallback, which is PrintLab's
                 # alone, so there is nothing real to keep.
                 old_weight = _safe_optional_float(current.get("spool_weight"))
                 if old_weight is None:
@@ -2266,7 +2266,7 @@ async def get_spoolman_spool_suppliers(
     db: AsyncSession = Depends(get_db),
     _: User | None = RequirePermissionIfAuthEnabled(Permission.INVENTORY_READ),
 ) -> list[dict]:
-    """Supplier assignments for a Spoolman spool (#2988, Bambuddy-side rows)."""
+    """Supplier assignments for a Spoolman spool (#2988, PrintLab-side rows)."""
     await _get_client(db)
     result = await db.execute(
         select(SpoolmanSpoolSupplier)
@@ -2286,7 +2286,7 @@ async def save_spoolman_spool_suppliers(
     """Replace a Spoolman spool's supplier assignments (#2988).
 
     Mirror of the built-in inventory's replace-all endpoint — Spoolman owns
-    the spool, Bambuddy owns the assignment (``SpoolmanKProfile`` precedent),
+    the spool, PrintLab owns the assignment (``SpoolmanKProfile`` precedent),
     so the rows are local and the spool is only verified to exist remotely.
     """
     client = await _get_client(db)

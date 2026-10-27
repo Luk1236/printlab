@@ -49,7 +49,7 @@ class MakerWorldProvider(ModelProvider):
         auth_type=ProviderAuthType.BAMBU_CLOUD_BEARER,
         display_label="Bambu Cloud sign-in",
         description=(
-            "MakerWorld downloads reuse the Bambu Cloud account already stored in Bambuddy — "
+            "MakerWorld downloads reuse the Bambu Cloud account already stored in PrintLab — "
             "there is no separate MakerWorld sign-in."
         ),
         setup_hint="Open the Profiles page and sign in to Bambu Cloud.",

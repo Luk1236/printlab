@@ -1,10 +1,10 @@
-"""Connected apps: external applications that sign users in with Bambuddy.
+"""Connected apps: external applications that sign users in with PrintLab.
 
 A connected app is registered by an admin with one exact callback URL. It
 signs a user in through a minimal OAuth 2.0 authorization-code flow with PKCE
-(see ``api/routes/connected_apps.py``): Bambuddy hands the app a single-use,
+(see ``api/routes/connected_apps.py``): PrintLab hands the app a single-use,
 60-second code, and the app's server swaps it for the user's identity and
-permissions. The app never sees the user's Bambuddy login token.
+permissions. The app never sees the user's PrintLab login token.
 """
 
 from datetime import datetime

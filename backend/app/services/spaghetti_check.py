@@ -16,7 +16,6 @@ from __future__ import annotations
 import json
 import logging
 import threading
-from pathlib import Path
 from typing import Any
 
 import cv2
@@ -138,7 +137,6 @@ class SpaghettiCheck:
             if not read_config()["enabled"] or not image or self._checked.get(printer_id):
                 return None
             self._checked[printer_id] = True
-        from backend.app.services import bed_empty_check
 
         blank_path = settings.base_dir / "plate_calibration" / f"{int(printer_id)}.blank.jpg"
         if not blank_path.is_file():

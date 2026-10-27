@@ -472,12 +472,12 @@ class TestStopDrying:
 
     @pytest.mark.asyncio
     @patch("backend.app.services.print_scheduler.printer_manager")
-    async def test_leaves_cycles_bambuddy_did_not_start(self, mock_pm, scheduler):
+    async def test_leaves_cycles_printlab_did_not_start(self, mock_pm, scheduler):
         """A hand-started dry on another unit survives (#2801).
 
         One auto-dried unit used to be enough to stop every AMS on the
         printer reporting dry_time > 0, which took the user's own cycle with
-        it. The entry gate only ever knew about cycles Bambuddy began; the
+        it. The entry gate only ever knew about cycles PrintLab began; the
         action now matches.
         """
         scheduler._drying_in_progress = {1: time.monotonic()}
@@ -494,7 +494,7 @@ class TestStopDrying:
     @pytest.mark.asyncio
     @patch("backend.app.services.print_scheduler.printer_manager")
     async def test_stops_nothing_it_cannot_prove_it_started(self, mock_pm, scheduler):
-        """After a restart Bambuddy cannot tell its own cycle from a manual one.
+        """After a restart PrintLab cannot tell its own cycle from a manual one.
 
         _sync_drying_state prunes but never adopts, for exactly this reason, so
         a cycle armed before the restart is left running rather than risking a
@@ -526,7 +526,7 @@ class TestMinimumDryingTime:
 
     Relative humidity reads low in heated air (the AMS sensor sees ~15-20% within
     minutes of the dryer starting even while the filament is still saturated), so a
-    humidity-based auto-stop would truncate every cycle — manual or Bambuddy-started —
+    humidity-based auto-stop would truncate every cycle — manual or PrintLab-started —
     to the old minimum-time floor. Drying is now left to run to its configured
     duration; the firmware stops it when the duration elapses.
     """
@@ -1679,7 +1679,7 @@ class TestAutoDryRearmGuards(_DryingTestBase):
         mock_pm.send_drying_command.assert_not_called()
         assert (1, 0) not in scheduler._auto_dry_units
 
-        # It ends; Bambuddy is free to arm its own cycle, with a clean slate.
+        # It ends; PrintLab is free to arm its own cycle, with a clean slate.
         await self._pass(scheduler, mock_pm, db, 0, self.ABOVE)
         mock_pm.send_drying_command.assert_called_once_with(1, 0, 45, 12, mode=1, filament="PLA")
         assert scheduler._auto_dry_units[(1, 0)]["unproductive"] == 0
@@ -1697,8 +1697,8 @@ class TestAutoDryRearmGuards(_DryingTestBase):
         assert scheduler._auto_dry_units == {}
 
 
-class TestAutoDryStoppedByBambuddy(_DryingTestBase):
-    """A cycle Bambuddy itself cut short must not count against the unit."""
+class TestAutoDryStoppedByPrintLab(_DryingTestBase):
+    """A cycle PrintLab itself cut short must not count against the unit."""
 
     THRESHOLD = "14"
     ABOVE = 16
@@ -1744,7 +1744,7 @@ class TestAutoDryStoppedByBambuddy(_DryingTestBase):
     @patch("backend.app.services.print_scheduler.printer_manager")
     @patch("backend.app.services.print_scheduler.supports_drying", return_value=True)
     async def test_print_takes_priority_stop_is_not_an_unproductive_cycle(self, mock_sd, mock_pm, scheduler):
-        """The queue stopping a dry so a print can start is Bambuddy's own doing.
+        """The queue stopping a dry so a print can start is PrintLab's own doing.
 
         Counting it would suspend auto-drying on any printer that dries between
         jobs often enough -- exactly the install queue-drying exists for.
@@ -1898,7 +1898,7 @@ class TestAmbientDryingSustainedDelay(_DryingTestBase):
     above the threshold for that many minutes straight before drying begins.
     The streak lives in ``scheduler._auto_dry_above``, keyed like
     ``_auto_dry_units`` by (printer_id, ams_id), but deliberately a separate
-    dict: arming a streak must never look like a Bambuddy-started cycle to
+    dict: arming a streak must never look like a PrintLab-started cycle to
     ``_auto_dry_units``, which is what ``_stop_drying`` and the manual-cycle
     immunity in #2801 key off of.
     """
@@ -2042,7 +2042,7 @@ class TestAmbientDryingSustainedDelay(_DryingTestBase):
     @patch("backend.app.services.print_scheduler.supports_drying", return_value=True)
     async def test_manual_cycle_immunity(self, mock_sd, mock_pm, scheduler):
         """Arming a streak must never create a ``_auto_dry_units`` entry — that dict is
-        reserved for cycles Bambuddy itself started (#2801's manual-cycle immunity). A
+        reserved for cycles PrintLab itself started (#2801's manual-cycle immunity). A
         unit already drying by the user's own hand (dry_time > 0) with a streak still
         present is left alone: no command sent, no entry created, streak untouched.
         """
@@ -2159,7 +2159,7 @@ class TestAmbientDryingSustainedDelay(_DryingTestBase):
     @patch("backend.app.services.print_scheduler.printer_manager")
     @patch("backend.app.services.print_scheduler.supports_drying", return_value=True)
     async def test_in_loop_cycle_end_restarts_the_streak(self, mock_sd, mock_pm, scheduler):
-        """When the in-loop cycle-end branch fires (a Bambuddy-armed cycle whose
+        """When the in-loop cycle-end branch fires (a PrintLab-armed cycle whose
         ``dry_time`` has gone to 0), the matured streak that armed it is spent —
         the pass re-arms a FRESH streak rather than keeping the old ``since``.
         Without the pop, a matured pre-cycle streak would survive the cycle and

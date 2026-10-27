@@ -245,7 +245,7 @@ wird genutzt, kein zweiter Stream.
 - `backend/app/api/routes/part_watcher.py` (neu)
 - `starte_pc_slicer.bat` (neu)
 - `install_pc_slicer_task.ps1` (neu)
-- `FORK-CHANGELOG.md` (neu)
+- `CHANGELOG.md` (neu)
 - `backend/app/main.py` (Router registriert)
 - `backend/tests/unit/services/test_maintenance_programs.py` (neu, 14 Tests)
 - `backend/tests/unit/services/test_maintenance_print.py` (neu, 5 Tests)

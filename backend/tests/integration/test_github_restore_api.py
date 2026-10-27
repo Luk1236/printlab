@@ -59,7 +59,7 @@ class TestCommitsEndpoint:
     async def test_returns_commits_from_the_provider(self, async_client: AsyncClient):
         await _create_config(async_client)
         commits = [
-            {"sha": "aaa1111", "message": "Bambuddy backup", "author": "Bambuddy", "date": "2026-07-02T10:00:00Z"}
+            {"sha": "aaa1111", "message": "PrintLab backup", "author": "PrintLab", "date": "2026-07-02T10:00:00Z"}
         ]
         with patch(
             "backend.app.services.git_providers.github.GitHubBackend.list_commits",
@@ -410,7 +410,7 @@ class TestRestoreDoesNotOpenTheMetricsEndpoint:
 
         response = await async_client.get("/api/v1/metrics")
         assert response.status_code == 404, "a settings restore opened the metrics endpoint"
-        assert "bambuddy_build_info" not in response.text
+        assert "printlab_build_info" not in response.text
         assert any(note["code"] == "settingsCompanionSkipped" for note in tally.notes)
 
     @pytest.mark.asyncio
@@ -444,7 +444,7 @@ class TestRestoreDoesNotOpenTheMetricsEndpoint:
 
         response = await async_client.get("/api/v1/metrics")
         assert response.status_code == 404, "a token-less Prometheus backup opened the metrics endpoint"
-        assert "bambuddy_build_info" not in response.text
+        assert "printlab_build_info" not in response.text
         assert any(note["code"] == "settingsCompanionSkipped" for note in tally.notes)
 
     @pytest.mark.asyncio
@@ -470,7 +470,7 @@ class TestRestoreDoesNotOpenTheMetricsEndpoint:
         assert (await async_client.get("/api/v1/metrics")).status_code == 401
         authorised = await async_client.get("/api/v1/metrics", headers={"Authorization": "Bearer local-token"})
         assert authorised.status_code == 200
-        assert "bambuddy_build_info" in authorised.text
+        assert "printlab_build_info" in authorised.text
 
 
 class TestSettingsRestoreNeedsSettingsUpdate(TestOwnershipPermissionsSetup):

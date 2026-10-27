@@ -40,7 +40,7 @@ _PLATE_PNG_SIZE = 512
 _PLATE_PNG_SMALL_SIZE = 128
 
 # Mirror stl_thumbnail.py's palette so archive cards rendered through
-# this path are visually consistent with the rest of Bambuddy's library
+# this path are visually consistent with the rest of PrintLab's library
 # thumbnails — same Bambu green on the same dark background.
 _BAMBU_GREEN = "#00AE42"
 _BACKGROUND_COLOR = "#1a1a1a"
@@ -153,7 +153,7 @@ def _render_model_thumbnails(threemf_bytes: bytes) -> tuple[bytes | None, bytes 
     Returns (large, small) PNG bytes, or (None, None) if the model
     couldn't be loaded. Mirrors stl_thumbnail.py's style (Bambu green
     mesh on dark background, ~25deg elev / 45deg azim) so this output
-    blends into Bambuddy's existing library/archive cards.
+    blends into PrintLab's existing library/archive cards.
     """
     # Local imports so a `import backend.app.services.plate_thumbnail` from
     # an environment without matplotlib/trimesh doesn't fail at import time —

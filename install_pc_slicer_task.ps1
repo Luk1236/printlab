@@ -25,9 +25,9 @@ Register-ScheduledTask `
     -Action $action `
     -Trigger $trigger `
     -Settings $settings `
-    -Description "Bambu Studio PC-Slicer fuer Bambuddy (Port 3001)" `
+    -Description "Bambu Studio PC-Slicer fuer PrintLab (Port 3001)" `
     -Force | Out-Null
 
-Write-Output "Aufgabe 'Bambuddy PC Slicer' eingerichtet."
+Write-Output "Aufgabe 'PrintLab PC Slicer' eingerichtet."
 Write-Output "Status:  Get-ScheduledTask -TaskName 'Bambuddy PC Slicer'"
 Write-Output "Starten: Start-ScheduledTask -TaskName 'Bambuddy PC Slicer'"

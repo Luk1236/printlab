@@ -533,7 +533,7 @@ describe('ModelViewerModal', () => {
   });
 
   describe('slicer split button (#2725)', () => {
-    it('shows both slicers in the dropdown when Bambuddy is the default slicer', async () => {
+    it('shows both slicers in the dropdown when PrintLab is the default slicer', async () => {
       server.use(
         http.get('/api/v1/settings/', () => {
           return HttpResponse.json({ use_slicer_api: true });
@@ -549,7 +549,7 @@ describe('ModelViewerModal', () => {
           title="Model.3mf"
           fileType="3mf"
           onClose={mockOnClose}
-          onSliceWithBambuddy={vi.fn()}
+          onSliceWithPrintLab={vi.fn()}
         />
       );
 
@@ -565,7 +565,7 @@ describe('ModelViewerModal', () => {
       });
     });
 
-    it('opens the selected local slicer from the Bambuddy dropdown', async () => {
+    it('opens the selected local slicer from the PrintLab dropdown', async () => {
       server.use(
         http.get('/api/v1/settings/', () => {
           return HttpResponse.json({ use_slicer_api: true });
@@ -581,7 +581,7 @@ describe('ModelViewerModal', () => {
           title="Model.3mf"
           fileType="3mf"
           onClose={mockOnClose}
-          onSliceWithBambuddy={vi.fn()}
+          onSliceWithPrintLab={vi.fn()}
         />
       );
 
@@ -774,7 +774,7 @@ describe('ModelViewerModal', () => {
           title="Model.stl"
           fileType="stl"
           onClose={mockOnClose}
-          onSliceWithBambuddy={vi.fn()}
+          onSliceWithPrintLab={vi.fn()}
         />
       );
 

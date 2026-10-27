@@ -607,7 +607,7 @@ describe('AddNotificationModal — Bark provider (#1495)', () => {
       />,
     );
 
-    const groupInput = await screen.findByPlaceholderText('Bambuddy');
+    const groupInput = await screen.findByPlaceholderText('PrintLab');
     await user.type(groupInput, 'Printers');
     const levelRow = screen.getByText(/interruption level/i).closest('div')!;
     await user.selectOptions(within(levelRow).getByRole('combobox'), 'critical');

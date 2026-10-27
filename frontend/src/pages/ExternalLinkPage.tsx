@@ -51,11 +51,11 @@ export function ExternalLinkPage() {
 }
 
 /**
- * Tell the framed page which theme Bambuddy is showing, so an app built to
- * sit in the sidebar (Bambuddy Orders) can match it. Sent when the page
+ * Tell the framed page which theme PrintLab is showing, so an app built to
+ * sit in the sidebar (PrintLab Orders) can match it. Sent when the page
  * loads, when the theme changes, and when the page asks for it. Only to the
  * link's own origin, and it carries nothing but the theme names, plus
- * ``canNavigate``: this Bambuddy takes the page's navigate requests (see
+ * ``canNavigate``: this PrintLab takes the page's navigate requests (see
  * useNavigateMessages), so the page can tell it apart from older builds.
  */
 function useThemeMessenger(iframeRef: RefObject<HTMLIFrameElement | null>) {
@@ -97,13 +97,13 @@ function useThemeMessenger(iframeRef: RefObject<HTMLIFrameElement | null>) {
 const MAX_NAVIGATE_PATH = 512;
 
 /**
- * Let the framed page open a Bambuddy page in place, e.g. Bambuddy Orders'
- * "In Bambuddy" link to a batch. The sandbox rightly doesn't let the frame
+ * Let the framed page open a PrintLab page in place, e.g. PrintLab Orders'
+ * "In PrintLab" link to a batch. The sandbox rightly doesn't let the frame
  * navigate the top window itself, so it asks:
- * ``{type: 'bambuddy:navigate', path: '/queue?batch=12'}``.
+ * ``{type: 'printlab:navigate', path: '/queue?batch=12'}``.
  *
  * Accepted only from the frame, only from the link's own origin, and only for
- * a path inside Bambuddy: anything else is ignored, so the request can never
+ * a path inside PrintLab: anything else is ignored, so the request can never
  * lead anywhere a typed address bar couldn't. The theme message's
  * ``canNavigate`` tells the page it can ask; without it the page opens a new
  * tab instead.

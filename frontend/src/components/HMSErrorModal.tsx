@@ -37,7 +37,7 @@ const AMS_RUNOUT_SHORT_CODES = new Set([
 // refusing a control command. Matched on its full 16-char code: this error's
 // meaning lives in attr's low half (0500) and code's high half (0001), both of
 // which getShortCode() discards. Bambu's own text for it says to update Studio
-// or Handy, which is no help from Bambuddy, so the modal says what it means here.
+// or Handy, which is no help from PrintLab, so the modal says what it means here.
 export const HMS_MQTT_VERIFY_FAILED = '0500050000010007';
 
 type SeverityInfo = { labelKey: string; color: string; bgColor: string; Icon: typeof AlertTriangle };
@@ -209,9 +209,9 @@ export function HMSErrorModal({ printerName, errors, onClose, printerId, hasPerm
                 // misleading generic "insert into the same slot" text.
                 // An actionable fault can count without text; it still gets a line.
                 let description = error.description || t('hmsErrors.unknownCode');
-                // The text and remedy are Bambuddy's, not Bambu's — their text says
+                // The text and remedy are PrintLab's, not Bambu's — their text says
                 // "update Studio or Handy", which is no help to someone printing
-                // from Bambuddy. Same override shape as the runout guidance below.
+                // from PrintLab. Same override shape as the runout guidance below.
                 const isVerifyFailed = error.full_code === HMS_MQTT_VERIFY_FAILED;
                 if (isVerifyFailed) description = t('hmsErrors.mqttVerifyFailedDescription');
                 const remedy = isVerifyFailed ? t('hmsErrors.mqttVerifyFailedRemedy') : null;

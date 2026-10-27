@@ -5,6 +5,7 @@ import { ArrowLeftRight, Check, DoorClosed, DoorOpen, Download, Droplet, ListPlu
 
 import { api } from '../api/client';
 import type {
+  AutoPlateChange,
   FirstLayerStatus,
   HardwareStatus,
   LayerAlertStatus,
@@ -72,7 +73,9 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
   });
 
   const hardwareMutation = useMutation({
-    mutationFn: (action: 'open' | 'close' | 'plate' | 'refill' | 'stop') => {
+    mutationFn: (action: 'open' | 'close' | 'plate' | 'refill' | 'stop' | 'unlock' | 'resolve') => {
+      if (action === 'unlock') return api.resetEmergencyStop(printerId);
+      if (action === 'resolve') return api.resolveIncompleteChange(printerId);
       if (action === 'open') return api.openHardwareDoor(printerId);
       if (action === 'close') return api.closeHardwareDoor(printerId);
       if (action === 'plate') return api.changeHardwarePlate(printerId);
@@ -123,9 +126,18 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
   // Automatik: Plattenwechsel nach Druckende (P2 der Monitor-Port-Roadmap).
   const autoPlateChange = hardware?.auto_plate_change ?? null;
   const autoMutation = useMutation({
-    mutationFn: (enabled: boolean) => api.updateAutoPlateChange(printerId, { enabled }),
+    mutationFn: (update: Partial<AutoPlateChange>) => api.updateAutoPlateChange(printerId, update),
     onSuccess: () => {
       showToast(t('common.success'));
+      queryClient.invalidateQueries({ queryKey: ['hardwareStatus', printerId] });
+    },
+    onError: (error: Error) => showToast(error.message, 'error'),
+  });
+
+  const cancelAutoMutation = useMutation({
+    mutationFn: () => api.cancelAutoPlateChange(printerId),
+    onSuccess: (data) => {
+      showToast(String(data.cancelled));
       queryClient.invalidateQueries({ queryKey: ['hardwareStatus', printerId] });
     },
     onError: (error: Error) => showToast(error.message, 'error'),
@@ -436,6 +448,34 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
           {hardware?.error && (
             <p className="text-xs text-red-700 dark:text-red-400">{hardware.error}</p>
           )}
+          {hardware?.estop && (
+            <div className="flex flex-wrap items-center justify-between gap-2" role="alert">
+              <p className="text-xs text-red-700 dark:text-red-400">{t('maintenance.programs.estopActive')}</p>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={!canControl || hardwareMutation.isPending}
+                onClick={() => hardwareMutation.mutate('unlock')}
+              >
+                {t('maintenance.programs.estopReset')}
+              </Button>
+            </div>
+          )}
+          {hardware?.incomplete && (
+            <div className="flex flex-wrap items-center justify-between gap-2" role="alert">
+              <p className="text-xs text-amber-700 dark:text-amber-400">
+                {t('maintenance.programs.incompleteActive', { step: hardware.incomplete.step })}
+              </p>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={!canControl || hardwareMutation.isPending}
+                onClick={() => hardwareMutation.mutate('resolve')}
+              >
+                {t('maintenance.programs.incompleteResolve')}
+              </Button>
+            </div>
+          )}
           <p className="text-xs text-bambu-gray">{t('maintenance.programs.hardwareSafety')}</p>
           {/* Automatik: Plattenwechsel nach Druckende */}
           <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
@@ -467,11 +507,39 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
               variant="secondary"
               className="whitespace-nowrap"
               disabled={autoMutation.isPending}
-              onClick={() => autoMutation.mutate(!autoPlateChange?.enabled)}
+              onClick={() => autoMutation.mutate({ enabled: !autoPlateChange?.enabled })}
             >
               {autoPlateChange?.enabled
                 ? t('maintenance.programs.autoPlateChangeOff')
                 : t('maintenance.programs.autoPlateChangeOn')}
+            </Button>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <label className="flex items-center gap-2 text-xs text-bambu-gray">
+              <input
+                type="checkbox"
+                checked={Boolean(autoPlateChange?.only_with_queue)}
+                disabled={!canControl || autoMutation.isPending}
+                onChange={(event) => autoMutation.mutate({ only_with_queue: event.target.checked })}
+              />
+              {t('maintenance.programs.autoOnlyWithQueue')}
+            </label>
+            <label className="flex items-center gap-2 text-xs text-bambu-gray">
+              <input
+                type="checkbox"
+                checked={Boolean(autoPlateChange?.auto_confirm_plate_clear)}
+                disabled={!canControl || autoMutation.isPending}
+                onChange={(event) => autoMutation.mutate({ auto_confirm_plate_clear: event.target.checked })}
+              />
+              {t('maintenance.programs.autoConfirmClear')}
+            </label>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={!canControl || cancelAutoMutation.isPending}
+              onClick={() => cancelAutoMutation.mutate()}
+            >
+              {t('maintenance.programs.autoCancel')}
             </Button>
           </div>
         </div>
@@ -556,7 +624,17 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
             {t('maintenance.programs.calibrateCamera')}
           </Button>
           {plateCalibration?.calibrated && (
-            <span className="text-xs text-bambu-green">{t('maintenance.programs.calibrationDone')}</span>
+            <>
+              <span className="text-xs text-bambu-green">{t('maintenance.programs.calibrationDone')}</span>
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={!canControl || calibrationClearMutation.isPending}
+                onClick={() => calibrationClearMutation.mutate()}
+              >
+                {t('maintenance.programs.calibrationClear')}
+              </Button>
+            </>
           )}
         </div>
 
@@ -576,7 +654,7 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
                   onChange={(event) =>
                     setRulesDraft((rules) => rules.map((r, i) => (i === index ? { ...r, key_contains: event.target.value } : r)))
                   }
-                  placeholder="im Drucknamen (z. B. 'Handtuch')"
+                  placeholder={t('maintenance.programs.jobRulesPlaceholder')}
                   className="flex-1 min-w-40 bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm"
                   aria-label={t('maintenance.programs.jobRulesFragment')}
                 />
@@ -654,7 +732,7 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
                 className="w-full rounded-lg select-none pointer-events-none"
                 draggable={false}
               />
-              {calibrationPoints.map(([x, y], index) => (
+              {calibrationPoints.map(([x, y]) => (
                 <span
                   key={`${x}-${y}`}
                   className="absolute w-4 h-4 -ml-2 -mt-2 rounded-full bg-bambu-green ring-2 ring-white/80 pointer-events-none"

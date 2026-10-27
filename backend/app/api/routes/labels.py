@@ -12,7 +12,7 @@ Each has a ``/preview`` sibling that renders one label as a PNG for the
 picker (#2981).
 
 The QR code on each label deep-links to ``/inventory?spool=<id>`` so a phone
-scan jumps straight back into Bambuddy at that spool's row.
+scan jumps straight back into PrintLab at that spool's row.
 """
 
 from __future__ import annotations
@@ -114,7 +114,7 @@ def _split_extra_colors(raw: str | None) -> list[str] | None:
 
 async def _resolve_deeplink_base(request: Request, db: AsyncSession) -> str:
     """Where the QR codes should point. Prefers `external_url` when set so a
-    phone scan reaches the user's public Bambuddy URL rather than an internal
+    phone scan reaches the user's public PrintLab URL rather than an internal
     address; falls back to the request's own scheme+host when no setting is
     configured.
     """
@@ -305,7 +305,7 @@ async def render_local_inventory_labels(
 ) -> Response:
     """Render labels for spools in the local inventory."""
     data_list = await _local_label_data(body.spool_ids, request, db)
-    return await _render_response(body, data_list, f"bambuddy-labels-{body.template}")
+    return await _render_response(body, data_list, f"printlab-labels-{body.template}")
 
 
 @router.post("/inventory/labels/preview")
@@ -329,7 +329,7 @@ async def render_spoolman_labels(
 ) -> Response:
     """Render labels for spools tracked in Spoolman."""
     data_list = await _spoolman_label_data(body.spool_ids, request, db)
-    return await _render_response(body, data_list, f"bambuddy-labels-spoolman-{body.template}")
+    return await _render_response(body, data_list, f"printlab-labels-spoolman-{body.template}")
 
 
 @router.post("/spoolman/labels/preview")

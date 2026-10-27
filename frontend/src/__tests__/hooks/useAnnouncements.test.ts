@@ -29,9 +29,9 @@ describe('announcementText', () => {
 
 describe('isAllowedAnnouncementLink', () => {
   it.each([
-    ['https://wiki.bambuddy.cool/x', true],
-    ['https://bambuddy.cool', true],
-    ['https://github.com/maziggy/bambuddy', true],
+    ['https://github.com/Luk1236/printlab/blob/bambu-monitor-port/docs/HILFE.md', true],
+    ['https://bambuddy.cool', false],
+    ['https://github.com/Luk1236/printlab', true],
     ['http://github.com/', false],
     ['https://github.com.evil.example/', false],
     ['https://user:pw@github.com/', false],

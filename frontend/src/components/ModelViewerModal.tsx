@@ -23,8 +23,8 @@ interface ModelViewerModalProps {
   // When set and `settings.use_slicer_api` is on, the header's slicer button
   // becomes "Slice" and calls this instead of opening BambuStudio / Orca
   // externally — so the preview modal's slice action matches the file row's
-  // Cog (in-app Bambuddy SliceModal) when the slicer API is enabled.
-  onSliceWithBambuddy?: () => void;
+  // Cog (in-app PrintLab SliceModal) when the slicer API is enabled.
+  onSliceWithPrintLab?: () => void;
   // Forwarded to ModelViewer: one 256px PNG of the first render, used by the
   // file manager to persist a STEP thumbnail (#2976).
   onSnapshot?: (blob: Blob) => void;
@@ -141,7 +141,7 @@ function SlicerSplitButton({ icon, label, dropdownLabel, onPrimary, items }: Sli
   );
 }
 
-export function ModelViewerModal({ archiveId, libraryFileId, title, fileType, onClose, onSliceWithBambuddy, onSnapshot }: ModelViewerModalProps) {
+export function ModelViewerModal({ archiveId, libraryFileId, title, fileType, onClose, onSliceWithPrintLab, onSnapshot }: ModelViewerModalProps) {
   const { t } = useTranslation();
   const { showToast } = useToast();
   const { data: settings } = useQuery({ queryKey: ['settings'], queryFn: api.getSettings });
@@ -401,12 +401,12 @@ export function ModelViewerModal({ archiveId, libraryFileId, title, fileType, on
 
   // When the user has the in-app Slicer API enabled (Settings → Workflow →
   // Slicer → Use Slicer API), library-mode previews route the header's slicer
-  // button into Bambuddy's own SliceModal — same behaviour as the Cog button
+  // button into PrintLab's own SliceModal — same behaviour as the Cog button
   // in the file-row actions. Falls back to the external-slicer launcher when
   // the API is off, when no in-app handler is wired (e.g. archive preview),
   // or when the file type can't be sliced (.gcode / .gcode.3mf, etc.).
-  const useBambuddySlicer = Boolean(
-    isLibrary && settings?.use_slicer_api && onSliceWithBambuddy && apiSlicerReadyType,
+  const usePrintLabSlicer = Boolean(
+    isLibrary && settings?.use_slicer_api && onSliceWithPrintLab && apiSlicerReadyType,
   );
 
   const handleOpenInSlicer = async (slicer: SlicerType) => {
@@ -440,7 +440,7 @@ export function ModelViewerModal({ archiveId, libraryFileId, title, fileType, on
   // With the sidecar as the primary action every usable slicer is an
   // alternative; without it the first one is the primary, so the dropdown holds
   // the rest.
-  const slicerDropdownTypes: SlicerType[] = useBambuddySlicer ? usableSlicers : usableSlicers.slice(1);
+  const slicerDropdownTypes: SlicerType[] = usePrintLabSlicer ? usableSlicers : usableSlicers.slice(1);
   const slicerName = (slicer: SlicerType) =>
     slicer === 'orcaslicer' ? t('settings.slicerOrcaSlicer') : t('settings.slicerBambuStudio');
   const slicerDropdownItems = slicerDropdownTypes.map((slicer) => ({
@@ -464,12 +464,12 @@ export function ModelViewerModal({ archiveId, libraryFileId, title, fileType, on
       }
       actions={
         <>
-          {useBambuddySlicer ? (
+          {usePrintLabSlicer ? (
             <SlicerSplitButton
               icon={<Cog className="w-4 h-4" />}
               label={t('slice.action')}
               dropdownLabel={t('modelViewer.moreSlicerOptions')}
-              onPrimary={() => onSliceWithBambuddy?.()}
+              onPrimary={() => onSliceWithPrintLab?.()}
               items={slicerDropdownItems}
             />
           ) : canOpenInSlicer ? (

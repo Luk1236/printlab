@@ -2,7 +2,7 @@
 
 Administrators see them; other signed-in users only when
 ``announcements_all_users`` is on. With authentication off, the person running
-Bambuddy sees them. Anyone else gets ``visible: false`` and an empty list. Those
+PrintLab sees them. Anyone else gets ``visible: false`` and an empty list. Those
 who may see them get ``visible: true`` even with nothing published, because the
 sidebar entry is there for them either way.
 """

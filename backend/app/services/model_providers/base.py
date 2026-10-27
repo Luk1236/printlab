@@ -1,7 +1,7 @@
 """Model-provider interface.
 
 A *model provider* is a website that hosts 3D printer models (MakerWorld,
-Thingiverse, Printables, ...) whose files Bambuddy can resolve and import
+Thingiverse, Printables, ...) whose files PrintLab can resolve and import
 into the library. This module defines the contract every provider must
 fulfil — the split being:
 

@@ -1,7 +1,7 @@
 """Answer the post-print outcome prompt with a Telegram reaction (#3046).
 
 Reactions arrive as ``message_reaction`` updates, which the Bot API only
-hands out through ``getUpdates`` (long polling) or a webhook. Bambuddy
+hands out through ``getUpdates`` (long polling) or a webhook. PrintLab
 polls: no inbound connectivity, no public URL, no certificate — the same
 outbound-only footing every other notification provider works from. One
 task per distinct bot token: several per-printer providers usually share a

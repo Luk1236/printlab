@@ -1,6 +1,6 @@
 """The backup says which version made it, and restore refuses one it cannot import.
 
-Restoring a backup into a different version of Bambuddy is ordinary -- an
+Restoring a backup into a different version of PrintLab is ordinary -- an
 upgrade, a rebuild, a move to another host. What is not ordinary is the Postgres
 restore path, which throws the backup's schema away and rebuilds from the
 running ORM. A NOT NULL column the running version has and the backup does not

@@ -74,11 +74,11 @@
       tägliche Aufgabe `install_backup_task.ps1`. GitHub-Backup ist ohnehin
       in Bambuddy selbst eingebaut (Einstellungen → Backup).
 - [ ] Volle Upstream-Suite auf Linux/CI (Windows scheitert an Pfad-Trennern).
-- [ ] Docker-/ARM-Build und Test auf Pi 4/5.
+- [ ] Docker-/ARM-Build und Test auf Pi 4/5 (Anleitung: `docs/INSTALLATION-PI.md`, ungetestet).
 - [x] Frontend-Tests für die Wartungskarte (Hardware-Abschnitt: Magazin, Automatik,
       Warnung, Fehler, Not-Halt, Rechte) — 27.10.2026.
 - [ ] Backend-Meldungen für alle 15 Sprachen.
-- [ ] Auth einschalten (wartet auf das Passwort), HTTPS/Tailscale.
+- [ ] Auth einschalten (wartet auf das Passwort), HTTPS/Tailscale. Hardware-Befehle sind bis dahin gesperrt.
 - [x] Kalkulator am Warteschlangen-Auftrag: Zeitstrahl lädt bei Hover
       `GET /quote/for-archive/{id}` (Material/Energie/Arbeit/Aufschlag).
 - [x] Monats-Report: Statistik-Seite hat Monatsaggregation + CSV-Export

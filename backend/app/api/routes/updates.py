@@ -14,7 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.core.auth import RequirePermissionIfAuthEnabled
-from backend.app.core.config import APP_VERSION, GITHUB_REPO, settings
+from backend.app.core.config import GITHUB_REPO, PRINTLAB_VERSION, settings
 from backend.app.core.database import get_db
 from backend.app.core.permissions import Permission
 from backend.app.models.settings import Settings
@@ -110,13 +110,13 @@ def _is_docker_environment() -> bool:
     return False
 
 
-# Mount points the shipped compose file gives Bambuddy. Only these are
+# Mount points the shipped compose file gives PrintLab. Only these are
 # consulted when guessing the compose directory — an arbitrary bind mount
 # (a NAS share, an external library root) says nothing about where the
 # compose file lives.
 _COMPOSE_BIND_MOUNTPOINTS = ("/app/data", "/app/logs")
 
-# A named volume resolves to ``.../docker/volumes/<project>_bambuddy_data/_data``
+# A named volume resolves to ``.../docker/volumes/<project>_printlab_data/_data``
 # in mountinfo. That names the compose *project* but reveals nothing about
 # the directory holding the compose file, so these entries are skipped.
 _DOCKER_NAMED_VOLUME_ROOT = re.compile(r"/docker/volumes/[^/]+/_data/?$")
@@ -130,12 +130,12 @@ def _compose_dir_from_mountinfo() -> str | None:
     user remembers where that is. Compose knows the answer — it stamps
     ``com.docker.compose.project.working_dir`` onto every container it
     creates — but reading your own labels requires the Docker socket, and
-    mounting that into Bambuddy would hand the container root-equivalent
+    mounting that into PrintLab would hand the container root-equivalent
     access to the host in exchange for a convenience string. So we infer.
 
     ``/proc/self/mountinfo`` exposes the *host* side of a bind mount in its
     root field: a ``./data:/app/data`` line in the compose file surfaces as
-    ``/opt/bambuddy/data``, whose parent is the compose directory. The leaf
+    ``/opt/printlab/data``, whose parent is the compose directory. The leaf
     must match the mount point's own name before we take the parent —
     ``/mnt/nas/prints:/app/data`` is a bind mount whose parent is emphatically
     not a compose directory.
@@ -176,11 +176,11 @@ def _compose_dir_from_mountinfo() -> str | None:
 def _detect_compose_dir() -> str | None:
     """Best-effort compose directory for the update instructions (#2664).
 
-    ``BAMBUDDY_COMPOSE_DIR`` wins when set — it is the only source that is
+    ``PRINTLAB_COMPOSE_DIR`` wins when set — it is the only source that is
     stated rather than inferred, and the shipped compose file carries a
     commented ``${PWD}`` line for it.
     """
-    env_dir = os.environ.get("BAMBUDDY_COMPOSE_DIR", "").strip()
+    env_dir = os.environ.get("PRINTLAB_COMPOSE_DIR", "").strip()
     if env_dir:
         return env_dir
     if not _is_docker_environment():
@@ -219,8 +219,8 @@ def _find_windows_installer_asset(release_data: dict) -> str | None:
     """Pick the Windows installer .exe out of a GitHub release's assets list.
 
     Both filenames the workflow uploads end in ``windows-x64-setup.exe``
-    (versioned ``bambuddy-<version>-windows-x64-setup.exe`` and the
-    unversioned alias ``bambuddy-windows-x64-setup.exe`` on non-daily tags
+    (versioned ``printlab-<version>-windows-x64-setup.exe`` and the
+    unversioned alias ``printlab-windows-x64-setup.exe`` on non-daily tags
     only). Either works as a download URL; we prefer the versioned form
     because it's the one guaranteed to exist on every release including
     dailies.
@@ -235,7 +235,7 @@ def _find_windows_installer_asset(release_data: dict) -> str | None:
             continue
         if not name.endswith("windows-x64-setup.exe"):
             continue
-        if name == "bambuddy-windows-x64-setup.exe":
+        if name == "printlab-windows-x64-setup.exe":
             unversioned = url
         else:
             versioned = url
@@ -305,7 +305,7 @@ def _parse_github_remote(url: str) -> tuple[str, str] | None:
 
 async def _origin_points_at_repo(git_path: str, git_config: list[str], app_dir, expected_repo: str) -> bool:
     """Return True iff the working tree's `origin` already resolves to
-    `<owner>/<repo>` matching `expected_repo` (e.g. "maziggy/bambuddy"),
+    `<owner>/<repo>` matching `expected_repo` (e.g. "Luk1236/printlab"),
     regardless of whether it's the SSH or HTTPS form. Used to skip the
     `git remote set-url origin https://...` rewrite when the developer's
     SSH origin is already correct — see `_perform_update` for context.
@@ -440,7 +440,7 @@ async def get_version():
     Note: Unauthenticated - needed to display version in UI without login.
     """
     return {
-        "version": APP_VERSION,
+        "version": PRINTLAB_VERSION,
         "repo": GITHUB_REPO,
     }
 
@@ -459,7 +459,7 @@ async def check_for_updates(
     if setting and setting.value.lower() == "false":
         return {
             "update_available": False,
-            "current_version": APP_VERSION,
+            "current_version": PRINTLAB_VERSION,
             "latest_version": None,
             "message": "Update checks are disabled",
         }
@@ -480,7 +480,7 @@ async def check_for_updates(
         }
         return {
             "update_available": False,
-            "current_version": APP_VERSION,
+            "current_version": PRINTLAB_VERSION,
             "latest_version": None,
             "error": "GitHub rate limit reached; retry later",
             "retry_after_seconds": int(backoff_remaining),
@@ -511,7 +511,7 @@ async def check_for_updates(
                 }
                 return {
                     "update_available": False,
-                    "current_version": APP_VERSION,
+                    "current_version": PRINTLAB_VERSION,
                     "latest_version": None,
                     "error": "GitHub rate limit reached; retry later",
                     "retry_after_seconds": int(_seconds_until_github_unblocked()),
@@ -527,7 +527,7 @@ async def check_for_updates(
                 }
                 return {
                     "update_available": False,
-                    "current_version": APP_VERSION,
+                    "current_version": PRINTLAB_VERSION,
                     "latest_version": None,
                     "message": "No releases found",
                 }
@@ -559,7 +559,7 @@ async def check_for_updates(
                 }
                 return {
                     "update_available": False,
-                    "current_version": APP_VERSION,
+                    "current_version": PRINTLAB_VERSION,
                     "latest_version": None,
                     "message": "No releases found",
                 }
@@ -570,7 +570,7 @@ async def check_for_updates(
             release_url = release_data.get("html_url", "")
             published_at = release_data.get("published_at", "")
 
-            update_available = is_newer_version(latest_version, APP_VERSION)
+            update_available = is_newer_version(latest_version, PRINTLAB_VERSION)
 
             _update_status = {
                 "status": "idle",
@@ -594,7 +594,7 @@ async def check_for_updates(
                 update_method = "git"
             return {
                 "update_available": update_available,
-                "current_version": APP_VERSION,
+                "current_version": PRINTLAB_VERSION,
                 "latest_version": latest_version,
                 "release_name": release_name,
                 "release_notes": release_notes,
@@ -622,7 +622,7 @@ async def check_for_updates(
         }
         return {
             "update_available": False,
-            "current_version": APP_VERSION,
+            "current_version": PRINTLAB_VERSION,
             "latest_version": None,
             "error": "Failed to check for updates",
         }
@@ -697,8 +697,8 @@ async def _perform_update(target_ref: str):
         # On a standard install with DATA_DIR=INSTALL_PATH/data, git happens
         # to walk up from a subdirectory of the repo to find .git so cwd=base_dir
         # used to silently work — but only by accident. On a native install with
-        # DATA_DIR mounted at an unrelated path (e.g. /srv/bambuddy/data while
-        # the install is /opt/bambuddy — see #1715), git can't walk up and every
+        # DATA_DIR mounted at an unrelated path (e.g. /srv/printlab/data while
+        # the install is /opt/printlab — see #1715), git can't walk up and every
         # operation fails with "not a git repository". safe.directory has the
         # same requirement: it must equal the repo root git discovers, not the
         # data dir, or every call returns "fatal: detected dubious ownership."
@@ -732,7 +732,7 @@ async def _perform_update(target_ref: str):
         # origin to HTTPS unconditionally on the assumption that systemd
         # service users wouldn't have SSH keys configured — which is fine
         # for that case, but stomps on developer checkouts where origin is
-        # legitimately `git@github.com:maziggy/bambuddy.git` and the user
+        # legitimately `git@github.com:Luk1236/printlab.git` and the user
         # auths via SSH keys. After the rewrite, `git push` prompts for
         # HTTPS credentials and fails.
         # New behaviour: read the current origin, parse out the
@@ -946,9 +946,9 @@ async def apply_update(
             "is_ha_addon": True,
             "is_docker": True,
             "message": (
-                "Bambuddy is running as a Home Assistant addon. "
+                "PrintLab is running as a Home Assistant addon. "
                 "Updates are managed by the Home Assistant Supervisor "
-                "(Settings → Add-ons → Bambuddy → Update)."
+                "(Settings → Add-ons → PrintLab → Update)."
             ),
         }
     if _is_docker_environment():
@@ -971,7 +971,7 @@ async def apply_update(
             "is_windows_installer": True,
             "message": (
                 "Windows installations are updated by re-running the installer. "
-                "Download the latest installer from the Bambuddy releases page."
+                "Download the latest installer from the PrintLab releases page."
             ),
         }
 

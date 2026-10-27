@@ -8,7 +8,7 @@ only the index used to render as "2%" in the good/green band while being the
 second-wettest of the five steps, chart an average of index values as a
 percentage, and sit under every alarm threshold forever.
 
-The reporting install ran X1Plus, which Bambuddy does not support, and no
+The reporting install ran X1Plus, which PrintLab does not support, and no
 stock-firmware printer is on record as sending the index alone. The guard is
 kept regardless because it is about what we do when the field is missing for
 any reason, and showing a number we cannot interpret is worse than showing

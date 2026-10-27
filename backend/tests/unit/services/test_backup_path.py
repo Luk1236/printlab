@@ -33,10 +33,10 @@ class TestSystemdUnitName:
     @pytest.mark.parametrize(
         ("cgroup", "expected"),
         [
-            ("0::/system.slice/bambuddy.service\n", "bambuddy.service"),
-            ("0::/system.slice/system-bambuddy.slice/bambuddy@1.service\n", "bambuddy@1.service"),
+            ("0::/system.slice/printlab.service\n", "printlab.service"),
+            ("0::/system.slice/system-printlab.slice/printlab@1.service\n", "printlab@1.service"),
             # No .service in the path (a user scope, say) — still name something usable.
-            ("0::/user.slice/user-1000.slice/session-3.scope\n", "bambuddy.service"),
+            ("0::/user.slice/user-1000.slice/session-3.scope\n", "printlab.service"),
         ],
     )
     def test_reads_the_unit_name_from_the_cgroup(self, monkeypatch, cgroup, expected):
@@ -45,19 +45,19 @@ class TestSystemdUnitName:
 
         assert systemd_unit_name() == expected
 
-    def test_falls_back_to_bambuddy_when_the_cgroup_is_unreadable(self, monkeypatch):
+    def test_falls_back_to_printlab_when_the_cgroup_is_unreadable(self, monkeypatch):
         monkeypatch.setenv("INVOCATION_ID", "deadbeef")
 
         def boom(_path):
             raise OSError("no /proc here")
 
         monkeypatch.setattr(Path, "read_text", boom)
-        assert systemd_unit_name() == "bambuddy.service"
+        assert systemd_unit_name() == "printlab.service"
 
 
 class TestClassifyReadOnly:
     def test_erofs_under_systemd_blames_the_sandbox_and_hands_over_the_fix(self, monkeypatch):
-        monkeypatch.setattr(backup_path, "systemd_unit_name", lambda: "bambuddy.service")
+        monkeypatch.setattr(backup_path, "systemd_unit_name", lambda: "printlab.service")
 
         result = classify_backup_dir_error(OSError(errno.EROFS, "Read-only file system"), NAS)
 
@@ -65,7 +65,7 @@ class TestClassifyReadOnly:
         assert result["code"] == "sandboxed"
         assert "ProtectSystem=strict" in result["message"]
         # The remedy has to be copy-pasteable, with their path already in it.
-        assert "systemctl edit bambuddy.service" in result["remedy"]
+        assert "systemctl edit printlab.service" in result["remedy"]
         assert "ReadWritePaths=/mnt/nasbackup" in result["remedy"]
 
     def test_erofs_outside_systemd_does_not_blame_a_unit_that_does_not_exist(self, monkeypatch):
@@ -78,7 +78,7 @@ class TestClassifyReadOnly:
         assert "systemd" not in result["message"]
 
     def test_eacces_is_a_permission_problem_not_a_sandbox_one(self, monkeypatch):
-        monkeypatch.setattr(backup_path, "systemd_unit_name", lambda: "bambuddy.service")
+        monkeypatch.setattr(backup_path, "systemd_unit_name", lambda: "printlab.service")
 
         result = classify_backup_dir_error(OSError(errno.EACCES, "Permission denied"), NAS)
 
@@ -115,7 +115,7 @@ class TestProbe:
         assert list(target.iterdir()) == []
 
     def test_a_read_only_directory_is_diagnosed_not_just_reported(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(backup_path, "systemd_unit_name", lambda: "bambuddy.service")
+        monkeypatch.setattr(backup_path, "systemd_unit_name", lambda: "printlab.service")
         target = tmp_path / "nasbackup"
         target.mkdir()
 

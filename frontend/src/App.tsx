@@ -181,7 +181,7 @@ function App() {
                 {/* Login page */}
                 <Route path="/login" element={<LoginPage />} />
 
-                {/* "Sign in with Bambuddy" for connected apps: standalone, no layout,
+                {/* "Sign in with PrintLab" for connected apps: standalone, no layout,
                     so it also fits inside the sidebar iframe of the app asking. */}
                 <Route path="/connect/authorize" element={<ProtectedRoute><ConnectAuthorizePage /></ProtectedRoute>} />
 

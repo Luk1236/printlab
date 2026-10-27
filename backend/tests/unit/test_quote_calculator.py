@@ -6,7 +6,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.models.settings import Settings
 
-
 pytestmark = pytest.mark.usefixtures("test_engine")
 
 

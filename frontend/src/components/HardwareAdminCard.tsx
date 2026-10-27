@@ -8,6 +8,7 @@ import type { AuditEntry, HardwareConfig, HardwareSlot, Printer } from '../api/c
 import { Button } from './Button';
 import { Card, CardContent } from './Card';
 import { useToast } from '../contexts/ToastContext';
+import { commandToDraft, draftToCommand } from '../utils/hardwareCommand';
 
 const SLOT_STATUSES = ['ready', 'used', 'empty', 'occupied'] as const;
 
@@ -58,11 +59,11 @@ export function HardwareAdminCard({ canControl }: { canControl: boolean }) {
   const buildDraft = (cfg: HardwareConfig): ConfigDraft => ({
     mode: cfg.mode,
     timeout_seconds: String(cfg.timeout_seconds ?? 15),
-    door_open_command: cfg.door_open_command ?? '',
-    door_close_command: cfg.door_close_command ?? '',
-    door_status_command: cfg.door_status_command ?? '',
-    plate_change_command: cfg.plate_change_command ?? '',
-    emergency_stop_command: cfg.emergency_stop_command ?? '',
+    door_open_command: commandToDraft(cfg.door_open_command),
+    door_close_command: commandToDraft(cfg.door_close_command),
+    door_status_command: commandToDraft(cfg.door_status_command),
+    plate_change_command: commandToDraft(cfg.plate_change_command),
+    emergency_stop_command: commandToDraft(cfg.emergency_stop_command),
   });
 
   const slotsSave = useMutation({
@@ -82,11 +83,11 @@ export function HardwareAdminCard({ canControl }: { canControl: boolean }) {
       api.setHardwareConfig(printerId, {
         mode: draft.mode,
         timeout_seconds: Number(draft.timeout_seconds) || 15,
-        door_open_command: draft.door_open_command,
-        door_close_command: draft.door_close_command,
-        door_status_command: draft.door_status_command,
-        plate_change_command: draft.plate_change_command,
-        emergency_stop_command: draft.emergency_stop_command,
+        door_open_command: draftToCommand(draft.door_open_command),
+        door_close_command: draftToCommand(draft.door_close_command),
+        door_status_command: draftToCommand(draft.door_status_command),
+        plate_change_command: draftToCommand(draft.plate_change_command),
+        emergency_stop_command: draftToCommand(draft.emergency_stop_command),
       }),
     onSuccess: (data) => {
       showToast(data.message || t('common.success'));
@@ -148,7 +149,7 @@ export function HardwareAdminCard({ canControl }: { canControl: boolean }) {
                   className={`px-1.5 py-0.5 text-[11px] font-medium rounded border ${STATUS_COLOR[slot.status] ?? ''}`}
                   title={slot.status}
                 >
-                  {t(`hardwareAdmin.status.${slot.status}`)}
+                  {t(`hardwareAdmin.status_${slot.status}`)}
                 </button>
               </div>
               <input
@@ -241,7 +242,7 @@ export function HardwareAdminCard({ canControl }: { canControl: boolean }) {
                   <span className="text-bambu-gray whitespace-nowrap">
                     {new Date(entry.ts).toLocaleString()}
                   </span>
-                  <span className="font-medium">{t(`hardwareAdmin.action.${entry.action}`, entry.action)}</span>
+                  <span className="font-medium">{t(`hardwareAdmin.action_${entry.action}`, entry.action)}</span>
                   <span className="text-bambu-gray truncate" title={entry.message}>{entry.message}</span>
                 </div>
               ))}

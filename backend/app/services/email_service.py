@@ -140,7 +140,7 @@ async def get_smtp_settings(db: AsyncSession) -> SMTPSettings | None:
         smtp_security=smtp_security,
         smtp_auth_enabled=smtp_auth_enabled,
         smtp_from_email=settings_dict["smtp_from_email"],
-        smtp_from_name=settings_dict.get("smtp_from_name", "BamBuddy"),
+        smtp_from_name=settings_dict.get("smtp_from_name", "PrintLab"),
     )
 
 
@@ -275,9 +275,9 @@ def create_welcome_email(username: str, password: str, login_url: str) -> tuple[
     Returns:
         Tuple of (subject, text_body, html_body)
     """
-    subject = "Welcome to BamBuddy - Your Account Details"
+    subject = "Welcome to PrintLab - Your Account Details"
 
-    text_body = f"""Welcome to BamBuddy!
+    text_body = f"""Welcome to PrintLab!
 
 Your account has been created. Here are your login details:
 
@@ -289,7 +289,7 @@ You can login at: {login_url}
 For security reasons, please change your password after your first login.
 
 Best regards,
-BamBuddy Team
+PrintLab Team
 """
 
     html_body = f"""<!DOCTYPE html>
@@ -300,7 +300,7 @@ BamBuddy Team
 </head>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); background-color: #667eea; padding: 20px; border-radius: 8px 8px 0 0;">
-        <h1 style="color: #ffffff; margin: 0; font-size: 24px; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">Welcome to BamBuddy!</h1>
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">Welcome to PrintLab!</h1>
     </div>
     <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; border: 1px solid #ddd; border-top: none;">
         <p style="font-size: 16px;">Your account has been created. Here are your login details:</p>
@@ -320,7 +320,7 @@ BamBuddy Team
 
         <p style="font-size: 14px; color: #999; margin-top: 30px;">
             Best regards,<br>
-            BamBuddy Team
+            PrintLab Team
         </p>
     </div>
 </body>
@@ -341,9 +341,9 @@ def create_password_reset_email(username: str, password: str, login_url: str) ->
     Returns:
         Tuple of (subject, text_body, html_body)
     """
-    subject = "BamBuddy - Your Password Has Been Reset"
+    subject = "PrintLab - Your Password Has Been Reset"
 
-    text_body = f"""Your BamBuddy password has been reset.
+    text_body = f"""Your PrintLab password has been reset.
 
 Your login details:
 
@@ -357,7 +357,7 @@ For security reasons, please change your password after logging in.
 If you did not request this password reset, please contact your administrator immediately.
 
 Best regards,
-BamBuddy Team
+PrintLab Team
 """
 
     html_body = f"""<!DOCTYPE html>
@@ -371,7 +371,7 @@ BamBuddy Team
         <h1 style="color: #ffffff; margin: 0; font-size: 24px; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">Password Reset</h1>
     </div>
     <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; border: 1px solid #ddd; border-top: none;">
-        <p style="font-size: 16px;">Your BamBuddy password has been reset.</p>
+        <p style="font-size: 16px;">Your PrintLab password has been reset.</p>
 
         <div style="background: white; padding: 20px; border-radius: 4px; margin: 20px 0; border-left: 4px solid #667eea;">
             <p style="margin: 0 0 10px 0;"><strong>Username:</strong> <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">{username}</code></p>
@@ -394,7 +394,7 @@ BamBuddy Team
 
         <p style="font-size: 14px; color: #999; margin-top: 30px;">
             Best regards,<br>
-            BamBuddy Team
+            PrintLab Team
         </p>
     </div>
 </body>
@@ -406,9 +406,9 @@ BamBuddy Team
 
 def create_password_reset_link_email(username: str, reset_url: str) -> tuple[str, str, str]:
     """Create a password-reset email that contains a secure link (not a plaintext password)."""
-    subject = "BamBuddy - Password Reset Request"
+    subject = "PrintLab - Password Reset Request"
 
-    text_body = f"""A password reset was requested for your BamBuddy account.
+    text_body = f"""A password reset was requested for your PrintLab account.
 
 Username: {username}
 
@@ -418,7 +418,7 @@ Click the link below to set a new password (valid for 1 hour):
 If you did not request this reset, you can safely ignore this email.
 
 Best regards,
-BamBuddy Team
+PrintLab Team
 """
 
     html_body = f"""<!DOCTYPE html>
@@ -432,7 +432,7 @@ BamBuddy Team
         <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Password Reset Request</h1>
     </div>
     <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; border: 1px solid #ddd; border-top: none;">
-        <p style="font-size: 16px;">A password reset was requested for your BamBuddy account (<strong>{username}</strong>).</p>
+        <p style="font-size: 16px;">A password reset was requested for your PrintLab account (<strong>{username}</strong>).</p>
         <p>Click the button below to set a new password. This link is valid for <strong>1 hour</strong>.</p>
         <div style="text-align: center; margin: 30px 0;">
             <a href="{reset_url}" style="display: inline-block; background-color: #667eea; color: #ffffff; padding: 12px 30px; text-decoration: none; border-radius: 4px; font-weight: bold;">Reset Password</a>
@@ -443,7 +443,7 @@ BamBuddy Team
             </p>
         </div>
         <p style="font-size: 14px; color: #999; margin-top: 30px;">
-            Best regards,<br>BamBuddy Team
+            Best regards,<br>PrintLab Team
         </p>
     </div>
 </body>
@@ -459,7 +459,7 @@ async def create_password_reset_link_email_from_template(
     template = await get_notification_template(db, "password_reset_link")
     if template:
         variables = {"username": username, "reset_url": reset_url}
-        subject = render_template(template.subject or "BamBuddy - Password Reset Request", variables)
+        subject = render_template(template.subject or "PrintLab - Password Reset Request", variables)
         text_body = render_template(template.body or "", variables)
         html_body = render_template(template.html_body or "", variables) if template.html_body else None
         if not html_body:
@@ -470,7 +470,7 @@ async def create_password_reset_link_email_from_template(
 
 
 async def create_welcome_email_from_template(
-    db: AsyncSession, username: str, password: str, login_url: str, app_name: str = "BamBuddy"
+    db: AsyncSession, username: str, password: str, login_url: str, app_name: str = "PrintLab"
 ) -> tuple[str, str, str]:
     """Create welcome email content using notification template from database.
 
@@ -479,7 +479,7 @@ async def create_welcome_email_from_template(
         username: Username of the new user
         password: Auto-generated password
         login_url: URL to login page
-        app_name: Application name (default: BamBuddy)
+        app_name: Application name (default: PrintLab)
 
     Returns:
         Tuple of (subject, text_body, html_body)
@@ -532,7 +532,7 @@ async def create_welcome_email_from_template(
 
 
 async def create_password_reset_email_from_template(
-    db: AsyncSession, username: str, password: str, login_url: str, app_name: str = "BamBuddy"
+    db: AsyncSession, username: str, password: str, login_url: str, app_name: str = "PrintLab"
 ) -> tuple[str, str, str]:
     """Create password reset email content using notification template from database.
 
@@ -541,7 +541,7 @@ async def create_password_reset_email_from_template(
         username: Username of the user
         password: New auto-generated password
         login_url: URL to login page
-        app_name: Application name (default: BamBuddy)
+        app_name: Application name (default: PrintLab)
 
     Returns:
         Tuple of (subject, text_body, html_body)
@@ -636,7 +636,7 @@ async def send_user_print_notification(
     all_variables = {
         "username": username,
         "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
-        "app_name": "Bambuddy",
+        "app_name": "PrintLab",
         **variables,
     }
 

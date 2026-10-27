@@ -10,8 +10,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from backend.app.services import auto_plate_change
-from backend.app.services import hardware_extension
+from backend.app.services import auto_plate_change, hardware_extension
 
 
 @pytest.fixture(autouse=True)
@@ -20,6 +19,14 @@ def isolated_config(tmp_path, monkeypatch):
     cfg = tmp_path / "hardware.json"
     monkeypatch.setattr(hardware_extension, "CONFIG_PATH", cfg)
     monkeypatch.setattr(auto_plate_change, "_config_path", lambda: cfg)
+    from backend.app.services import audit_log
+
+    monkeypatch.setattr(audit_log, "LOG_PATH", tmp_path / "audit_log.jsonl")
+
+    async def _no_notify(printer_id, entry):
+        return None
+
+    monkeypatch.setattr(auto_plate_change, "_notify", _no_notify)
     return cfg
 
 

@@ -1,7 +1,7 @@
 [project]
-name = "bambuddy"
+name = "printlab"
 version = "0.1.5"
-description = "Archive and manage Bambu Lab 3MF files"
+description = "PrintLab – Drucker-Verwaltung für Bambu Lab (P2S) mit Plattenwechsler, Optik-Prüfung und Angebotskalkulator"
 requires-python = ">=3.10"
 
 [tool.ruff]

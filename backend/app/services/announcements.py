@@ -1,8 +1,8 @@
-"""Announcements from the Bambuddy maintainers: fetch, verify, keep what applies.
+"""Announcements from the PrintLab maintainers: fetch, verify, keep what applies.
 
-Bambuddy fetches one file, ``feed.json``, from the public
-``maziggy/bambuddy-notifications`` repo on raw.githubusercontent.com -- the host
-the update check already talks to. No Bambuddy server is contacted and nothing
+PrintLab fetches one file, ``feed.json``, from the public
+``the notifications feed`` repo on raw.githubusercontent.com -- the host
+the update check already talks to. No PrintLab server is contacted and nothing
 about this install is sent: whether a message applies here (version range,
 channel, install type) is decided below, locally.
 
@@ -12,7 +12,7 @@ The file is written by the maintainers' registrar and signed with Ed25519:
 
 The signature covers ``canonical(payload)``. A file that does not verify against
 a key in ``TRUSTED_KEYS`` is ignored, so neither a copy of the repo nor anyone in
-the middle can make Bambuddy show a message. The payload's ``serial`` only goes
+the middle can make PrintLab show a message. The payload's ``serial`` only goes
 up; a feed older than one already accepted is refused, so an old signed file
 cannot be re-served to bring back a withdrawn message.
 
@@ -27,6 +27,7 @@ import asyncio
 import base64
 import json
 import logging
+import os
 import random
 import re
 from dataclasses import dataclass
@@ -45,7 +46,8 @@ from backend.app.models.settings import Settings
 
 logger = logging.getLogger(__name__)
 
-FEED_URL = "https://raw.githubusercontent.com/maziggy/bambuddy-notifications/main/feed.json"
+# Fork: kein Upstream-Feed; ANNOUNCEMENTS_FEED_URL setzen, um Meldungen zu laden (leer = aus).
+FEED_URL = os.environ.get("ANNOUNCEMENTS_FEED_URL", "")
 FEED_FORMAT = 1
 
 # key_id (first 16 hex of sha256 of the raw public key) -> base64 raw public key.
@@ -56,7 +58,7 @@ TRUSTED_KEYS: dict[str, str] = {
 
 # Where a message may link to. The registrar refuses anything else too; this is
 # the side that counts.
-LINK_HOSTS = ("github.com", "bambuddy.cool")
+LINK_HOSTS = ("github.com",)
 
 LEVELS = ("info", "important", "critical")
 MAX_FEED_BYTES = 512 * 1024
@@ -327,7 +329,7 @@ async def apply_payload(db: AsyncSession, payload: dict, facts: InstallFacts) ->
 async def _download() -> bytes:
     # No version and no install identity in the request: the generic agent says
     # what is asking, nothing about which install.
-    headers = {"User-Agent": "Bambuddy-Announcements", "Cache-Control": "no-cache"}
+    headers = {"User-Agent": "PrintLab-Announcements", "Cache-Control": "no-cache"}
     async with (
         httpx.AsyncClient(timeout=15, follow_redirects=False) as client,
         client.stream("GET", FEED_URL, headers=headers) as response,
@@ -375,7 +377,7 @@ async def refresh(db: AsyncSession) -> int | None:
 
 
 async def _tell_open_pages() -> None:
-    """Have every open Bambuddy page re-read the list, so a new message's dot and
+    """Have every open PrintLab page re-read the list, so a new message's dot and
     banner appear without a reload. The event carries nothing: each page asks
     GET /announcements, which answers by who is asking."""
     from backend.app.core.websocket import ws_manager
@@ -465,6 +467,9 @@ async def _loop() -> None:
 
 def start() -> None:
     global _task
+    if not FEED_URL:
+        logger.info("Announcements feed disabled (ANNOUNCEMENTS_FEED_URL not set)")
+        return
     if _task is None:
         _task = asyncio.create_task(_loop())
 

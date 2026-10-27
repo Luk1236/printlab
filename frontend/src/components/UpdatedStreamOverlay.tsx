@@ -78,11 +78,11 @@ export function UpdatedStreamOverlay(props: UpdatedStreamOverlayProps) {
         )}
         <a
           className="updated-overlay__logo"
-          href="https://github.com/maziggy/bambuddy"
+          href="https://github.com/Luk1236/printlab"
           target="_blank"
           rel="noopener noreferrer"
         >
-          <img src="/img/bambuddy_logo_powered_by.png" alt="Bambuddy" />
+          <img src="/img/printlab_dark.png" alt="PrintLab" />
         </a>
       </header>
       {camera && (

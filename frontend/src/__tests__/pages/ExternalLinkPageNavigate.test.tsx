@@ -1,7 +1,7 @@
 /**
- * The framed app may ask Bambuddy to open one of its own pages in place
- * (Bambuddy Orders' "In Bambuddy" link): only from the frame, only from the
- * link's origin, only for a path inside Bambuddy.
+ * The framed app may ask PrintLab to open one of its own pages in place
+ * (PrintLab Orders' "In PrintLab" link): only from the frame, only from the
+ * link's origin, only for a path inside PrintLab.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -54,7 +54,7 @@ afterEach(() => {
 });
 
 describe('ExternalLinkPage navigate requests', () => {
-  it('opens the asked-for Bambuddy page', async () => {
+  it('opens the asked-for PrintLab page', async () => {
     const frame = await renderFrame();
     ask(frame, '/queue?batch=12');
     expect(await screen.findByTestId('where')).toHaveTextContent('/queue?batch=12');
