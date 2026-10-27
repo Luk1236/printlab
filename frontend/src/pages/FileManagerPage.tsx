@@ -2669,9 +2669,9 @@ export function FileManagerPage() {
             {t('fileManager.subtitle')}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {/* View mode toggle */}
-          <div className="flex items-center bg-bambu-dark rounded-lg p-1">
+          <div className="flex items-center bg-bambu-dark rounded-lg p-1 self-center">
             <button
               onClick={() => handleViewModeChange('grid')}
               className={`p-1.5 rounded transition-colors ${
@@ -2705,6 +2705,7 @@ export function FileManagerPage() {
             onClick={() => batchThumbnailMutation.mutate()}
             disabled={batchThumbnailMutation.isPending || !hasAnyPermission('library:update_own', 'library:update_all')}
             title={!hasAnyPermission('library:update_own', 'library:update_all') ? t('fileManager.noPermissionGenerateThumbnail') : t('fileManager.generateThumbnailsForMissing')}
+            className="whitespace-nowrap"
           >
             {batchThumbnailMutation.isPending ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -2718,6 +2719,7 @@ export function FileManagerPage() {
             onClick={() => setShowExternalFolderModal(true)}
             disabled={!hasPermission('library:upload')}
             title={!hasPermission('library:upload') ? t('fileManager.noPermissionCreateFolder') : t('fileManager.linkExternalFolder')}
+            className="whitespace-nowrap"
           >
             <FolderSymlink className="w-4 h-4 mr-2" />
             {t('fileManager.linkExternal')}
@@ -2727,6 +2729,7 @@ export function FileManagerPage() {
             onClick={() => setShowNewFolderModal(true)}
             disabled={!hasPermission('library:upload')}
             title={!hasPermission('library:upload') ? t('fileManager.noPermissionCreateFolder') : undefined}
+            className="whitespace-nowrap"
           >
             <FolderPlus className="w-4 h-4 mr-2" />
             {t('fileManager.newFolder')}
@@ -2735,6 +2738,7 @@ export function FileManagerPage() {
             variant="secondary"
             onClick={() => setShowTagsModal(true)}
             title={t('fileManager.tags.manageTitle')}
+            className="whitespace-nowrap"
           >
             <TagIcon className="w-4 h-4 mr-2" />
             {t('fileManager.tags.manage')}
@@ -2744,6 +2748,7 @@ export function FileManagerPage() {
               variant="secondary"
               onClick={() => setShowPurgeModal(true)}
               title={t('libraryPurge.headerTooltip')}
+              className="whitespace-nowrap"
             >
               <Trash2 className="w-4 h-4 mr-2" />
               {t('libraryPurge.headerButton')}
@@ -2752,7 +2757,7 @@ export function FileManagerPage() {
           {(hasAnyPermission('library:delete_own', 'library:delete_all')) && (
             <Link
               to="/files/trash"
-              className="inline-flex items-center px-3 py-1.5 text-sm rounded bg-bambu-dark-secondary text-bambu-gray hover:text-white hover:bg-bambu-dark transition-colors"
+              className="inline-flex items-center px-4 py-2 text-sm rounded whitespace-nowrap bg-bambu-dark-secondary text-bambu-gray hover:text-white hover:bg-bambu-dark transition-colors"
               title={t('libraryTrash.headerTooltip')}
             >
               <Trash2 className="w-4 h-4 mr-2" />
@@ -2768,6 +2773,7 @@ export function FileManagerPage() {
             onClick={() => setShowUploadModal(true)}
             disabled={!hasPermission('library:upload')}
             title={!hasPermission('library:upload') ? t('fileManager.noPermissionUpload') : undefined}
+            className="whitespace-nowrap"
           >
             <Upload className="w-4 h-4 mr-2" />
             {t('common.upload')}
