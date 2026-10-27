@@ -1879,6 +1879,8 @@ export default {
       jobRulesHint: '依列印名設定規則：第一個符合生效（名稱片段、門檻、開/關）。',
       jobRulesFragment: '名稱片段',
       jobRulesThreshold: '門檻',
+      priceList: '價格表',
+      materialName: '材料名',
       queuePrintRods: '保養絲桿入列',
       confirmQueuePrint: '將保養列印加入佇列？將產生3MF、加入庫並排程。',
       autoPlateChangeOn: '開啟自動化',

@@ -6,6 +6,9 @@ vorgegebenen Rate, z. B. aus einem Spool) hervor, Energie aus Druckdauer ×
 Durchschnittsleistung × €/kWh, Arbeit aus der eingetragenen Handarbeitszeit ×
 Stundenlohn; auf die Summe kommt der Aufschlag-Prozentsatz — jeweils die in
 den Einstellungen hinterlegten Werte.
+
+Preisliste: stehende Materialtarife aus ``data/price_list.json`` (siehe
+``services/price_list.py``); der Kalkulator nutzt sie mit ``material=``.
 """
 from __future__ import annotations
 
@@ -16,6 +19,7 @@ from backend.app.api.routes.settings import DEFAULT_SETTINGS, get_setting
 from backend.app.core.auth import RequirePermissionIfAuthEnabled
 from backend.app.core.database import get_db
 from backend.app.core.permissions import Permission
+from backend.app.services import price_list
 
 router = APIRouter(prefix="/quote", tags=["quote"])
 
@@ -26,6 +30,21 @@ async def _float_setting(db: AsyncSession, key: str) -> float:
         return float(raw) if raw is not None else getattr(DEFAULT_SETTINGS, key)
     except (TypeError, ValueError):
         return getattr(DEFAULT_SETTINGS, key)
+
+
+@router.get("/price-list")
+async def get_price_list(
+    _=RequirePermissionIfAuthEnabled(Permission.ARCHIVES_READ),
+):
+    return {"entries": price_list.read_list()}
+
+
+@router.put("/price-list")
+async def set_price_list(
+    entries: list[dict],
+    _=RequirePermissionIfAuthEnabled(Permission.SETTINGS_UPDATE),
+):
+    return price_list.write_list(entries)
 
 
 @router.get("/for-archive/{archive_id}")
@@ -77,14 +96,15 @@ async def quote(
     grams: float = Query(..., ge=0, description="Filament in Gramm"),
     duration_minutes: float = Query(..., ge=0, description="Druckdauer in Minuten"),
     labor_minutes: float = Query(0, ge=0, description="Handarbeitszeit in Minuten"),
-    filament_cost_per_kg: float | None = Query(None, ge=0, description="Materialrate; Standard: Einstellung"),
+    filament_cost_per_kg: float | None = Query(None, ge=0, description="Materialrate; Standard: Preisliste/Einstellung"),
+    material: str | None = Query(None, max_length=40, description="Materialname für die Preisliste (z. B. TPU)"),
     currency: str | None = Query(None, max_length=8, description="Währungskürzel für die Antwort"),
     _=RequirePermissionIfAuthEnabled(Permission.ARCHIVES_READ),
     db: AsyncSession = Depends(get_db),
 ):
-    material_rate = filament_cost_per_kg if filament_cost_per_kg is not None else await _float_setting(
-        db, "default_filament_cost"
-    )
+    default_rate = await _float_setting(db, "default_filament_cost")
+    list_rate, _list_material = price_list.rate_for(material, default_rate)
+    material_rate = filament_cost_per_kg if filament_cost_per_kg is not None else list_rate
     energy_per_kwh = await _float_setting(db, "energy_cost_per_kwh")
     power_watts = await _float_setting(db, "printer_power_watts")
     labor_rate = await _float_setting(db, "labor_rate_per_hour")

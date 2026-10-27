@@ -1803,6 +1803,8 @@ export default {
       jobRulesHint: 'Правила по имени печати: первый матч побеждает (фрагмент, порог, вкл/выкл).',
       jobRulesFragment: 'Фрагмент',
       jobRulesThreshold: 'Порог',
+      priceList: 'Прейскурант',
+      materialName: 'Название материала',
       queuePrintRods: 'Обслуж. штанги в очередь',
       confirmQueuePrint: 'Поставить печать обслуживания в очередь? 3MF создаётся, добавляется в библиотеку и планируется.',
       autoPlateChangeOn: 'Включить автоматику',

@@ -1879,6 +1879,8 @@ export default {
       jobRulesHint: '按打印名设置规则：第一个匹配生效（名称片段、阈值、开/关）。',
       jobRulesFragment: '名称片段',
       jobRulesThreshold: '阈值',
+      priceList: '价格表',
+      materialName: '材料名',
       queuePrintRods: '保养丝杆入队',
       confirmQueuePrint: '将保养打印加入队列？将生成3MF、加入库并计划任务。',
       autoPlateChangeOn: '开启自动化',

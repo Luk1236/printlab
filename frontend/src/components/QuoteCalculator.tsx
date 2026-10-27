@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Calculator, Settings } from 'lucide-react';
 
 import { api } from '../api/client';
-import type { QuoteResponse } from '../api/client';
+import type { PriceListEntry, QuoteResponse } from '../api/client';
 import { Button } from './Button';
 import { Card, CardContent } from './Card';
 import { useToast } from '../contexts/ToastContext';
@@ -29,6 +29,23 @@ export function QuoteCalculator() {
   const [rateOverride, setRateOverride] = useState<string | null>(null);
   const [quote, setQuote] = useState<QuoteResponse | null>(null);
   const [showRates, setShowRates] = useState(false);
+  const [priceListOpen, setPriceListOpen] = useState(false);
+  const [priceListDraft, setPriceListDraft] = useState<PriceListEntry[] | null>(null);
+
+  const { data: priceList } = useQuery({
+    queryKey: ['priceList'],
+    queryFn: () => api.getPriceList(),
+  });
+  const priceListMutation = useMutation({
+    mutationFn: () => api.setPriceList(priceListDraft ?? []),
+    onSuccess: () => {
+      showToast(t('common.success'));
+      setPriceListOpen(false);
+      setPriceListDraft(null);
+      queryClient.invalidateQueries({ queryKey: ['priceList'] });
+    },
+    onError: (error: Error) => showToast(error.message),
+  });
 
   const { data: settings } = useQuery({ queryKey: ['quoteSettings'], queryFn: api.getSettings });
   const currency = settings?.currency ?? 'EUR';
@@ -152,7 +169,72 @@ export function QuoteCalculator() {
             <Settings className="w-4 h-4" />
             {t('quote.rates')}
           </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              if (!priceListOpen && priceListDraft === null) {
+                setPriceListDraft((priceList?.entries ?? []).map((entry) => ({ ...entry })));
+              }
+              setPriceListOpen((open) => !open);
+            }}
+            title={t('quote.priceList')}
+          >
+            {t('quote.priceList')}
+          </Button>
         </div>
+        {priceListOpen && priceListDraft && (
+          <div className="border border-bambu-dark-tertiary rounded-lg p-3 space-y-2">
+            {priceListDraft.map((entry, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <input
+                  value={entry.material}
+                  onChange={(event) =>
+                    setPriceListDraft((rows) => rows.map((r, i) => (i === index ? { ...r, material: event.target.value } : r)))
+                  }
+                  placeholder="PLA"
+                  className="w-28 bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm"
+                  aria-label={t('quote.materialName', { index: index + 1 })}
+                />
+                <input
+                  type="number"
+                  step="0.5"
+                  min={0}
+                  value={entry.rate_per_kg}
+                  onChange={(event) =>
+                    setPriceListDraft((rows) => rows.map((r, i) => (i === index ? { ...r, rate_per_kg: Number(event.target.value) } : r)))
+                  }
+                  className="w-24 bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm"
+                  aria-label={`${t('quote.rate')} ${index + 1}`}
+                />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setPriceListDraft((rows) => rows.filter((_, i) => i !== index))}
+                >
+                  ✕
+                </Button>
+              </div>
+            ))}
+            <div className="flex justify-between gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setPriceListDraft((rows) => [...rows, { material: '', rate_per_kg: Number(defaultRate) || 22 }])}
+              >
+                +
+              </Button>
+              <div className="flex gap-2">
+                <Button size="sm" variant="ghost" onClick={() => { setPriceListOpen(false); setPriceListDraft(null); }}>
+                  {t('common.cancel')}
+                </Button>
+                <Button size="sm" disabled={priceListMutation.isPending} onClick={() => priceListMutation.mutate()}>
+                  {t('common.save')}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
         {showRates && (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 border border-bambu-dark-tertiary rounded-lg p-3">
             <label className="text-xs text-bambu-gray">

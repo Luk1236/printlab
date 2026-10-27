@@ -1898,6 +1898,8 @@ export default {
       jobRulesHint: 'Rules by print name: first match wins (fragment of the print name, threshold, on/off).',
       jobRulesFragment: 'Fragment',
       jobRulesThreshold: 'Threshold',
+      priceList: 'Price list',
+      materialName: 'Material name',
       queuePrintRods: 'Queue maint. rods',
       confirmQueuePrint: 'Queue the maintenance print? The 3MF is generated, added to the library and scheduled as a job.',
       autoPlateChangeOn: 'Enable automation',

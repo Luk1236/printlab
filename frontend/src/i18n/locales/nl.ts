@@ -1898,6 +1898,8 @@ export default {
       jobRulesHint: 'Regels per printnaam: eerste match telt (fragment, drempel, aan/uit).',
       jobRulesFragment: 'Naamfragment',
       jobRulesThreshold: 'Drempel',
+      priceList: 'Prijslijst',
+      materialName: 'Materiaalnaam',
       queuePrintRods: 'Onderhoud stangen in wachtrij',
       confirmQueuePrint: 'Onderhoudsafdruk in de wachtrij plaatsen? De 3MF wordt gegenereerd, toegevoegd aan de bibliotheek en gepland.',
       autoPlateChangeOn: 'Automatiek inschakelen',

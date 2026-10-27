@@ -1880,6 +1880,8 @@ export default {
       jobRulesHint: 'Regeln nach Druckname: erster Treffer gilt (Fragment im Drucknamen, Schwelle, an/aus).',
       jobRulesFragment: 'Namensbestandteil',
       jobRulesThreshold: 'Schwelle',
+      priceList: 'Preisliste',
+      materialName: 'Materialname',
       queuePrintRods: 'Wart. Stangen in Queue',
       confirmQueuePrint: 'Wartungsdruck in die Warteschlange stellen? Die 3MF wird erzeugt, in der Bibliothek gelegt und als Auftrag geplant.',
       autoPlateChangeOn: 'Automatik einschalten',

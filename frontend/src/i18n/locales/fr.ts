@@ -1879,6 +1879,8 @@ export default {
       jobRulesHint: 'Règles par nom d\'impression : la première correspondance gagne (fragment, seuil, on/off).',
       jobRulesFragment: 'Extrait',
       jobRulesThreshold: 'Seuil',
+      priceList: 'Liste des prix',
+      materialName: 'Nom du matériau',
       queuePrintRods: 'File d\'attente maint. tiges',
       confirmQueuePrint: 'Mettre l\'impression d\'entretien en file ? La 3MF est générée, ajoutée à la bibliothèque et planifiée.',
       autoPlateChangeOn: 'Activer l\'automatisation',

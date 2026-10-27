@@ -1881,6 +1881,8 @@ export default {
       jobRulesHint: 'Baskı adına göre kurallar: ilk eşleşme geçerli (parça, eşik, açık/kapalı).',
       jobRulesFragment: 'Parça',
       jobRulesThreshold: 'Eşik',
+      priceList: 'Fiyat listesi',
+      materialName: 'Malzeme adı',
       queuePrintRods: 'Bakım çubuk sıraya',
       confirmQueuePrint: 'Bakım baskısını sıraya? 3MF oluşturulur, kütüphaneye eklenir ve planlanır.',
       autoPlateChangeOn: 'Otomatiklemeyi aç',

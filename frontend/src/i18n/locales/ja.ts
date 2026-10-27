@@ -1879,6 +1879,8 @@ export default {
       jobRulesHint: '印刷名ごとのルール: 最初に一致したものが有効(部分文字列、しきい値、有効/無効)。',
       jobRulesFragment: '部分文字列',
       jobRulesThreshold: 'しきい値',
+      priceList: '価格表',
+      materialName: 'マテリアル名',
       queuePrintRods: 'メンテ送棒をキューへ',
       confirmQueuePrint: 'メンテナンス印刷をキューに入れますか？3MFを生成し、ライブラリに登録して計画します。',
       autoPlateChangeOn: '自動化を有効化',

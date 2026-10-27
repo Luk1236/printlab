@@ -1897,6 +1897,8 @@ export default {
       jobRulesHint: 'Regler per utskriftsnamn: första match gäller (fragment, tröskel, på/av).',
       jobRulesFragment: 'Namnfragment',
       jobRulesThreshold: 'Tröskel',
+      priceList: 'Prislista',
+      materialName: 'Materialnamn',
       queuePrintRods: 'Underhåll stänger i kön',
       confirmQueuePrint: 'Lägga underhållsutskriften i kön? 3MF-filen skapas, läggs i biblioteket och schemaläggs.',
       autoPlateChangeOn: 'Aktivera automation',

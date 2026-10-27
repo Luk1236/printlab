@@ -1881,6 +1881,8 @@ export default {
       jobRulesHint: 'Reglas por nombre de impresión: la primera coincidencia gana (fragmento, umbral, on/off).',
       jobRulesFragment: 'Fragmento',
       jobRulesThreshold: 'Umbral',
+      priceList: 'Lista de precios',
+      materialName: 'Nombre del material',
       queuePrintRods: 'Encolar mant. barras',
       confirmQueuePrint: '¿Encolar el mantenimiento? Se genera la 3MF, se añade a la biblioteca y se programa.',
       autoPlateChangeOn: 'Activar automatización',

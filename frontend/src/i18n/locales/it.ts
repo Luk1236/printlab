@@ -1879,6 +1879,8 @@ export default {
       jobRulesHint: 'Regole per nome di stampa: vince la prima corrispondenza (frammento, soglia, on/off).',
       jobRulesFragment: 'Frammento',
       jobRulesThreshold: 'Soglia',
+      priceList: 'Listino prezzi',
+      materialName: 'Nome materiale',
       queuePrintRods: 'In coda mant. aste',
       confirmQueuePrint: 'Mettere in coda la manutenzione? La 3MF viene generata, aggiunta alla libreria e pianificata.',
       autoPlateChangeOn: 'Attiva automazione',

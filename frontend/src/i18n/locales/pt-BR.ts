@@ -1879,6 +1879,8 @@ export default {
       jobRulesHint: 'Regras por nome de impressão: a primeira correspondência vale (fragmento, limite, liga/desliga).',
       jobRulesFragment: 'Fragmento',
       jobRulesThreshold: 'Limite',
+      priceList: 'Lista de preços',
+      materialName: 'Nome do material',
       queuePrintRods: 'Fila de mant. hastes',
       confirmQueuePrint: 'Colorar a impressão de manutenção na fila? A 3MF é gerada, adicionada à biblioteca e agendada.',
       autoPlateChangeOn: 'Ativar automação',

@@ -1896,6 +1896,8 @@ export default {
       jobRulesHint: 'Правила за іменем друку: перший збіг перемагає (фрагмент, поріг, увімк/вимк).',
       jobRulesFragment: 'Фрагмент',
       jobRulesThreshold: 'Поріг',
+      priceList: 'Прайс-лист',
+      materialName: 'Назва матеріалу',
       queuePrintRods: 'Обслуг. стрижні в чергу',
       confirmQueuePrint: 'Поставити друк обслуговування в чергу? 3MF створюється, додається до бібліотеки й планується.',
       autoPlateChangeOn: 'Увімкнути автоматику',

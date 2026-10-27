@@ -1806,6 +1806,8 @@ export default {
       jobRulesHint: '출력 이름별 규칙: 첫 일치가 적용됩니다(부분 문자열, 임계값, 켜기/끄기).',
       jobRulesFragment: '부분 문자열',
       jobRulesThreshold: '임계값',
+      priceList: '가격표',
+      materialName: '재료명',
       queuePrintRods: '유지 봉 대기열',
       confirmQueuePrint: '유지보수 프린트를 대기열에 넣을까요? 3MF를 생성하고 라이브러리에 추가하며 일정을 잡습니다.',
       autoPlateChangeOn: '자동화 켜기',

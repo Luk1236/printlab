@@ -4215,6 +4215,11 @@ export interface SpaghettiCheckStatus {
   min_changed_percent: number;
 }
 
+export interface PriceListEntry {
+  material: string;
+  rate_per_kg: number;
+}
+
 export interface AuditEntry {
   ts: string;
   action: string;
@@ -7505,6 +7510,12 @@ export const api = {
     request<QuoteResponse & { archive_id: number; grams: number; duration_minutes: number }>(
       `/quote/for-archive/${archiveId}?labor_minutes=${laborMinutes}`
     ),
+  getPriceList: () => request<{ entries: PriceListEntry[] }>('/quote/price-list'),
+  setPriceList: (entries: PriceListEntry[]) =>
+    request<{ entries: PriceListEntry[] }>('/quote/price-list', {
+      method: 'PUT',
+      body: JSON.stringify(entries),
+    }),
   testCameraConnection: (printerId: number) =>
     request<{ success: boolean; message?: string; error?: string }>(`/printers/${printerId}/camera/test`),
   getCameraStatus: (printerId: number) =>
