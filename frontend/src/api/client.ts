@@ -4264,6 +4264,13 @@ export interface PartWatcherStatus {
   warning: PartWatcherWarning | null;
   checked: boolean;
   last_layer: number;
+  overrides?: PartWatcherOverride[];
+}
+
+export interface PartWatcherOverride {
+  key_contains: string;
+  threshold: number;
+  enabled: boolean;
 }
 
 export interface FirstLayerResult {
@@ -7378,7 +7385,7 @@ export const api = {
   // Part watcher (camera comparison)
   getPartWatcher: (printerId: number) =>
     request<PartWatcherStatus>(`/printers/${printerId}/part-watcher`),
-  setPartWatcher: (printerId: number, data: { enabled: boolean; threshold?: number }) =>
+  setPartWatcher: (printerId: number, data: { enabled: boolean; threshold?: number; overrides?: PartWatcherOverride[] }) =>
     request<PartWatcherStatus>(`/printers/${printerId}/part-watcher`, {
       method: 'PUT',
       body: JSON.stringify(data),

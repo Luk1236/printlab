@@ -102,6 +102,24 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
     onError: (error: Error) => showToast(error.message, 'error'),
   });
 
+  // Auftrags-Regeln für den Bauteil-Wächter (Schwelle/Enabled pro Druck).
+  const [rulesOpen, setRulesOpen] = useState(false);
+  const [rulesDraft, setRulesDraft] = useState<Array<{ key_contains: string; threshold: number; enabled: boolean }>>([]);
+  const rulesMutation = useMutation({
+    mutationFn: () =>
+      api.setPartWatcher(printerId, {
+        enabled: Boolean(partWatcher?.enabled),
+        threshold: partWatcher?.threshold,
+        overrides: rulesDraft.filter((rule) => rule.key_contains.trim() !== ''),
+      }),
+    onSuccess: () => {
+      showToast(t('common.success'));
+      setRulesOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['partWatcher', printerId] });
+    },
+    onError: (error: Error) => showToast(error.message, 'error'),
+  });
+
   // Automatik: Plattenwechsel nach Druckende (P2 der Monitor-Port-Roadmap).
   const autoPlateChange = hardware?.auto_plate_change ?? null;
   const autoMutation = useMutation({
@@ -490,6 +508,17 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
             />
             {t('maintenance.programs.partWatcher')}
           </label>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="whitespace-nowrap"
+            onClick={() => {
+              setRulesDraft((partWatcher?.overrides ?? []).map((rule) => ({ ...rule })));
+              setRulesOpen(true);
+            }}
+          >
+            {t('maintenance.programs.jobRules')}
+          </Button>
           {partWatcher?.warning && (
             <span className="text-xs text-red-700 dark:text-red-400">{partWatcher.warning.message}</span>
           )}
@@ -528,6 +557,73 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
 
         <p className="text-xs text-bambu-gray">{t('maintenance.programs.safety')}</p>
       </CardContent>
+
+      {/* Bauteil-Wächter: Auftrags-Regeln (erster Treffer gewinnt). */}
+      {rulesOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 overflow-y-auto">
+          <div className="bg-bambu-dark-secondary rounded-xl p-5 max-w-xl w-full border border-bambu-dark-tertiary space-y-3">
+            <h3 className="text-base font-semibold text-white mb-1">{t('maintenance.programs.jobRules')}</h3>
+            <p className="text-xs text-bambu-gray">{t('maintenance.programs.jobRulesHint')}</p>
+            {rulesDraft.map((rule, index) => (
+              <div key={index} className="flex flex-wrap items-center gap-2">
+                <input
+                  value={rule.key_contains}
+                  onChange={(event) =>
+                    setRulesDraft((rules) => rules.map((r, i) => (i === index ? { ...r, key_contains: event.target.value } : r)))
+                  }
+                  placeholder="im Drucknamen (z. B. 'Handtuch')"
+                  className="flex-1 min-w-40 bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm"
+                  aria-label={t('maintenance.programs.jobRulesFragment')}
+                />
+                <input
+                  type="number"
+                  min={0.05}
+                  max={20}
+                  step={0.05}
+                  value={rule.threshold}
+                  onChange={(event) =>
+                    setRulesDraft((rules) => rules.map((r, i) => (i === index ? { ...r, threshold: Number(event.target.value) } : r)))
+                  }
+                  className="w-20 bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm"
+                  aria-label={t('maintenance.programs.jobRulesThreshold')}
+                />
+                <input
+                  type="checkbox"
+                  checked={rule.enabled}
+                  onChange={(event) =>
+                    setRulesDraft((rules) => rules.map((r, i) => (i === index ? { ...r, enabled: event.target.checked } : r)))
+                  }
+                  aria-label={t('common.enabled')}
+                />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setRulesDraft((rules) => rules.filter((_, i) => i !== index))}
+                >
+                  ✕
+                </Button>
+              </div>
+            ))}
+            <div className="flex flex-wrap justify-between gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() =>
+                  setRulesDraft((rules) => [...rules, { key_contains: '', threshold: partWatcher?.threshold ?? 1, enabled: true }])
+                }
+              >
+                +
+              </Button>
+              <div className="flex gap-2">
+                <Button size="sm" variant="ghost" onClick={() => setRulesOpen(false)}>{t('common.cancel')}</Button>
+                <Button size="sm" disabled={rulesMutation.isPending} onClick={() => rulesMutation.mutate()}>
+                  {t('common.save')}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Kamera-Einmessung: Live-Snapshot, vier Ecken anklicken (TL, TR, BR, BL). */}
       {calibrationOpen && (

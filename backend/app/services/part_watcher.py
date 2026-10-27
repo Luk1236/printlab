@@ -79,22 +79,63 @@ class PartWatcher:
             entry["threshold"] = 1.0
         return entry
 
+    def _resolve(self, printer_id: int, key: str) -> dict[str, Any]:
+        """Standard-Eintrag, überlagert vom ersten passenden Auftrags-Override.
+
+        Overrides sitzen in ``self._config["overrides"]``:
+        ``[{"key_contains": "mein-modell",
+            "threshold": 2.0, "enabled": true}, ...]`` — Treffer, wenn
+        ``key_contains`` (Groß-/Kleinschreibung egal) im Druck-Schlüssel steckt.
+        Der erste Treffer gewinnt; ohne Treffer gilt der Drucker-Standard.
+        """
+        entry = dict(self._entry(printer_id))
+        overrides = self._config.get("overrides")
+        if isinstance(overrides, list) and key:
+            lowered = key.lower()
+            for rule in overrides:
+                if not isinstance(rule, dict):
+                    continue
+                fragment = str(rule.get("key_contains", "")).strip().lower()
+                if fragment and fragment in lowered:
+                    entry["threshold"] = max(0.05, min(20.0, float(rule.get("threshold", entry["threshold"]))))
+                    entry["enabled"] = bool(rule.get("enabled", entry["enabled"]))
+                    entry["override"] = fragment
+                    break
+        return entry
+
     def status(self, printer_id: int) -> dict[str, Any]:
         with self._lock:
             entry = dict(self._entry(printer_id))
+            overrides = self._config.get("overrides")
             return {
                 **entry,
+                "overrides": overrides if isinstance(overrides, list) else [],
                 "warning": self._warning.get(printer_id),
                 "checked": bool(self._checked.get(printer_id, False)),
                 "last_layer": int(self._last_layer.get(printer_id, 0)),
             }
 
-    def configure(self, printer_id: int, enabled: bool, threshold: float | None = None) -> dict[str, Any]:
+    def configure(self, printer_id: int, enabled: bool, threshold: float | None = None,
+                  overrides: list[dict[str, Any]] | None = None) -> dict[str, Any]:
         with self._lock:
             entry = self._entry(printer_id)
             entry["enabled"] = bool(enabled)
             if threshold is not None:
                 entry["threshold"] = max(0.05, min(20.0, float(threshold)))
+            if overrides is not None:
+                rules: list[dict[str, Any]] = []
+                for rule in overrides:
+                    if not isinstance(rule, dict):
+                        continue
+                    fragment = str(rule.get("key_contains", "")).strip()
+                    if not fragment:
+                        continue
+                    rules.append({
+                        "key_contains": fragment[:120],
+                        "threshold": max(0.05, min(20.0, float(rule.get("threshold", 1.0)))),
+                        "enabled": bool(rule.get("enabled", True)),
+                    })
+                self._config["overrides"] = rules
             self._save()
             self._checked[printer_id] = False
             self._warning[printer_id] = None
@@ -113,7 +154,7 @@ class PartWatcher:
 
     def needs_frame(self, printer_id: int, layer_num: int, total_layers: int, key: str = "") -> bool:
         with self._lock:
-            entry = self._entry(printer_id)
+            entry = self._resolve(printer_id, key)
             if not entry.get("enabled"):
                 return False
             self._reset_if_new_print(printer_id, key, layer_num)
@@ -128,7 +169,7 @@ class PartWatcher:
     def observe(self, printer_id: int, printer_name: str, layer_num: int, total_layers: int,
                 image: bytes | None, key: str = "") -> dict[str, Any] | None:
         with self._lock:
-            entry = self._entry(printer_id)
+            entry = self._resolve(printer_id, key)
             if not entry.get("enabled") or not image:
                 return None
             self._reset_if_new_print(printer_id, key, layer_num)

@@ -19,6 +19,8 @@ router = APIRouter(prefix="/printers", tags=["part-watcher"])
 class PartWatcherUpdate(BaseModel):
     enabled: bool = False
     threshold: float = Field(default=1.0, ge=0.05, le=20.0)
+    # Auftrags-Regeln: [{key_contains, threshold, enabled}] — erster Treffer gewinnt.
+    overrides: list[dict] | None = None
 
 
 @router.get("/{printer_id}/part-watcher")
@@ -39,4 +41,4 @@ async def set_part_watcher(
     result = await db.execute(select(Printer).where(Printer.id == printer_id))
     if result.scalar_one_or_none() is None:
         raise HTTPException(404, "Printer not found")
-    return part_watcher.configure(printer_id, data.enabled, data.threshold)
+    return part_watcher.configure(printer_id, data.enabled, data.threshold, data.overrides)
