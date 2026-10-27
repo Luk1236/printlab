@@ -65,8 +65,11 @@
 - P2S aus der alten `config.ini` übernommen (IP, Seriennummer, Zugangscode, P2S, Werkstatt);
   aktuell offline.
 - Einstellungen: EUR, 22 €/kg, 0,35 €/kWh, PC-Slicer `http://127.0.0.1:3001`.
-- **Login noch aus:** Das alte Passwort erfüllt Bambuddys Komplexitätsregel nicht
-  (kein Großbuchstabe). Es muss ein neues Admin-Passwort gesetzt werden.
+- **Login:** Das alte Passwort erfüllt Bambuddys Komplexitätsregel nicht (kein Großbuchstabe).
+  Ein neues Passwort wird **nicht** vom Assistenten gesetzt oder im Chat ausgegeben.
+  Stattdessen: `werkzeugedmin_passwort_setzen.py` ausführen, Passwort selbst eingeben
+  (getpass, keine Anzeige). Danach Server neu starten und mit `lukas` + neuem Passwort anmelden.
+  Notfall: `--deaktivieren`.
 - **Modellimport:** 2 Dateien in die Bibliothek übernommen
   (`Einmess_Marken_P2S.gcode.3mf`, `Tuer_Oeffner_Kompakt.stl`).
   3 Dateien (`Oel_verteilen`, `Wartung_Gewindestangen`, `Einmess_Marken_P2S.stl`) sind
