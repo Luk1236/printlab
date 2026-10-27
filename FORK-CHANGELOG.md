@@ -1,6 +1,6 @@
 # Bambuddy-Fork: Bambu-Monitor-Port
 
-**Version:** 1.0.0-bambu-port
+**Version:** 1.2.0 (PrintLab)
 **Basis:** Bambuddy 1.2.5.7 (AGPL-3.0)
 **Stand:** 27.10.2026
 
@@ -8,7 +8,19 @@ Dieser Fork übernimmt die eigenständigen Funktionen des Bambu-Monitors in Bamb
 Die vollständige Beschreibung, Konfiguration und offene Punkte stehen in
 `docs/BAMBU-MONITOR-PORT.md`.
 
-## Enthalten
+## v1.2.0 (27.10.2026)
+
+- Spaghetti-/Abbruch-Erkennung ab ca. 75 % der Schichten (nur Warnung).
+- Bauteil-Wächter pro Auftrag: Regeln „Namensfragment → Schwelle/an/aus“.
+- Angebot pro Warteschlangen-Auftrag (Hover) und Preisliste je Material.
+- Automatischer Plattenwechsel: „Nur wenn Auftrag wartet“ wird jetzt wirklich gespeichert,
+  Abbruch während der Abkühlwartezeit (Not-Halt, neuer Druck, `POST .../auto-plate-change/cancel`),
+  Füllstand-Warnung bei wenig frischen Platten oder freien Ablagefächern.
+- PC-Slicer: Zugriffsschutz (Loopback immer, andere Rechner nur über `PC_SLICER_ALLOWED_IPS`
+  und/oder `PC_SLICER_TOKEN`, sonst 403).
+- Tests: Wartungskarte (Frontend) und Zugriffsschutz/Automatik (Backend); 102 Fork-Backend-Tests.
+
+## Enthalten (v1.0.0)
 
 - Wartungsprogramme: Öl verteilen und Gewindestangen schmieren, mit Sicherheitsprüfung
   und Pflichtbestätigung „Platte frei“.

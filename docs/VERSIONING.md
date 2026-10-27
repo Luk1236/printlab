@@ -40,5 +40,6 @@ Vorlage für Release-Notes: Release v1.0.0 auf GitHub.
 ## Status
 
 - Repository: <https://github.com/Luk1236/printlab> (privat, Branch `bambu-monitor-port` = Standard)
-- Aktuell: **v1.0.0** (2026-10-27) — Bambu-Monitor-Port, PrintLab-Rebrand, Prusa-Design
+- Aktuell: **v1.2.0** (2026-10-27, lokal getaggt, noch nicht gepusht) — Spaghetti-Erkennung, Auftrags-Regeln, Preisliste, Automatik-Verfeinerungen, PC-Slicer-Zugriffsschutz
+- Davor: v1.1.0, v1.0.0 (2026-10-27) — Bambu-Monitor-Port, PrintLab-Rebrand, Prusa-Design
 - Nächste geplante Version: v1.1.0 sobald die ersten P1-/P2-Punkte aus `TODO.md` fertig sind
