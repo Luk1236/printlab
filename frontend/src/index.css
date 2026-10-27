@@ -87,26 +87,27 @@ html {
 }
 
 :root {
-  /* Default accent color (green). Darker than Bambu's #00ae42 so white text
-     on primary buttons and the active nav item reaches WCAG AA (4.5:1). */
-  --accent: #007a2e;
-  --accent-light: #00963a;
-  --accent-dark: #006326;
+  /* Default accent color (Prusa orange -- matches the .accent-orange class;
+     see the note there for why --accent-text exists). */
+  --accent: #fa6831;
+  --accent-light: #ff8a5c;
+  --accent-dark: #d14b00;
 
   /* Semantic status colors - these never change with accent theme */
   --status-ok: #22c55e;      /* green-500 - always green for success/online/ok */
   --status-error: #ef4444;   /* red-500 - always red for error/offline/failed */
   --status-warning: #f59e0b; /* amber-500 - always amber for warnings */
 
-  /* Default light mode background (neutral) */
-  --bg-primary: #f5f5f5;
+  /* Default light mode background (Prusa Connect: light grey page, white
+     panels, hairline borders). */
+  --bg-primary: #f1f1f1;
   --bg-secondary: #ffffff;
-  --bg-tertiary: #e5e5e5;
+  --bg-tertiary: #e4e4e4;
   --text-primary: #1a1a1a;
   --text-secondary: #4a4a4a;
   --text-muted: #6b6b6b;
   --text-tertiary: #808080;
-  --border-color: #d4d4d4;
+  --border-color: #e0e0e0;
 
   /* Default style (classic) */
   --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -132,7 +133,7 @@ html {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Dark mode base */
+/* Dark mode base (PrusaSlicer-style warm dark grey) */
 .dark {
   /* Pairs with `color-scheme: light` on :root -- see the note there.  This
      sits on `.dark` rather than on each `.dark.bg-*` palette because the
@@ -140,15 +141,15 @@ html {
      palette is a dark one regardless of which background it picks. */
   color-scheme: dark;
 
-  --bg-primary: #1a1a1a;
-  --bg-secondary: #2d2d2d;
-  --bg-tertiary: #3d3d3d;
-  --text-primary: #ffffff;
-  --text-secondary: #a0a0a0;
-  --text-muted: #808080;
-  --text-tertiary: #4a4a4a;
-  --border-color: #3d3d3d;
-  --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --bg-primary: #232326;
+  --bg-secondary: #2e2e33;
+  --bg-tertiary: #3c3c42;
+  --text-primary: #f2f2f2;
+  --text-secondary: #a5a5aa;
+  --text-muted: #8a8a90;
+  --text-tertiary: #525258;
+  --border-color: #3c3c42;
+  --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
 /* ============================================
@@ -184,14 +185,14 @@ html {
 
 /* Dark mode backgrounds */
 .dark.bg-neutral {
-  --bg-primary: #1a1a1a;
-  --bg-secondary: #2d2d2d;
-  --bg-tertiary: #3d3d3d;
-  --text-primary: #ffffff;
-  --text-secondary: #a0a0a0;
-  --text-muted: #808080;
-  --text-tertiary: #4a4a4a;
-  --border-color: #3d3d3d;
+  --bg-primary: #232326;
+  --bg-secondary: #2e2e33;
+  --bg-tertiary: #3c3c42;
+  --text-primary: #f2f2f2;
+  --text-secondary: #a5a5aa;
+  --text-muted: #8a8a90;
+  --text-tertiary: #525258;
+  --border-color: #3c3c42;
 }
 
 .dark.bg-warm {
@@ -314,10 +315,13 @@ html {
   --accent-dark: #2563eb;
 }
 
+/* Prusa-style accent (#fa6831, the canonical Prusa-Link-Web primary orange).
+   Filled surfaces use --accent; text/icons use --accent-text so both modes
+   keep WCAG AA (white on orange alone never reaches 4.5:1). */
 .accent-orange {
-  --accent: #f97316;
-  --accent-light: #fb923c;
-  --accent-dark: #ea580c;
+  --accent: #fa6831;
+  --accent-light: #ff8a5c;
+  --accent-dark: #d14b00;
 }
 
 .accent-purple {
@@ -621,11 +625,22 @@ body {
    filled buttons (white on #007a2e). Filled surfaces keep --accent; text uses
    this token so both reach WCAG AA. */
 :root {
-  --accent-text: #007a2e;
+  --accent-text: #9a3412;
 }
 .dark {
-  --accent-text: #4ade80;
+  --accent-text: #ff8a5c;
 }
+/* Prusa-style corners: Prusa's interfaces (Connect, PrusaLink-Web) use flat
+   panels with small radii. The Tailwind radius utilities below are re-tuned
+   here globally -- unlayered so the rules outrank the utilities layer.
+   .rounded-md (4px) and .rounded-full are already Prusa-appropriate. */
+.rounded-lg { border-radius: 6px; }
+.rounded-xl { border-radius: 8px; }
+.rounded-2xl { border-radius: 10px; }
+.rounded-3xl { border-radius: 14px; }
+
+/* Accent-coloured text/icons: darker in light mode, lighter in dark mode so
+   both reach WCAG AA. Filled surfaces keep --accent instead. */
 .text-bambu-green {
   color: var(--accent-text);
 }
