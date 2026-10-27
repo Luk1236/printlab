@@ -7053,6 +7053,18 @@ async def on_print_complete(printer_id: int, data: dict):
     if _final_status in ("completed", "failed", "aborted", "cancelled"):
         printer_manager.set_awaiting_plate_clear(printer_id, True)
 
+    # Automatischer Plattenwechsel (Monitor-Port P2): nur nach "completed" und
+    # nur wenn die Automatik in data/hardware.json eingeschaltet ist. Läuft als
+    # eigener Task; ein Fehler meldet sich nur, blockiert aber nie die
+    # Aufräum-Schritte weiter unten.
+    if _final_status == "completed":
+        try:
+            from backend.app.services import auto_plate_change
+
+            auto_plate_change.schedule(printer_id, data.get("subtask_name", ""))
+        except Exception as e:
+            logger.warning("[CALLBACK] auto plate change schedule failed for printer %s: %s", printer_id, e)
+
     # MQTT relay - publish print complete
     try:
         printer_info = printer_manager.get_printer(printer_id)

@@ -90,6 +90,17 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
     onError: (error: Error) => showToast(error.message, 'error'),
   });
 
+  // Automatik: Plattenwechsel nach Druckende (P2 der Monitor-Port-Roadmap).
+  const autoPlateChange = hardware?.auto_plate_change ?? null;
+  const autoMutation = useMutation({
+    mutationFn: (enabled: boolean) => api.updateAutoPlateChange(printerId, { enabled }),
+    onSuccess: () => {
+      showToast(t('common.success'));
+      queryClient.invalidateQueries({ queryKey: ['hardwareStatus', printerId] });
+    },
+    onError: (error: Error) => showToast(error.message, 'error'),
+  });
+
   const { data: layerAlert } = useQuery<LayerAlertStatus>({
     queryKey: ['layerAlert', printerId],
     queryFn: () => api.getLayerAlert(printerId),
@@ -344,6 +355,38 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
             <p className="text-xs text-red-700 dark:text-red-400">{hardware.error}</p>
           )}
           <p className="text-xs text-bambu-gray">{t('maintenance.programs.hardwareSafety')}</p>
+          {/* Automatik: Plattenwechsel nach Druckende */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-white">
+                {t('maintenance.programs.autoPlateChange')}
+                {autoPlateChange?.enabled ? (
+                  <span className="ml-1 text-bambu-green">({t('common.on')})</span>
+                ) : (
+                  <span className="ml-1 text-bambu-gray">({t('common.off')})</span>
+                )}
+              </p>
+              {autoPlateChange?.last_run && (
+                <p
+                  className={`text-xs truncate ${autoPlateChange.last_run.ok ? 'text-bambu-green' : 'text-red-700 dark:text-red-400'}`}
+                  title={autoPlateChange.last_run.message}
+                >
+                  {autoPlateChange.last_run.message}
+                </p>
+              )}
+            </div>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="whitespace-nowrap"
+              disabled={autoMutation.isPending}
+              onClick={() => autoMutation.mutate(!autoPlateChange?.enabled)}
+            >
+              {autoPlateChange?.enabled
+                ? t('maintenance.programs.autoPlateChangeOff')
+                : t('maintenance.programs.autoPlateChangeOn')}
+            </Button>
+          </div>
         </div>
 
         <div className="border-t border-bambu-dark-tertiary pt-4 flex flex-wrap items-end gap-3">

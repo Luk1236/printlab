@@ -62,7 +62,8 @@ describe('Button', () => {
       render(<Button variant="danger">Danger</Button>);
 
       const button = screen.getByRole('button');
-      expect(button.className).toContain('bg-red-600');
+      // The component uses red-700/red-800 for AA contrast with white text.
+      expect(button.className).toContain('bg-red-700');
     });
 
     it('applies ghost variant styles', () => {

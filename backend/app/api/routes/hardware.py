@@ -13,6 +13,7 @@ from backend.app.core.auth import RequirePermissionIfAuthEnabled
 from backend.app.core.database import get_db
 from backend.app.core.permissions import Permission
 from backend.app.models.printer import Printer
+from backend.app.services import auto_plate_change
 from backend.app.services.hardware_extension import get_hardware
 from backend.app.services.printer_manager import printer_manager
 
@@ -48,7 +49,29 @@ async def get_hardware_status(
     _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_READ),
 ):
     """Zustand von Tür und Magazin (auch bei nicht verbundenem Drucker)."""
-    return get_hardware().status()
+    return {
+        **get_hardware().status(),
+        "auto_plate_change": {
+            **auto_plate_change.read_config(),
+            "last_run": auto_plate_change.last_run(printer_id),
+        },
+    }
+
+
+@router.put("/{printer_id}/hardware/auto-plate-change")
+async def update_auto_plate_change(
+    printer_id: int,
+    payload: dict,
+    _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_CONTROL),
+):
+    """Automatik-Konfiguration (Plattenwechsel nach Druckende) setzen."""
+    cfg = auto_plate_change.write_config(payload or {})
+    return {
+        "auto_plate_change": {
+            **cfg,
+            "last_run": auto_plate_change.last_run(printer_id),
+        }
+    }
 
 
 @router.post("/{printer_id}/hardware/door/open")

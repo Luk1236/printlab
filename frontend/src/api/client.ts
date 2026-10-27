@@ -4160,6 +4160,21 @@ export interface HardwareStatus {
   storage_empty: number;
   changes: number;
   last_change: string | null;
+  auto_plate_change?: AutoPlateChange;
+}
+
+export interface AutoPlateChange {
+  enabled: boolean;
+  cooldown_bed_temp: number;
+  max_wait_seconds: number;
+  poll_seconds: number;
+  skip_if_offline: boolean;
+  last_run: {
+    printer_id: number;
+    job: string;
+    ok: boolean;
+    message: string;
+  } | null;
 }
 
 export interface HardwareActionResponse extends HardwareStatus {
@@ -7229,6 +7244,11 @@ export const api = {
     request<HardwareActionResponse>(`/printers/${printerId}/hardware/magazine/refill`, { method: 'POST' }),
   emergencyStopHardware: (printerId: number) =>
     request<HardwareActionResponse>(`/printers/${printerId}/hardware/emergency-stop`, { method: 'POST' }),
+  updateAutoPlateChange: (printerId: number, payload: Partial<AutoPlateChange>) =>
+    request<{ auto_plate_change: AutoPlateChange }>(`/printers/${printerId}/hardware/auto-plate-change`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
 
   // Maintenance print (movement-only 3MF, Bambu-Monitor port)
   downloadMaintenancePrint: async (printerId: number, program: 'oil' | 'rods'): Promise<MaintenancePrintResponse> => {

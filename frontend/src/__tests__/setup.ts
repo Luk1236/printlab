@@ -10,6 +10,12 @@ import { server } from './mocks/server';
 
 // Initialize i18n for tests (suppresses react-i18next warnings)
 import '../i18n';
+// The fork ships with German as the UI default ('de' in src/i18n/index.ts),
+// but the test suite is written against the upstream English strings. Pin the
+// test language to English so the i18n default stays German without breaking
+// every getByText('File Manager') assertion.
+import i18nForTests from '../i18n';
+i18nForTests.changeLanguage('en');
 
 // Setup MSW server
 beforeAll(() =>
