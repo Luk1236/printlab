@@ -1,12 +1,12 @@
 {
   "id": "/",
-  "name": "Bambuddy",
-  "short_name": "Bambuddy",
+  "name": "Bambu Monitor",
+  "short_name": "Bambu Monitor",
   "description": "Monitor and manage your Bambu Lab 3D printers",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1a1a1a",
-  "theme_color": "#00ae42",
+  "theme_color": "#007a2e",
   "orientation": "any",
   "scope": "/",
   "icons": [
