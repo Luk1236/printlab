@@ -110,6 +110,7 @@ feature_votes.sh
 # Runtime data of the Bambu-Monitor port (created next to the app when DATA_DIR is unset)
 /hardware.json
 /magazine.json
+/price_list.json
 /layer_alerts.json
 /maintenance/
 /part_watcher.json

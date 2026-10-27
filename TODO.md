@@ -48,8 +48,12 @@
 - [X] Magazinverwaltung in der UI (Status klicken zum Wechseln, Etiketten).
 - [X] Audit-Log: `data/audit_log.jsonl` + Protokoll in der Karte (Benachrichtigungen
       folgen mit dem Telegram/E-Mail-Ausbau).
-- [ ] Automatik-Verfeinerungen: „Nur wenn Auftrag wartet" ist drin
-      (`only_with_queue`); offen: Abbruch mitten im Wechsel, Füllstand-Warnung.
+- [x] Automatik-Verfeinerungen (27.10.2026): `only_with_queue` wird jetzt wirklich
+      gespeichert (fehlte in `write_config`); Abbruch während der Abkühlwartezeit
+      (`POST /printers/{id}/hardware/auto-plate-change/cancel`, Not-Halt, neuer Druck);
+      Füllstand-Warnung (`low_supply_warning`, Standard 1) bei wenig frischen Platten
+      oder freien Ablagefächern. Offen: Schalter „Nur mit Auftrag" in der UI (braucht
+      i18n-Schlüssel in allen Sprachen); ein schon laufender Hardware-Schritt stoppt nur per Not-Halt.
 
 ### P3 PC-Slicer alltagstauglich
 - [X] Plattenwahl (`plate`): `--export-plate N`, Fallback auf alle Platten bei

@@ -45,6 +45,7 @@ DEFAULTS: dict[str, Any] = {
     "poll_seconds": 10,
     "skip_if_offline": True,
     "only_with_queue": False,
+    "low_supply_warning": 1,  # Warnung, wenn nach dem Wechsel höchstens so viele frische Platten bleiben
 }
 
 
@@ -78,6 +79,7 @@ def read_config() -> dict[str, Any]:
         cfg["cooldown_bed_temp"] = float(cfg["cooldown_bed_temp"])
         cfg["max_wait_seconds"] = max(0, int(cfg["max_wait_seconds"]))
         cfg["poll_seconds"] = max(1, int(cfg["poll_seconds"]))
+        cfg["low_supply_warning"] = max(0, int(cfg["low_supply_warning"]))
     except (TypeError, ValueError):
         cfg = dict(DEFAULTS)
     return cfg
@@ -95,7 +97,10 @@ def write_config(update: dict[str, Any]) -> dict[str, Any]:
     section = data.get("auto_plate_change") if isinstance(data.get("auto_plate_change"), dict) else {}
     if "enabled" in update:
         section["enabled"] = bool(update["enabled"])
-    for key in ("cooldown_bed_temp", "max_wait_seconds", "poll_seconds", "skip_if_offline"):
+    for key in ("skip_if_offline", "only_with_queue"):
+        if key in update:
+            section[key] = bool(update[key])
+    for key in ("cooldown_bed_temp", "max_wait_seconds", "poll_seconds", "low_supply_warning"):
         if key in update:
             section[key] = update[key]
     data["auto_plate_change"] = section
@@ -124,17 +129,29 @@ async def _run_change(printer_id: int, job_name: str, cfg: dict[str, Any]) -> No
     from backend.app.services.hardware_extension import get_hardware
     from backend.app.services.printer_manager import printer_manager
 
-    async def record(ok: bool, message: str) -> None:
+    async def record(ok: bool, message: str, warning: str | None = None) -> None:
         entry = {
             "printer_id": printer_id,
             "job": job_name,
             "ok": ok,
             "message": message,
         }
+        if warning:
+            entry["warning"] = warning
         _LAST[printer_id] = entry
         _broadcast({"type": "auto_plate_change", **entry})
         logger.info("[AutoPlateChange] Drucker %s: %s%s", printer_id, "OK" if ok else "FEHLER", f" — {message}")
 
+    try:
+        await _wait_and_change(printer_id, job_name, cfg, record, printer_manager, get_hardware)
+    except asyncio.CancelledError:
+        # Abbruch während der Abkühlwartezeit (Not-Halt, manueller Abbruch, neuer Auftrag).
+        # Ein bereits laufender Hardware-Schritt (Thread) lässt sich nur per Not-Halt stoppen.
+        await record(False, "Automatischer Plattenwechsel abgebrochen.")
+        raise
+
+
+async def _wait_and_change(printer_id, job_name, cfg, record, printer_manager, get_hardware) -> None:
     max_wait = max(0, int(cfg["max_wait_seconds"]))
     poll = max(1, int(cfg["poll_seconds"]))
     threshold = float(cfg["cooldown_bed_temp"])
@@ -147,6 +164,9 @@ async def _run_change(printer_id: int, job_name: str, cfg: dict[str, Any]) -> No
                 await record(False, "Drucker getrennt — Automatik übersprungen.")
                 return
             break
+        if getattr(state, "state", None) in ("RUNNING", "PREPARE", "PAUSE"):
+            await record(False, "Neuer Druck hat begonnen — Plattenwechsel abgebrochen.")
+            return
         bed = None
         temps = getattr(state, "temperatures", None)
         if isinstance(temps, dict):
@@ -175,7 +195,40 @@ async def _run_change(printer_id: int, job_name: str, cfg: dict[str, Any]) -> No
         return
 
     ok, message = await asyncio.to_thread(hw.change_plate, job_name)
-    await record(bool(ok), message)
+    warning = _low_supply_warning(hw.status(), cfg) if ok else None
+    await record(bool(ok), message, warning)
+
+
+def _low_supply_warning(hw_status: dict[str, Any], cfg: dict[str, Any]) -> str | None:
+    """Warntext, wenn nach dem Wechsel kaum noch frische Platten oder freie Ablagefächer bleiben."""
+    limit = int(cfg.get("low_supply_warning", 0))
+    supply = hw_status.get("supply_ready")
+    storage = hw_status.get("storage_empty")
+    parts: list[str] = []
+    if isinstance(supply, int) and supply <= limit:
+        parts.append("keine frische Platte mehr" if supply == 0 else f"nur noch {supply} frische Platte(n)")
+    if isinstance(storage, int) and storage <= limit:
+        parts.append("kein freies Ablagefach mehr" if storage == 0 else f"nur noch {storage} freies Ablagefach/-fächer")
+    if not parts:
+        return None
+    return "Magazin: " + ", ".join(parts) + " — bitte auffüllen bzw. leeren."
+
+
+def cancel(printer_id: int | None = None, reason: str = "") -> int:
+    """Wartende Automatik abbrechen (``None`` = alle Drucker); gibt die Zahl abgebrochener Aufträge zurück.
+
+    Greift während der Abkühlwartezeit. Ein schon laufender Hardware-Schritt
+    läuft in einem Thread weiter und wird nur durch den Not-Halt gestoppt.
+    """
+    cancelled = 0
+    for pid, task in list(_TASKS.items()):
+        if printer_id is not None and pid != printer_id:
+            continue
+        if not task.done():
+            task.cancel()
+            cancelled += 1
+            logger.info("[AutoPlateChange] Drucker %s abgebrochen%s", pid, f" ({reason})" if reason else "")
+    return cancelled
 
 
 def schedule(printer_id: int, job_name: str = "") -> bool:

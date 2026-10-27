@@ -4173,11 +4173,14 @@ export interface AutoPlateChange {
   max_wait_seconds: number;
   poll_seconds: number;
   skip_if_offline: boolean;
+  only_with_queue?: boolean;
+  low_supply_warning?: number;
   last_run: {
     printer_id: number;
     job: string;
     ok: boolean;
     message: string;
+    warning?: string;
   } | null;
 }
 

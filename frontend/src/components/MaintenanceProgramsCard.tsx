@@ -456,6 +456,11 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
                   {autoPlateChange.last_run.message}
                 </p>
               )}
+              {autoPlateChange?.last_run?.warning && (
+                <p className="text-xs text-amber-700 dark:text-amber-400" role="status">
+                  {autoPlateChange.last_run.warning}
+                </p>
+              )}
             </div>
             <Button
               size="sm"

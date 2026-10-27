@@ -14,8 +14,7 @@ from backend.app.core.auth import RequirePermissionIfAuthEnabled, get_current_us
 from backend.app.core.database import get_db
 from backend.app.core.permissions import Permission
 from backend.app.models.printer import Printer
-from backend.app.services import audit_log
-from backend.app.services import auto_plate_change
+from backend.app.services import audit_log, auto_plate_change
 from backend.app.services.hardware_extension import get_hardware
 from backend.app.services.printer_manager import printer_manager
 
@@ -172,6 +171,23 @@ async def update_auto_plate_change(
     }
 
 
+@router.post("/{printer_id}/hardware/auto-plate-change/cancel")
+async def cancel_auto_plate_change(
+    printer_id: int,
+    _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_CONTROL),
+):
+    """Wartenden automatischen Plattenwechsel dieses Druckers abbrechen."""
+    cancelled = auto_plate_change.cancel(printer_id, reason="manuell")
+    return {
+        "success": True,
+        "cancelled": cancelled,
+        "auto_plate_change": {
+            **auto_plate_change.read_config(),
+            "last_run": auto_plate_change.last_run(printer_id),
+        },
+    }
+
+
 @router.post("/{printer_id}/hardware/door/open")
 async def open_door(
     printer_id: int,
@@ -245,6 +261,7 @@ async def emergency_stop(
     result = await db.execute(select(Printer).where(Printer.id == printer_id))
     if result.scalar_one_or_none() is None:
         raise HTTPException(404, "Printer not found")
+    auto_plate_change.cancel(reason="Not-Halt")
     ok, message = await asyncio.to_thread(get_hardware().emergency_stop)
     _audit("emergency_stop", ok, message, printer_id, user)
     if not ok:
