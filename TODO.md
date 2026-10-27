@@ -22,6 +22,10 @@
 - Automatischer Plattenwechsel: nach „completed" warten auf Abkühlung (45 °C),
   Türprüfung, dann Wechsel; Fehlerzustand sichtbar in der Wartungskarte.
   Schalter in der Wartungskarte, Konfiguration in `data/hardware.json`.
+- Angebotskalkulator: Material (Gramm × €/kg, Spoolman-Walzen rechnen mit dem
+  Walzenpreis), Energie (Dauer × Leistung × €/kWh), Stundenlohn, Aufschlag.
+  Karte auf der Finanz-Seite; Raten (Stundenlohn, Aufschlag, Leistung) direkt
+  in der Karte einstellbar. Neuer Endpunkt `GET /api/v1/quote`.
 - Sicherheit: Platte-frei-Pflicht, Tür-Endschalterprüfung, Not-Halt (auch bei Druck/offline).
 - Barrierefreiheit: WCAG-AA-Kontraste, Zoom erlaubt, Axe auf der Wartungsseite ohne Verstöße.
 - 64 neue Backend-Tests; Frontend-Suite, TypeScript, i18n-Parität und Build grün.
