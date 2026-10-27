@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeftRight, Check, DoorClosed, DoorOpen, Download, Droplet, RefreshCw, Square, Wrench } from 'lucide-react';
+import { ArrowLeftRight, Check, DoorClosed, DoorOpen, Download, Droplet, ListPlus, RefreshCw, Square, Wrench } from 'lucide-react';
 
 import { api } from '../api/client';
 import type {
@@ -88,6 +88,16 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
   const printMutation = useMutation({
     mutationFn: (program: MaintenanceProgram) => api.downloadMaintenancePrint(printerId, program),
     onSuccess: (data) => showToast(data.message),
+    onError: (error: Error) => showToast(error.message, 'error'),
+  });
+
+  // Wartungsdruck direkt in die Warteschlange (3MF + Queue-Eintrag beim Server).
+  const queuePrintMutation = useMutation({
+    mutationFn: (program: 'oil' | 'rods') => api.queueMaintenancePrint(printerId, program),
+    onSuccess: (data) => {
+      showToast(data.message);
+      queryClient.invalidateQueries({ queryKey: ['printQueue'] });
+    },
     onError: (error: Error) => showToast(error.message, 'error'),
   });
 
@@ -261,6 +271,32 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
           >
             <Download className="w-4 h-4" />
             3MF · {t('maintenance.programs.rods')}
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={!canControl || !supported || queuePrintMutation.isPending}
+            onClick={() => {
+              if (!window.confirm(t('maintenance.programs.confirmQueuePrint'))) return;
+              queuePrintMutation.mutate('oil');
+            }}
+            title={t('maintenance.programs.confirmQueuePrint')}
+          >
+            <ListPlus className="w-4 h-4" />
+            {t('maintenance.programs.queuePrintOil')}
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={!canControl || !supported || queuePrintMutation.isPending}
+            onClick={() => {
+              if (!window.confirm(t('maintenance.programs.confirmQueuePrint'))) return;
+              queuePrintMutation.mutate('rods');
+            }}
+            title={t('maintenance.programs.confirmQueuePrint')}
+          >
+            <ListPlus className="w-4 h-4" />
+            {t('maintenance.programs.queuePrintRods')}
           </Button>
         </div>
 

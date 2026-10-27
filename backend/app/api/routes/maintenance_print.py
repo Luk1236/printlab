@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import logging
 import re
 from datetime import datetime, timezone
@@ -53,10 +54,16 @@ async def create_maintenance_print(
     printer_id: int,
     program: str,
     archive_id: int | None = Query(None, description="Archiv-3MF als Vorlage (sonst das neueste)"),
+    queue: bool = Query(False, description="3MF in die Bibliothek legen und als Queue-Eintrag planen"),
     _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_CONTROL),
     db: AsyncSession = Depends(get_db),
 ):
-    """Erzeugt aus einem geslicten Archiv eine reine Bewegungs-3MF zum Herunterladen."""
+    """Erzeugt aus einem geslicten Archiv eine reine Bewegungs-3MF.
+
+    Ohne ``queue=true``: Antwort mit Download-Link (manuelles Drucken im
+    Dateimanager). Mit ``queue=true``: Datei landet zusätzlich in der
+    Bibliothek und wird als Warteschlangeneintrag für diesen Drucker geplant.
+    """
     await _printer(printer_id, db)
     key = program.strip().lower()
     if key not in ("oil", "rods", "oel", "schmieren"):
@@ -94,11 +101,57 @@ async def create_maintenance_print(
     except MaintenancePrintError as exc:
         raise HTTPException(400, str(exc)) from exc
     logger.info("[Wartungsdruck] %s aus Archiv %s erzeugt (%s)", filename, archive.id, template)
+
+    if not queue:
+        return {
+            "success": True,
+            "message": "Wartungsdruck erzeugt. Datei herunterladen und über den Dateimanager starten.",
+            "filename": filename,
+            "download_url": f"/api/v1/printers/{printer_id}/maintenance-print/{filename}",
+        }
+
+    # queue=true: Bibliothekseintrag + Warteschlangeneintrag für diesen Drucker.
+    from backend.app.api.routes.print_queue import PrintQueueItemCreate, add_to_queue
+    from backend.app.models.library import LibraryFile
+
+    content = target.read_bytes()
+    file_hash = hashlib.sha256(content).hexdigest() if content else None
+    program_name = "Öl verteilen" if label == "Oel" else "Gewindestangen schmieren"
+    library_file = LibraryFile(
+        folder_id=None,
+        is_external=False,
+        filename=filename,
+        file_path=str(target),
+        file_type="gcode.3mf",
+        file_size=len(content),
+        file_hash=file_hash,
+        file_metadata={"print_name": f"Wartung: {program_name}", "maintenance_program": label},
+        created_by_id=None,
+    )
+    db.add(library_file)
+    await db.commit()
+    await db.refresh(library_file)
+
+    item_create = PrintQueueItemCreate(
+        printer_id=printer_id,
+        library_file_id=library_file.id,
+        skip_filament_check=True,  # Bewegungs-3MF ohne Filament
+        manual_start=False,
+    )
+    try:
+        item = await add_to_queue(item_create, db, None)
+    except HTTPException as exc:
+        raise HTTPException(
+            exc.status_code,
+            f"Die 3MF ist erzeugt und in der Bibliothek ({library_file.id}), aber die Warteschlange lehnte ab: {exc.detail}",
+        ) from exc
     return {
         "success": True,
-        "message": "Wartungsdruck erzeugt. Datei herunterladen und über den Dateimanager starten.",
+        "message": f"Wartungsdruck erzeugt und in die Warteschlange gestellt (Job {getattr(item, 'id', '?')}).",
         "filename": filename,
         "download_url": f"/api/v1/printers/{printer_id}/maintenance-print/{filename}",
+        "library_file_id": library_file.id,
+        "queue_item_id": getattr(item, "id", None),
     }
 
 

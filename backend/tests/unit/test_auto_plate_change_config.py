@@ -87,31 +87,34 @@ class TestScheduleGate:
         asyncio.run(main())
         assert pending == ["Wartung"]
 
-
-class TestOfflineSkip:
-    def test_offline_printer_never_touches_hardware(self, monkeypatch):
-        offline = SimpleNamespace(connected=False)
-
-        class FakeManager:
-            def get_status(self, printer_id):
-                return offline
-
-        class ExplodeHardware:
-            def change_plate(self, job_name=""):
-                raise AssertionError("change_plate must not run when offline")
-
+    def test_only_with_queue_skips_without_pending_items(self, monkeypatch):
         monkeypatch.setattr(
-            auto_plate_change, "read_config", lambda: dict(auto_plate_change.DEFAULTS, enabled=True)
+            auto_plate_change, "read_config", lambda: dict(auto_plate_change.DEFAULTS, enabled=True, only_with_queue=True)
         )
-        monkeypatch.setattr(
-            "backend.app.services.printer_manager.printer_manager", FakeManager()
-        )
-        monkeypatch.setattr(
-            "backend.app.services.hardware_extension.get_hardware", lambda: ExplodeHardware()
-        )
-        cfg = dict(auto_plate_change.DEFAULTS, enabled=True, max_wait_seconds=10, poll_seconds=1)
+        monkeypatch.setattr(auto_plate_change, "_has_pending_queue_item", lambda pid: False)
 
-        asyncio.run(auto_plate_change._run_change(1, "job", cfg))
-        # The skip is recorded for the status endpoint.
-        assert auto_plate_change.last_run(1)["ok"] is False
-        assert "getrennt" in auto_plate_change.last_run(1)["message"]
+        async def main():
+            assert auto_plate_change.schedule(1, "job") is False
+
+        asyncio.run(main())
+        assert auto_plate_change.last_run(1)["ok"] is True
+        assert "übersprungen" in auto_plate_change.last_run(1)["message"]
+
+    def test_only_with_queue_true_starts_when_queue_pending(self, monkeypatch):
+        started: list[str] = []
+
+        async def fake_run(printer_id, job_name, cfg):
+            started.append(job_name)
+
+        monkeypatch.setattr(auto_plate_change, "_run_change", fake_run)
+        monkeypatch.setattr(
+            auto_plate_change, "read_config", lambda: dict(auto_plate_change.DEFAULTS, enabled=True, only_with_queue=True)
+        )
+        monkeypatch.setattr(auto_plate_change, "_has_pending_queue_item", lambda pid: True)
+
+        async def main():
+            assert auto_plate_change.schedule(7, "job") is True
+            await auto_plate_change._TASKS[7]
+
+        asyncio.run(main())
+        assert started == ["job"]

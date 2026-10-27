@@ -7307,6 +7307,10 @@ export const api = {
     }),
 
   // Maintenance print (movement-only 3MF, Bambu-Monitor port)
+  queueMaintenancePrint: (printerId: number, program: 'oil' | 'rods'): Promise<MaintenancePrintResponse & { library_file_id?: number; queue_item_id?: number }> =>
+    request<MaintenancePrintResponse>(`/printers/${printerId}/maintenance-print/${program}?queue=true`, {
+      method: 'POST',
+    }),
   downloadMaintenancePrint: async (printerId: number, program: 'oil' | 'rods'): Promise<MaintenancePrintResponse> => {
     const created = await request<MaintenancePrintResponse>(
       `/printers/${printerId}/maintenance-print/${program}`,

@@ -44,6 +44,7 @@ DEFAULTS: dict[str, Any] = {
     "max_wait_seconds": 1800,
     "poll_seconds": 10,
     "skip_if_offline": True,
+    "only_with_queue": False,
 }
 
 
@@ -182,8 +183,46 @@ def schedule(printer_id: int, job_name: str = "") -> bool:
     cfg = read_config()
     if not cfg.get("enabled"):
         return False
+    if cfg.get("only_with_queue"):
+        pending = _has_pending_queue_item(printer_id)
+        if pending is False:
+            _note_no_queue(printer_id)
+            return False
     old = _TASKS.get(printer_id)
     if old and not old.done():
         old.cancel()
     _TASKS[printer_id] = asyncio.create_task(_run_change(printer_id, job_name, cfg))
     return True
+
+
+def _has_pending_queue_item(printer_id: int) -> bool | None:
+    """True/False, wenn die DB nicht erreichbar ist None (dann weiterlaufen)."""
+    try:
+        import sqlite3
+
+        from backend.app.models.print_queue import PrintQueueItem
+        from backend.app.services.hardware_extension import settings as app_settings
+
+        db_path = app_settings.database_url.replace("sqlite:///", "").replace("sqlite+aiosqlite:///", "")
+        db_file = db_path or str(app_settings.base_dir / "bambuddy.db")
+        con = sqlite3.connect(db_file)
+        try:
+            row = con.execute(
+                f"SELECT 1 FROM {PrintQueueItem.__tablename__} WHERE printer_id=? AND status='pending' LIMIT 1",
+                (printer_id,),
+            ).fetchone()
+        finally:
+            con.close()
+        return row is not None
+    except Exception as exc:
+        logger.debug("[AutoPlateChange] Warteschlangen-Prüfung fehlgeschlagen: %s", exc)
+        return None
+
+
+def _note_no_queue(printer_id: int) -> None:
+    _LAST[printer_id] = {
+        "printer_id": printer_id,
+        "job": "",
+        "ok": True,
+        "message": "Kein weiterer Auftrag wartet — Wechsel übersprungen (only_with_queue).",
+    }
