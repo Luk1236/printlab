@@ -1830,6 +1830,7 @@ export default {
       hardwareSafety: 'Only with an idle printer. Keep hands out of the chamber during the change.',
       layerAlert: 'Layer stop (pause at layer)',
       confirmPlate: 'Is the build plate clear? The program homes the printer and moves the bed.',
+      partWatcher: 'Part watcher (camera comparison)',
     },
     overview: 'Overview',
     allOk: 'All maintenance up to date',

@@ -1811,6 +1811,7 @@ export default {
       hardwareSafety: 'Solo con stampante libera. Non mettere le mani nella camera durante il cambio.',
       layerAlert: 'Stop dello strato (pausa allo strato)',
       confirmPlate: 'Il piano è libero? Il programma esegue l’Home e muove il piatto.',
+      partWatcher: 'Controllo del pezzo (confronto fotocamera)',
     },
     overview: 'Panoramica',
     allOk: 'Tutta la manutenzione aggiornata',

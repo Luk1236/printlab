@@ -4181,6 +4181,22 @@ export interface LayerAlertStatus {
   last_layer: number;
 }
 
+export interface PartWatcherWarning {
+  layer: number;
+  total_layers: number;
+  difference: number;
+  printer: string;
+  message: string;
+}
+
+export interface PartWatcherStatus {
+  enabled: boolean;
+  threshold: number;
+  warning: PartWatcherWarning | null;
+  checked: boolean;
+  last_layer: number;
+}
+
 // External Links (sidebar)
 export interface ExternalLink {
   id: number;
@@ -7226,6 +7242,15 @@ export const api = {
     request<LayerAlertStatus>(`/printers/${printerId}/layer-alert`),
   setLayerAlert: (printerId: number, data: { enabled: boolean; layer: number }) =>
     request<LayerAlertStatus>(`/printers/${printerId}/layer-alert`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  // Part watcher (camera comparison)
+  getPartWatcher: (printerId: number) =>
+    request<PartWatcherStatus>(`/printers/${printerId}/part-watcher`),
+  setPartWatcher: (printerId: number, data: { enabled: boolean; threshold?: number }) =>
+    request<PartWatcherStatus>(`/printers/${printerId}/part-watcher`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),

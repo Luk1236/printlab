@@ -60,6 +60,7 @@ from backend.app.api.routes import (
     notifications,
     obico,
     orca_cloud,
+    part_watcher,
     pending_uploads,
     pipeline_runs,
     print_log,
@@ -9694,8 +9695,38 @@ async def lifespan(app: FastAPI):
     async def on_layer_change(printer_id: int, layer_num: int):
         """Capture timelapse frame on layer change + first layer notification."""
         from backend.app.services.layer_alerts import layer_alerts as layer_alert_service
+        from backend.app.services.part_watcher import part_watcher as part_watcher_service
 
         await layer_alert_service.observe(printer_id, layer_num, printer_manager.get_client(printer_id))
+
+        # Bauteil-Wächter: Schicht 2 als Referenz, Mitte des Drucks als Vergleich.
+        pw_client = printer_manager.get_client(printer_id)
+        pw_state = pw_client.state if pw_client else None
+        if pw_state is not None:
+            pw_key = pw_state.subtask_id or pw_state.gcode_file or ""
+            if part_watcher_service.needs_frame(printer_id, layer_num, pw_state.total_layers, pw_key):
+                try:
+                    from backend.app.models.printer import Printer
+
+                    async with async_session() as pw_db:
+                        result = await pw_db.execute(select(Printer).where(Printer.id == printer_id))
+                        pw_printer = result.scalar_one_or_none()
+                        if pw_printer:
+                            image = await _capture_snapshot_for_notification(
+                                printer_id, pw_printer, logging.getLogger(__name__)
+                            )
+                            warning = part_watcher_service.observe(
+                                printer_id, pw_printer.name, layer_num,
+                                pw_state.total_layers, image, pw_key,
+                            )
+                            if warning:
+                                await notification_service.on_ai_failure_detection(
+                                    printer_id, pw_printer.name,
+                                    pw_state.subtask_name or "", 0.5, "part_watcher",
+                                    pw_db, image_data=image,
+                                )
+                except Exception as exc:  # noqa: BLE001 - Callback darf nicht abbrechen
+                    logging.getLogger(__name__).warning("Bauteil-Wächter fehlgeschlagen: %s", exc)
 
         from backend.app.services.layer_timelapse import on_layer_change as tl_layer_change
 
@@ -10664,6 +10695,7 @@ app.include_router(maintenance.router, prefix=app_settings.api_prefix)
 app.include_router(maintenance_programs.router, prefix=app_settings.api_prefix)
 app.include_router(maintenance_print.router, prefix=app_settings.api_prefix)
 app.include_router(layer_alerts.router, prefix=app_settings.api_prefix)
+app.include_router(part_watcher.router, prefix=app_settings.api_prefix)
 app.include_router(hardware.router, prefix=app_settings.api_prefix)
 app.include_router(camera.router, prefix=app_settings.api_prefix)
 app.include_router(camwall.router, prefix=app_settings.api_prefix)

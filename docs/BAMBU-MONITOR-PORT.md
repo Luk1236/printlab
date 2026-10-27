@@ -16,7 +16,7 @@ Ziel ist, die eigenständigen Funktionen des **Bambu-Monitors**
 | Wartungsprogramme (Öl / Gewindestangen) | **fertig** | `backend/app/services/maintenance_programs.py`, `backend/app/api/routes/maintenance_programs.py`, `frontend/src/components/MaintenanceProgramsCard.tsx` |
 | Tür-Servo & Plattenwechsler (GPIO/Befehl) | **fertig** (Simulation/Befehl) | `backend/app/services/hardware_extension.py`, `backend/app/api/routes/hardware.py` |
 | MakerWorld + lokales PC-Slicen | **fertig** (PC-Dienst + Integration) | `backend/app/services/slicer_cli.py`, `backend/app/pc_slicer.py` |
-| Optische Prüfungen (Leerbett, Bauteil, Schicht) | **teilweise**: Schicht-Stopp fertig | `backend/app/services/layer_alerts.py` |
+| Optische Prüfungen (Leerbett, Bauteil, Schicht) | **teilweise**: Schicht-Stopp + Bauteil-Wächter | `backend/app/services/layer_alerts.py`, `part_watcher.py` |
 | Wartungsdruck (Bewegungs-3MF) | **fertig** | `backend/app/services/maintenance_print.py`, `backend/app/api/routes/maintenance_print.py` |
 | Cloud-Steuerung / `fun`-Schutz / Bambu Connect | **bewusst nicht** | widerspricht Bambuddys LAN-Only-/Virtual-Printer-Architektur |
 
@@ -28,7 +28,8 @@ Ziel ist, die eigenständigen Funktionen des **Bambu-Monitors**
 | Tür-Servo, Endschalter, Magazin und Plattenwechsler | ✅ eingebaut (Simulation/Befehl) |
 | Wartungsdruck als reine Bewegungs-3MF | ✅ eingebaut |
 | Schicht-Hinweise (Pause bei Zielschicht) | ✅ eingebaut |
-| Kamera-Einmessung, Referenzbild-Ausrichtung, Bauteil-Wächter, Erste-Schicht-Inspektor | ⏳ geplant |
+| Bauteil-Wächter (Kamera-Vergleich) | ✅ eingebaut |
+| Kamera-Einmessung, Referenzbild-Ausrichtung, Erste-Schicht-Inspektor | ⏳ geplant |
 | MakerWorld-Download + lokales Slicen mit Bambu Studio CLI in einem Schritt | ✅ eingebaut (PC-Dienst) |
 | Bambu-Cloud-Steuerung, `fun`-Schutzbit, Bambu Connect | ❌ nicht portiert (LAN-Only-Architektur) |
 | PV-/Tarif-Zeitfenster, Angebotskalkulator | optional; Bambuddy hat Smart Plugs/Billing |
@@ -180,7 +181,23 @@ setzen; erreicht der Druck sie, pausiert Bambuddy einmal (z. B. zum Einlegen von
 - Tests: 6 (`test_layer_alerts.py`), inkl. einmalige Pause, Reset bei neuem Druck,
   keine Pause bei deaktiviertem Hinweis oder nicht laufendem Druck.
 
-### Noch offen: Kamera und Bauteil
+### Bauteil-Wächter (fertig)
+
+Portiert aus `teil_waechter.py`: Bei Schicht 2 wird ein Referenzbild gespeichert, etwa bei
+der Hälfte des Drucks wird ein neues Bild verglichen. Kaum Unterschied = Warnung
+(„Bauteil prüfen"), **ohne Eingriff**. Der Dienst hängt im Layer-Callback, nutzt Bambuddys
+vorhandene Snapshot-Funktion (extern/gepuffert/frisch) und meldet über das bestehende
+AI-Fehler-Ereignis.
+
+- Konfiguration `data/part_watcher.json` (pro Drucker `enabled`, `threshold`).
+- API: `GET/PUT /api/v1/printers/{id}/part-watcher`.
+- Oberfläche: Häkchen „Bauteil-Wächter (Kamera-Vergleich)" in der Wartungskarte; eine
+  Warnung erscheint dort rot.
+- Vergleich: OpenCV, Graustufen, zentraler Bauraum-Ausschnitt; Standard-Schwelle 1,0.
+- Tests: 8 (`test_part_watcher.py`) mit synthetischen Bildern, Reset bei neuem Druck,
+  deaktiviert/ohne Bild.
+
+### Noch offen: Kamera-Einmessung und Erste Schicht
 
 Einbau in `backend/app/services/plate_detection.py`/`camera.py` und eine Erweiterung der
 Drucker-Detailseite. Die vorhandene Bambuddy-Kamera-Infrastruktur (Fan-out, Snapshots)
@@ -206,7 +223,9 @@ wird genutzt, kein zweiter Stream.
 - `backend/app/services/slicer_cli.py` (neu)
 - `backend/app/pc_slicer.py` (neu)
 - `backend/app/services/layer_alerts.py` (neu)
+- `backend/app/services/part_watcher.py` (neu)
 - `backend/app/api/routes/layer_alerts.py` (neu)
+- `backend/app/api/routes/part_watcher.py` (neu)
 - `starte_pc_slicer.bat` (neu)
 - `backend/app/main.py` (Router registriert)
 - `backend/tests/unit/services/test_maintenance_programs.py` (neu, 14 Tests)
@@ -214,6 +233,7 @@ wird genutzt, kein zweiter Stream.
 - `backend/tests/unit/services/test_hardware_extension.py` (neu, 9 Tests)
 - `backend/tests/unit/services/test_pc_slicer.py` (neu, 8 Tests)
 - `backend/tests/unit/services/test_layer_alerts.py` (neu, 6 Tests)
+- `backend/tests/unit/services/test_part_watcher.py` (neu, 8 Tests)
 - `frontend/src/components/MaintenanceProgramsCard.tsx` (neu, Programme + Hardware)
 - `frontend/src/pages/MaintenancePage.tsx` (Karte eingebunden)
 - `frontend/src/api/client.ts` (Typen und Methoden)
@@ -265,6 +285,8 @@ Live geprüft:
   heruntergeladen; `G28`/`G1 X236` enthalten, kein `M104/M140/M109`.
 - Schicht-Stopp: API live gesetzt (`enabled`, Schicht 50) und gelesen; die Pause selbst
   ist mit 6 Unit-Tests abgedeckt (ohne echten Drucker).
+- Bauteil-Wächter: API live aktiviert (Schwelle 1,0); der Bildvergleich ist mit 8 Tests
+  abgedeckt, ein echter Kameradurchlauf steht ohne Drucker noch aus.
 
 ## Offene Punkte
 
@@ -279,7 +301,7 @@ Live geprüft:
   getestet; der Befehlspfad ist mit Testbefehlen abgedeckt.
 - Die Wartungsprogramme und der Wechsler sind bewusst auf den P2S begrenzt. Für X1/P1
   ließen sich die XY-Grenzen parametrisieren, das ist aber nicht am Drucker verifiziert.
-- Noch nicht portiert: **Kamera-Einmessung, Bauteil-Wächter und Erste-Schicht-Inspektor**.
+- Noch nicht portiert: **Kamera-Einmessung und Erste-Schicht-Inspektor**.
   Bambuddy hat bereits Leerbett-Erkennung, Obico und eine Erstschicht-Meldung; die
   Portierung braucht eine eigene Kalibrier-/Vergleichslogik auf Kamera-Snapshots.
   Der Schicht-Stopp ist fertig.

@@ -1811,6 +1811,7 @@ export default {
       hardwareSafety: 'Uniquement imprimante libre. Ne pas mettre les mains dans la chambre pendant le changement.',
       layerAlert: 'Arrêt de couche (pause à la couche)',
       confirmPlate: 'La plaque est-elle vide ? Le programme fait un Home et déplace le plateau.',
+      partWatcher: 'Surveillance de la pièce (comparaison caméra)',
     },
     overview: 'Vue d\'ensemble',
     allOk: 'Toute la maintenance est à jour',

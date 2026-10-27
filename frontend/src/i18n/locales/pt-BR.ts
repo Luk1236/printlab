@@ -1811,6 +1811,7 @@ export default {
       hardwareSafety: 'Somente com a impressora livre. Não coloque as mãos dentro da câmara durante a troca.',
       layerAlert: 'Parada de camada (pausa na camada)',
       confirmPlate: 'A mesa está vazia? O programa faz o Home e move a mesa.',
+      partWatcher: 'Vigia da peça (comparação por câmera)',
     },
     overview: 'Visão Geral',
     allOk: 'Todas as manutenções estão em dia',

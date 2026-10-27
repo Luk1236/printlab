@@ -9,6 +9,7 @@ import type {
   LayerAlertStatus,
   MaintenanceProgram,
   MaintenanceProgramStatus,
+  PartWatcherStatus,
   Printer,
 } from '../api/client';
 import { Button } from './Button';
@@ -104,6 +105,21 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
       showToast(t('common.success'));
       setLayerInput(data.layer);
       queryClient.invalidateQueries({ queryKey: ['layerAlert', printerId] });
+    },
+    onError: (error: Error) => showToast(error.message, 'error'),
+  });
+
+  const { data: partWatcher } = useQuery<PartWatcherStatus>({
+    queryKey: ['partWatcher', printerId],
+    queryFn: () => api.getPartWatcher(printerId),
+    enabled: printerId > 0,
+    refetchInterval: 10000,
+  });
+  const partWatcherMutation = useMutation({
+    mutationFn: (enabled: boolean) => api.setPartWatcher(printerId, { enabled }),
+    onSuccess: () => {
+      showToast(t('common.success'));
+      queryClient.invalidateQueries({ queryKey: ['partWatcher', printerId] });
     },
     onError: (error: Error) => showToast(error.message, 'error'),
   });
@@ -328,6 +344,21 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
           </Button>
           {layerAlert?.enabled && layerAlert.layer > 0 && (
             <span className="text-xs text-bambu-green">{t('common.on')}</span>
+          )}
+        </div>
+
+        <div className="border-t border-bambu-dark-tertiary pt-4 flex flex-wrap items-end gap-3">
+          <label className="flex items-center gap-2 text-xs text-bambu-gray">
+            <input
+              type="checkbox"
+              checked={Boolean(partWatcher?.enabled)}
+              onChange={(event) => partWatcherMutation.mutate(event.target.checked)}
+              disabled={!canControl || partWatcherMutation.isPending}
+            />
+            {t('maintenance.programs.partWatcher')}
+          </label>
+          {partWatcher?.warning && (
+            <span className="text-xs text-red-700 dark:text-red-400">{partWatcher.warning.message}</span>
           )}
         </div>
 

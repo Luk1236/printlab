@@ -1811,6 +1811,7 @@ export default {
       hardwareSafety: 'プリンターが空いているときのみ。交換中はチャンバー内に手を入れないでください。',
       layerAlert: 'レイヤー停止（指定レイヤーで一時停止）',
       confirmPlate: 'プレートは空ですか？プログラムはホームし、ベッドを動かします。',
+      partWatcher: 'パーツ監視（カメラ比較）',
     },
     overview: '概要',
     allOk: 'すべてのメンテナンスは最新です',

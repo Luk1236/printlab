@@ -1829,6 +1829,7 @@ export default {
       hardwareSafety: 'Endast med ledig skrivare. Håll händerna borta från kammaren under bytet.',
       layerAlert: 'Lagerstopp (paus vid lager)',
       confirmPlate: 'Är plattan tom? Programmet kör Home och flyttar bädden.',
+      partWatcher: 'Delbevakning (kamerajämförelse)',
     },
     overview: 'Översikt',
     allOk: 'Allt underhåll är gjort',

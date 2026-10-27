@@ -1813,6 +1813,7 @@ export default {
       hardwareSafety: 'Yalnızca yazıcı boştayken. Değişim sırasında elinizi hazneye sokmayın.',
       layerAlert: 'Katman durdurma (katmanda duraklat)',
       confirmPlate: 'Plaka boş mu? Program Home yapar ve tablayı hareket ettirir.',
+      partWatcher: 'Parça denetimi (kamera karşılaştırması)',
     },
     overview: 'Genel Bakış',
     allOk: 'Tüm bakım güncel',

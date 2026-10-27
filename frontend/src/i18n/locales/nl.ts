@@ -1830,6 +1830,7 @@ export default {
       hardwareSafety: 'Alleen bij een vrije printer. Steek tijdens de wissel je handen niet in de behuizing.',
       layerAlert: 'Laagstop (pauze bij laag)',
       confirmPlate: 'Is de plaat leeg? Het programma doet een Home en beweegt het bed.',
+      partWatcher: 'Onderdeelbewaking (cameravergelijking)',
     },
     overview: 'Overzicht',
     allOk: 'Al het onderhoud is bijgewerkt',

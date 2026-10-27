@@ -1812,6 +1812,7 @@ export default {
       hardwareSafety: 'Nur bei freiem Drucker. Während des Wechsels nicht in den Bauraum greifen.',
       layerAlert: 'Schicht-Stopp (Pause bei Schicht)',
       confirmPlate: 'Ist die Druckplatte leer? Das Programm fährt Home und bewegt das Bett.',
+      partWatcher: 'Bauteil-Wächter (Kamera-Vergleich)',
     },
     overview: 'Übersicht',
     allOk: 'Alle Wartungen aktuell',

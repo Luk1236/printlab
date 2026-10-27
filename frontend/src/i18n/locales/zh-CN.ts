@@ -1811,6 +1811,7 @@ export default {
       hardwareSafety: '仅在打印机空闲时使用。更换期间请勿将手伸入腔体。',
       layerAlert: '层暂停（在指定层暂停）',
       confirmPlate: '打印板是空的吗？程序会回原点并移动热床。',
+      partWatcher: '零件监测（摄像头对比）',
     },
     overview: '概览',
     allOk: '所有维护均已完成',

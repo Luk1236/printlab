@@ -1811,6 +1811,7 @@ export default {
       hardwareSafety: '僅在印表機閒置時使用。更換期間請勿將手伸入腔體。',
       layerAlert: '層暫停（在指定層暫停）',
       confirmPlate: '列印板是空的嗎？程式會回原點並移動熱床。',
+      partWatcher: '零件監測（攝影機比對）',
     },
     overview: '概覽',
     allOk: '所有維護均已完成',
