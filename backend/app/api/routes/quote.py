@@ -28,6 +28,50 @@ async def _float_setting(db: AsyncSession, key: str) -> float:
         return getattr(DEFAULT_SETTINGS, key)
 
 
+@router.get("/for-archive/{archive_id}")
+async def quote_for_archive(
+    archive_id: int,
+    labor_minutes: float = Query(0, ge=0, description="Handarbeitszeit in Minuten"),
+    _=RequirePermissionIfAuthEnabled(Permission.ARCHIVES_READ),
+    db: AsyncSession = Depends(get_db),
+):
+    """Angebot aus den Archiv-Metadaten (Zeit + Gramm) vorrechnen."""
+    from fastapi import HTTPException
+    from sqlalchemy import select
+
+    from backend.app.models.archive import PrintArchive
+
+    archive = await db.scalar(select(PrintArchive).where(PrintArchive.id == archive_id))
+    if archive is None:
+        raise HTTPException(404, "Archive not found")
+    grams = float(archive.filament_used_grams or 0)
+    minutes = float(archive.print_time_seconds or 0) / 60.0
+    material_rate = await _float_setting(db, "default_filament_cost")
+    energy_per_kwh = await _float_setting(db, "energy_cost_per_kwh")
+    power_watts = await _float_setting(db, "printer_power_watts")
+    labor_rate = await _float_setting(db, "labor_rate_per_hour")
+    markup_percent = await _float_setting(db, "quote_markup_percent")
+
+    material_cost = (grams / 1000.0) * material_rate
+    energy_cost = (minutes / 60.0) * (power_watts / 1000.0) * energy_per_kwh
+    labor_cost = (labor_minutes / 60.0) * labor_rate
+    subtotal = material_cost + energy_cost + labor_cost
+    markup_amount = subtotal * (markup_percent / 100.0)
+    currency_code = (await get_setting(db, "currency")) or "EUR"
+    return {
+        "archive_id": archive_id,
+        "currency": currency_code,
+        "grams": round(grams, 2),
+        "duration_minutes": round(minutes, 1),
+        "material": round(material_cost, 2),
+        "energy": round(energy_cost, 2),
+        "labor": round(labor_cost, 2),
+        "subtotal": round(subtotal, 2),
+        "markup": round(markup_amount, 2),
+        "total": round(subtotal + markup_amount, 2),
+    }
+
+
 @router.get("")
 async def quote(
     grams: float = Query(..., ge=0, description="Filament in Gramm"),

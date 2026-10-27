@@ -74,6 +74,18 @@ export function QueueTimelineView({
     return () => clearInterval(interval);
   }, []);
 
+  // Angebotskalkulator am Auftrag: Preis aus den Archivdaten nach-hover laden.
+  const [quotes, setQuotes] = useState<Record<number, number>>({});
+  const loadQuote = (archiveId: number) => {
+    if (quotes[archiveId] != null) return;
+    api
+      .getQuoteForArchive(archiveId)
+      .then((quote) => setQuotes((prev) => ({ ...prev, [archiveId]: quote.total })))
+      .catch(() => {
+        /* kein Angebot für dieses Archiv */
+      });
+  };
+
   // User can shift the window forward/back in 12h steps. Default = current
   // time, so the timeline reads "next 24h from now."
   const [windowOffsetMs, setWindowOffsetMs] = useState(0);
@@ -414,11 +426,15 @@ export function QueueTimelineView({
                         ev.item.print_time_seconds ? formatDuration(ev.item.print_time_seconds) : null,
                         isPrinting && ev.progress != null ? `${Math.round(ev.progress)}%` : null,
                         ev.item.batch_name ? `batch: ${ev.item.batch_name}` : null,
+                        quotes[ev.item.archive_id!] != null
+                          ? `${t('quote.title')}: ${quotes[ev.item.archive_id!].toFixed(2)}`
+                          : null,
                       ].filter(Boolean).join(' · ');
                       return (
                         <button
                           key={ev.item.id}
                           onClick={() => onItemClick(ev.item)}
+                          onMouseEnter={() => { if (ev.item.archive_id != null) loadQuote(ev.item.archive_id); }}
                           title={tooltipParts}
                           className={`absolute rounded-md transition-all hover:brightness-110 hover:z-10 overflow-hidden flex items-center gap-1.5 px-1.5 text-left ${
                             isPrinting

@@ -7501,6 +7501,10 @@ export const api = {
     });
     return request<QuoteResponse>(`/quote?${query.toString()}`);
   },
+  getQuoteForArchive: (archiveId: number, laborMinutes = 0) =>
+    request<QuoteResponse & { archive_id: number; grams: number; duration_minutes: number }>(
+      `/quote/for-archive/${archiveId}?labor_minutes=${laborMinutes}`
+    ),
   testCameraConnection: (printerId: number) =>
     request<{ success: boolean; message?: string; error?: string }>(`/printers/${printerId}/camera/test`),
   getCameraStatus: (printerId: number) =>
