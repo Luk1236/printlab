@@ -38,8 +38,14 @@ def program_path() -> str:
 
 def build_command(program: str, source: Path, out_dir: Path, name: str,
                   printer_json: str | None, process_json: str | None,
-                  filament_jsons: list[str], arrange: bool, orient: bool) -> list[str]:
-    """Baut den Bambu-Studio-Aufruf; Profile werden vorher als Dateien geschrieben."""
+                  filament_jsons: list[str], arrange: bool, orient: bool,
+                  plate: int | None = None) -> list[str]:
+    """Baut den Bambu-Studio-Aufruf; Profile werden vorher als Dateien geschrieben.
+
+    ``plate`` (1-indexiert) hängt ``--export-plate N`` an, damit nur diese
+    Platte geslict wird; bei CLIs ohne die Option schlägt der Lauf fehl und
+    ``slice_file`` wiederholt ohne den Schalter.
+    """
     cmd = [program, "--orient", "1" if orient else "0", "--arrange", "1" if arrange else "0",
            "--slice", "0"]
     if printer_json is not None and process_json is not None:
@@ -55,6 +61,8 @@ def build_command(program: str, source: Path, out_dir: Path, name: str,
                 path.write_text(text, encoding="utf-8")
                 filament_paths.append(str(path))
             cmd += ["--load-filaments", ";".join(filament_paths)]
+    if plate is not None:
+        cmd += ["--export-plate", str(plate)]
     cmd += ["--outputdir", str(out_dir), "--export-3mf", name, str(source)]
     return cmd
 
@@ -78,8 +86,13 @@ def _read_slice_info(path: Path) -> tuple[int, float]:
 def slice_file(source: Path, name: str, printer_json: str | None = None,
                process_json: str | None = None, filament_jsons: list[str] | None = None,
                arrange: bool = False, orient: bool = False,
-               timeout: float = 900.0) -> SliceOutput:
-    """Slict eine 3MF/STL mit Bambu Studio und liefert die fertige 3MF."""
+               timeout: float = 900.0, plate: int | None = None) -> SliceOutput:
+    """Slict eine 3MF/STL mit Bambu Studio und liefert die fertige 3MF.
+
+    ``plate``: nur diese Platte (1-indexiert). Eine CLI ohne ``--export-plate``
+    meldet einen Fehler; dann läuft ein zweiter Versuch komplett — mit sauberer
+    Warnung im Protokoll statt stiller Allesplatten-Ergebnisse.
+    """
     program = program_path()
     if not program or not Path(program).is_file():
         raise SlicerCliError(f"Bambu Studio nicht gefunden: {program or '(leer)'}")
@@ -93,17 +106,30 @@ def slice_file(source: Path, name: str, printer_json: str | None = None,
         copy = tmp_path / source.name
         shutil.copy2(source, copy)
         cmd = build_command(program, copy, tmp_path, name, printer_json, process_json,
-                             filament_jsons or [], arrange, orient)
+                             filament_jsons or [], arrange, orient, plate)
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout,
                                     cwd=tmp_path, check=False)
         except (OSError, subprocess.SubprocessError) as exc:
             raise SlicerCliError(f"Bambu Studio konnte nicht gestartet werden: {exc}") from exc
+        if result.returncode != 0 and plate is not None:
+            stderr = (result.stderr or result.stdout or "").strip()
+            logger.warning(
+                "[PC-Slicer] --export-plate %s fehlgeschlagen (%s); wiederhole mit allen Platten.",
+                plate, stderr[-200:],
+            )
+            cmd = build_command(program, copy, tmp_path, name, printer_json, process_json,
+                                 filament_jsons or [], arrange, orient, None)
+            try:
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout,
+                                        cwd=tmp_path, check=False)
+            except (OSError, subprocess.SubprocessError) as exc:
+                raise SlicerCliError(f"Bambu Studio konnte nicht gestartet werden: {exc}") from exc
         output = tmp_path / name
         if result.returncode != 0 or not output.is_file():
             stderr = (result.stderr or result.stdout or "").strip()
             raise SlicerCliError(f"Slicen fehlgeschlagen: {stderr[-500:] or 'keine Ausgabe'}")
         seconds, grams = _read_slice_info(output)
         content = output.read_bytes()
-        logger.info("[PC-Slicer] %s geslict (%s s, %.1f g)", name, seconds, grams)
+        logger.info("[PC-Slicer] %s geslict (Platte %s; %s s, %.1f g)", name, plate or "alle", seconds, grams)
         return SliceOutput(content, seconds, grams)

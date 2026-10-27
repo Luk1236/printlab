@@ -70,6 +70,14 @@ async def slice_route(
     suffix = Path(filename).suffix.lower()
     if suffix not in (".3mf", ".stl"):
         raise HTTPException(400, "Nur .3mf oder .stl werden unterstützt.")
+    plate_num: int | None = None
+    if plate is not None and str(plate).strip():
+        try:
+            plate_num = int(str(plate).strip())
+            if plate_num < 1:
+                raise ValueError
+        except ValueError:
+            raise HTTPException(400, f"Ungültige Platte: {plate!r} (Zahl >= 1 oder leer).") from None
     data = await file.read(MAX_BYTES + 1)
     if not data:
         raise HTTPException(400, "Die Datei ist leer.")
@@ -91,6 +99,8 @@ async def slice_route(
             list(filamentProfile or []),
             _truthy(arrange),
             _truthy(orient),
+            900.0,
+            plate_num,
         )
     except SlicerCliError as exc:
         logger.warning("[PC-Slicer] %s", exc)
@@ -108,12 +118,19 @@ async def slice_route(
         return Response(content=result.content, media_type="application/octet-stream", headers=headers)
 
     # Ohne 3MF-Wunsch den G-code aus der erzeugten Datei liefern (Bambuddy erwartet dann Text).
+    # Mit Plattenwahl: zuerst Metadata/plate_N.gcode, sonst plate_1.gcode.
+    candidates = ([f"Metadata/plate_{plate_num}.gcode", "Metadata/plate_1.gcode"]
+                  if plate_num is not None else ["Metadata/plate_1.gcode"])
     try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".3mf") as tmp:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".gcode.3mf") as tmp:
             tmp.write(result.content)
             tmp_name = tmp.name
         with zipfile.ZipFile(tmp_name) as zf:
-            gcode = zf.read("Metadata/plate_1.gcode")
+            names = set(zf.namelist())
+            wanted = next((c for c in candidates if c in names), None)
+            if wanted is None:
+                raise KeyError("plate_N.gcode nicht in der 3MF (gefunden: %s)" % [n for n in names if n.endswith('.gcode')][:3])
+            gcode = zf.read(wanted)
         return Response(content=gcode, media_type="text/plain", headers=headers)
     except (OSError, KeyError, zipfile.BadZipFile) as exc:
         raise HTTPException(500, f"Erzeugte 3MF ohne G-code: {exc}") from exc
