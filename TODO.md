@@ -1,0 +1,87 @@
+# TODO — Bambuddy-Fork (Bambu-Monitor-Port)
+
+**Stand:** 27.10.2026
+**Basis:** Bambuddy 1.2.5.7 (AGPL-3.0)
+**Branch:** `bambu-monitor-port`
+
+## Fertig
+
+- Wartungsprogramme: Öl verteilen, Gewindestangen schmieren (P2S, Sicherheitsprüfung,
+  Pflichtbestätigung „Platte frei“).
+- Tür-Servo und Plattenwechsler/Magazin: Simulations- und Befehlsmodus, Endschalterprüfung,
+  Not-Halt, Magazinstand in `data/magazine.json`.
+- Wartungsdruck: Bewegungs-3MF aus dem neuesten geslicten Archiv, ohne Heizung/Filament.
+- MakerWorld + PC-Slicen: FastAPI-Dienst (`backend/app/pc_slicer.py`) für Bambu Studio,
+  Bambuddy-Sidecar konfiguriert, echter Slice getestet.
+- Schicht-Stopp: Pause bei Zielschicht.
+- Bauteil-Wächter: Kamera-Vergleich Schicht 2 ↔ Druckmitte, nur Warnung.
+- Erste-Schicht-Inspektor: Helligkeit/Kontrast/Kanten der Schichten 1–5, nur Warnung.
+- Sicherheit: Platte-frei-Pflicht, Tür-Endschalterprüfung, Not-Halt (auch bei Druck/offline).
+- Barrierefreiheit: WCAG-AA-Kontraste, Zoom erlaubt, Axe auf der Wartungsseite ohne Verstöße.
+- 64 neue Backend-Tests; Frontend-Suite, TypeScript, i18n-Parität und Build grün.
+
+## Offen — nach Priorität
+
+### P1 Optik abschließen
+- [ ] Kamera-Einmessung über vier Plattenecken (Homographie).
+- [ ] Referenzbild-Ausrichtung für den Leerbett-/Bauteilvergleich.
+- [ ] Optional: Part-Watcher-Schwelle und Zielschicht pro Auftrag statt pro Drucker.
+
+### P2 Queue und Automatik
+- [ ] Wartungsdruck direkt in die Warteschlange legen (P2S-/G-code-/MD5-Prüfung).
+- [ ] Automatischer Plattenwechsel nach Druckende (Abkühlung, Türprüfung, Fehlerzustand).
+- [ ] Hardware-Konfiguration in der UI statt `data/hardware.json`.
+- [ ] Magazinverwaltung in der UI (Fächer belegen/freigeben, Etiketten).
+- [ ] Audit-Log und Benachrichtigungen für Hardware-/Wartungsaktionen.
+
+### P3 PC-Slicer alltagstauglich
+- [ ] Plattenwahl (`plate`) umsetzen; aktuell slict die CLI alle Platten.
+- [ ] Fortschritt über `/slice/progress` (oder klarer Hinweis auf Zeitüberwachung).
+- [ ] Autostart als Windows-Dienst (Aufgabe ist vorhanden: `install_pc_slicer_task.ps1`).
+- [ ] Voller E2E-Test: MakerWorld → PC-Slicer → Queue.
+- [ ] Token/Firewall, sobald der Dienst nicht nur auf `127.0.0.1` lauscht.
+
+### P4 Engineering und Betrieb
+- [ ] Volle Upstream-Suite auf Linux/CI (Windows scheitert an Pfad-Trennern).
+- [ ] Docker-/ARM-Build und Test auf Pi 4/5.
+- [ ] Fork-Version/Changelog pflegen, AGPL-Hinweis, Upstream-Merge-Strategie.
+- [ ] Frontend-Tests für die Wartungskarte; Backend-Meldungen für alle 15 Sprachen.
+- [ ] Auth einschalten, Admin anlegen, HTTPS/Tailscale, Backup.
+- [ ] Release-Paket und Installationsanleitung für Pi 4/5.
+
+### P5 Oberfläche
+- [ ] Wartungskarte in einen eigenen Tab „Hardware & Optik“ aufteilen.
+- [ ] Mobilansicht der neuen Bedienelemente prüfen.
+- [ ] Fehlermeldungen/Fokus vereinheitlichen; Einrichtungsassistent für Hardware.
+
+### Optional (bewusst nicht im Fokus)
+- Verschlüsselte Sicherung, Angebotskalkulator, PV-/Tarifsteuerung, Kiosk, Drucker-Simulator.
+- Cloud-Steuerung/`fun`/Bambu Connect — passt nicht zu Bambuddys LAN-Only-Architektur;
+  dafür bleibt der Bambu-Monitor die richtige Wahl.
+
+## Start
+
+```powershell
+cd C:\Users\lukas\OneDrive\Desktop\Bambuddy-Fork
+.venv\Scripts\python.exe -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --loop asyncio
+starte_pc_slicer.bat
+```
+
+## Aufräumen (27.10.2026)
+
+Entfernt: Demo-Datenbank, `data/`, `logs/`, `maintenance/`, Laufzeit-JSONs
+(`hardware.json`, `magazine.json`, `layer_alerts.json`, `part_watcher.json`,
+`first_layer_inspector.json`), `__pycache__` sowie temporäre Screenshots/Testdateien.
+
+Behalten: Quellcode, `.venv`, `frontend/node_modules`, `static/` (Build), Doku.
+Der nächste Start von Bambuddy beginnt wieder mit der Einrichtung (Auth aus, keine
+Demo-Drucker). Die echten Daten des Bambu-Monitors wurden **nicht** angefasst.
+
+## Commits
+
+- `8c6eb57` Port der Monitor-Funktionen
+- `ba41320` Bauteil-Wächter
+- `c833ac4` Not-Halt und PC-Slicer-Autostart
+- `b35e3f2` Erste-Schicht-Inspektor
+
+Nicht gepusht. Lizenz: AGPL-3.0.
