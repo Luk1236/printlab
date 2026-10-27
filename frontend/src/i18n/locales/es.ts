@@ -1815,6 +1815,7 @@ export default {
       confirmPlate: '¿Está vacía la placa? El programa hace Home y mueve la cama.',
       partWatcher: 'Vigilante de pieza (comparación de cámara)',
       emergencyStop: 'Parada de emergencia',
+      firstLayerInspector: 'Inspector de primera capa (cámara)',
     },
     overview: 'Resumen',
     allOk: 'Todo el mantenimiento al día',

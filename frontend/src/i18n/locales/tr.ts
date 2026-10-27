@@ -1815,6 +1815,7 @@ export default {
       confirmPlate: 'Plaka boş mu? Program Home yapar ve tablayı hareket ettirir.',
       partWatcher: 'Parça denetimi (kamera karşılaştırması)',
       emergencyStop: 'Acil durdurma',
+      firstLayerInspector: 'İlk katman denetçisi (kamera)',
     },
     overview: 'Genel Bakış',
     allOk: 'Tüm bakım güncel',

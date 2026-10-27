@@ -16,7 +16,7 @@ Ziel ist, die eigenständigen Funktionen des **Bambu-Monitors**
 | Wartungsprogramme (Öl / Gewindestangen) | **fertig** | `backend/app/services/maintenance_programs.py`, `backend/app/api/routes/maintenance_programs.py`, `frontend/src/components/MaintenanceProgramsCard.tsx` |
 | Tür-Servo & Plattenwechsler (GPIO/Befehl) | **fertig** (Simulation/Befehl) | `backend/app/services/hardware_extension.py`, `backend/app/api/routes/hardware.py` |
 | MakerWorld + lokales PC-Slicen | **fertig** (PC-Dienst + Integration) | `backend/app/services/slicer_cli.py`, `backend/app/pc_slicer.py` |
-| Optische Prüfungen (Leerbett, Bauteil, Schicht) | **teilweise**: Schicht-Stopp + Bauteil-Wächter | `backend/app/services/layer_alerts.py`, `part_watcher.py` |
+| Optische Prüfungen (Leerbett, Bauteil, Schicht) | **teilweise**: Schicht-Stopp, Bauteil-Wächter, Erste-Schicht | `layer_alerts.py`, `part_watcher.py`, `first_layer_inspector.py` |
 | Wartungsdruck (Bewegungs-3MF) | **fertig** | `backend/app/services/maintenance_print.py`, `backend/app/api/routes/maintenance_print.py` |
 | Cloud-Steuerung / `fun`-Schutz / Bambu Connect | **bewusst nicht** | widerspricht Bambuddys LAN-Only-/Virtual-Printer-Architektur |
 
@@ -29,7 +29,8 @@ Ziel ist, die eigenständigen Funktionen des **Bambu-Monitors**
 | Wartungsdruck als reine Bewegungs-3MF | ✅ eingebaut |
 | Schicht-Hinweise (Pause bei Zielschicht) | ✅ eingebaut |
 | Bauteil-Wächter (Kamera-Vergleich) | ✅ eingebaut |
-| Kamera-Einmessung, Referenzbild-Ausrichtung, Erste-Schicht-Inspektor | ⏳ geplant |
+| Erste-Schicht-Inspektor (Kamera) | ✅ eingebaut |
+| Kamera-Einmessung / Referenzbild-Ausrichtung | ⏳ geplant |
 | MakerWorld-Download + lokales Slicen mit Bambu Studio CLI in einem Schritt | ✅ eingebaut (PC-Dienst) |
 | Bambu-Cloud-Steuerung, `fun`-Schutzbit, Bambu Connect | ❌ nicht portiert (LAN-Only-Architektur) |
 | PV-/Tarif-Zeitfenster, Angebotskalkulator | optional; Bambuddy hat Smart Plugs/Billing |
@@ -197,7 +198,18 @@ AI-Fehler-Ereignis.
 - Tests: 8 (`test_part_watcher.py`) mit synthetischen Bildern, Reset bei neuem Druck,
   deaktiviert/ohne Bild.
 
-### Noch offen: Kamera-Einmessung und Erste Schicht
+### Erste-Schicht-Inspektor (fertig)
+
+Portiert aus dem Erste-Schicht-Inspektor des Monitors: Nach Schicht 1–5 wird ein
+Kamerabild ohne Referenz beurteilt (Helligkeit, Kontrast, Kantendichte). Zu dunkel,
+zu kontrastarm oder keine Struktur = Warnung, **ohne Eingriff**.
+
+- Konfiguration `data/first_layer_inspector.json`; API `GET/PUT /printers/{id}/first-layer-inspector`.
+- Oberfläche: Häkchen „Erste-Schicht-Inspektor (Kamera)" in der Wartungskarte.
+- Meldet über das bestehende AI-Ereignis; das Bild wird nicht dauerhaft gespeichert.
+- Tests: 8 (`test_first_layer_inspector.py`), synthetische Bilder.
+
+### Noch offen: Kamera-Einmessung
 
 Einbau in `backend/app/services/plate_detection.py`/`camera.py` und eine Erweiterung der
 Drucker-Detailseite. Die vorhandene Bambuddy-Kamera-Infrastruktur (Fan-out, Snapshots)
@@ -227,6 +239,8 @@ wird genutzt, kein zweiter Stream.
 - `backend/app/pc_slicer.py` (neu)
 - `backend/app/services/layer_alerts.py` (neu)
 - `backend/app/services/part_watcher.py` (neu)
+- `backend/app/services/first_layer_inspector.py` (neu)
+- `backend/app/api/routes/first_layer_inspector.py` (neu)
 - `backend/app/api/routes/layer_alerts.py` (neu)
 - `backend/app/api/routes/part_watcher.py` (neu)
 - `starte_pc_slicer.bat` (neu)
@@ -239,6 +253,7 @@ wird genutzt, kein zweiter Stream.
 - `backend/tests/unit/services/test_pc_slicer.py` (neu, 8 Tests)
 - `backend/tests/unit/services/test_layer_alerts.py` (neu, 6 Tests)
 - `backend/tests/unit/services/test_part_watcher.py` (neu, 8 Tests)
+- `backend/tests/unit/services/test_first_layer_inspector.py` (neu, 8 Tests)
 - `frontend/src/components/MaintenanceProgramsCard.tsx` (neu, Programme + Hardware)
 - `frontend/src/pages/MaintenancePage.tsx` (Karte eingebunden)
 - `frontend/src/api/client.ts` (Typen und Methoden)
@@ -294,6 +309,7 @@ Live geprüft:
   abgedeckt, ein echter Kameradurchlauf steht ohne Drucker noch aus.
 - Not-Halt: in der Simulation live ausgelöst (Tür → `unknown`); der Befehlspfad ist
   mit 3 Tests abgedeckt.
+- Erste-Schicht-Inspektor: API live aktiviert; Bildbeurteilung mit 8 Tests abgedeckt.
 
 ## Offene Punkte
 
@@ -308,7 +324,7 @@ Live geprüft:
   getestet; der Befehlspfad ist mit Testbefehlen abgedeckt.
 - Die Wartungsprogramme und der Wechsler sind bewusst auf den P2S begrenzt. Für X1/P1
   ließen sich die XY-Grenzen parametrisieren, das ist aber nicht am Drucker verifiziert.
-- Noch nicht portiert: **Kamera-Einmessung und Erste-Schicht-Inspektor**.
+- Noch nicht portiert: **Kamera-Einmessung/Referenzbild-Ausrichtung**.
   Bambuddy hat bereits Leerbett-Erkennung, Obico und eine Erstschicht-Meldung; die
   Portierung braucht eine eigene Kalibrier-/Vergleichslogik auf Kamera-Snapshots.
   Der Schicht-Stopp ist fertig.

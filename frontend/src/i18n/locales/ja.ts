@@ -1813,6 +1813,7 @@ export default {
       confirmPlate: 'プレートは空ですか？プログラムはホームし、ベッドを動かします。',
       partWatcher: 'パーツ監視（カメラ比較）',
       emergencyStop: '緊急停止',
+      firstLayerInspector: 'ファーストレイヤー検査（カメラ）',
     },
     overview: '概要',
     allOk: 'すべてのメンテナンスは最新です',

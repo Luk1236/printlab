@@ -1813,6 +1813,7 @@ export default {
       confirmPlate: '列印板是空的嗎？程式會回原點並移動熱床。',
       partWatcher: '零件監測（攝影機比對）',
       emergencyStop: '緊急停止',
+      firstLayerInspector: '首層檢查（攝影機）',
     },
     overview: '概覽',
     allOk: '所有維護均已完成',

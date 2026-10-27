@@ -1813,6 +1813,7 @@ export default {
       confirmPlate: 'Il piano è libero? Il programma esegue l’Home e muove il piatto.',
       partWatcher: 'Controllo del pezzo (confronto fotocamera)',
       emergencyStop: 'Arresto di emergenza',
+      firstLayerInspector: 'Ispettore del primo strato (fotocamera)',
     },
     overview: 'Panoramica',
     allOk: 'Tutta la manutenzione aggiornata',

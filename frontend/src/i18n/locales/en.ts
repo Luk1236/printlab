@@ -1832,6 +1832,7 @@ export default {
       confirmPlate: 'Is the build plate clear? The program homes the printer and moves the bed.',
       partWatcher: 'Part watcher (camera comparison)',
       emergencyStop: 'Emergency stop',
+      firstLayerInspector: 'First-layer inspector (camera)',
     },
     overview: 'Overview',
     allOk: 'All maintenance up to date',

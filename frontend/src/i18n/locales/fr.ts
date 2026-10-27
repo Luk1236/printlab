@@ -1813,6 +1813,7 @@ export default {
       confirmPlate: 'La plaque est-elle vide ? Le programme fait un Home et déplace le plateau.',
       partWatcher: 'Surveillance de la pièce (comparaison caméra)',
       emergencyStop: 'Arrêt d’urgence',
+      firstLayerInspector: 'Inspecteur de première couche (caméra)',
     },
     overview: 'Vue d\'ensemble',
     allOk: 'Toute la maintenance est à jour',

@@ -1832,6 +1832,7 @@ export default {
       confirmPlate: 'Is de plaat leeg? Het programma doet een Home en beweegt het bed.',
       partWatcher: 'Onderdeelbewaking (cameravergelijking)',
       emergencyStop: 'Noodstop',
+      firstLayerInspector: 'Eerste-laaginspectie (camera)',
     },
     overview: 'Overzicht',
     allOk: 'Al het onderhoud is bijgewerkt',

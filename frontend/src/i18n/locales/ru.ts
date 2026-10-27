@@ -1737,6 +1737,7 @@ export default {
       confirmPlate: 'Стол пуст? Программа выполнит Home и переместит стол.',
       partWatcher: 'Контроль детали (сравнение камеры)',
       emergencyStop: 'Аварийный стоп',
+      firstLayerInspector: 'Инспектор первого слоя (камера)',
     },
     overview: "Обзор",
     allOk: "Всё обслуживание выполнено вовремя",

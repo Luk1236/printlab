@@ -5,6 +5,7 @@ import { ArrowLeftRight, Check, DoorClosed, DoorOpen, Download, Droplet, Refresh
 
 import { api } from '../api/client';
 import type {
+  FirstLayerStatus,
   HardwareStatus,
   LayerAlertStatus,
   MaintenanceProgram,
@@ -121,6 +122,21 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
     onSuccess: () => {
       showToast(t('common.success'));
       queryClient.invalidateQueries({ queryKey: ['partWatcher', printerId] });
+    },
+    onError: (error: Error) => showToast(error.message, 'error'),
+  });
+
+  const { data: firstLayer } = useQuery<FirstLayerStatus>({
+    queryKey: ['firstLayerInspector', printerId],
+    queryFn: () => api.getFirstLayerInspector(printerId),
+    enabled: printerId > 0,
+    refetchInterval: 10000,
+  });
+  const firstLayerMutation = useMutation({
+    mutationFn: (enabled: boolean) => api.setFirstLayerInspector(printerId, enabled),
+    onSuccess: () => {
+      showToast(t('common.success'));
+      queryClient.invalidateQueries({ queryKey: ['firstLayerInspector', printerId] });
     },
     onError: (error: Error) => showToast(error.message, 'error'),
   });
@@ -369,6 +385,18 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
           </label>
           {partWatcher?.warning && (
             <span className="text-xs text-red-700 dark:text-red-400">{partWatcher.warning.message}</span>
+          )}
+          <label className="flex items-center gap-2 text-xs text-bambu-gray">
+            <input
+              type="checkbox"
+              checked={Boolean(firstLayer?.enabled)}
+              onChange={(event) => firstLayerMutation.mutate(event.target.checked)}
+              disabled={!canControl || firstLayerMutation.isPending}
+            />
+            {t('maintenance.programs.firstLayerInspector')}
+          </label>
+          {firstLayer?.result && !firstLayer.result.ok && (
+            <span className="text-xs text-red-700 dark:text-red-400">{firstLayer.result.message}</span>
           )}
         </div>
 

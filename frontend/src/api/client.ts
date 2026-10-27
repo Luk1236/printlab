@@ -4197,6 +4197,23 @@ export interface PartWatcherStatus {
   last_layer: number;
 }
 
+export interface FirstLayerResult {
+  ok: boolean;
+  brightness: number;
+  contrast: number;
+  edge_density: number;
+  message: string;
+  layer: number;
+  time: string;
+}
+
+export interface FirstLayerStatus {
+  enabled: boolean;
+  result: FirstLayerResult | null;
+  checked: boolean;
+  last_layer: number;
+}
+
 // External Links (sidebar)
 export interface ExternalLink {
   id: number;
@@ -7255,6 +7272,15 @@ export const api = {
     request<PartWatcherStatus>(`/printers/${printerId}/part-watcher`, {
       method: 'PUT',
       body: JSON.stringify(data),
+    }),
+
+  // First-layer inspector
+  getFirstLayerInspector: (printerId: number) =>
+    request<FirstLayerStatus>(`/printers/${printerId}/first-layer-inspector`),
+  setFirstLayerInspector: (printerId: number, enabled: boolean) =>
+    request<FirstLayerStatus>(`/printers/${printerId}/first-layer-inspector`, {
+      method: 'PUT',
+      body: JSON.stringify({ enabled }),
     }),
 
   // Camera

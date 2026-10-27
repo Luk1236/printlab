@@ -1831,6 +1831,7 @@ export default {
       confirmPlate: 'Är plattan tom? Programmet kör Home och flyttar bädden.',
       partWatcher: 'Delbevakning (kamerajämförelse)',
       emergencyStop: 'Nödstopp',
+      firstLayerInspector: 'Första lagret-inspektör (kamera)',
     },
     overview: 'Översikt',
     allOk: 'Allt underhåll är gjort',

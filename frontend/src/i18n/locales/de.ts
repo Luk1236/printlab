@@ -1814,6 +1814,7 @@ export default {
       confirmPlate: 'Ist die Druckplatte leer? Das Programm fährt Home und bewegt das Bett.',
       partWatcher: 'Bauteil-Wächter (Kamera-Vergleich)',
       emergencyStop: 'Not-Halt',
+      firstLayerInspector: 'Erste-Schicht-Inspektor (Kamera)',
     },
     overview: 'Übersicht',
     allOk: 'Alle Wartungen aktuell',

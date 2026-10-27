@@ -35,6 +35,7 @@ from backend.app.api.routes import (
     filaments,
     finance,
     firmware,
+    first_layer_inspector,
     github_backup,
     groups,
     ha_sensors,
@@ -9694,10 +9695,37 @@ async def lifespan(app: FastAPI):
     # Layer change callback for external camera timelapse
     async def on_layer_change(printer_id: int, layer_num: int):
         """Capture timelapse frame on layer change + first layer notification."""
+        from backend.app.services.first_layer_inspector import first_layer_inspector as first_layer_service
         from backend.app.services.layer_alerts import layer_alerts as layer_alert_service
         from backend.app.services.part_watcher import part_watcher as part_watcher_service
 
         await layer_alert_service.observe(printer_id, layer_num, printer_manager.get_client(printer_id))
+
+        # Erste-Schicht-Inspektor: Bild der ersten Schichten ohne Referenz beurteilen.
+        fl_client = printer_manager.get_client(printer_id)
+        fl_state = fl_client.state if fl_client else None
+        if fl_state is not None:
+            fl_key = fl_state.subtask_id or fl_state.gcode_file or ""
+            if first_layer_service.needs_frame(printer_id, layer_num, fl_key):
+                try:
+                    from backend.app.models.printer import Printer
+
+                    async with async_session() as fl_db:
+                        result = await fl_db.execute(select(Printer).where(Printer.id == printer_id))
+                        fl_printer = result.scalar_one_or_none()
+                        if fl_printer:
+                            image = await _capture_snapshot_for_notification(
+                                printer_id, fl_printer, logging.getLogger(__name__)
+                            )
+                            warning = first_layer_service.observe(printer_id, layer_num, image, fl_key)
+                            if warning:
+                                await notification_service.on_ai_failure_detection(
+                                    printer_id, fl_printer.name,
+                                    fl_state.subtask_name or "", 0.5, "first_layer_inspector",
+                                    fl_db, image_data=image,
+                                )
+                except Exception as exc:  # noqa: BLE001 - Callback darf nicht abbrechen
+                    logging.getLogger(__name__).warning("Erste-Schicht-Inspektor fehlgeschlagen: %s", exc)
 
         # Bauteil-Wächter: Schicht 2 als Referenz, Mitte des Drucks als Vergleich.
         pw_client = printer_manager.get_client(printer_id)
@@ -10696,6 +10724,7 @@ app.include_router(maintenance_programs.router, prefix=app_settings.api_prefix)
 app.include_router(maintenance_print.router, prefix=app_settings.api_prefix)
 app.include_router(layer_alerts.router, prefix=app_settings.api_prefix)
 app.include_router(part_watcher.router, prefix=app_settings.api_prefix)
+app.include_router(first_layer_inspector.router, prefix=app_settings.api_prefix)
 app.include_router(hardware.router, prefix=app_settings.api_prefix)
 app.include_router(camera.router, prefix=app_settings.api_prefix)
 app.include_router(camwall.router, prefix=app_settings.api_prefix)
