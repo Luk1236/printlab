@@ -35,9 +35,10 @@
 ### P1 Optik abschließen
 - [x] Kamera-Einmessung über vier Plattenecken (Homographie) — erledigt 27.10.2026.
 - [x] Leerbett-Prüfung beim Druckstart (Referenz per Klick, Warn-Kanal) — 27.10.2026.
-- [ ] Spaghetti-/Abbruch-Erkennung nach Druckmitte (Warf-Bilder auf abruptes
-      Filament-Ende) — Bausteine (Warp, Warnkanal) sind da.
-- [ ] Optional: Part-Watcher-Schwelle und Zielschicht pro Auftrag statt pro Drucker.
+- [x] Spaghetti-/Abbruch-Erkennung ab ~75 % der Schichten (Fleck-Verstreutheit,
+      zusammenhängende Komponenten, nur Warnung) — 27.10.2026.
+- [x] Part-Watcher pro Auftrag: Regeln „Namensfragment → Schwelle/an/aus",
+      erster Treffer gewinnt (`data/part_watcher.json` → overrides).
 
 ### P2 Queue und Automatik
 - [X] Automatischer Plattenwechsel nach Druckende (Abkühlung, Türprüfung, Fehlerzustand) — erledigt 27.10.2026.
@@ -69,7 +70,12 @@
 - [ ] Docker-/ARM-Build und Test auf Pi 4/5.
 - [ ] Frontend-Tests für die Wartungskarte; Backend-Meldungen für alle 15 Sprachen.
 - [ ] Auth einschalten (wartet auf das Passwort), HTTPS/Tailscale.
-- [ ] Kalkulator am Warteschlangen-Auftrag, Monats-Report, Preisliste-Tarife.
+- [x] Kalkulator am Warteschlangen-Auftrag: Zeitstrahl lädt bei Hover
+      `GET /quote/for-archive/{id}` (Material/Energie/Arbeit/Aufschlag).
+- [x] Monats-Report: Statistik-Seite hat Monatsaggregation + CSV-Export
+      (vom Upstream; PDF-Report optional später).
+- [x] Preisliste: `data/price_list.json` + Editor in der Kalkulator-Karte;
+      `GET /quote?material=TPU` nimmt die Liste.
 - [ ] Release-Paket und Installationsanleitung für Pi 4/5.
 
 ### P5 Oberfläche
