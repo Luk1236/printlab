@@ -4209,6 +4209,12 @@ export interface BedEmptyCheckStatus {
   has_reference: boolean;
 }
 
+export interface SpaghettiCheckStatus {
+  enabled: boolean;
+  max_components: number;
+  min_changed_percent: number;
+}
+
 export interface AuditEntry {
   ts: string;
   action: string;
@@ -7321,6 +7327,13 @@ export const api = {
   captureBedReference: (printerId: number) =>
     request<{ saved: boolean; reference: string }>(`/printers/${printerId}/bed-empty-check/reference`, {
       method: 'POST',
+    }),
+  getSpaghettiCheck: (printerId: number) =>
+    request<SpaghettiCheckStatus>(`/printers/${printerId}/spaghetti-check`),
+  setSpaghettiCheck: (printerId: number, payload: { enabled: boolean; max_components: number; min_changed_percent: number }) =>
+    request<SpaghettiCheckStatus>(`/printers/${printerId}/spaghetti-check`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
     }),
 
   // Maintenance print (movement-only 3MF, Bambu-Monitor port)

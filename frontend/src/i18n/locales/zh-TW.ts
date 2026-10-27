@@ -1874,6 +1874,7 @@ export default {
       bedReferenceSaved: '基準已拍攝',
       bedNeedReference: '無基準 — 請先清空並拍攝。',
       bedReferenceHint: '基準來自目前攝影機影像；盤面必須為空。',
+      spaghettiCheck: '拉絲檢查',
       queuePrintRods: '保養絲桿入列',
       confirmQueuePrint: '將保養列印加入佇列？將產生3MF、加入庫並排程。',
       autoPlateChangeOn: '開啟自動化',

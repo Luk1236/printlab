@@ -1892,6 +1892,7 @@ export default {
       bedReferenceSaved: 'Referens tagen',
       bedNeedReference: 'Ingen referens — töm bädden och ta en först.',
       bedReferenceHint: 'Referensen kommer från den aktuella kamerabilden; bädden måste vara tom.',
+      spaghettiCheck: 'Spaghetti-kontroll',
       queuePrintRods: 'Underhåll stänger i kön',
       confirmQueuePrint: 'Lägga underhållsutskriften i kön? 3MF-filen skapas, läggs i biblioteket och schemaläggs.',
       autoPlateChangeOn: 'Aktivera automation',

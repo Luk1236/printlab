@@ -1874,6 +1874,7 @@ export default {
       bedReferenceSaved: '基準を撮影済み',
       bedNeedReference: '基準なし — 盤を空にして撮影してください。',
       bedReferenceHint: '基準は現在のカメラ映像から作成します。盤は空にしてください。',
+      spaghettiCheck: 'スパゲッティ検査',
       queuePrintRods: 'メンテ送棒をキューへ',
       confirmQueuePrint: 'メンテナンス印刷をキューに入れますか？3MFを生成し、ライブラリに登録して計画します。',
       autoPlateChangeOn: '自動化を有効化',

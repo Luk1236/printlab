@@ -1801,6 +1801,7 @@ export default {
       bedReferenceSaved: '기준 촬영됨',
       bedNeedReference: '기준 없음 — 베드를 비우고 먼저 촬영하세요.',
       bedReferenceHint: '기준은 현재 카메라 이미지에서 생성되며, 베드는 비어 있어야 합니다.',
+      spaghettiCheck: '스파게티 검사',
       queuePrintRods: '유지 봉 대기열',
       confirmQueuePrint: '유지보수 프린트를 대기열에 넣을까요? 3MF를 생성하고 라이브러리에 추가하며 일정을 잡습니다.',
       autoPlateChangeOn: '자동화 켜기',

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Camera } from 'lucide-react';
 
 import { api } from '../api/client';
-import type { BedEmptyCheckStatus } from '../api/client';
+import type { BedEmptyCheckStatus, SpaghettiCheckStatus } from '../api/client';
 import { Button } from './Button';
 import { useToast } from '../contexts/ToastContext';
 
@@ -69,5 +69,41 @@ export function BedEmptyCheckRow({ printerId, canControl }: { printerId: number;
         <span className="text-xs text-bambu-green">{t('maintenance.programs.bedReferenceSaved')}</span>
       )}
     </div>
+  );
+}
+
+/** Spaghetti-/Abbruch-Erkennung nach Druckmitte (nur Warnung). */
+export function SpaghettiCheckRow({ printerId, canControl }: { printerId: number; canControl: boolean }) {
+  const { t } = useTranslation();
+  const { showToast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: check } = useQuery<SpaghettiCheckStatus>({
+    queryKey: ['spaghettiCheck', printerId],
+    queryFn: () => api.getSpaghettiCheck(printerId),
+    enabled: printerId > 0,
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: (enabled: boolean) =>
+      api.setSpaghettiCheck(printerId, {
+        enabled,
+        max_components: check?.max_components ?? 25,
+        min_changed_percent: check?.min_changed_percent ?? 0.5,
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['spaghettiCheck', printerId] }),
+    onError: (error: Error) => showToast(error.message),
+  });
+
+  return (
+    <label className="flex items-center gap-2 text-xs text-bambu-gray">
+      <input
+        type="checkbox"
+        checked={Boolean(check?.enabled)}
+        onChange={(event) => toggleMutation.mutate(event.target.checked)}
+        disabled={!canControl || toggleMutation.isPending}
+      />
+      {t('maintenance.programs.spaghettiCheck')}
+    </label>
   );
 }

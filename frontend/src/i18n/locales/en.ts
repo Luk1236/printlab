@@ -1893,6 +1893,7 @@ export default {
       bedReferenceSaved: 'Reference captured',
       bedNeedReference: 'No reference — clear the plate and capture one first.',
       bedReferenceHint: 'The reference comes from the current camera image; the plate must be empty.',
+      spaghettiCheck: 'Spaghetti check',
       queuePrintRods: 'Queue maint. rods',
       confirmQueuePrint: 'Queue the maintenance print? The 3MF is generated, added to the library and scheduled as a job.',
       autoPlateChangeOn: 'Enable automation',

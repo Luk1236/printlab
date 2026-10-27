@@ -1876,6 +1876,7 @@ export default {
       bedReferenceSaved: 'Referencia capturada',
       bedNeedReference: 'Sin referencia — vacíe la placa y capture primero.',
       bedReferenceHint: 'La referencia viene de la imagen actual; la placa debe estar vacía.',
+      spaghettiCheck: 'Control de hilos',
       queuePrintRods: 'Encolar mant. barras',
       confirmQueuePrint: '¿Encolar el mantenimiento? Se genera la 3MF, se añade a la biblioteca y se programa.',
       autoPlateChangeOn: 'Activar automatización',

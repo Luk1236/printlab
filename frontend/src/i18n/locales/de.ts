@@ -1875,6 +1875,7 @@ export default {
       bedReferenceSaved: 'Referenz aufgenommen',
       bedNeedReference: 'Keine Referenz — Platte leer machen und Referenz aufnehmen.',
       bedReferenceHint: 'Das Referenzbild entsteht aus dem aktuellen Kamerabild; die Platte muss leer sein.',
+      spaghettiCheck: 'Spaghetti-Prüfung',
       queuePrintRods: 'Wart. Stangen in Queue',
       confirmQueuePrint: 'Wartungsdruck in die Warteschlange stellen? Die 3MF wird erzeugt, in der Bibliothek gelegt und als Auftrag geplant.',
       autoPlateChangeOn: 'Automatik einschalten',

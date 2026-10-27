@@ -1876,6 +1876,7 @@ export default {
       bedReferenceSaved: 'Referans alındı',
       bedNeedReference: 'Referans yok — tablayı boşaltıp önce alın.',
       bedReferenceHint: 'Referans güncel kamera görüntüsünden oluşur; tabla boş olmalı.',
+      spaghettiCheck: 'Spagetti kontrolü',
       queuePrintRods: 'Bakım çubuk sıraya',
       confirmQueuePrint: 'Bakım baskısını sıraya? 3MF oluşturulur, kütüphaneye eklenir ve planlanır.',
       autoPlateChangeOn: 'Otomatiklemeyi aç',

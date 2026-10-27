@@ -1893,6 +1893,7 @@ export default {
       bedReferenceSaved: 'Referentie vastgelegd',
       bedNeedReference: 'Geen referentie — maak het bord leeg en leg eerst vast.',
       bedReferenceHint: 'De referentie komt van de camerabeeld; het bord moet leeg zijn.',
+      spaghettiCheck: 'Spaghetti-controle',
       queuePrintRods: 'Onderhoud stangen in wachtrij',
       confirmQueuePrint: 'Onderhoudsafdruk in de wachtrij plaatsen? De 3MF wordt gegenereerd, toegevoegd aan de bibliotheek en gepland.',
       autoPlateChangeOn: 'Automatiek inschakelen',

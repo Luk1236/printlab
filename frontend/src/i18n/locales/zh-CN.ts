@@ -1874,6 +1874,7 @@ export default {
       bedReferenceSaved: '基准已拍摄',
       bedNeedReference: '无基准 — 请先清空并拍摄。',
       bedReferenceHint: '基准来自当前摄像头图像；盘面必须为空。',
+      spaghettiCheck: '拉丝检查',
       queuePrintRods: '保养丝杆入队',
       confirmQueuePrint: '将保养打印加入队列？将生成3MF、加入库并计划任务。',
       autoPlateChangeOn: '开启自动化',

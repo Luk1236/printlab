@@ -1874,6 +1874,7 @@ export default {
       bedReferenceSaved: 'Referência capturada',
       bedNeedReference: 'Sem referência — esvazie o prato e capture antes.',
       bedReferenceHint: 'A referência vem da imagem atual; o prato deve estar vazio.',
+      spaghettiCheck: 'Verificação de hilos',
       queuePrintRods: 'Fila de mant. hastes',
       confirmQueuePrint: 'Colorar a impressão de manutenção na fila? A 3MF é gerada, adicionada à biblioteca e agendada.',
       autoPlateChangeOn: 'Ativar automação',

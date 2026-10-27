@@ -1874,6 +1874,7 @@ export default {
       bedReferenceSaved: 'Riferimento acquisito',
       bedNeedReference: 'Nessun riferimento — svuota il piatto e acquisisci prima.',
       bedReferenceHint: 'Il riferimento proviene dall\'immagine attuale; il piatto deve essere vuoto.',
+      spaghettiCheck: 'Controllo spaghetti',
       queuePrintRods: 'In coda mant. aste',
       confirmQueuePrint: 'Mettere in coda la manutenzione? La 3MF viene generata, aggiunta alla libreria e pianificata.',
       autoPlateChangeOn: 'Attiva automazione',

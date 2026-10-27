@@ -1874,6 +1874,7 @@ export default {
       bedReferenceSaved: 'Référence capturée',
       bedNeedReference: 'Pas de référence — videz le plateau et capturez d\'abord.',
       bedReferenceHint: 'La référence vient de l\'image actuelle ; le plateau doit être vide.',
+      spaghettiCheck: 'Test de fils',
       queuePrintRods: 'File d\'attente maint. tiges',
       confirmQueuePrint: 'Mettre l\'impression d\'entretien en file ? La 3MF est générée, ajoutée à la bibliothèque et planifiée.',
       autoPlateChangeOn: 'Activer l\'automatisation',
