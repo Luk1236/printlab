@@ -16,6 +16,12 @@
 - Schicht-Stopp: Pause bei Zielschicht.
 - Bauteil-Wächter: Kamera-Vergleich Schicht 2 ↔ Druckmitte, nur Warnung.
 - Erste-Schicht-Inspektor: Helligkeit/Kontrast/Kanten der Schichten 1–5, nur Warnung.
+- Kamera-Einmessung: vier Plattenecken anklicken, Homographie in die
+  Plattenaufsicht; Bauteil-Wächter und Erste-Schicht-Inspektor erhalten das
+  entzerrte Bild (27.10.2026).
+- Automatischer Plattenwechsel: nach „completed" warten auf Abkühlung (45 °C),
+  Türprüfung, dann Wechsel; Fehlerzustand sichtbar in der Wartungskarte.
+  Schalter in der Wartungskarte, Konfiguration in `data/hardware.json`.
 - Sicherheit: Platte-frei-Pflicht, Tür-Endschalterprüfung, Not-Halt (auch bei Druck/offline).
 - Barrierefreiheit: WCAG-AA-Kontraste, Zoom erlaubt, Axe auf der Wartungsseite ohne Verstöße.
 - 64 neue Backend-Tests; Frontend-Suite, TypeScript, i18n-Parität und Build grün.
@@ -23,13 +29,14 @@
 ## Offen — nach Priorität
 
 ### P1 Optik abschließen
-- [ ] Kamera-Einmessung über vier Plattenecken (Homographie).
-- [ ] Referenzbild-Ausrichtung für den Leerbett-/Bauteilvergleich.
+- [x] Kamera-Einmessung über vier Plattenecken (Homographie) — erledigt 27.10.2026.
+- [ ] Referenzbild-Ausrichtung für den Leerbett-/Bauteilvergleich (über die
+      Homographie-Aufsicht stark abgedeckt; Rest: Bildversatz-Abgleich).
 - [ ] Optional: Part-Watcher-Schwelle und Zielschicht pro Auftrag statt pro Drucker.
 
 ### P2 Queue und Automatik
+- [X] Automatischer Plattenwechsel nach Druckende (Abkühlung, Türprüfung, Fehlerzustand) — erledigt 27.10.2026.
 - [ ] Wartungsdruck direkt in die Warteschlange legen (P2S-/G-code-/MD5-Prüfung).
-- [ ] Automatischer Plattenwechsel nach Druckende (Abkühlung, Türprüfung, Fehlerzustand).
 - [ ] Hardware-Konfiguration in der UI statt `data/hardware.json`.
 - [ ] Magazinverwaltung in der UI (Fächer belegen/freigeben, Etiketten).
 - [ ] Audit-Log und Benachrichtigungen für Hardware-/Wartungsaktionen.
