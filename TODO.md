@@ -63,6 +63,11 @@
 
 - Rebrand als **PrintLab** (vorher „Bambu Monitor“), deutsche Oberfläche als
   Standard, dunkles Design voreingestellt, eigene Logos/Icons.
+- **Prusa-Design** für hell + dunkel: Prusa-Orange (#fa6831, aus Prusa-Link-Web),
+  flache Kacheln, Prusa-Connect-Hellpalette, PrusaSlicer-Dunkelpalette.
+  Funktionen unverändert (Theming nur über die zentralen CSS-Variablen).
+- Versionsverwaltung: private Repo **Luk1236/printlab**, Tags + Releases
+  (Start: v1.0.0), Schema/Siehe `docs/VERSIONING.md`.
 - P2S aus der alten `config.ini` übernommen (IP, Seriennummer, Zugangscode, P2S, Werkstatt);
   aktuell offline.
 - Einstellungen: EUR, 22 €/kg, 0,35 €/kWh, PC-Slicer `http://127.0.0.1:3001`.
