@@ -59,6 +59,20 @@
 - Cloud-Steuerung/`fun`/Bambu Connect — passt nicht zu Bambuddys LAN-Only-Architektur;
   dafür bleibt der Bambu-Monitor die richtige Wahl.
 
+## Persönliche Anpassung (27.10.2026)
+
+- Rebrand als **Bambu Monitor**, deutsche Oberfläche als Standard, eigene Logos/Icons.
+- P2S aus der alten `config.ini` übernommen (IP, Seriennummer, Zugangscode, P2S, Werkstatt);
+  aktuell offline.
+- Einstellungen: EUR, 22 €/kg, 0,35 €/kWh, PC-Slicer `http://127.0.0.1:3001`.
+- **Login noch aus:** Das alte Passwort erfüllt Bambuddys Komplexitätsregel nicht
+  (kein Großbuchstabe). Es muss ein neues Admin-Passwort gesetzt werden.
+- **Modellimport:** 2 Dateien in die Bibliothek übernommen
+  (`Einmess_Marken_P2S.gcode.3mf`, `Tuer_Oeffner_Kompakt.stl`).
+  3 Dateien (`Oel_verteilen`, `Wartung_Gewindestangen`, `Einmess_Marken_P2S.stl`) sind
+  OneDrive-Platzhalter und konnten nicht gelesen werden — OneDrive starten/hydratisieren.
+- Warteschlange/Historie/Protokolle noch nicht importiert (eigene Schema-Übernahme nötig).
+
 ## Start
 
 ```powershell
