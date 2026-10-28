@@ -6349,6 +6349,8 @@ export default {
       name: '名稱',
       hint: '建立後可以設定存取碼、目標印表機和其他設定。',
       create: '建立',
+      optional: '選填',
+      multiHint: '可以為同一目標印表機建立多個虛擬印表機，例如一個用於佇列，一個用於審核。每個在切片軟體中都需要獨立的 IP 位址（建立後設定「綁定 IP」）。',
     },
     deleteConfirm: {
       title: '刪除虛擬印表機',

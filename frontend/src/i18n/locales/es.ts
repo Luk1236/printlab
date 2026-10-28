@@ -6370,6 +6370,8 @@ export default {
       name: 'Nombre',
       hint: 'Puede configurar el código de acceso, la impresora de destino y otros ajustes después de crearla.',
       create: 'Crear',
+      optional: 'opcional',
+      multiHint: 'Puedes crear varias impresoras virtuales para la misma impresora de destino, por ejemplo una para la cola y otra para revisión. Cada una necesita su propia dirección IP en el slicer (ajuste «IP de enlace» tras crearla).',
     },
     deleteConfirm: {
       title: 'Eliminar impresora virtual',

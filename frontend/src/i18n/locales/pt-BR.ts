@@ -6335,6 +6335,8 @@ export default {
       name: 'Nome',
       hint: 'Você pode configurar o código de acesso, impressora alvo e outras configurações após a criação.',
       create: 'Criar',
+      optional: 'opcional',
+      multiHint: 'Você pode criar várias impressoras virtuais para a mesma impressora de destino, por exemplo uma para a fila e outra para revisão. Cada uma precisa de um endereço IP próprio no slicer (configuração "IP de vínculo" após criar).',
     },
     deleteConfirm: {
       title: 'Excluir Impressora Virtual',

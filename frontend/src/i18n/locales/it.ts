@@ -6335,6 +6335,8 @@ export default {
       name: 'Nome',
       hint: 'Potrai configurare il codice di accesso, la stampante di destinazione e altre impostazioni dopo la creazione.',
       create: 'Crea',
+      optional: 'facoltativo',
+      multiHint: 'Puoi creare più stampanti virtuali per la stessa stampante di destinazione, ad esempio una per la coda e una per la revisione. Ognuna richiede un proprio indirizzo IP nello slicer (impostazione «IP di bind» dopo la creazione).',
     },
     deleteConfirm: {
       title: 'Elimina stampante virtuale',

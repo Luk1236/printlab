@@ -39,7 +39,7 @@ export function VirtualPrinterAddDialog({ onClose }: VirtualPrinterAddDialogProp
       multiVirtualPrinterApi.create({
         name: name.trim() || 'PrintLab',
         mode,
-        target_printer_id: mode === 'proxy' ? (targetPrinterId ?? undefined) : undefined,
+        target_printer_id: targetPrinterId ?? undefined,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['virtual-printers'] });
@@ -104,10 +104,13 @@ export function VirtualPrinterAddDialog({ onClose }: VirtualPrinterAddDialogProp
             </div>
           </div>
 
-          {/* Target Printer - only for proxy mode */}
-          {mode === 'proxy' && (
+          {/* Zieldrucker: für Proxy Pflicht, sonst optional (Warteschlange/Prüfung/Archiv leiten dann an genau diesen Drucker) */}
+          {(
             <div>
-              <label className="text-sm text-white font-medium block mb-1">{t('virtualPrinter.targetPrinter.title')}</label>
+              <label className="text-sm text-white font-medium block mb-1">
+                {t('virtualPrinter.targetPrinter.title')}
+                {mode !== 'proxy' && <span className="ml-2 text-xs text-bambu-gray">({t('virtualPrinter.addDialog.optional')})</span>}
+              </label>
               <div className="relative">
                 <select
                   value={targetPrinterId ?? ''}
@@ -127,6 +130,8 @@ export function VirtualPrinterAddDialog({ onClose }: VirtualPrinterAddDialogProp
             </div>
           )}
 
+          <p className="text-xs text-bambu-gray">{t('virtualPrinter.addDialog.multiHint')}</p>
+
           <p className="text-xs text-bambu-gray">
             {t('virtualPrinter.addDialog.hint')}
           </p>
@@ -140,7 +145,7 @@ export function VirtualPrinterAddDialog({ onClose }: VirtualPrinterAddDialogProp
               variant="primary"
               onClick={() => createMutation.mutate()}
               className="flex-1"
-              disabled={createMutation.isPending}
+              disabled={createMutation.isPending || (mode === 'proxy' && targetPrinterId === null)}
             >
               {createMutation.isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

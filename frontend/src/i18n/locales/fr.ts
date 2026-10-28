@@ -6336,6 +6336,8 @@ export default {
       name: 'Nom',
       hint: 'Vous pourrez configurer le code d\'accès, l\'imprimante cible et d\'autres paramètres après la création.',
       create: 'Créer',
+      optional: 'facultatif',
+      multiHint: 'Vous pouvez créer plusieurs imprimantes virtuelles pour la même imprimante cible, par exemple une pour la file et une pour la vérification. Chacune a besoin de sa propre adresse IP dans le slicer (réglage « IP de liaison » après la création).',
     },
     deleteConfirm: {
       title: 'Supprimer l\'imprimante virtuelle',

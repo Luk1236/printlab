@@ -6413,6 +6413,8 @@ export default {
       name: 'Name',
       hint: 'You can configure access code, target printer, and other settings after creating.',
       create: 'Create',
+      optional: 'optional',
+      multiHint: 'You can create several virtual printers for the same target printer, for example one for the queue and one for review. Each needs its own IP address in the slicer (set "Bind IP" after creating).',
     },
     deleteConfirm: {
       title: 'Delete Virtual Printer',

@@ -6413,6 +6413,8 @@ export default {
       name: 'Naam',
       hint: 'Je kunt de toegangscode, doelprinter en andere instellingen na het aanmaken configureren.',
       create: 'Maken',
+      optional: 'optioneel',
+      multiHint: 'Je kunt meerdere virtuele printers voor dezelfde doelprinter aanmaken, bijvoorbeeld een voor de wachtrij en een voor controle. Elk heeft in de slicer een eigen IP-adres nodig (instelling "Bind-IP" na het aanmaken).',
     },
     deleteConfirm: {
       title: 'Virtuele printer verwijderen',

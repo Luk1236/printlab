@@ -6324,6 +6324,8 @@ export default {
       name: 'Ad',
       hint: 'Oluşturduktan sonra erişim kodunu, hedef yazıcıyı ve diğer ayarları yapılandırabilirsiniz.',
       create: 'Oluştur',
+      optional: 'isteğe bağlı',
+      multiHint: 'Aynı hedef yazıcı için birden fazla sanal yazıcı oluşturabilirsiniz, örneğin biri kuyruk, biri inceleme için. Her biri dilimleyicide kendi IP adresine ihtiyaç duyar (oluşturduktan sonra "Bağlama IP\'si" ayarı).',
     },
     deleteConfirm: {
       title: 'Sanal Yazıcıyı Sil',

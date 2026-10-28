@@ -6349,6 +6349,8 @@ export default {
       name: '名称',
       hint: '创建后可以配置访问码、目标打印机和其他设置。',
       create: '创建',
+      optional: '可选',
+      multiHint: '可以为同一目标打印机创建多个虚拟打印机，例如一个用于队列，一个用于审核。每个在切片软件中都需要独立的 IP 地址（创建后设置“绑定 IP”）。',
     },
     deleteConfirm: {
       title: '删除虚拟打印机',

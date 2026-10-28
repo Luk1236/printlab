@@ -6411,6 +6411,8 @@ errors: {
       name: 'Namn',
       hint: 'Du kan konfigurera åtkomstkod, målskrivare och andra inställningar efter skapande.',
       create: 'Skapa',
+      optional: 'valfritt',
+      multiHint: 'Du kan skapa flera virtuella skrivare för samma målskrivare, till exempel en för kön och en för granskning. Var och en behöver en egen IP-adress i slicern (inställningen "Bind-IP" efter skapandet).',
     },
     deleteConfirm: {
       title: 'Ta bort virtuell skrivare',

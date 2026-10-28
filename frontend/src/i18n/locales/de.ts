@@ -6362,6 +6362,8 @@ export default {
       name: 'Name',
       hint: 'Sie können Zugangscode, Zieldrucker und andere Einstellungen nach dem Erstellen konfigurieren.',
       create: 'Erstellen',
+      optional: 'optional',
+      multiHint: 'Du kannst mehrere virtuelle Drucker für denselben Zieldrucker anlegen, zum Beispiel einen für die Warteschlange und einen für Prüfen. Jeder braucht im Slicer eine eigene IP-Adresse (Einstellung „Bind-IP“ nach dem Anlegen).',
     },
     deleteConfirm: {
       title: 'Virtuellen Drucker löschen',

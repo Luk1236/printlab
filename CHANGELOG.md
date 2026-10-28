@@ -3,6 +3,12 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.9.2 (in Arbeit)
+
+- **Virtuelle Drucker:** Beim Anlegen lässt sich der Zieldrucker jetzt für jeden Modus wählen (Archiv, Prüfen,
+  Warteschlange; bei Proxy bleibt er Pflicht). So gibt es mehrere virtuelle Drucker mit unterschiedlichen Modi für
+  denselben Zieldrucker. Ein Hinweis erklärt, dass jeder im Slicer eine eigene IP-Adresse (Bind-IP) braucht.
+
 ## v1.9.1 (28.10.2026) — Update-Prüfung
 
 - **Update trotz GitHub-Limit:** Meldet GitHub „rate limit reached" (ohne Anmeldung 60 Abfragen pro Stunde und IP), liest

@@ -6086,7 +6086,9 @@ export default {
       title: '가상 프린터 추가',
       name: '이름',
       hint: '생성 후 액세스 코드, 대상 프린터 및 기타 설정을 구성할 수 있습니다.',
-      create: '생성'
+      create: '생성',
+      optional: '선택',
+      multiHint: '같은 대상 프린터에 여러 가상 프린터를 만들 수 있습니다(예: 대기열용과 검토용). 슬라이서에서 각각 고유한 IP 주소가 필요합니다(생성 후 "바인드 IP" 설정).',
     },
     deleteConfirm: {
       title: '가상 프린터 삭제',
