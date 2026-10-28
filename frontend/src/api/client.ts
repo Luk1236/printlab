@@ -1388,7 +1388,6 @@ export interface AppSettings {
   printer_power_watts: number;
   labor_rate_per_hour: number;
   quote_markup_percent: number;
-  energy_cost_per_kwh: number;
   energy_tracking_mode: 'print' | 'total';
   check_updates: boolean;
   check_printer_firmware: boolean;
@@ -4157,6 +4156,14 @@ export interface HardwareSlot {
   status: 'ready' | 'used' | 'empty' | 'occupied' | string;
   label?: string;
   print?: string | null;
+}
+
+/** Teil-Update eines Magazin-Fachs (der Server akzeptiert id + beliebiges davon). */
+export interface PartialHardwareSlot {
+  id: number;
+  type?: 'supply' | 'storage' | string;
+  status?: 'ready' | 'used' | 'empty' | 'occupied' | string;
+  label?: string;
 }
 
 export interface HardwareStatus {
@@ -7336,6 +7343,8 @@ export const api = {
     request<HardwareActionResponse>(`/printers/${printerId}/hardware/door/open`, { method: 'POST' }),
   closeHardwareDoor: (printerId: number) =>
     request<HardwareActionResponse>(`/printers/${printerId}/hardware/door/close`, { method: 'POST' }),
+  checkDoorStatus: (printerId: number) =>
+    request<HardwareActionResponse>(`/printers/${printerId}/hardware/door/status`, { method: 'POST' }),
   changeHardwarePlate: (printerId: number, job?: string) =>
     request<HardwareActionResponse>(
       `/printers/${printerId}/hardware/plate/change${job ? `?job=${encodeURIComponent(job)}` : ''}`,
@@ -7358,7 +7367,7 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(payload),
     }),
-  setMagazineSlots: (printerId: number, slots: HardwareSlot[]) =>
+  setMagazineSlots: (printerId: number, slots: PartialHardwareSlot[]) =>
     request<HardwareActionResponse>(`/printers/${printerId}/hardware/magazine`, {
       method: 'PUT',
       body: JSON.stringify({ slots }),

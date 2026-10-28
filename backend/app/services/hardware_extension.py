@@ -305,6 +305,36 @@ class HardwareExtension:
             with self._lock:
                 self._busy = False
 
+    def check_door_status(self) -> tuple[bool, str]:
+        """Tür-Endschalter mit dem konfigurierten ``door_status_command`` abfragen.
+
+        Der Ausgabewert (``DOOR:OPEN``/``DOOR:CLOSED``/``DOOR:UNKNOWN``) setzt den
+        internen Türzustand. Ohne konfigurierten Befehl oder im Simulationsmodus
+        wird der gespeicherte Zustand gemeldet.
+        """
+        status_cmd = self._config.get("door_status_command")
+        configured = bool(status_cmd) and (not isinstance(status_cmd, str) or bool(status_cmd.strip()))
+        if self._config["mode"] == "simulated" or not configured:
+            return True, f"Tür: {self._door}"
+        with self._lock:
+            if self._busy:
+                return False, "Es läuft bereits ein Hardware-Vorgang."
+            self._busy = True
+        try:
+            ok, output = self._command("door_status_command")
+            if not ok:
+                self._last_error = output
+                return False, output
+            reported = door_state_from_output(output)
+            if reported is None:
+                self._last_error = "Tür-Befehl meldet keinen Zustand (DOOR:OPEN/CLOSED/UNKNOWN erwartet)."
+                return False, self._last_error
+            self._set_door(reported)
+            return True, f"Tür: {reported}"
+        finally:
+            with self._lock:
+                self._busy = False
+
     # --- Plattenwechsel ----------------------------------------------------
 
     def change_plate(self, job_name: str = "") -> tuple[bool, str]:

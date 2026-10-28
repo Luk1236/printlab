@@ -255,7 +255,7 @@ async def _wait_and_change(printer_id, job_name, cfg, record, printer_manager, g
 
     hw = get_hardware(printer_id)
     hw_status = hw.status()
-    if hw_status.get("door") not in ("closed", "open") or hw_status.get("door") == "open":
+    if hw_status.get("door") != "closed":
         await record(False, "Tür ist offen bzw. unbestätigt — Plattenwechsel nicht angetreten.")
         return
     if hw_status.get("busy"):
@@ -370,6 +370,10 @@ def schedule(printer_id: int, job_name: str = "") -> bool:
         if pending is False:
             _note_no_queue(printer_id)
             return False
+        if pending is None:
+            # DB nicht erreichbar: es läuft weiter (fail-open, bewusst), aber sichtbar
+            # im Protokoll statt stillschweigend — sonst verschwindet die Lücke.
+            _note_queue_check_failed(printer_id)
     old = _TASKS.get(printer_id)
     if old and not old.done():
         old.cancel()
@@ -411,3 +415,17 @@ def _note_no_queue(printer_id: int) -> None:
         "message": "Kein weiterer Auftrag wartet — Wechsel übersprungen (only_with_queue).",
     }
     _audit(_LAST[printer_id])
+
+
+def _note_queue_check_failed(printer_id: int) -> None:
+    """Warteschlangen-Prüfung nicht möglich (DB): sichtbar protokollieren, nicht still weiterlaufen."""
+    entry = {
+        "printer_id": printer_id,
+        "job": "",
+        "ok": True,
+        "message": "Warteschlangen-Prüfung nicht möglich (Datenbank nicht erreichbar)"
+                   " — Automatik läuft weiter, ohne die Auftragsprüfung zu kennen.",
+        "warning": "only_with_queue war nicht prüfbar.",
+    }
+    _LAST[printer_id] = entry
+    _audit(entry)

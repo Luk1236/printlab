@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -165,8 +165,35 @@ describe('MaintenanceProgramsCard safety states and automation controls', () => 
       }),
     );
     render(<MaintenanceProgramsCard canControl />);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
     await userEvent.click(await screen.findByRole('button', { name: 'Cancel change' }));
     await waitFor(() => expect(calls).toContain('cancel'));
+  });
+
+  it('checks the door sensor via the configured status command', async () => {
+    const calls: string[] = [];
+    useHardware(hardware(), calls);
+    server.use(
+      http.post('/api/v1/printers/:id/hardware/door/status', () => {
+        calls.push('door-status');
+        return HttpResponse.json({ success: true, message: 'Tür: closed' });
+      }),
+    );
+    render(<MaintenanceProgramsCard canControl />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Check door sensor' }));
+    await waitFor(() => expect(calls).toContain('door-status'));
+  });
+
+  it('does not cancel when the confirmation is dismissed', async () => {
+    const calls: string[] = [];
+    useHardware(hardware(), calls);
+    render(<MaintenanceProgramsCard canControl />);
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    await userEvent.click(await screen.findByRole('button', { name: 'Cancel change' }));
+    // A dismissed confirmation must not fire the request.
+    await expect(waitFor(() => expect(calls).toContain('cancel'), { timeout: 500 })).rejects.toEqual(
+      expect.anything(),
+    );
   });
 
   it('deletes the camera calibration', async () => {

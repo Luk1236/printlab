@@ -57,7 +57,8 @@ jobs:
     name: Backend Security
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event.pull_request.user.login != github.repository_owner
-    continue-on-error: true
+    # Fork: harte Schwelle — bekannte Ausnahmen sind unten dokumentiert
+    # (--ignore-vuln); alles Neue lässt CI rot anlaufen statt still durch.
     steps:
       - uses: actions/checkout@v6
 
@@ -184,7 +185,9 @@ jobs:
     name: Frontend Security
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event.pull_request.user.login != github.repository_owner
-    continue-on-error: true
+    # Fork: harte Schwelle — das Audit-Skript selbst entscheidet über die
+    # dokumentierte Allowlist; continue-on-error hat den Befund sonst
+    # stillschweigend verworfen.
     steps:
       - uses: actions/checkout@v6
 

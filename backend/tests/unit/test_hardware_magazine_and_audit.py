@@ -84,11 +84,12 @@ class TestAuditLog:
     def test_file_is_capped(self, tmp_path, monkeypatch):
         monkeypatch.setattr(audit_log, "LOG_PATH", tmp_path / "audit.jsonl")
         monkeypatch.setattr(audit_log, "MAX_LINES", 5)
+        monkeypatch.setattr(audit_log, "_lines_since_trim", 0)
         for i in range(10):
             audit_log.record("tick", True, str(i), 1)
         assert len(audit_log.entries(limit=100)) == 5
-        # newest survived
-        assert json.loads(audit_log.LOG_PATH.read_text(encoding="utf-8").splitlines()[0])["message"] == "9"
+        # newest survived (chronological on disk: last line is the newest)
+        assert json.loads(audit_log.LOG_PATH.read_text(encoding="utf-8").splitlines()[-1])["message"] == "9"
 
     def test_record_never_raises(self, tmp_path, monkeypatch):
         # Parent path is a FILE, so creating the log file must fail — and the
@@ -98,3 +99,47 @@ class TestAuditLog:
         monkeypatch.setattr(audit_log, "LOG_PATH", blocker / "audit.jsonl")
         entry = audit_log.record("test", True, "msg")
         assert entry["ok"] is True
+
+
+class TestDoorStatus:
+    """Der konfigurierte door_status_command wird jetzt wirklich ausgeführt."""
+
+    def test_simulated_reports_state(self, extension):
+        ok, msg = extension.open_door()
+        assert ok, msg
+        ok, msg = extension.check_door_status()
+        assert ok, msg
+        assert extension.status()["door"] == "open"
+
+    def test_without_command_reports_cached_state(self, extension):
+        ok, msg = extension.check_door_status()
+        assert ok and "closed" in msg
+
+    def test_command_output_sets_state(self, tmp_path):
+        import sys
+
+        extension = HardwareExtension(
+            config_path=tmp_path / "hardware.json", magazine_path=tmp_path / "magazine.json"
+        )
+        ok, msg = extension.update_config({
+            "mode": "command",
+            "door_status_command": [sys.executable, "-c", "print('DOOR:OPEN')"],
+        })
+        assert ok, msg
+        ok, msg = extension.check_door_status()
+        assert ok, msg
+        assert extension.status()["door"] == "open"
+
+    def test_unknown_output_is_reported(self, tmp_path):
+        import sys
+
+        extension = HardwareExtension(
+            config_path=tmp_path / "hardware.json", magazine_path=tmp_path / "magazine.json"
+        )
+        extension.update_config({
+            "mode": "command",
+            "door_status_command": [sys.executable, "-c", "print('DOOR:UNKNOWN')"],
+        })
+        ok, msg = extension.check_door_status()
+        assert ok, msg
+        assert extension.status()["door"] == "unknown"

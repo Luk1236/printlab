@@ -9639,6 +9639,26 @@ async def lifespan(app: FastAPI):
 
     await init_db()
 
+    # Fork: Warnen, wenn die Anmeldung aus ist, das Backend aber nicht nur am
+    # Loopback lauscht (Docker/systemd binden standardmäßig an 0.0.0.0). Dann
+    # wäre die Instanz ungeschützt im Netz steuerbar.
+    try:
+        from backend.app.core.auth import is_auth_enabled
+
+        listen_host = (os.environ.get("HOST") or "127.0.0.1").strip()
+        if listen_host not in ("127.0.0.1", "localhost", "::1"):
+            async with async_session() as boot_db:
+                auth_on = await is_auth_enabled(boot_db)
+            if not auth_on:
+                logging.getLogger(__name__).warning(
+                    "[PrintLab] Anmeldung ist ausgeschaltet und HOST=%s: die Oberfläche ist "
+                    "für das gesamte Netz erreichbar. Anmeldung einschalten "
+                    "(werkzeuge\\admin_passwort_setzen.py) oder HOST auf 127.0.0.1 setzen.",
+                    listen_host,
+                )
+    except Exception as exc:  # noqa: BLE001 - Warnung darf den Start nie blockieren
+        logging.getLogger(__name__).debug("[PrintLab] Bindungs-/Anmeldeprüfung übersprungen: %s", exc)
+
     # Browser download tokens expire after five minutes. Remove abandoned
     # prepared ZIPs at startup as well as before each new preparation so a
     # quiet appliance cannot retain an unusable bundle indefinitely.
@@ -9735,20 +9755,25 @@ async def lifespan(app: FastAPI):
 
         await layer_alert_service.observe(printer_id, layer_num, printer_manager.get_client(printer_id))
 
-        async def calibrate_snapshot(image: bytes) -> bytes:
+        async def calibrate_snapshot(image: bytes) -> bytes | None:
             """Ein gemessenes Bild (Plattenaufsicht) anliefern, wenn eingerückt.
 
-            Ohne Einmessung oder bei Fehler kommt das Original durch — die
-            Beobachter rechnen mit ihrem ROI-Ausschnitt weiter, nie mit nichts.
+            - Einmessung vorhanden, Warp gelingt: das gewarppte Bild.
+            - Einmessung vorhanden, Warp scheitert: ``None`` — ein Vergleich mit
+              einer gewarppten Referenz wäre sonst unstatthaft (gewarpt gegen
+              ungewarpt). Die Beobachter überspringen die Prüfung dann.
+            - Keine Einmessung: das Original — Beobachter ohne Referenz rechnen
+              einheitlich mit ungewarpten Bildern weiter, nie mit nichts.
             """
             try:
-                from backend.app.services.plate_calibration import warp_snapshot
+                from backend.app.services.plate_calibration import has_calibration, warp_snapshot
 
-                warped = await warp_snapshot(printer_id, image)
-                return warped or image
+                if not has_calibration(printer_id):
+                    return image
+                return await warp_snapshot(printer_id, image) or None
             except Exception as exc:  # noqa: BLE001 - Kamerapfad darf nicht abbrechen
                 logging.getLogger(__name__).warning("Platteinmessung übersprungen: %s", exc)
-                return image
+                return None
 
         # Erste-Schicht-Inspektor: Bild der ersten Schichten ohne Referenz beurteilen.
         fl_client = printer_manager.get_client(printer_id)
@@ -9767,7 +9792,10 @@ async def lifespan(app: FastAPI):
                                 printer_id, fl_printer, logging.getLogger(__name__)
                             )
                             image = await calibrate_snapshot(image)
-                            warning = first_layer_service.observe(printer_id, layer_num, image, fl_key)
+                            warning = (
+                                first_layer_service.observe(printer_id, layer_num, image, fl_key)
+                                if image is not None else None
+                            )
                             if warning:
                                 await notification_service.on_ai_failure_detection(
                                     printer_id, fl_printer.name,
@@ -9795,8 +9823,11 @@ async def lifespan(app: FastAPI):
                                 printer_id, sp_printer, logging.getLogger(__name__)
                             )
                             image = await calibrate_snapshot(image)
-                            warning = spaghetti_service.observe(
-                                printer_id, sp_printer.name, layer_num, image, pw_key,
+                            warning = (
+                                spaghetti_service.observe(
+                                    printer_id, sp_printer.name, layer_num, image, pw_key,
+                                )
+                                if image is not None else None
                             )
                             if warning:
                                 await notification_service.on_ai_failure_detection(
@@ -9819,9 +9850,12 @@ async def lifespan(app: FastAPI):
                                 printer_id, pw_printer, logging.getLogger(__name__)
                             )
                             image = await calibrate_snapshot(image)
-                            warning = part_watcher_service.observe(
-                                printer_id, pw_printer.name, layer_num,
-                                pw_state.total_layers, image, pw_key,
+                            warning = (
+                                part_watcher_service.observe(
+                                    printer_id, pw_printer.name, layer_num,
+                                    pw_state.total_layers, image, pw_key,
+                                )
+                                if image is not None else None
                             )
                             if warning:
                                 await notification_service.on_ai_failure_detection(

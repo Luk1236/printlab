@@ -177,7 +177,8 @@ services:
   #  restart: unless-stopped
   #  environment:
   #    POSTGRES_USER: printlab
-  #    POSTGRES_PASSWORD: changeme
+  #    POSTGRES_PASSWORD: # KEIN echtes Passwort hier eintragen: vor Aktivieren setzen
+  #                        # (z. B. `docker secret` oder eigene .env), "changeme" nicht verwenden.
   #    POSTGRES_DB: printlab
   #  volumes:
   #    - printlab_pgdata:/var/lib/postgresql/data

@@ -227,6 +227,22 @@ async def close_door(
     return {"success": True, "message": message, **get_hardware(printer_id).status()}
 
 
+@router.post("/{printer_id}/hardware/door/status")
+async def check_door_status(
+    printer_id: int,
+    user=Depends(get_current_user_optional),
+    _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_CONTROL),
+    db: AsyncSession = Depends(get_db),
+):
+    """Tür-Endschalter abfragen (``door_status_command`` ausführen und Ergebnis übernehmen)."""
+    await _printer_and_guard(printer_id, db)
+    ok, message = await asyncio.to_thread(get_hardware(printer_id).check_door_status)
+    _audit("door_status", ok, message, printer_id, user)
+    if not ok:
+        raise HTTPException(400, message)
+    return {"success": True, "message": message, **get_hardware(printer_id).status()}
+
+
 @router.post("/{printer_id}/hardware/plate/change")
 async def change_plate(
     printer_id: int,

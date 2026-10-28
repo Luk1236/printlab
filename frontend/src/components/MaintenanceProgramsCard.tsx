@@ -73,11 +73,12 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
   });
 
   const hardwareMutation = useMutation({
-    mutationFn: (action: 'open' | 'close' | 'plate' | 'refill' | 'stop' | 'unlock' | 'resolve') => {
+    mutationFn: (action: 'open' | 'close' | 'status' | 'plate' | 'refill' | 'stop' | 'unlock' | 'resolve') => {
       if (action === 'unlock') return api.resetEmergencyStop(printerId);
       if (action === 'resolve') return api.resolveIncompleteChange(printerId);
       if (action === 'open') return api.openHardwareDoor(printerId);
       if (action === 'close') return api.closeHardwareDoor(printerId);
+      if (action === 'status') return api.checkDoorStatus(printerId);
       if (action === 'plate') return api.changeHardwarePlate(printerId);
       if (action === 'stop') return api.emergencyStopHardware(printerId);
       return api.refillHardwareMagazine(printerId);
@@ -420,6 +421,16 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
             </Button>
             <Button
               size="sm"
+              variant="ghost"
+              disabled={hardwareDisabled}
+              aria-label={t('maintenance.programs.doorStatusCheck')}
+              onClick={() => hardwareMutation.mutate('status')}
+            >
+              <DoorClosed className="w-4 h-4" />
+              {t('maintenance.programs.doorStatusCheck')}
+            </Button>
+            <Button
+              size="sm"
               disabled={hardwareDisabled}
               onClick={() => hardwareMutation.mutate('plate')}
             >
@@ -537,7 +548,10 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
               size="sm"
               variant="ghost"
               disabled={!canControl || cancelAutoMutation.isPending}
-              onClick={() => cancelAutoMutation.mutate()}
+              onClick={() => {
+                if (!window.confirm(t('maintenance.programs.autoCancelNote'))) return;
+                cancelAutoMutation.mutate();
+              }}
             >
               {t('maintenance.programs.autoCancel')}
             </Button>

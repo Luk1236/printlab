@@ -3,6 +3,46 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.3.0 (28.10.2026)
+
+- **Sicherung repariert:** `werkzeuge\\backup_erstellen.ps1` sicherte seit dem Rebrand nur
+  noch die alte `bambuddy.db`. Jetzt laufen `printlab.db` (+ Journal-Dateien), alle
+  Hardware-/Magazin-Konfigurationen, `audit_log.jsonl`, Preisliste, Angebotsverlauf,
+  Prüfungs-Konfigurationen sowie die Geheimnisse `data/.jwt_secret` und
+  `data/.mfa_encryption_key` mit.
+- **Tür-Status:** der bislang nur konfigurierbare `door_status_command` wird jetzt
+  ausgeführt — neuer Endpunkt `POST /printers/{id}/hardware/door/status` und Button
+  „Türstatus abfragen“ in der Wartungskarte; das Ergebnis setzt den Türzustand.
+- **PC-Slicer-Token im Client:** der Slicer-Client im Backend schickt
+  `Authorization: Bearer <PC_SLICER_TOKEN>` mit, wenn die Variable gesetzt ist —
+  der Zugriffsschutz des PC-Slicers kann dann per Token statt nur per IP-Liste erfolgen
+  (Doku in `docs/INSTALLATION-PI.md` und der Slicer-Hinweistext).
+- **Audit-Log:** hängt Einträge jetzt an (O(1)) und kappt alle 250 Zeilen auf die
+  letzten 2000; die Datei liegt einheitlich unter `data/` (bzw. DATA_DIR), eine
+  bestehende Datei aus dem Projekt-Root wird beim ersten Schreiben mitgenommen.
+- **Automatik:** der Tür-Check ist auf „ geschlossen bestätigt oder Abbruch“ vereinfacht;
+  wenn die Warteschlangen-Prüfung wegen Datenbankfehlern nicht möglich ist, läuft der
+  Wechsel weiterhin (fail-open, unverändert), aber das Ergebnis wird sichtbar
+  protokolliert statt stillschweigend.
+- **Kamera-Einmessung:** scheitert das Verzerren eines neuen Bildes, während eine
+  Einmessung vorliegt, überspringen Bauteil-Wächter, Erste-Schicht-Inspektor und
+  Spaghetti-Check die Prüfung, statt ein ungewarptes Bild gegen gewarpte Referenzen
+  zu vergleichen (Fehlwarnquelle beseitigt).
+- **Sicherheit/Start:** Warnung im Protokoll, wenn die Anmeldung aus ist und das Backend
+  nicht nur am Loopback lauscht (Docker/systemd binden standardmäßig an 0.0.0.0).
+- **Windows-Aufgabe:** die Anmeldeaufgabe heißt „PrintLab PC Slicer“ und entfernt eine
+  alte Aufgabe namens „Bambuddy PC Slicer“ (einmalig, beim Einrichten).
+- **CI:** Sicherheits-Aufträge (pip-audit, npm-audit) sind wieder harte Schwelle
+  (kein `continue-on-error`); CodeQL scannt auch den Arbeitsbranch.
+- **Aufräumen:** Installations-README beschreibt den Windows-Installer aus den Releases
+  statt eines nicht vorhandenen Skripts; Postgres-Beispiel im compose warnt vor
+  „changeme“; `TODO.md` bereinigt.
+- **Oberfläche:** Abbruch der Automatik fragt mit Warnhinweis nach (laufende
+  Hardware-Schritte stoppt nur der Not-Halt); die Konfigurations-Hilfe empfiehlt
+  Befehle als Liste (ohne Shell). Zwei neue UI-Texte in allen 15 Sprachen.
+- **Tests:** neue Backend-Tests für Tür-Status und chronologisches Audit-Log;
+  Frontend-Tests für die Tür-Status- und Abbruch-Schaltflächen.
+
 ## v1.2.2 (27.10.2026)
 
 - **Meldungen auf Englisch:** Die Erweiterungs-Endpunkte (Hardware, Wartung, Kamera-Prüfungen, Angebote)

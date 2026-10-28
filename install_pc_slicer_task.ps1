@@ -2,7 +2,7 @@
 # Aufruf (PowerShell, im Projektordner):
 #   powershell -ExecutionPolicy Bypass -File .\install_pc_slicer_task.ps1
 # Entfernen:
-#   Unregister-ScheduledTask -TaskName "Bambuddy PC Slicer" -Confirm:$false
+#   Unregister-ScheduledTask -TaskName "PrintLab PC Slicer" -Confirm:$false
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -20,8 +20,14 @@ $settings = New-ScheduledTaskSettingsSet `
     -RestartInterval (New-TimeSpan -Minutes 1) `
     -ExecutionTimeLimit (New-TimeSpan -Days 365)
 
+# Alte Aufgabe unter dem Vorgänger-Namen entfernen, falls vorhanden.
+if (Get-ScheduledTask -TaskName "Bambuddy PC Slicer" -ErrorAction SilentlyContinue) {
+    Unregister-ScheduledTask -TaskName "Bambuddy PC Slicer" -Confirm:$false
+    Write-Output "Alte Aufgabe 'Bambuddy PC Slicer' entfernt."
+}
+
 Register-ScheduledTask `
-    -TaskName "Bambuddy PC Slicer" `
+    -TaskName "PrintLab PC Slicer" `
     -Action $action `
     -Trigger $trigger `
     -Settings $settings `
@@ -29,5 +35,5 @@ Register-ScheduledTask `
     -Force | Out-Null
 
 Write-Output "Aufgabe 'PrintLab PC Slicer' eingerichtet."
-Write-Output "Status:  Get-ScheduledTask -TaskName 'Bambuddy PC Slicer'"
-Write-Output "Starten: Start-ScheduledTask -TaskName 'Bambuddy PC Slicer'"
+Write-Output "Status:  Get-ScheduledTask -TaskName 'PrintLab PC Slicer'"
+Write-Output "Starten: Start-ScheduledTask -TaskName 'PrintLab PC Slicer'"

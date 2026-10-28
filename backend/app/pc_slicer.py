@@ -11,10 +11,10 @@ und „Slicer-API verwenden“ einschalten.
 Zugriffsschutz (Standard: nur Anfragen von diesem PC, also Loopback):
 
 - ``PC_SLICER_ALLOWED_IPS`` – kommagetrennte IPs/Netze (z. B. ``192.168.178.133,10.0.0.0/24``),
-  die zusätzlich zugreifen dürfen. Das ist der Weg für PrintLab auf dem Pi, weil PrintLabs
-  Slicer-Client keinen Token mitschickt.
+  die zusätzlich zugreifen dürfen.
 - ``PC_SLICER_TOKEN`` – wenn gesetzt, müssen Nicht-Loopback-Clients ``Authorization: Bearer <Token>``
-  oder ``X-Slicer-Token`` senden.
+  oder ``X-Slicer-Token`` senden. Der Slicer-Client in PrintLab schickt den Token mit, wenn dieselbe
+  Variable auf dem PrintLab-Rechner gesetzt ist (also auf **beiden** Rechnern ``PC_SLICER_TOKEN``).
 
 Ohne eine der beiden Variablen werden Anfragen von anderen Rechnern mit 403 abgelehnt, auch
 wenn der Dienst auf ``0.0.0.0`` lauscht (Firewall-Regel für Port 3001 bleibt trotzdem sinnvoll).

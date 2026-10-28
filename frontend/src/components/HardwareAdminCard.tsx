@@ -4,13 +4,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Boxes, ClipboardList, Save } from 'lucide-react';
 
 import { api } from '../api/client';
-import type { AuditEntry, HardwareConfig, HardwareSlot, Printer } from '../api/client';
+import type { AuditEntry, HardwareConfig, HardwareSlot, HardwareStatus, PartialHardwareSlot, Printer } from '../api/client';
 import { Button } from './Button';
 import { Card, CardContent } from './Card';
 import { useToast } from '../contexts/ToastContext';
 import { commandToDraft, draftToCommand } from '../utils/hardwareCommand';
-
-const SLOT_STATUSES = ['ready', 'used', 'empty', 'occupied'] as const;
 
 const STATUS_COLOR: Record<string, string> = {
   ready: 'bg-bambu-green/20 text-bambu-green border-bambu-green/40',
@@ -67,7 +65,7 @@ export function HardwareAdminCard({ canControl }: { canControl: boolean }) {
   });
 
   const slotsSave = useMutation({
-    mutationFn: (slots: HardwareSlot[]) => api.setMagazineSlots(printerId, slots),
+    mutationFn: (slots: PartialHardwareSlot[]) => api.setMagazineSlots(printerId, slots),
     onSuccess: (data) => {
       showToast(data.message || t('common.success'));
       setDrafts({});
@@ -100,10 +98,13 @@ export function HardwareAdminCard({ canControl }: { canControl: boolean }) {
   });
 
   const cycleStatus = (slot: HardwareSlot) => {
-    const next = SLOT_STATUSES[(SLOT_STATUSES.indexOf(slot.status) + 1) % SLOT_STATUSES.length];
+    const next: PartialHardwareSlot['status'] =
+      slot.status === 'ready' ? 'used'
+      : slot.status === 'used' ? 'empty'
+      : slot.status === 'empty' ? 'occupied'
+      : 'ready';
     slotsSave.mutate([{ id: slot.id, status: next }]);
   };
-
   const saveSlotLabel = (id: number, fallback: string) => {
     const value = (drafts[id] ?? '').trim();
     slotsSave.mutate([{ id, label: value || fallback }]);

@@ -41,7 +41,10 @@ Registry. In `docker-compose.yml` dann statt `build: .` die Zeile `image: ghcr.i
    gesperrt, und jeder im Netz könnte Drucker steuern.
 2. Drucker hinzufügen (IP, Seriennummer, Zugangscode).
 3. Optional PC-Slicer: auf dem Windows-PC `starte_pc_slicer.bat`, in den PrintLab-Einstellungen die Adresse des PCs
-   eintragen. Auf dem PC `PC_SLICER_ALLOWED_IPS=<pi-ip>` setzen, sonst weist der Slicer den Pi ab.
+   eintragen. Auf dem PC `PC_SLICER_ALLOWED_IPS=<pi-ip>` setzen, sonst weist der Slicer den Pi ab. Sicherer als die
+   IP-Liste ist ein Token: dieselbe Variable `PC_SLICER_TOKEN=<geheim>` auf **beiden** Rechnern setzen (PC und Pi,
+   z. B. in `docker-compose.yml` unter `environment:`) — der Slicer-Client in PrintLab schickt den Token dann
+   automatisch mit, und die `PC_SLICER_ALLOWED_IPS`-Liste kann entfallen.
 
 ## Betrieb
 

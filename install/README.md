@@ -27,15 +27,16 @@ curl -fsSL https://raw.githubusercontent.com/Luk1236/printlab/main/install/insta
 
 ### Windows Native Installation
 
-**Windows PowerShell:**
+**Windows (Installer von GitHub Releases):**
 
-```powershell
-powershell -ExecutionPolicy Bypass -Command "iwr -useb https://raw.githubusercontent.com/Luk1236/printlab/main/install/windows-installer.ps1 -OutFile windows-installer.ps1; .\windows-installer.ps1"
-```
+Der Windows-Installer wird beim Release (Tag `v*`) gebaut und als Anhang an der
+Release-Seite bereitgestellt: https://github.com/Luk1236/printlab/releases
+(Quelle: `installers/windows/printlab.iss`, gebaut über `.github/workflows/windows-installer.yml`).
 
-**Unattended:**
+**Unattended (aus dem Installer-Download):**
 ```powershell
-.\windows-installer.ps1 -InstallDir C:\PrintLab -Port 8000 -Yes
+# Der Setup-Assistent unterstützt /SILENT /DIR="C:\PrintLab" (Inno Setup)
+.\PrintLabSetup.exe /SILENT /DIR="C:\PrintLab"
 ```
 ---
 
@@ -46,7 +47,7 @@ powershell -ExecutionPolicy Bypass -Command "iwr -useb https://raw.githubusercon
 | `install.sh` | Linux, macOS | Native (Python venv) |
 | `docker-install.sh` | Linux, macOS | Docker |
 | `docker-install.ps1` | Windows (Docker Desktop) | Docker |
-| `windows-installer.ps1` | Windows (Native) | Windows Service |
+| `PrintLabSetup.exe` | Windows (Native) | Inno Setup + Windows-Service (Release-Anhang) |
 | `update.sh` | Linux (systemd) | Native update helper |
 
 ---
@@ -91,32 +92,18 @@ Installs PrintLab with Python virtual environment and optional systemd/launchd s
 # Skip service setup
 ./install.sh --no-service -y
 ```
-### `windows-installer.ps1` (Windows)
+### `PrintLabSetup.exe` (Windows, Inno Setup)
 
-Windows PowerShell (run as Administrator — the installer self-elevates via UAC if not):
+The signed setup is attached to each release (tag `v*`) at
+https://github.com/Luk1236/printlab/releases. Run as Administrator — the
+installer self-elevates via UAC if not:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -Command "iwr -useb https://raw.githubusercontent.com/Luk1236/printlab/main/install/windows-installer.ps1 -OutFile windows-installer.ps1; .\windows-installer.ps1"
+.\PrintLabSetup.exe              # interaktiv
+.\PrintLabSetup.exe /SILENT /DIR="C:\PrintLab"   # Unattended (Inno Setup)
 ```
 
-> Installs PrintLab natively on Windows using Git, Python, a virtual environment, and optional NSSM Windows Service registration. See the [Windows Installer Guide](https://github.com/Luk1236/printlab/blob/bambu-monitor-port/docs/HILFE.md) for full parameter reference.
-
-**Parameters:**
-```powershell
--InstallDir PATH  Installation directory (default: C:\PrintLab)
--Port PORT        Port to listen on (default: 8000)
--Yes              Non-interactive mode, accept defaults
--Silent           Non-interactive mode with reduced console output
--NoService        Skip Windows Service setup
--NoStart          Do not start PrintLab at the end
--LocalOnly        Bind to 127.0.0.1 instead of all LAN interfaces
-```
-
-The installer stores the Git checkout in `INSTALL_DIR\printlab`, user data in
-`INSTALL_DIR\data`, and application logs in `INSTALL_DIR\logs` so updates and
-re-clones do not delete runtime data. If an earlier Windows installer run left
-runtime data in the Git checkout, the installer moves known data and log paths
-to the new locations before starting PrintLab.
+> Installs PrintLab natively on Windows using Git, Python, a virtual environment, and an NSSM Windows Service. The Inno-Setup source is `installers/windows/printlab.iss`; the build runs `.github/workflows/windows-installer.yml`. See the [Windows Installer Guide](https://github.com/Luk1236/printlab/blob/bambu-monitor-port/docs/HILFE.md) for full parameter reference.
 
 ---
 

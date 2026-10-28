@@ -90,6 +90,11 @@ def clear(printer_id: int) -> dict[str, Any]:
     return status(printer_id)
 
 
+def has_calibration(printer_id: int) -> bool:
+    """True, wenn für diesen Drucker eine Einmessung gespeichert ist."""
+    return _load_points(printer_id) is not None
+
+
 def warp_points_for(printer_id: int, size: tuple[int, int]) -> np.ndarray | None:
     """Quellpunkte in Pixeln für ein Bild der angegebenen Größe (oder None)."""
     points = _load_points(printer_id)

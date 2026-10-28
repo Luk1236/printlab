@@ -2,7 +2,8 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [main]
+    # Fork: auch der Arbeitsbranch, auf dem entwickelt wird, wird gescannt.
+    branches: [main, bambu-monitor-port]
   pull_request:
     branches: [main]
   schedule:

@@ -296,7 +296,10 @@ export function QuoteCalculator() {
                 <input
                   value={entry.material}
                   onChange={(event) =>
-                    setPriceListDraft((rows) => rows.map((r, i) => (i === index ? { ...r, material: event.target.value } : r)))
+                    setPriceListDraft(
+                      (rows) =>
+                        rows?.map((r, i) => (i === index ? { ...r, material: event.target.value } : r)) ?? null,
+                    )
                   }
                   placeholder="PLA"
                   className="w-28 bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm"
@@ -308,7 +311,11 @@ export function QuoteCalculator() {
                   min={0}
                   value={entry.rate_per_kg}
                   onChange={(event) =>
-                    setPriceListDraft((rows) => rows.map((r, i) => (i === index ? { ...r, rate_per_kg: Number(event.target.value) } : r)))
+                    setPriceListDraft(
+                      (rows) =>
+                        rows?.map((r, i) => (i === index ? { ...r, rate_per_kg: Number(event.target.value) } : r)) ??
+                        null,
+                    )
                   }
                   className="w-24 bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm"
                   aria-label={`${t('quote.rate')} ${index + 1}`}
@@ -316,7 +323,7 @@ export function QuoteCalculator() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => setPriceListDraft((rows) => rows.filter((_, i) => i !== index))}
+                  onClick={() => setPriceListDraft((rows) => rows?.filter((_, i) => i !== index) ?? null)}
                 >
                   ✕
                 </Button>
@@ -326,7 +333,9 @@ export function QuoteCalculator() {
               <Button
                 size="sm"
                 variant="secondary"
-                onClick={() => setPriceListDraft((rows) => [...rows, { material: '', rate_per_kg: Number(defaultRate) || 22 }])}
+                onClick={() =>
+                  setPriceListDraft((rows) => [...(rows ?? []), { material: '', rate_per_kg: Number(defaultRate) || 22 }])
+                }
               >
                 +
               </Button>

@@ -64,8 +64,9 @@
 - [ ] Voller E2E-Test: MakerWorld → PC-Slicer → Queue.
 - [x] Zugriffsschutz des PC-Slicers (27.10.2026): Loopback immer erlaubt, andere Rechner nur
       über `PC_SLICER_ALLOWED_IPS` (IPs/Netze) und/oder `PC_SLICER_TOKEN`, sonst 403.
-      Bambuddys Slicer-Client schickt keinen Token mit → für den Pi die IP-Liste nutzen.
-      Offen: Windows-Firewallregel für Port 3001 beim Wechsel auf `0.0.0.0`.
+      Der Slicer-Client in PrintLab schickt seit v1.3.0 den Token mit (`PC_SLICER_TOKEN`
+      auf beiden Rechnern setzen). Offen: Windows-Firewallregel für Port 3001 beim
+      Wechsel auf `0.0.0.0`.
 
 ### P4 Engineering und Betrieb
 - [X] CI auf dem Fork-Branch: `.github/workflows/ci.yml` lauscht jetzt auch auf
@@ -145,4 +146,5 @@ Demo-Drucker). Die echten Daten des Bambu-Monitors wurden **nicht** angefasst.
 - `c833ac4` Not-Halt und PC-Slicer-Autostart
 - `b35e3f2` Erste-Schicht-Inspektor
 
-Nicht gepusht. Lizenz: AGPL-3.0.
+Diese Commits sind inzwischen gepusht (Repository `Luk1236/printlab`, Tag v1.2.2 ff.).
+Lizenz: AGPL-3.0.

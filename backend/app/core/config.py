@@ -14,7 +14,7 @@ for _legacy_key, _legacy_value in list(os.environ.items()):
 
 # Eigene Version von PrintLab (Git-Tags vX.Y.Z). Einzige Versionsquelle: Oberfläche, Backups, Support-Infos
 # und die Update-Prüfung gegen das eigene Repo benutzen sie. Bei jedem Release erhöhen (docs/VERSIONING.md).
-PRINTLAB_VERSION = "1.2.2"
+PRINTLAB_VERSION = "1.3.0"
 APP_VERSION = PRINTLAB_VERSION
 # Fork: Updates kommen aus dem eigenen Repo, nie aus dem Upstream (PRINTLAB_GITHUB_REPO überschreibt).
 GITHUB_REPO = os.environ.get("PRINTLAB_GITHUB_REPO", "Luk1236/printlab")

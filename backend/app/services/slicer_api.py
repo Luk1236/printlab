@@ -12,6 +12,7 @@ import asyncio
 import io
 import json
 import logging
+import os
 import time
 import zipfile
 from collections.abc import Callable
@@ -20,6 +21,18 @@ from typing import NamedTuple
 import httpx
 
 logger = logging.getLogger(__name__)
+
+# Fork: teilt sich mit dem PC-Slicer-Dienst (backend/app/pc_slicer.py) dieselbe
+# Umgebungsvariable — läuft PrintLab auf einem anderen Rechner als der Slicer
+# (z. B. Pi + PC), tragen die Aufrufe hier den Bearer-Token mit, damit der
+# Zugriffsschutz des Sidecars greift. Loopback-Aufrufe brauchen ihn nicht.
+_SIDECAR_TOKEN_ENV = "PC_SLICER_TOKEN"
+
+
+def sidecar_auth_headers() -> dict[str, str]:
+    """Bearer-Header aus ``PC_SLICER_TOKEN`` (leer = keiner mitschicken)."""
+    token = (os.environ.get(_SIDECAR_TOKEN_ENV) or "").strip()
+    return {"Authorization": f"Bearer {token}"} if token else {}
 
 
 class SlicerApiError(Exception):
@@ -412,7 +425,7 @@ class SlicerApiService:
         """GET /health — used to surface a clear "sidecar offline" error before
         accepting a slice request from the user."""
         try:
-            response = await self._client.get(f"{self.base_url}/health", timeout=10.0)
+            response = await self._client.get(f"{self.base_url}/health", timeout=10.0, headers=sidecar_auth_headers())
         except httpx.RequestError as exc:
             raise SlicerApiUnavailableError(f"Slicer sidecar unreachable: {_transport_error_reason(exc)}") from exc
         if response.status_code >= 400:
@@ -453,6 +466,7 @@ class SlicerApiService:
                 f"{self.base_url}/profiles/resolve",
                 json={"category": category, "profile": payload},
                 timeout=15.0,
+                headers=sidecar_auth_headers(),
             )
         except httpx.RequestError as exc:
             raise SlicerApiUnavailableError(f"Slicer sidecar unreachable: {_transport_error_reason(exc)}") from exc
@@ -492,7 +506,9 @@ class SlicerApiService:
         crashing the modal — cloud + local-imported profiles still render.
         """
         try:
-            response = await self._client.get(f"{self.base_url}/profiles/bundled", timeout=10.0)
+            response = await self._client.get(
+                f"{self.base_url}/profiles/bundled", timeout=10.0, headers=sidecar_auth_headers()
+            )
         except httpx.RequestError as exc:
             raise SlicerApiUnavailableError(f"Slicer sidecar unreachable: {_transport_error_reason(exc)}") from exc
         if response.status_code >= 400:
@@ -532,7 +548,7 @@ class SlicerApiService:
         last_payload: dict | None = None
         while True:
             try:
-                response = await self._client.get(url, timeout=5.0)
+                response = await self._client.get(url, timeout=5.0, headers=sidecar_auth_headers())
                 if response.status_code == 200:
                     payload = response.json()
                     if isinstance(payload, dict):
@@ -595,6 +611,7 @@ class SlicerApiService:
                 f"{self.base_url}/slice",
                 files=files,
                 data=data,
+                headers=sidecar_auth_headers(),
                 timeout=httpx.Timeout(connect=30.0, read=None, write=None, pool=30.0),
             ),
             name="slicer-slice-post",
