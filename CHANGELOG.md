@@ -3,7 +3,7 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
-## v1.9.4 (in Arbeit) — Auslastung und Fertigzeit
+## v1.9.4 (28.10.2026) — Auslastung und Fertigzeit
 
 - **Übersicht „Auslastung und Fertigzeit"** über der Warteschlange: je Drucker der laufende Druck mit Restzeit, „frei ab",
   Auslastung der nächsten 24 Stunden und die Aufträge in der Warteschlange; dazu eine Zeile mit der voraussichtlichen
