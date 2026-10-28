@@ -8,6 +8,9 @@ from pathlib import Path
 import pytest
 
 SCRIPT = Path(__file__).resolve().parents[3] / "werkzeuge" / "gpio_mechanik.py"
+if not SCRIPT.exists():  # das Docker-Test-Image enthält den Ordner werkzeuge/ nicht
+    pytest.skip("werkzeuge/ fehlt in dieser Umgebung", allow_module_level=True)
+
 spec = importlib.util.spec_from_file_location("gpio_mechanik", SCRIPT)
 gm = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(gm)

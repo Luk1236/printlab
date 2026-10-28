@@ -45,7 +45,7 @@ def _template_path(archive: PrintArchive) -> Path | None:
         return None
     path = Path(raw)
     if not path.is_absolute():
-        path = settings.base_dir / path
+        path = settings.base_dir / path  # SEC-PATH-OK: Wert aus dem eigenen Archiv-Datensatz, keine Anfrage-Eingabe
     return path if path.is_file() else None
 
 

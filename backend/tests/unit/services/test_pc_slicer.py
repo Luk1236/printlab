@@ -73,6 +73,28 @@ class TestCli:
         with pytest.raises(SlicerCliError):
             slice_file(tmp_path / "m.3mf", "out.gcode.3mf")
 
+    @pytest.mark.parametrize("name", ["../../evil.3mf", "..\\..\\evil.3mf", "/etc/evil.3mf", "C:\\x\\evil.3mf"])
+    def test_dateiname_wird_auf_den_reinen_namen_reduziert(self, tmp_path, monkeypatch, name):
+        """Ein Dateiname mit Pfadanteilen darf den Arbeitsordner nie verlassen (Ausgabe landet in tmp)."""
+        from backend.app.services import slicer_cli
+
+        program = tmp_path / "studio.exe"
+        program.write_bytes(b"x")
+        source = tmp_path / "m.3mf"
+        source.write_bytes(b"3mf")
+        monkeypatch.setattr(slicer_cli, "program_path", lambda: str(program))
+        seen = {}
+
+        def fake_build(prog, src, out_dir, out_name, *args, **kwargs):
+            seen["name"] = out_name
+            return ["x"]
+
+        monkeypatch.setattr(slicer_cli, "build_command", fake_build)
+        monkeypatch.setattr(slicer_cli.subprocess, "run", lambda *a, **k: (_ for _ in ()).throw(OSError("stop")))
+        with pytest.raises(SlicerCliError):
+            slice_file(source, name)
+        assert seen["name"] == "evil.3mf"
+
 
 class TestApi:
     def client(self):

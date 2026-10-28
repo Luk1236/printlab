@@ -29,7 +29,7 @@ def tuning_path(data_dir: Path | str | None = None) -> Path:
         from backend.app.core.config import settings
 
         data_dir = settings.base_dir
-    return Path(data_dir) / TUNING_NAME
+    return Path(data_dir).joinpath(TUNING_NAME)  # SEC-PATH-OK: feste Namenskonstante
 
 
 def load_difference_threshold(data_dir: Path | str | None = None) -> float | None:

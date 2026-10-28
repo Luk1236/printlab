@@ -114,6 +114,7 @@ def slice_file(
     source = Path(source)
     if not source.is_file() or source.stat().st_size > MAX_3MF_BYTES:
         raise SlicerCliError("Datei fehlt oder ist größer als 200 MB.")
+    name = Path(str(name).replace("\\", "/")).name or "slice.3mf"  # nur der Dateiname, nie ein Pfad
     if not name.lower().endswith(".3mf"):
         name = Path(name).stem + ".gcode.3mf"
     with tempfile.TemporaryDirectory(prefix="bambu_slice_") as tmp:
@@ -141,7 +142,7 @@ def slice_file(
                 result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=tmp_path, check=False)
             except (OSError, subprocess.SubprocessError) as exc:
                 raise SlicerCliError(f"Bambu Studio konnte nicht gestartet werden: {exc}") from exc
-        output = tmp_path / name
+        output = tmp_path / name  # SEC-PATH-OK: name ist oben auf den reinen Dateinamen reduziert
         if result.returncode != 0 or not output.is_file():
             stderr = (result.stderr or result.stdout or "").strip()
             raise SlicerCliError(f"Slicen fehlgeschlagen: {stderr[-500:] or 'keine Ausgabe'}")

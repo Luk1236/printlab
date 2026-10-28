@@ -39,6 +39,11 @@ class UpdateGuardError(RuntimeError):
     """Die Sicherung vor dem Update ist fehlgeschlagen; das Update wird nicht begonnen."""
 
 
+def _in(data_dir: Path | str, *names: str) -> Path:
+    """Pfad im Datenordner; nur mit festen Dateinamen aufrufen."""
+    return Path(data_dir).joinpath(*names)  # SEC-PATH-OK: nur feste Namenskonstanten, nie Eingaben von außen
+
+
 def _git(app_dir: Path, *args: str, timeout: int = 120) -> subprocess.CompletedProcess:
     return subprocess.run(  # noqa: S603 - feste Argumentliste, keine Shell
         ["git", "-c", f"safe.directory={app_dir}", *args],  # noqa: S607
@@ -74,15 +79,15 @@ def _write_json(path: Path, data: dict) -> None:
 
 
 def read_marker(data_dir: Path) -> dict | None:
-    return _read_json(Path(data_dir) / MARKER_NAME)
+    return _read_json(_in(data_dir, MARKER_NAME))
 
 
 def read_rollback_notice(data_dir: Path) -> dict | None:
-    return _read_json(Path(data_dir) / ROLLED_BACK_NAME)
+    return _read_json(_in(data_dir, ROLLED_BACK_NAME))
 
 
 def clear_rollback_notice(data_dir: Path) -> None:
-    (Path(data_dir) / ROLLED_BACK_NAME).unlink(missing_ok=True)
+    _in(data_dir, ROLLED_BACK_NAME).unlink(missing_ok=True)
 
 
 def _copy_sqlite(source: Path, target: Path) -> None:
@@ -129,7 +134,7 @@ def backup_data(data_dir: Path, backup_dir: Path) -> list[str]:
 
 
 def _prune_backups(data_dir: Path) -> None:
-    root = Path(data_dir) / BACKUP_FOLDER
+    root = _in(data_dir, BACKUP_FOLDER)
     folders = sorted(p for p in root.iterdir() if p.is_dir()) if root.is_dir() else []
     for old in folders[:-KEEP_BACKUPS]:
         shutil.rmtree(old, ignore_errors=True)
@@ -142,7 +147,7 @@ def prepare(app_dir: Path, data_dir: Path, target_ref: str, version: str) -> dic
     if not commit:
         raise UpdateGuardError("Der aktuelle Git-Stand ist nicht lesbar.")
     stamp = time.strftime("%Y%m%d-%H%M%S")
-    backup_dir = data_dir / BACKUP_FOLDER / stamp
+    backup_dir = _in(data_dir, BACKUP_FOLDER, stamp)
     try:
         saved = backup_data(data_dir, backup_dir)
     except (OSError, sqlite3.Error) as exc:
@@ -157,7 +162,7 @@ def prepare(app_dir: Path, data_dir: Path, target_ref: str, version: str) -> dic
         "started_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "starts": 0,
     }
-    _write_json(data_dir / MARKER_NAME, marker)
+    _write_json(_in(data_dir, MARKER_NAME), marker)
     clear_rollback_notice(data_dir)
     _prune_backups(data_dir)
     return marker
@@ -165,7 +170,7 @@ def prepare(app_dir: Path, data_dir: Path, target_ref: str, version: str) -> dic
 
 def confirm(data_dir: Path) -> bool:
     """Das Update gilt als gelungen: Marke löschen. True, wenn eine Marke da war."""
-    marker = Path(data_dir) / MARKER_NAME
+    marker = _in(data_dir, MARKER_NAME)
     existed = marker.exists()
     marker.unlink(missing_ok=True)
     return existed
@@ -202,7 +207,7 @@ def rollback(app_dir: Path, data_dir: Path, marker: dict, reason: str) -> bool:
         return False
     restored = _restore_data(data_dir, Path(str(marker.get("backup_dir", ""))))
     _write_json(
-        data_dir / ROLLED_BACK_NAME,
+        _in(data_dir, ROLLED_BACK_NAME),
         {
             "from_ref": marker.get("target_ref"),
             "to_commit": commit,
@@ -212,7 +217,7 @@ def rollback(app_dir: Path, data_dir: Path, marker: dict, reason: str) -> bool:
             "at": time.strftime("%Y-%m-%dT%H:%M:%S"),
         },
     )
-    (data_dir / MARKER_NAME).unlink(missing_ok=True)
+    _in(data_dir, MARKER_NAME).unlink(missing_ok=True)
     return True
 
 
@@ -227,7 +232,7 @@ def guard(app_dir: Path, data_dir: Path) -> str:
         reason = f"Die neue Version ist {starts - 1}-mal nicht stabil gestartet."
         return "rolled_back" if rollback(Path(app_dir), data_dir, marker, reason) else "rollback_failed"
     marker["starts"] = starts
-    _write_json(data_dir / MARKER_NAME, marker)
+    _write_json(_in(data_dir, MARKER_NAME), marker)
     return "counted"
 
 

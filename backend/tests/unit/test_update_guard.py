@@ -1,12 +1,15 @@
 """Update-Schutz: Sicherung, Zähler, Rückbau auf den alten Git-Stand samt Datenbank, Bestätigung."""
 
 import asyncio
+import shutil
 import sqlite3
 import subprocess
 
 import pytest
 
 from backend.app.services import update_guard as ug
+
+pytestmark = pytest.mark.skipif(shutil.which("git") is None, reason="git fehlt in dieser Umgebung")
 
 
 def _git(repo, *args):
