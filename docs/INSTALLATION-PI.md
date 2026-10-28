@@ -46,6 +46,14 @@ Registry. In `docker-compose.yml` dann statt `build: .` die Zeile `image: ghcr.i
    z. B. in `docker-compose.yml` unter `environment:`) — der Slicer-Client in PrintLab schickt den Token dann
    automatisch mit, und die `PC_SLICER_ALLOWED_IPS`-Liste kann entfallen.
 
+## Updates
+
+PrintLab prüft unter **Einstellungen → System** auf neue Versionen (Releases von `Luk1236/printlab`) und kann sie
+selbst einspielen. Weil das Repo privat ist, braucht der Pi dafür einen Token mit Leserecht:
+`PRINTLAB_GITHUB_TOKEN` (beim Neuaufspielen mit `PRINTLAB_STORE_TOKEN=1` wird er in `~/.config/printlab.env` mit
+Rechten 600 abgelegt). Nach dem Update startet sich der Dienst von selbst neu. Voraussetzung: PrintLab wurde mit
+`werkzeuge/pi_neu_installieren.sh` installiert (Git-Ordner, Dienst mit `Restart=always`).
+
 ## Betrieb
 
 | Aufgabe | Befehl |

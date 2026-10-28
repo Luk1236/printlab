@@ -13,6 +13,8 @@
 # Optionen (Umgebungsvariablen):
 #   PRINTLAB_REF=v1.2.2        Tag oder Branch (Standard: bambu-monitor-port)
 #   PRINTLAB_FRESH_DATA=1      gesicherte Daten NICHT zurückspielen (leere Datenbank)
+#   PRINTLAB_STORE_TOKEN=1     Token in ~/.config/printlab.env (nur für dich lesbar) speichern, damit die
+#                              Update-Funktion in PrintLab (Einstellungen) das private Repo erreicht
 set -euo pipefail
 
 REPO="Luk1236/printlab"
@@ -65,6 +67,12 @@ python3 -m venv "$DIR/.venv"
 
 step "6/7 Dienst einrichten und starten"
 mkdir -p "$HOME/.config/systemd/user"
+if [ -n "${PRINTLAB_STORE_TOKEN:-}" ]; then
+  umask 077
+  printf 'PRINTLAB_GITHUB_TOKEN=%s\n' "$GH_TOKEN" > "$HOME/.config/printlab.env"
+  umask 022
+  echo "Token für die Update-Funktion gespeichert: ~/.config/printlab.env (Rechte 600)"
+fi
 cat > "$HOME/.config/systemd/user/printlab.service" <<'EOF'
 [Unit]
 Description=PrintLab
@@ -74,8 +82,11 @@ After=network-online.target
 WorkingDirectory=%h/printlab
 Environment=DATA_DIR=%h/printlab/data
 Environment=LOG_DIR=%h/printlab/logs
+# Nach einem Update in PrintLab beendet sich der Dienst sauber; Restart=always startet ihn mit dem neuen Stand
+Environment=PRINTLAB_AUTO_RESTART=1
+EnvironmentFile=-%h/.config/printlab.env
 ExecStart=%h/printlab/.venv/bin/python -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --loop asyncio
-Restart=on-failure
+Restart=always
 RestartSec=5
 
 [Install]

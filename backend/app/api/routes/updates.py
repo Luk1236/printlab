@@ -1,10 +1,12 @@
 """Update checking and management routes."""
 
 import asyncio
+import base64
 import logging
 import os
 import re
 import shutil
+import signal
 import sys
 import time
 
@@ -55,6 +57,38 @@ def _github_headers() -> dict[str, str]:
     if token:
         headers["Authorization"] = f"Bearer {token}"
     return headers
+
+
+def _git_auth_env() -> dict[str, str] | None:
+    """Umgebung für git fetch gegen das private Repo (Token als HTTP-Header, nicht in Argumenten oder Konfiguration).
+
+    ``None`` ohne Token. Über ``GIT_CONFIG_*`` (git ≥ 2.31) statt ``-c``, damit das Token nicht in der
+    Prozessliste steht und nirgends gespeichert wird.
+    """
+    token = (os.environ.get("PRINTLAB_GITHUB_TOKEN") or "").strip()
+    if not token:
+        return None
+    basic = base64.b64encode(f"x-access-token:{token}".encode()).decode()
+    return {
+        **os.environ,
+        "GIT_TERMINAL_PROMPT": "0",
+        "GIT_CONFIG_COUNT": "1",
+        "GIT_CONFIG_KEY_0": "http.https://github.com/.extraheader",
+        "GIT_CONFIG_VALUE_0": f"AUTHORIZATION: basic {basic}",
+    }
+
+
+def _schedule_restart_after_update() -> bool:
+    """Nach einem Update neu starten, wenn der Dienst das ausdrücklich erlaubt (``PRINTLAB_AUTO_RESTART=1``).
+
+    Gedacht für systemd mit ``Restart=always``: PrintLab beendet sich sauber (SIGTERM an sich selbst), systemd
+    startet es mit dem neuen Code wieder. Ohne die Variable passiert nichts (Meldung „bitte neu starten“).
+    """
+    if (os.environ.get("PRINTLAB_AUTO_RESTART") or "").strip().lower() not in ("1", "true", "yes"):
+        return False
+    loop = asyncio.get_running_loop()
+    loop.call_later(3.0, os.kill, os.getpid(), signal.SIGTERM)
+    return True
 
 
 def _seconds_until_github_unblocked() -> float:
@@ -534,18 +568,25 @@ async def check_for_updates(
                 }
 
             if response.status_code == 404:
-                # No releases yet
+                # No releases yet — or a private repo that needs a token to be seen at all
+                no_token = not (os.environ.get("PRINTLAB_GITHUB_TOKEN") or "").strip()
+                hint = (
+                    "No releases found. The repository is private: set PRINTLAB_GITHUB_TOKEN "
+                    "(read access to the repository) to check for updates."
+                    if no_token
+                    else "No releases found"
+                )
                 _update_status = {
                     "status": "idle",
                     "progress": 100,
-                    "message": "No releases found",
+                    "message": hint,
                     "error": None,
                 }
                 return {
                     "update_available": False,
                     "current_version": PRINTLAB_VERSION,
                     "latest_version": None,
-                    "message": "No releases found",
+                    "message": hint,
                 }
 
             response.raise_for_status()
@@ -800,6 +841,7 @@ async def _perform_update(target_ref: str):
             "--force",
             "origin",
             cwd=str(app_dir),
+            env=_git_auth_env(),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -918,10 +960,13 @@ async def _perform_update(target_ref: str):
         else:
             logger.info("npm not found or frontend dir missing - using pre-built static files")
 
+        restarting = _schedule_restart_after_update()
         _update_status = {
             "status": "complete",
             "progress": 100,
-            "message": "Update complete! Please restart the application.",
+            "message": "Update complete! PrintLab restarts in a few seconds."
+            if restarting
+            else "Update complete! Please restart the application.",
             "error": None,
         }
 

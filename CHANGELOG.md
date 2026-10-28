@@ -3,6 +3,16 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.5.1 (28.10.2026) — Update-Funktion für das private Repo
+
+- **Updates aus der Oberfläche** funktionieren jetzt mit dem privaten Repo: Der Token (`PRINTLAB_GITHUB_TOKEN`) wird
+  auch für `git fetch` verwendet (als HTTP-Header über die Umgebung, nirgends gespeichert); vorher scheiterte das
+  Holen des neuen Stands ohne hinterlegte Zugangsdaten.
+- **Automatischer Neustart** nach dem Update, wenn der Dienst ihn erlaubt (`PRINTLAB_AUTO_RESTART=1`, systemd mit
+  `Restart=always`); ohne die Variable bleibt es bei „bitte neu starten“.
+- **Klarer Hinweis**, wenn das Repo privat ist und kein Token gesetzt ist (statt „keine Releases gefunden“).
+- `werkzeuge/pi_neu_installieren.sh` richtet den Dienst dafür ein (`Restart=always`, optional gespeicherter Token).
+
 ## v1.5.0 (28.10.2026) — Fernzugriff
 
 - **Fernzugriff über Tailscale** (Seite „Wartung“): Einrichten ohne Root, Anmelde-Link, Freigabe nur im privaten
