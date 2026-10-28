@@ -1919,6 +1919,7 @@ export default {
       autoOnlyWithQueue: 'Solo se un lavoro è in attesa',
       autoConfirmClear: 'Conferma piastra libera automaticamente (telecamera)',
       firstLayerInspector: 'Ispettore del primo strato (fotocamera)',
+      firstLayerAutoPause: 'Metti in pausa la stampa in caso di avviso',
     },
     overview: 'Panoramica',
     allOk: 'Tutta la manutenzione aggiornata',

@@ -213,7 +213,8 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
     refetchInterval: 10000,
   });
   const firstLayerMutation = useMutation({
-    mutationFn: (enabled: boolean) => api.setFirstLayerInspector(printerId, enabled),
+    mutationFn: (update: { enabled: boolean; pause_on_warning?: boolean }) =>
+      api.setFirstLayerInspector(printerId, update.enabled, update.pause_on_warning),
     onSuccess: () => {
       showToast(t('common.success'));
       queryClient.invalidateQueries({ queryKey: ['firstLayerInspector', printerId] });
@@ -613,11 +614,27 @@ export function MaintenanceProgramsCard({ canControl }: MaintenanceProgramsCardP
             <input
               type="checkbox"
               checked={Boolean(firstLayer?.enabled)}
-              onChange={(event) => firstLayerMutation.mutate(event.target.checked)}
+              onChange={(event) => firstLayerMutation.mutate({ enabled: event.target.checked })}
               disabled={!canControl || firstLayerMutation.isPending}
             />
             {t('maintenance.programs.firstLayerInspector')}
           </label>
+          {firstLayer?.enabled && (
+            <label className="ml-6 flex items-center gap-2 text-xs text-bambu-gray">
+              <input
+                type="checkbox"
+                checked={Boolean(firstLayer?.pause_on_warning)}
+                onChange={(event) =>
+                  firstLayerMutation.mutate({
+                    enabled: true,
+                    pause_on_warning: event.target.checked,
+                  })
+                }
+                disabled={!canControl || firstLayerMutation.isPending}
+              />
+              {t('maintenance.programs.firstLayerAutoPause')}
+            </label>
+          )}
           {firstLayer?.result && !firstLayer.result.ok && (
             <span className="text-xs text-red-700 dark:text-red-400">{firstLayer.result.message}</span>
           )}

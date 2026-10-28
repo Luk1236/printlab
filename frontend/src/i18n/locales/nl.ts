@@ -1938,6 +1938,7 @@ export default {
       autoOnlyWithQueue: 'Alleen als er een opdracht wacht',
       autoConfirmClear: 'Plaat-vrij automatisch bevestigen (camera)',
       firstLayerInspector: 'Eerste-laaginspectie (camera)',
+      firstLayerAutoPause: 'De afdruk pauzeren bij een waarschuwing',
     },
     overview: 'Overzicht',
     allOk: 'Al het onderhoud is bijgewerkt',

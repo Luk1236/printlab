@@ -9797,6 +9797,20 @@ async def lifespan(app: FastAPI):
                                 if image is not None else None
                             )
                             if warning:
+                                # Erste-Schicht-Gate: optional pausieren statt nur warnen —
+                                # einmalig je Druck (observe markiert ihn als geprüft).
+                                if first_layer_service.pause_on_warning(printer_id) and fl_client.state.state == "RUNNING":
+                                    try:
+                                        await fl_client.pause_print()
+                                        warning["paused"] = True
+                                        logging.getLogger(__name__).warning(
+                                            "Erste Schicht auffällig (Drucker %s) — Druck pausiert.",
+                                            printer_id,
+                                        )
+                                    except Exception as pause_exc:  # noqa: BLE001
+                                        logging.getLogger(__name__).warning(
+                                            "Pause nach Erste-Schicht-Warnung fehlgeschlagen: %s", pause_exc
+                                        )
                                 await notification_service.on_ai_failure_detection(
                                     printer_id, fl_printer.name,
                                     fl_state.subtask_name or "", 0.5, "first_layer_inspector",

@@ -1921,6 +1921,7 @@ export default {
       autoOnlyWithQueue: 'Solo cuando haya un trabajo en espera',
       autoConfirmClear: 'Confirmar placa libre automáticamente (cámara)',
       firstLayerInspector: 'Inspector de primera capa (cámara)',
+      firstLayerAutoPause: 'Pausar la impresión al avisar',
     },
     overview: 'Resumen',
     allOk: 'Todo el mantenimiento al día',

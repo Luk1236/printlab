@@ -1919,6 +1919,7 @@ export default {
       autoOnlyWithQueue: 'Seulement si un travail attend',
       autoConfirmClear: 'Confirmer automatiquement plaque libre (caméra)',
       firstLayerInspector: 'Inspecteur de première couche (caméra)',
+      firstLayerAutoPause: 'Mettre l\'impression en pause en cas d\'alerte',
     },
     overview: 'Vue d\'ensemble',
     allOk: 'Toute la maintenance est à jour',

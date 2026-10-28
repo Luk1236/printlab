@@ -1938,6 +1938,7 @@ export default {
       autoOnlyWithQueue: 'Only when a job is waiting',
       autoConfirmClear: 'Confirm plate clear automatically (camera)',
       firstLayerInspector: 'First-layer inspector (camera)',
+      firstLayerAutoPause: 'Pause the print on warning',
     },
     overview: 'Overview',
     allOk: 'All maintenance up to date',

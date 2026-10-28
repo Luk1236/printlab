@@ -1919,6 +1919,7 @@ export default {
       autoOnlyWithQueue: '仅在有任务等待时',
       autoConfirmClear: '自动确认平台已清空（摄像头）',
       firstLayerInspector: '首层检查（摄像头）',
+      firstLayerAutoPause: '警告时暂停打印',
     },
     overview: '概览',
     allOk: '所有维护均已完成',

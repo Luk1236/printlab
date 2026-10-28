@@ -1937,6 +1937,7 @@ export default {
       autoOnlyWithQueue: 'Endast när ett jobb väntar',
       autoConfirmClear: 'Bekräfta platta fri automatiskt (kamera)',
       firstLayerInspector: 'Första lagret-inspektör (kamera)',
+      firstLayerAutoPause: 'Pausa utskriften vid varning',
     },
     overview: 'Översikt',
     allOk: 'Allt underhåll är gjort',

@@ -70,3 +70,26 @@ class TestInspector:
         inspector = FirstLayerInspector(tmp_path / "fl.json")
         inspector.configure(1, True)
         assert inspector.observe(1, 2, None, "a") is None
+
+    def test_pause_on_warning_konfigurierbar(self, tmp_path):
+        inspector = FirstLayerInspector(tmp_path / "fl.json")
+        # Standard aus.
+        assert inspector.pause_on_warning(1) is False
+        inspector.configure(1, True, pause_on_warning=True)
+        assert inspector.pause_on_warning(1) is True
+        # Status liefert ihn zum Anzeigen.
+        assert inspector.status(1)["pause_on_warning"] is True
+        # Ohne Angabe (nur enable/disable) bleibt er erhalten.
+        inspector.configure(1, False)
+        assert inspector.pause_on_warning(1) is True
+        inspector.configure(1, True, pause_on_warning=False)
+        assert inspector.pause_on_warning(1) is False
+        # Persistiert für neue Instanzen.
+        assert FirstLayerInspector(tmp_path / "fl.json").pause_on_warning(1) is False
+
+    def test_paused_markiert_ergebnis(self, tmp_path):
+        inspector = FirstLayerInspector(tmp_path / "fl.json")
+        inspector.configure(1, True, pause_on_warning=True)
+        warning = inspector.observe(1, 2, jpeg(np.full((240, 320), 128, dtype=np.uint8)), "a")
+        assert warning is not None
+        assert warning.get("paused") is None  # Pause setzt der Callback nach dem Pausieren

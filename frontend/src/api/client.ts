@@ -4332,6 +4332,7 @@ export interface FirstLayerResult {
 
 export interface FirstLayerStatus {
   enabled: boolean;
+  pause_on_warning?: boolean;
   result: FirstLayerResult | null;
   checked: boolean;
   last_layer: number;
@@ -7451,10 +7452,10 @@ export const api = {
   // First-layer inspector
   getFirstLayerInspector: (printerId: number) =>
     request<FirstLayerStatus>(`/printers/${printerId}/first-layer-inspector`),
-  setFirstLayerInspector: (printerId: number, enabled: boolean) =>
+  setFirstLayerInspector: (printerId: number, enabled: boolean, pause_on_warning?: boolean) =>
     request<FirstLayerStatus>(`/printers/${printerId}/first-layer-inspector`, {
       method: 'PUT',
-      body: JSON.stringify({ enabled }),
+      body: JSON.stringify(pause_on_warning === undefined ? { enabled } : { enabled, pause_on_warning }),
     }),
 
   // Camera

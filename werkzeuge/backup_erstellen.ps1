@@ -1,4 +1,4 @@
-# Lokale Sicherung von PrintLab: Datenbank + Konfigurationen + Geheimnisse.
+﻿# Lokale Sicherung von PrintLab: Datenbank + Konfigurationen + Geheimnisse.
 # Aufruf (PowerShell):
 #   powershell -ExecutionPolicy Bypass -File .\werkzeuge\backup_erstellen.ps1
 # Ziel: <Projekt>\backup\<JJJJ-MM-TT>\ — alte Sicherungen bleiben 14 Tage.
@@ -65,3 +65,13 @@ Get-ChildItem (Join-Path $root "backup") -Directory -ErrorAction SilentlyContinu
     Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 
 Write-Output "Backup erstellt: $dest"
+
+# Direkt danach die Integritaet prüfen (best-effort; ein fehlendes Prüfskript kippt die Sicherung nicht).
+$check = Join-Path $root "werkzeuge\backup_pruefen.ps1"
+if (Test-Path $check) {
+    try {
+        & $check
+    } catch {
+        Write-Output "Hinweis: Integritätsprüfung nicht möglich: $($_.Exception.Message)"
+    }
+}

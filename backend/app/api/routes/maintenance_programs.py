@@ -8,11 +8,16 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.core.auth import RequirePermissionIfAuthEnabled
+from backend.app.core.auth import RequirePermissionIfAuthEnabled, get_current_user_optional
 from backend.app.core.database import get_db
 from backend.app.core.permissions import Permission
 from backend.app.models.printer import Printer
-from backend.app.services.maintenance_programs import PROGRAMS, service
+from backend.app.services.maintenance_programs import (
+    PROGRAMS,
+    custom_specs,
+    save_custom_plans,
+    service,
+)
 from backend.app.services.printer_manager import printer_manager
 
 logger = logging.getLogger(__name__)
@@ -26,6 +31,43 @@ async def _get_printer(printer_id: int, db: AsyncSession) -> Printer:
     if printer is None:
         raise HTTPException(404, "Printer not found")
     return printer
+
+
+@router.get("/maintenance-plans")
+async def get_maintenance_plans(
+    _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_READ),
+):
+    """Alle Wartungsprogramme (eingebaut + eigene) mit ihren Abläufen."""
+    specs = custom_specs()
+    known = {**PROGRAMS, **specs}
+    return {
+        "programs": [
+            {
+                "key": key,
+                "label": spec.label,
+                "description": spec.description,
+                "default_runs": spec.default_runs,
+                "custom": key not in PROGRAMS,
+            }
+            for key, spec in known.items()
+        ]
+    }
+
+
+@router.put("/maintenance-plans")
+async def set_maintenance_plans(
+    data: dict,
+    user=Depends(get_current_user_optional),
+    _=RequirePermissionIfAuthEnabled(Permission.SETTINGS_UPDATE),
+):
+    """Eigene Wartungsprogramme ersetzen (komplett; eingebaut bleiben immer verfübar)."""
+    from backend.app.services import audit_log
+
+    ok, message = save_custom_plans(data)
+    audit_log.record("maintenance_plans", ok, message, None, getattr(user, "username", None))
+    if not ok:
+        raise HTTPException(400, message)
+    return {"success": True, "message": message}
 
 
 @router.get("/{printer_id}/maintenance-programs")
@@ -49,7 +91,7 @@ async def start_program(
     """Startet ein Wartungsprogramm. Es wird nichts geheizt und kein Filament verwendet."""
     printer = await _get_printer(printer_id, db)
     key = program.strip().lower()
-    if key not in PROGRAMS:
+    if key not in custom_specs():
         raise HTTPException(400, f"Unknown maintenance program: {program}")
     if not platte_frei:
         raise HTTPException(400, "Bitte zuerst bestätigen, dass die Druckplatte frei ist.")

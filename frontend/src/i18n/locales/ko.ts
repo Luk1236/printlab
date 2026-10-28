@@ -1846,6 +1846,7 @@ export default {
       autoOnlyWithQueue: '대기 중인 작업이 있을 때만',
       autoConfirmClear: '플레이트 비움 자동 확인(카메라)',
       firstLayerInspector: '첫 레이어 검사 (카메라)',
+      firstLayerAutoPause: '경고 시 인쇄 일시 정지',
     },
     overview: '개요',
     allOk: '모든 유지보수 최신 상태',

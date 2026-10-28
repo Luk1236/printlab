@@ -3,6 +3,26 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.4.0 (28.10.2026) — Welle 1 der Erweiterungen
+
+- **Erste-Schicht-Gate:** optionale Automatik „Bei Warnung drucken anhalten“ — pausiert den
+  Druck einmalig nach der Inspektor-Warnung (Standard aus); Neuer Schalter in der
+  Wartungskarte, Schlüssel `pause_on_warning` je Drucker.
+- **Eigene Wartungsprogramme:** Ablaufpläne (home/z/xy/pause) frei definiert in
+  `data/maintenance_plans.json` — API `GET/PUT /api/v1/printers/maintenance-plans`, Start
+  über dieselbe Start-Route wie eingebaute Programme; harte Validierung (P2S-Grenzen
+  20–236 mm, Pausen 1–600 s, max. 200 Schritte, Audit-Log). UI-Editor folgt in Welle 2.
+- **Windows-Firewallregeln:** `werkzeuge/firewall_regeln.ps1` legt Portfreigaben für Web
+  (8000) und PC-Slicer (3001) mit automatischer Subnetz-Ermittlung oder Geräteliste an
+  (`-AllowedIps`), gilt nur für Private-/Domänennetzwerke; `-Remove` entfernt sie.
+- **Backup-Integritätsprüfung:** `werkzeuge/backup_pruefen.ps1` prüft die neueste
+  Sicherung (Datenbank in Temp kopieren, `PRAGMA integrity_check`); die
+  Sicherungsroutine ruft die Prüfung nach jedem Backup automatisch auf.
+- **Powershell-Skripte als UTF-8 mit BOM** (PowerShell 5.1 liest ohne BOM als ANSI und
+  verliert Umlaute — drei Skripte korrigiert).
+- **Tests:** Erste-Schicht-Gate (Konfig + Persistenz), eigene Programme (Validierung,
+  Plan-Bau, Startpfad); Update-/Integration-Kontexte unverändert grün.
+
 ## v1.3.1 (28.10.2026)
 
 - **Update-Prüfung bei privatem Repo:** die Update-Prüfung schickt jetzt einen GitHub-Token mit

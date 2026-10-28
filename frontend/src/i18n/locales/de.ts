@@ -1920,6 +1920,7 @@ export default {
       autoOnlyWithQueue: 'Nur wenn ein Auftrag wartet',
       autoConfirmClear: 'Platte frei automatisch bestätigen (Kamera)',
       firstLayerInspector: 'Erste-Schicht-Inspektor (Kamera)',
+      firstLayerAutoPause: 'Bei Warnung drucken anhalten',
     },
     overview: 'Übersicht',
     allOk: 'Alle Wartungen aktuell',

@@ -99,14 +99,21 @@ class FirstLayerInspector:
                 "last_layer": int(self._last_layer.get(printer_id, 0)),
             }
 
-    def configure(self, printer_id: int, enabled: bool) -> dict[str, Any]:
+    def configure(self, printer_id: int, enabled: bool, pause_on_warning: bool | None = None) -> dict[str, Any]:
         with self._lock:
             entry = self._entry(printer_id)
             entry["enabled"] = bool(enabled)
+            if pause_on_warning is not None:
+                entry["pause_on_warning"] = bool(pause_on_warning)
             self._save()
             self._checked[printer_id] = False
             self._result[printer_id] = None
             return self.status(printer_id)
+
+    def pause_on_warning(self, printer_id: int) -> bool:
+        """True, wenn bei einer Warnung der Druck automatisch pausieren soll."""
+        with self._lock:
+            return bool(self._entry(printer_id).get("pause_on_warning", False))
 
     def _reset_if_new_print(self, printer_id: int, key: str, layer_num: int) -> None:
         old_key = self._print_key.get(printer_id, "")

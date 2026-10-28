@@ -1921,6 +1921,7 @@ export default {
       autoOnlyWithQueue: 'Yalnızca bekleyen iş varsa',
       autoConfirmClear: 'Plaka boş onayını otomatik ver (kamera)',
       firstLayerInspector: 'İlk katman denetçisi (kamera)',
+      firstLayerAutoPause: 'Uyarıdan ardından yazıcıyı duraklat',
     },
     overview: 'Genel Bakış',
     allOk: 'Tüm bakım güncel',

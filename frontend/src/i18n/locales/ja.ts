@@ -1919,6 +1919,7 @@ export default {
       autoOnlyWithQueue: 'ジョブが待機中の場合のみ',
       autoConfirmClear: 'プレート空きを自動確認（カメラ）',
       firstLayerInspector: 'ファーストレイヤー検査（カメラ）',
+      firstLayerAutoPause: '警告時に印刷を一時停止',
     },
     overview: '概要',
     allOk: 'すべてのメンテナンスは最新です',

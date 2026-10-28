@@ -1,4 +1,4 @@
-# Startet den PC-Slicer beim Anmelden als Windows-Aufgabe.
+﻿# Startet den PC-Slicer beim Anmelden als Windows-Aufgabe.
 # Aufruf (PowerShell, im Projektordner):
 #   powershell -ExecutionPolicy Bypass -File .\install_pc_slicer_task.ps1
 # Entfernen:
