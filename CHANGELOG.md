@@ -3,7 +3,7 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
-## v1.9.0 (in Arbeit) — Angebote und Einrichtung
+## v1.9.0 (28.10.2026) — Angebote und Einrichtung
 
 - **Wartungsseite in vier Reiter** (auch mit Handy bedienbar, waagerecht scrollbar): *Status* (Drucker und Wartung),
   *Hardware & Optik* (Wartungsprogramme, Tür/Wechsler, Kamera-Einmessung), *System & Betrieb* (Checkliste, Zustand des
