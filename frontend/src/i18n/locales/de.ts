@@ -1859,6 +1859,8 @@ export default {
     },
     // Bulk edit
     bulkEdit: {
+      dueSet: 'Termin setzen',
+      dueClear: 'Termin entfernen',
       title: '{{count}} Element bearbeiten',
       title_plural: '{{count}} Elemente bearbeiten',
       description: 'Nur geänderte Einstellungen werden auf ausgewählte Elemente angewendet.',

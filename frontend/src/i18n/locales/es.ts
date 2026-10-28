@@ -1859,6 +1859,8 @@ export default {
     },
     // Bulk edit
     bulkEdit: {
+      dueSet: 'Fijar fecha de entrega',
+      dueClear: 'Quitar fecha de entrega',
       title: 'Editar {{count}} elemento',
       title_plural: 'Editar {{count}} elementos',
       description: 'Solo se aplicarán los ajustes modificados a los elementos seleccionados.',

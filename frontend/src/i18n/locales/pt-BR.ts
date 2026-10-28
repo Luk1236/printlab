@@ -1859,6 +1859,8 @@ export default {
     },
     // Bulk edit
     bulkEdit: {
+      dueSet: 'Definir prazo de entrega',
+      dueClear: 'Remover prazo de entrega',
       title: 'Editar {{count}} Item',
       title_plural: 'Editar {{count}} Itens',
       description: 'Apenas as configurações alteradas serão aplicadas aos itens selecionados.',

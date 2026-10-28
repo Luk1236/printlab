@@ -1858,6 +1858,8 @@ export default {
     },
     // Bulk edit
     bulkEdit: {
+      dueSet: '納期を設定',
+      dueClear: '納期を削除',
       title: '{{count}}件のアイテムを編集',
       title_plural: '{{count}}件のアイテムを編集',
       description: '変更した設定のみが選択されたアイテムに適用されます。',

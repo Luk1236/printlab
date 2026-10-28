@@ -1859,6 +1859,8 @@ export default {
     },
     // Bulk edit
     bulkEdit: {
+      dueSet: '設定交付日期',
+      dueClear: '移除交付日期',
       title: '編輯 {{count}} 個項目',
       title_plural: '編輯 {{count}} 個項目',
       description: '僅更改的設定將套用於所選項目。',

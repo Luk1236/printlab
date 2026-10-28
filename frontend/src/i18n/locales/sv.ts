@@ -1875,6 +1875,8 @@ export default {
     },
     // Bulk edit
     bulkEdit: {
+      dueSet: 'Ange leveransdatum',
+      dueClear: 'Ta bort leveransdatum',
       title: 'Redigera {{count}} post',
       title_plural: 'Redigera {{count}} poster',
       description: 'Endast ändrade inställningar kommer att tillämpas på valda poster.',

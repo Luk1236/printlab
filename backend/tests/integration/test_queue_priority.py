@@ -124,3 +124,81 @@ class TestBalancedPrinterChoice:
         await printer_factory(model="X1C", location="Keller", runtime_seconds=1)
         ordered = await PrintScheduler()._printers_for_model(db_session, "X1C", "Werkstatt")
         assert [p.id for p in ordered] == [a.id]
+
+
+class TestBulkPriority:
+    async def make(self, client: AsyncClient, printer, archive, **extra):
+        body = {"printer_id": printer.id, "archive_id": archive.id, **extra}
+        return (await client.post("/api/v1/queue/", json=body)).json()["id"]
+
+    @pytest.mark.asyncio
+    async def test_sets_priority_and_due_date_for_several_items_at_once(
+        self, async_client: AsyncClient, printer_factory, archive_factory
+    ):
+        printer = await printer_factory()
+        archive = await archive_factory(printer.id)
+        ids = [await self.make(async_client, printer, archive) for _ in range(3)]
+        due = (datetime.now(timezone.utc) + timedelta(days=2)).isoformat()
+        resp = await async_client.patch("/api/v1/queue/bulk", json={"item_ids": ids[:2], "priority": 2, "due_at": due})
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["updated_count"] == 2
+        items = {i["id"]: i for i in (await async_client.get("/api/v1/queue/")).json()}
+        assert [items[i]["priority"] for i in ids] == [2, 2, 1]
+        assert items[ids[0]]["due_at"] is not None and items[ids[2]]["due_at"] is None
+
+    @pytest.mark.asyncio
+    async def test_a_priority_only_change_keeps_the_due_dates(
+        self, async_client: AsyncClient, printer_factory, archive_factory
+    ):
+        printer = await printer_factory()
+        archive = await archive_factory(printer.id)
+        due = (datetime.now(timezone.utc) + timedelta(days=2)).isoformat()
+        item_id = await self.make(async_client, printer, archive, due_at=due)
+        await async_client.patch("/api/v1/queue/bulk", json={"item_ids": [item_id], "priority": 0})
+        item = (await async_client.get("/api/v1/queue/")).json()[0]
+        assert item["priority"] == 0 and item["due_at"] is not None
+
+    @pytest.mark.asyncio
+    async def test_an_explicit_null_removes_the_due_date(
+        self, async_client: AsyncClient, printer_factory, archive_factory
+    ):
+        printer = await printer_factory()
+        archive = await archive_factory(printer.id)
+        due = (datetime.now(timezone.utc) + timedelta(days=2)).isoformat()
+        item_id = await self.make(async_client, printer, archive, due_at=due)
+        resp = await async_client.patch("/api/v1/queue/bulk", json={"item_ids": [item_id], "due_at": None})
+        assert resp.status_code == 200
+        item = (await async_client.get("/api/v1/queue/")).json()[0]
+        assert item["due_at"] is None and item["priority"] == 1
+
+    @pytest.mark.asyncio
+    async def test_invalid_and_null_priority_are_rejected_without_touching_anything(
+        self, async_client: AsyncClient, printer_factory, archive_factory
+    ):
+        printer = await printer_factory()
+        archive = await archive_factory(printer.id)
+        item_id = await self.make(async_client, printer, archive)
+        for bad in (3, -1, None, "hoch"):
+            resp = await async_client.patch("/api/v1/queue/bulk", json={"item_ids": [item_id], "priority": bad})
+            assert resp.status_code == 422, bad
+        single = await async_client.patch(f"/api/v1/queue/{item_id}", json={"priority": None})
+        assert single.status_code == 422
+        assert (await async_client.get("/api/v1/queue/")).json()[0]["priority"] == 1
+
+    @pytest.mark.asyncio
+    async def test_non_pending_items_are_skipped(
+        self, async_client: AsyncClient, printer_factory, archive_factory, db_session
+    ):
+        from backend.app.models.print_queue import PrintQueueItem
+
+        printer = await printer_factory()
+        archive = await archive_factory(printer.id)
+        pending = await self.make(async_client, printer, archive)
+        done = await self.make(async_client, printer, archive)
+        row = await db_session.get(PrintQueueItem, done)
+        row.status = "completed"
+        await db_session.commit()
+        resp = await async_client.patch("/api/v1/queue/bulk", json={"item_ids": [pending, done], "priority": 2})
+        assert resp.json()["updated_count"] == 1 and resp.json()["skipped_count"] == 1
+        await db_session.refresh(row)
+        assert row.priority == 1

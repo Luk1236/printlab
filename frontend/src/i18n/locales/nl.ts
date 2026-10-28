@@ -1875,6 +1875,8 @@ export default {
     },
     // Bulk edit
     bulkEdit: {
+      dueSet: 'Leverdatum instellen',
+      dueClear: 'Leverdatum verwijderen',
       title: '{{count}} item bewerken',
       title_plural: '{{count}} items bewerken',
       description: 'Alleen gewijzigde instellingen worden toegepast op de geselecteerde items.',

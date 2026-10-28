@@ -1859,6 +1859,8 @@ export default {
     },
     // Toplu düzenleme
     bulkEdit: {
+      dueSet: 'Teslim tarihi belirle',
+      dueClear: 'Teslim tarihini kaldır',
       title: '{{count}} Öğeyi Düzenle',
       title_plural: '{{count}} Öğeyi Düzenle',
       description: 'Yalnızca değiştirilen ayarlar seçili öğelere uygulanacak.',

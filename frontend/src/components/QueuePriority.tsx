@@ -1,9 +1,10 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle, ArrowUp } from 'lucide-react';
 
 import { useQueueForecast } from '../hooks/useQueueForecast';
 import { dueWarningFor, formatForecastTime } from '../utils/queueForecast';
-import { PRIORITY_KEYS, PRIORITY_LEVELS, PRIORITY_NORMAL } from '../utils/queuePriority';
+import { PRIORITY_KEYS, PRIORITY_LEVELS, PRIORITY_NORMAL, queuePriorityPayload } from '../utils/queuePriority';
 
 /** Filter „Alle Prioritäten / Eilig / Normal / Niedrig" für die Warteschlange; leer = alle. */
 export function QueuePriorityFilter({ value, onChange }: { value: string; onChange: (value: string) => void }) {
@@ -62,6 +63,88 @@ export function QueueItemFlags({
           {t(warning === 'overdue' ? 'queue.due.overdue' : 'queue.due.tooLate')}
         </span>
       )}
+    </div>
+  );
+}
+
+/** Was die Sammel-Änderung an Priorität und Termin ändern soll; fehlende Schlüssel bleiben unverändert, `due_at: null` entfernt den Termin. */
+export type BulkPriorityPatch = { priority?: number; due_at?: string | null };
+
+type DueMode = 'unchanged' | 'set' | 'clear';
+
+/** Felder „Priorität" und „Liefertermin" für die Sammel-Änderung; meldet nur, was wirklich geändert werden soll. */
+export function BulkPriorityFields({ onChange }: { onChange: (patch: BulkPriorityPatch) => void }) {
+  const { t } = useTranslation();
+  const [priority, setPriority] = useState('');
+  const [dueMode, setDueMode] = useState<DueMode>('unchanged');
+  const [dueAt, setDueAt] = useState('');
+  const input = 'w-full px-3 py-2 bg-bambu-dark border border-bambu-dark-tertiary rounded-lg text-white text-sm focus:outline-none focus:border-bambu-green';
+
+  const emit = (next: { priority: string; dueMode: DueMode; dueAt: string }) => {
+    const patch: BulkPriorityPatch = {};
+    if (next.priority !== '') patch.priority = Number(next.priority);
+    if (next.dueMode === 'clear') patch.due_at = null;
+    if (next.dueMode === 'set') {
+      const due = queuePriorityPayload({ priority: PRIORITY_NORMAL, dueAt: next.dueAt }).due_at;
+      if (due) patch.due_at = due;
+    }
+    onChange(patch);
+  };
+
+  return (
+    <div className="space-y-3" data-testid="bulk-priority-fields">
+      <div>
+        <label htmlFor="bulkPriority" className="block text-sm font-medium text-white mb-2">
+          {t('queue.priority.label')}
+        </label>
+        <select
+          id="bulkPriority"
+          value={priority}
+          onChange={(event) => {
+            setPriority(event.target.value);
+            emit({ priority: event.target.value, dueMode, dueAt });
+          }}
+          className={input}
+        >
+          <option value="">{t('queue.bulkEdit.noChange')}</option>
+          {PRIORITY_LEVELS.map((level) => (
+            <option key={level} value={String(level)}>
+              {t(`queue.priority.${PRIORITY_KEYS[level]}`)}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label htmlFor="bulkDue" className="block text-sm font-medium text-white mb-2">
+          {t('queue.due.label')}
+        </label>
+        <select
+          id="bulkDue"
+          value={dueMode}
+          onChange={(event) => {
+            const mode = event.target.value as DueMode;
+            setDueMode(mode);
+            emit({ priority, dueMode: mode, dueAt });
+          }}
+          className={input}
+        >
+          <option value="unchanged">{t('queue.bulkEdit.noChange')}</option>
+          <option value="set">{t('queue.bulkEdit.dueSet')}</option>
+          <option value="clear">{t('queue.bulkEdit.dueClear')}</option>
+        </select>
+        {dueMode === 'set' && (
+          <input
+            type="datetime-local"
+            aria-label={t('queue.due.label')}
+            value={dueAt}
+            onChange={(event) => {
+              setDueAt(event.target.value);
+              emit({ priority, dueMode, dueAt: event.target.value });
+            }}
+            className={`${input} mt-2`}
+          />
+        )}
+      </div>
     </div>
   );
 }

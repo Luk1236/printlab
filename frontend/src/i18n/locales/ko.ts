@@ -1786,6 +1786,8 @@ export default {
       requeue: '재대기'
     },
     bulkEdit: {
+      dueSet: '납기일 설정',
+      dueClear: '납기일 제거',
       title: '{{count}}개 항목 편집',
       title_plural: '{{count}}개 항목 편집',
       description: '변경된 설정만 선택된 항목에 적용됩니다.',

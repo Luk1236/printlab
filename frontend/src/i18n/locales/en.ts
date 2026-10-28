@@ -1875,6 +1875,8 @@ export default {
     },
     // Bulk edit
     bulkEdit: {
+      dueSet: 'Set due date',
+      dueClear: 'Remove due date',
       title: 'Edit {{count}} Item',
       title_plural: 'Edit {{count}} Items',
       description: 'Only changed settings will be applied to selected items.',

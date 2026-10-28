@@ -3,6 +3,15 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.9.5 (in Arbeit) — Sammel-Priorität
+
+- **Priorität und Liefertermin für mehrere Aufträge auf einmal:** In der Warteschlange Aufträge markieren, „Auswahl
+  bearbeiten", dort Priorität setzen und den Liefertermin setzen oder entfernen. Nur was du änderst, wird geändert
+  (eine reine Prioritätsänderung lässt die Termine stehen). Aufträge, die nicht mehr wartend sind, werden übersprungen.
+- **Schnittstelle:** Die Sammel-Änderung (`PATCH /queue/bulk`) kennt `priority` und `due_at`; ein ausdrückliches `null` bei
+  `due_at` entfernt den Termin, bei `priority` wird es abgelehnt (422), auch beim Einzel-Update.
+- **Intern:** Der Sammel-Dialog liegt jetzt in `QueueBulkEditModal.tsx`; `QueuePage.tsx` ist dadurch gut 230 Zeilen kürzer.
+
 ## v1.9.4 (28.10.2026) — Auslastung und Fertigzeit
 
 - **Übersicht „Auslastung und Fertigzeit"** über der Warteschlange: je Drucker der laufende Druck mit Restzeit, „frei ab",

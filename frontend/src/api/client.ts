@@ -2924,6 +2924,8 @@ export interface PrintQueueBulkUpdate {
   require_previous_success?: boolean;
   auto_off_after?: boolean;
   manual_start?: boolean;
+  priority?: number;
+  due_at?: string | null;
   // Print options
   bed_levelling?: CalibrationMode;
   flow_cali?: CalibrationMode;

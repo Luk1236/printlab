@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, BeforeValidator, Field, PlainSerializer, model_validator
+from pydantic import BaseModel, BeforeValidator, Field, PlainSerializer, field_validator, model_validator
 
 from backend.app.utils.printer_models import MAX_CHAMBER_TEMP_C
 
@@ -153,6 +153,14 @@ class PrintQueueItemUpdate(BaseModel):
     due_at: datetime | None = None
     ams_mapping: list[int] | None = None
     plate_id: int | None = None
+
+    @field_validator("priority")
+    @classmethod
+    def _priority_not_null(cls, value: int | None) -> int | None:
+        if value is None:
+            raise ValueError("priority must not be null")
+        return value
+
     # Print options
     bed_levelling: TriState | None = None
     flow_cali: TriState | None = None
@@ -342,6 +350,16 @@ class PrintQueueBulkUpdate(BaseModel):
     require_previous_success: bool | None = None
     auto_off_after: bool | None = None
     manual_start: bool | None = None
+    priority: int | None = Field(None, ge=0, le=2)  # PrintLab: nur wenn gesetzt
+    due_at: datetime | None = None  # PrintLab: ausdrücklich null entfernt den Liefertermin
+
+    @field_validator("priority")
+    @classmethod
+    def _priority_not_null(cls, value: int | None) -> int | None:
+        if value is None:
+            raise ValueError("priority must not be null")
+        return value
+
     # Print options
     bed_levelling: TriState | None = None
     flow_cali: TriState | None = None
