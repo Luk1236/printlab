@@ -24,7 +24,7 @@ import { SpoolCsvImportModal } from '../components/SpoolCsvImportModal';
 import { LocationsModal } from '../components/LocationsModal';
 import { SuppliersModal } from '../components/SuppliersModal';
 import { BulkEditSpoolsModal } from '../components/BulkEditSpoolsModal';
-import { SpoolPresetMatchModal } from '../components/SpoolPresetMatchModal';
+import { SpoolPresetMatchControl } from '../components/SpoolPresetMatchControl';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 import { colorSortKey, resolveSpoolColorName } from '../utils/colors';
@@ -682,7 +682,6 @@ function InventoryPage({ spoolmanMode = false, spoolmanModeReady = true }: { spo
   // produces a confusing toolbar count vs. visible-row count delta.
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
-  const [presetMatchOpen, setPresetMatchOpen] = useState(false);
   const [bulkConfirmAction, setBulkConfirmAction] = useState<'delete' | 'archive' | 'restore' | 'reset-consumed-counter' | null>(null);
   const toggleSelected = useCallback((id: number) => {
     setSelectedIds((prev) => {
@@ -1643,11 +1642,7 @@ function InventoryPage({ spoolmanMode = false, spoolmanModeReady = true }: { spo
             <Printer className="w-4 h-4" />
             {t('inventory.labels.printLabels', 'Print labels…')}
           </Button>
-          {!spoolmanMode && (
-            <Button variant="secondary" onClick={() => setPresetMatchOpen(true)}>
-              {t('inventory.presetMatch.button')}
-            </Button>
-          )}
+          {!spoolmanMode && <SpoolPresetMatchControl spools={spools ?? []} />}
           <Button onClick={() => setFormModal({ spool: null, mode: 'create' })}>
             <Plus className="w-4 h-4" />
             {t('inventory.addSpool')}
@@ -2611,13 +2606,6 @@ function InventoryPage({ spoolmanMode = false, spoolmanModeReady = true }: { spo
         initialSelectedIds={labelPickerSpoolIds ?? []}
         spoolmanMode={spoolmanMode}
       />
-
-      {presetMatchOpen && (
-        <SpoolPresetMatchModal
-          spools={(spools ?? []).filter((spool) => !spool.archived_at)}
-          onClose={() => setPresetMatchOpen(false)}
-        />
-      )}
 
       <BulkEditSpoolsModal
         isOpen={bulkEditOpen}

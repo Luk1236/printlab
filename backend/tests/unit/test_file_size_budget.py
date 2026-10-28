@@ -30,7 +30,7 @@ LIMITS = {
     "frontend/src/pages/ArchivesPage.tsx": 4925,
     "frontend/src/pages/FileManagerPage.tsx": 4050,
     "frontend/src/pages/QueuePage.tsx": 3325,
-    "frontend/src/pages/InventoryPage.tsx": 3275,
+    "frontend/src/pages/InventoryPage.tsx": 3267,
     "frontend/src/pages/ProfilesPage.tsx": 3075,
 }
 
