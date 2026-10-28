@@ -9,6 +9,7 @@ import { Button } from './Button';
 import { Card, CardContent } from './Card';
 import { useToast } from '../contexts/ToastContext';
 import { buildQuoteDocument } from '../utils/quoteDocument';
+import { InvoicesPanel } from './InvoicesPanel';
 
 const fmt = (value: number, currency: string) =>
   new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(value || 0);
@@ -39,6 +40,7 @@ export function QuoteCalculator() {
   const [companyOpen, setCompanyOpen] = useState(false);
   const [companyDraft, setCompanyDraft] = useState<CompanyProfile | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [invoicesOpen, setInvoicesOpen] = useState(false);
   const [historyFilter, setHistoryFilter] = useState('');
 
   const { data: history } = useQuery({
@@ -77,6 +79,15 @@ export function QuoteCalculator() {
       queryClient.invalidateQueries({ queryKey: ['quoteCompany'] });
     },
     onError: (error: Error) => showToast(error.message),
+  });
+  const invoiceMutation = useMutation({
+    mutationFn: (quoteId: string) => api.createInvoice(quoteId),
+    onSuccess: (invoice) => {
+      showToast(t('quote.invoiceCreated', { number: invoice.number }));
+      setInvoicesOpen(true);
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+    },
+    onError: (error: Error) => showToast(error.message, 'error'),
   });
   const logoMutation = useMutation({
     mutationFn: (file: File) => api.uploadCompanyLogo(file),
@@ -294,6 +305,9 @@ export function QuoteCalculator() {
           <Button size="sm" variant="ghost" onClick={() => setHistoryOpen((open) => !open)}>
             {t('quote.history')}
           </Button>
+          <Button size="sm" variant="ghost" onClick={() => setInvoicesOpen((open) => !open)}>
+            {t('quote.invoices')}
+          </Button>
           <Button
             size="sm"
             variant="ghost"
@@ -333,6 +347,15 @@ export function QuoteCalculator() {
                     <Button
                       size="sm"
                       variant="ghost"
+                      aria-label={`${t('quote.createInvoice')} ${entry.customer}`}
+                      disabled={invoiceMutation.isPending}
+                      onClick={() => invoiceMutation.mutate(entry.id)}
+                    >
+                      {t('quote.createInvoice')}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
                       aria-label={`${t('quote.pdf')} ${entry.customer}`}
                       onClick={() => downloadPdf(entry.id)}
                     >
@@ -353,6 +376,7 @@ export function QuoteCalculator() {
             )}
           </div>
         )}
+        {invoicesOpen && <InvoicesPanel canEdit />}
         {companyOpen && (
           <div className="border border-bambu-dark-tertiary rounded-lg p-3 space-y-2">
             {draft !== null && (
@@ -482,6 +506,37 @@ export function QuoteCalculator() {
                   />
                   <span className="block mt-1">{t('quote.companyNumberFormatHint')}</span>
                 </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <label className="text-xs text-bambu-gray">
+                    {t('quote.companyInvoicePrefix')}
+                    <input
+                      type="text"
+                      value={draft.invoice_prefix}
+                      onChange={(event) => setCompanyDraft({ ...draft, invoice_prefix: event.target.value })}
+                      className="mt-1 w-full bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm"
+                    />
+                  </label>
+                  <label className="text-xs text-bambu-gray">
+                    {t('quote.companyInvoiceFormat')}
+                    <input
+                      type="text"
+                      value={draft.invoice_format}
+                      onChange={(event) => setCompanyDraft({ ...draft, invoice_format: event.target.value })}
+                      className="mt-1 w-full bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm font-mono"
+                    />
+                  </label>
+                  <label className="text-xs text-bambu-gray">
+                    {t('quote.companyPaymentDays')}
+                    <input
+                      type="number"
+                      min={0}
+                      max={365}
+                      value={draft.payment_days}
+                      onChange={(event) => setCompanyDraft({ ...draft, payment_days: Number(event.target.value) })}
+                      className="mt-1 w-full bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm"
+                    />
+                  </label>
+                </div>
                 <div className="flex flex-wrap items-center gap-2 text-xs text-bambu-gray">
                   <span>
                     {t('quote.companyLogo')}: {draft.has_logo ? t('quote.companyLogoSet') : t('quote.companyLogoNone')}

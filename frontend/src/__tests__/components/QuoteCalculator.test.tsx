@@ -199,6 +199,30 @@ describe('QuoteCalculator company data and PDF', () => {
     await waitFor(() => expect(calls.pdf).toEqual(['a1?lang=en']));
   });
 
+  it('creates an invoice from a quote and opens the invoice list', async () => {
+    const calls = { saved: [] as unknown[], pdf: [] as string[], description: [] as unknown[] };
+    setupCompany(calls);
+    const created: string[] = [];
+    server.use(
+      http.post('/api/v1/quote/history/:id/invoice', ({ params }) => {
+        created.push(String(params.id));
+        return HttpResponse.json({ id: 'i1', number: 'R-2026-0001', status: 'open', customer: 'Müller GmbH', total: 3.6, currency: 'EUR', due: '2026-11-11' });
+      }),
+      http.get('/api/v1/quote/invoices', () =>
+        HttpResponse.json({
+          invoices: [{ id: 'i1', number: 'R-2026-0001', status: 'open', customer: 'Müller GmbH', total: 3.6, currency: 'EUR', due: '2026-11-11' }],
+          totals: { EUR: { open: 3.6, overdue: 0, paid: 0 } },
+          overdue_ids: [],
+        }),
+      ),
+    );
+    render(<QuoteCalculator />);
+    await userEvent.click(await screen.findByRole('button', { name: 'History' }));
+    await userEvent.click(await screen.findByRole('button', { name: /Invoice Müller GmbH/ }));
+    await waitFor(() => expect(created).toEqual(['a1']));
+    expect(await screen.findByTestId('invoices-panel')).toHaveTextContent('R-2026-0001');
+  });
+
   it('loads, edits and saves the company data', async () => {
     const calls = { saved: [] as unknown[], pdf: [] as string[], description: [] as unknown[] };
     setupCompany(calls);

@@ -652,6 +652,17 @@ async def send_test_alert(
     return await asyncio.to_thread(alert_channels.send, config, "PrintLab: Testmeldung. Der Meldeweg funktioniert.")
 
 
+@router.get("/setup-status")
+async def get_setup_status(
+    db: AsyncSession = Depends(get_db),
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.SETTINGS_READ),
+):
+    """Inbetriebnahme-Checkliste: was ist eingerichtet, was fehlt noch (ändert nichts)."""
+    from backend.app.services import remote_access, setup_status
+
+    return await setup_status.collect(db, settings.base_dir, await remote_access.status())
+
+
 @router.get("/health", response_model=ScanResult)
 async def get_system_health(
     db: AsyncSession = Depends(get_db),

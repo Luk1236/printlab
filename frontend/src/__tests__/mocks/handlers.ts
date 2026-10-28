@@ -602,6 +602,9 @@ export const handlers = [
   http.get('/api/v1/system/alerts', () =>
     HttpResponse.json({ telegram: false, telegram_chat: '', ntfy: false, ntfy_host: '' })
   ),
+  http.get('/api/v1/system/setup-status', () =>
+    HttpResponse.json({ items: [], done: 0, total: 0, required_open: 0 })
+  ),
   http.get('/api/v1/updates/version', () =>
     HttpResponse.json({ version: '0.1.5', commit: 'test' })
   ),

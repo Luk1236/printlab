@@ -35,13 +35,18 @@ TEXT_LIMITS = {
     "vat_note": 240,
     "number_prefix": 8,
     "number_format": 40,
+    "invoice_prefix": 8,
+    "invoice_format": 40,
 }
 DEFAULTS: dict[str, Any] = {
     **dict.fromkeys(TEXT_LIMITS, ""),
     "number_prefix": "A",
     "number_format": DEFAULT_NUMBER_FORMAT,
+    "invoice_prefix": "R",
+    "invoice_format": DEFAULT_NUMBER_FORMAT,
     "vat_percent": 0.0,
     "valid_days": 14,
+    "payment_days": 14,
 }
 _CONTROL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")  # Zeilenumbruch (\n) bleibt erlaubt
 
@@ -109,11 +114,13 @@ def _clean(raw: dict[str, Any], strict: bool) -> dict[str, Any]:
             if len(value) > limit and strict:
                 raise ValueError(f"„{key}“ ist zu lang (höchstens {limit} Zeichen).")
             out[key] = value[:limit]
-    if "number_prefix" in out:
-        prefix = re.sub(r"[^A-Za-z0-9]", "", out["number_prefix"])
-        out["number_prefix"] = prefix or "A"
-    if "number_format" in out:
-        fmt = out["number_format"] or DEFAULT_NUMBER_FORMAT
+    for key, fallback in (("number_prefix", "A"), ("invoice_prefix", "R")):
+        if key in out:
+            out[key] = re.sub(r"[^A-Za-z0-9]", "", out[key]) or fallback
+    for format_key in ("number_format", "invoice_format"):
+        if format_key not in out:
+            continue
+        fmt = out[format_key] or DEFAULT_NUMBER_FORMAT
         rest = fmt
         for token in NUMBER_TOKENS:
             rest = rest.replace(token, "")
@@ -130,7 +137,7 @@ def _clean(raw: dict[str, Any], strict: bool) -> dict[str, Any]:
                     "Das Nummernformat braucht {seq}, {seq4} oder {seq5} und darf nur {prefix}, {year}, {yy} enthalten."
                 )
             fmt = DEFAULT_NUMBER_FORMAT
-        out["number_format"] = fmt
+        out[format_key] = fmt
     if "vat_percent" in raw:
         try:
             vat = float(raw["vat_percent"])
@@ -147,6 +154,14 @@ def _clean(raw: dict[str, Any], strict: bool) -> dict[str, Any]:
         if not 0 <= days <= 365:
             raise ValueError("Gültigkeit muss zwischen 0 und 365 Tagen liegen.")
         out["valid_days"] = days
+    if "payment_days" in raw:
+        try:
+            pay = int(raw["payment_days"])
+        except (TypeError, ValueError):
+            raise ValueError("Zahlungsziel muss eine ganze Zahl sein.") from None
+        if not 0 <= pay <= 365:
+            raise ValueError("Zahlungsziel muss zwischen 0 und 365 Tagen liegen.")
+        out["payment_days"] = pay
     return out
 
 

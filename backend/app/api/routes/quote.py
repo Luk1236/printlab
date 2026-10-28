@@ -23,7 +23,7 @@ from backend.app.api.routes.settings import DEFAULT_SETTINGS, get_setting
 from backend.app.core.auth import RequirePermissionIfAuthEnabled
 from backend.app.core.database import get_db
 from backend.app.core.permissions import Permission
-from backend.app.services import company_profile, price_list, quote_history, quote_pdf
+from backend.app.services import company_profile, invoices, price_list, quote_history, quote_pdf
 
 router = APIRouter(prefix="/quote", tags=["quote"])
 
@@ -140,6 +140,85 @@ async def quote_pdf_for_entry(
         pdf,
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="Angebot-{name}.pdf"'},
+    )
+
+
+@router.get("/invoices")
+async def list_invoices(
+    status: str | None = Query(None, pattern="^(open|paid|cancelled)$"),
+    _=RequirePermissionIfAuthEnabled(Permission.ARCHIVES_READ),
+):
+    """Rechnungen (neueste zuerst), Summen je Währung und die überfälligen offenen Rechnungen."""
+    return {
+        "invoices": invoices.entries(status),
+        "totals": invoices.totals(),
+        "overdue_ids": [i["id"] for i in invoices.overdue()],
+    }
+
+
+@router.post("/history/{entry_id}/invoice")
+async def create_invoice(
+    entry_id: str,
+    payload: dict | None = None,
+    _=RequirePermissionIfAuthEnabled(Permission.ARCHIVES_UPDATE_ALL),
+):
+    """Aus einem gespeicherten Angebot eine Rechnung mit eigener, lückenloser Nummer erstellen."""
+    try:
+        return invoices.create_from_quote(entry_id, company_profile.read(), (payload or {}).get("service_date"))
+    except invoices.InvoiceError as exc:
+        raise HTTPException(409 if "schon eine" in str(exc) else 400, str(exc)) from exc
+
+
+def _invoice_action(action, *args):
+    try:
+        return action(*args)
+    except invoices.InvoiceError as exc:
+        raise HTTPException(404 if "nicht gefunden" in str(exc) else 400, str(exc)) from exc
+
+
+@router.post("/invoices/{invoice_id}/paid")
+async def mark_invoice_paid(
+    invoice_id: str,
+    payload: dict | None = None,
+    _=RequirePermissionIfAuthEnabled(Permission.ARCHIVES_UPDATE_ALL),
+):
+    return _invoice_action(invoices.mark_paid, invoice_id, (payload or {}).get("paid_at"))
+
+
+@router.post("/invoices/{invoice_id}/reopen")
+async def reopen_invoice(
+    invoice_id: str,
+    _=RequirePermissionIfAuthEnabled(Permission.ARCHIVES_UPDATE_ALL),
+):
+    return _invoice_action(invoices.reopen, invoice_id)
+
+
+@router.post("/invoices/{invoice_id}/cancel")
+async def cancel_invoice(
+    invoice_id: str,
+    payload: dict | None = None,
+    _=RequirePermissionIfAuthEnabled(Permission.ARCHIVES_UPDATE_ALL),
+):
+    """Stornieren (Rechnungen werden nie gelöscht; die Nummer bleibt vergeben)."""
+    return _invoice_action(invoices.cancel, invoice_id, (payload or {}).get("reason", ""))
+
+
+@router.get("/invoices/{invoice_id}/pdf")
+async def invoice_pdf(
+    invoice_id: str,
+    lang: str = Query("de", pattern="^(de|en)$"),
+    _=RequirePermissionIfAuthEnabled(Permission.ARCHIVES_READ),
+):
+    invoice = invoices.get(invoice_id)
+    if invoice is None:
+        raise HTTPException(404, "Rechnung nicht gefunden.")
+    company = {**company_profile.read(), "_logo_path": company_profile.logo_path()}
+    pdf = quote_pdf.render(invoice, company, lang, kind="invoice")
+    name = re.sub(r"[^A-Za-z0-9._-]", "_", str(invoice.get("number") or invoice_id))
+    return Response(
+        pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="Rechnung-{name}.pdf"'},
     )
 
 

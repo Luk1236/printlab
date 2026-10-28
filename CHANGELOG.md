@@ -15,6 +15,13 @@ PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
   ansehen, Schwellwert übernehmen oder zurücksetzen; die Bilder werden nicht gespeichert.
 - **Angebote:** Kundenanschrift (im PDF), einstellbares Nummernformat (`{prefix}`, `{year}`, `{yy}`, `{seq}`, `{seq4}`,
   `{seq5}`) und Firmenlogo (PNG/JPEG, wird als sauberes PNG abgelegt) im Briefkopf.
+- **Rechnungen** (Angebote → „Rechnungen"): aus einem Angebot per „Rechnung" erzeugen, eigene lückenlose Nummer
+  (`invoice_prefix`/`invoice_format`), Zahlungsziel, Leistungsdatum, PDF (de/en), als bezahlt markieren, wieder öffnen,
+  stornieren (Rechnungen werden nie gelöscht), Summen je Währung und Überfälliges. Keine elektronischen Formate
+  (XRechnung, ZUGFeRD); Pflichtangaben klärt die Steuerberatung.
+- **Inbetriebnahme-Checkliste** (Einstellungen → System): zeigt, was eingerichtet ist (Anmeldung, Drucker, Meldeweg, Sicherung
+  nach außen, Update-Schutz, Signatur, SSD, Fernzugriff, HTTPS) und wie man Offenes erledigt; ändert nichts selbst.
+- **Intern:** Erweiterungs-API aus `client.ts` in `forkApi.ts` ausgelagert (Dateigrößen-Budget sinkt).
 - **Update ohne Absturz-Eindruck:** nach dem Update zeigt die Oberfläche „startet neu" und lädt sich von selbst neu, sobald
   PrintLab wieder antwortet.
 - **Übersetzungen der Fehlermeldungen:** ein Test verlangt für jede deutsche Meldung der Erweiterungen eine englische Regel;

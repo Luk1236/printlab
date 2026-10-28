@@ -1,3 +1,17 @@
+import { createForkApi } from './forkApi';
+export type {
+  RemoteAccessStatus,
+  CompanyProfile,
+  PiHealthWarning,
+  PiHealth,
+  AlertChannelsStatus,
+  SetupStatus,
+  UpdateBackup,
+  UpdateBackups,
+  PlateTuningAnalysis,
+  Invoice,
+  InvoicesResponse,
+} from './forkApi';
 import i18n from '../i18n';
 import type { ArchivePlatesResponse, LibraryFilePlatesResponse } from '../types/plates';
 
@@ -4255,102 +4269,11 @@ export interface QuoteHistoryEntry {
   total: number;
 }
 
-export interface CompanyProfile {
-  name: string;
-  address: string;
-  tax_id: string;
-  email: string;
-  phone: string;
-  iban: string;
-  bic: string;
-  footer: string;
-  vat_percent: number;
-  vat_note: string;
-  valid_days: number;
-  number_prefix: string;
-  number_format: string;
-  has_logo: boolean;
-}
-
 export interface QuoteCustomerTotal {
   customer: string;
   currency: string;
   count: number;
   total: number;
-}
-
-export interface RemoteAccessStatus {
-  supported: boolean;
-  installed: boolean;
-  managed: boolean;
-  daemon_running: boolean;
-  state: 'off' | 'stopped' | 'login' | 'connected';
-  login_url: string | null;
-  ips: string[];
-  dns_name: string;
-  serving: boolean;
-  enabled: boolean;
-  slicer: boolean;
-  https: boolean;
-  https_url: string;
-  error: string | null;
-  auth_enabled: boolean;
-}
-
-export interface AlertChannelsStatus {
-  telegram: boolean;
-  telegram_chat: string;
-  ntfy: boolean;
-  ntfy_host: string;
-}
-
-export interface PlateTuningAnalysis {
-  empty: { name: string; score: number }[];
-  occupied: { name: string; score: number }[];
-  suggestion: {
-    threshold: number;
-    min_confidence: number;
-    separable: boolean;
-    quality: 'good' | 'ok' | 'weak' | 'overlap';
-    missed_objects: number;
-    false_alarms: number;
-    empty_max: number;
-    occupied_min: number;
-    message: string;
-  };
-}
-
-export interface UpdateBackup {
-  name: string;
-  created: string;
-  files: string[];
-  size_bytes: number;
-}
-
-export interface UpdateBackups {
-  backups: UpdateBackup[];
-  restore_pending: string | null;
-  restored: { name: string; restored: string[]; at: string } | null;
-  can_restore: boolean;
-}
-
-export interface PiHealthWarning {
-  level: 'warn' | 'crit';
-  code: string;
-  text: string;
-  params: Record<string, number>;
-}
-
-export interface PiHealth {
-  cpu_temp_c: number | null;
-  throttled: { value: number; flags: string[] } | null;
-  disk: { total: number; free: number } | null;
-  storage: { device: string; kind: 'sd' | 'usb' | 'nvme' | 'other' } | null;
-  memory: { total: number; available: number; swap_total: number; swap_free: number } | null;
-  uptime_seconds: number | null;
-  backup: { path: string; age_days: number } | null;
-  external_backup: { ok: boolean; detail: string; at: string } | null;
-  warnings: PiHealthWarning[];
 }
 
 export interface PriceListEntry {
@@ -4937,6 +4860,7 @@ export interface AuthStatus {
 
 // API functions
 export const api = {
+  ...createForkApi({ request, apiBase: API_BASE, getAuthToken: () => authToken }),
   // Authentication
   getAuthStatus: () => request<AuthStatus>('/auth/status'),
   setupAuth: (data: SetupRequest) =>
@@ -7374,44 +7298,6 @@ export const api = {
       method: 'POST',
     }),
   getUpdateStatus: () => request<UpdateStatus>('/updates/status'),
-  getPlateTuning: (printerId: number) =>
-    request<{ saved: number | null; default: number; effective: number }>(
-      `/printers/${printerId}/camera/plate-detection/tuning`
-    ),
-  analyzePlateTuning: async (printerId: number, empty: File[], occupied: File[]): Promise<PlateTuningAnalysis> => {
-    const form = new FormData();
-    empty.forEach((file) => form.append('empty', file));
-    occupied.forEach((file) => form.append('occupied', file));
-    const headers: Record<string, string> = {};
-    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
-    const response = await fetch(`${API_BASE}/printers/${printerId}/camera/plate-detection/tuning/analyze`, {
-      method: 'POST',
-      headers,
-      body: form,
-    });
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(typeof error.detail === 'string' ? error.detail : `HTTP ${response.status}`);
-    }
-    return response.json();
-  },
-  savePlateTuning: (printerId: number, threshold: number) =>
-    request<{ saved: number }>(`/printers/${printerId}/camera/plate-detection/tuning`, {
-      method: 'PUT',
-      body: JSON.stringify({ threshold }),
-    }),
-  resetPlateTuning: (printerId: number) =>
-    request<{ reset: boolean }>(`/printers/${printerId}/camera/plate-detection/tuning`, { method: 'DELETE' }),
-  getAlertChannels: () => request<AlertChannelsStatus>('/system/alerts'),
-  saveAlertChannels: (update: Record<string, string>) =>
-    request<AlertChannelsStatus>('/system/alerts', { method: 'PUT', body: JSON.stringify(update) }),
-  testAlertChannels: () => request<{ sent: string[]; errors: string[] }>('/system/alerts/test', { method: 'POST' }),
-  getUpdateBackups: () => request<UpdateBackups>('/updates/backups'),
-  restoreUpdateBackup: (name: string) =>
-    request<{ success: boolean; name: string }>(`/updates/backups/${encodeURIComponent(name)}/restore`, { method: 'POST' }),
-  dismissRestoreNotice: () => request<{ ok: boolean }>('/updates/restore-notice/dismiss', { method: 'POST' }),
-  dismissRollbackNotice: () => request<{ ok: boolean }>('/updates/rollback-notice/dismiss', { method: 'POST' }),
-
   // Maintenance
   getMaintenanceTypes: () => request<MaintenanceType[]>('/maintenance/types'),
   createMaintenanceType: (data: MaintenanceTypeCreate) =>
@@ -7703,43 +7589,7 @@ export const api = {
     ),
   saveQuote: (payload: Record<string, unknown>) =>
     request<QuoteHistoryEntry>('/quote/history', { method: 'POST', body: JSON.stringify(payload) }),
-  uploadCompanyLogo: async (file: File): Promise<{ has_logo: boolean }> => {
-    const form = new FormData();
-    form.append('file', file);
-    const headers: Record<string, string> = {};
-    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
-    const response = await fetch(`${API_BASE}/quote/company/logo`, { method: 'PUT', headers, body: form });
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(typeof error.detail === 'string' ? error.detail : `HTTP ${response.status}`);
-    }
-    return response.json();
-  },
-  deleteCompanyLogo: () => request<{ deleted: boolean }>('/quote/company/logo', { method: 'DELETE' }),
-  getCompanyProfile: () => request<CompanyProfile>('/quote/company'),
-  saveCompanyProfile: (data: Partial<CompanyProfile>) =>
-    request<CompanyProfile>('/quote/company', { method: 'PUT', body: JSON.stringify(data) }),
-  downloadQuotePdf: async (id: string, lang: string): Promise<{ blob: Blob; filename: string }> => {
-    const headers: Record<string, string> = {};
-    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
-    const response = await fetch(`${API_BASE}/quote/history/${encodeURIComponent(id)}/pdf?lang=${lang}`, { headers });
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new Error(typeof error.detail === 'string' ? error.detail : `HTTP ${response.status}`);
-    }
-    const match = (response.headers.get('Content-Disposition') ?? '').match(/filename="?([^";]+)"?/);
-    return { blob: await response.blob(), filename: match?.[1] ?? 'Angebot.pdf' };
-  },
   deleteQuote: (id: string) => request<{ success: boolean }>(`/quote/history/${encodeURIComponent(id)}`, { method: 'DELETE' }),
-  getPiHealth: () => request<PiHealth>('/system/pi-health'),
-  getRemoteAccess: () => request<RemoteAccessStatus>('/remote-access'),
-  setupRemoteAccess: () => request<RemoteAccessStatus>('/remote-access/setup', { method: 'POST' }),
-  shareRemoteAccess: () => request<RemoteAccessStatus>('/remote-access/share', { method: 'POST' }),
-  setRemoteAccessHttps: (enabled: boolean) =>
-    request<RemoteAccessStatus>(`/remote-access/https?enabled=${enabled}`, { method: 'POST' }),
-  setRemoteAccessSlicer: (enabled: boolean) =>
-    request<RemoteAccessStatus>(`/remote-access/slicer?enabled=${enabled}`, { method: 'POST' }),
-  disableRemoteAccess: () => request<RemoteAccessStatus>('/remote-access/disable', { method: 'POST' }),
   getPriceList: () => request<{ entries: PriceListEntry[] }>('/quote/price-list'),
   setPriceList: (entries: PriceListEntry[]) =>
     request<{ entries: PriceListEntry[] }>('/quote/price-list', {

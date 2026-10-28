@@ -17,6 +17,12 @@ from reportlab.pdfgen import canvas as rl_canvas
 
 LABELS = {
     "de": {
+        "invoice_title": "RECHNUNG",
+        "invoice_number": "Rechnungsnummer",
+        "due": "Zahlbar bis",
+        "service": "Leistungsdatum",
+        "reference": "Zu Angebot {number}",
+        "pay_hint": "Bitte überweisen Sie den Betrag bis {due} unter Angabe der Rechnungsnummer.",
         "title": "ANGEBOT",
         "number": "Nummer",
         "date": "Datum",
@@ -36,6 +42,12 @@ LABELS = {
         "page": "Seite",
     },
     "en": {
+        "invoice_title": "INVOICE",
+        "invoice_number": "Invoice number",
+        "due": "Due date",
+        "service": "Service date",
+        "reference": "Re: quote {number}",
+        "pay_hint": "Please transfer the amount by {due} quoting the invoice number.",
         "title": "QUOTE",
         "number": "Number",
         "date": "Date",
@@ -76,7 +88,9 @@ def _fmt_date(moment: datetime, lang: str) -> str:
     return moment.strftime("%d.%m.%Y") if lang == "de" else moment.strftime("%Y-%m-%d")
 
 
-def render(entry: dict[str, Any], company: dict[str, Any], lang: str = "de") -> bytes:
+def render(entry: dict[str, Any], company: dict[str, Any], lang: str = "de", kind: str = "quote") -> bytes:
+    """``kind``: ``quote`` (Angebot) oder ``invoice`` (Rechnung; Eintrag aus ``services/invoices.py``)."""
+    invoice = kind == "invoice"
     lang = lang if lang in LABELS else "de"
     t = LABELS[lang]
     currency = str(entry.get("currency") or "EUR")
@@ -114,15 +128,21 @@ def render(entry: dict[str, Any], company: dict[str, Any], lang: str = "de") -> 
             line_y -= 4.2 * mm
 
     # Kopf rechts: Titel, Nummer, Datum, Gültigkeit
-    created = _date(str(entry.get("ts", "")), lang)
+    created = _date(str(entry.get("issued") if invoice else entry.get("ts", "")) or str(entry.get("ts", "")), lang)
     number = str(entry.get("number") or entry.get("id", ""))
     pdf.setFont("Helvetica-Bold", 18)
-    pdf.drawRightString(right, y - 4 * mm, t["title"])
+    pdf.drawRightString(right, y - 4 * mm, t["invoice_title"] if invoice else t["title"])
     pdf.setFont("Helvetica", 9)
-    info = [(t["number"], number), (t["date"], _fmt_date(created, lang))]
-    days = int(company.get("valid_days") or 0)
-    if days:
-        info.append((t["valid"], _fmt_date(created + timedelta(days=days), lang)))
+    info = [(t["invoice_number"] if invoice else t["number"], number), (t["date"], _fmt_date(created, lang))]
+    if invoice:
+        if entry.get("service_date"):
+            info.append((t["service"], _fmt_date(_date(str(entry["service_date"]), lang), lang)))
+        if entry.get("due"):
+            info.append((t["due"], _fmt_date(_date(str(entry["due"]), lang), lang)))
+    else:
+        days = int(company.get("valid_days") or 0)
+        if days:
+            info.append((t["valid"], _fmt_date(created + timedelta(days=days), lang)))
     info_y = y - 11 * mm
     for label, value in info:
         pdf.drawRightString(right - 28 * mm, info_y, f"{label}:")
@@ -186,6 +206,18 @@ def render(entry: dict[str, Any], company: dict[str, Any], lang: str = "de") -> 
             for wrapped in simpleSplit(note, "Helvetica-Oblique", 8.5, right - MARGIN):
                 pdf.drawString(MARGIN, y, wrapped)
                 y -= 4 * mm
+
+    if invoice:
+        y -= 4 * mm
+        pdf.setFont("Helvetica", 9)
+        if entry.get("quote_number"):
+            pdf.drawString(MARGIN, y, t["reference"].format(number=entry["quote_number"]))
+            y -= 5 * mm
+        if entry.get("due"):
+            due_text = _fmt_date(_date(str(entry["due"]), lang), lang)
+            for wrapped in simpleSplit(t["pay_hint"].format(due=due_text), "Helvetica", 9, right - MARGIN):
+                pdf.drawString(MARGIN, y, wrapped)
+                y -= 4.5 * mm
 
     # Fußzeile: Freitext, Bank, Steuernummer
     foot_y = MARGIN + 14 * mm

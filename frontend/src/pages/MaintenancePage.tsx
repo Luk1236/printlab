@@ -47,6 +47,7 @@ import { MaintenanceProgramsCard } from '../components/MaintenanceProgramsCard';
 import { HardwareAdminCard } from '../components/HardwareAdminCard';
 import { RemoteAccessCard } from '../components/RemoteAccessCard';
 import { PiHealthCard } from '../components/PiHealthCard';
+import { SetupChecklistCard } from '../components/SetupChecklistCard';
 import { AlertChannelsCard } from '../components/AlertChannelsCard';
 import { PlateTuningCard } from '../components/PlateTuningCard';
 import { useToast } from '../contexts/ToastContext';
@@ -1284,6 +1285,7 @@ export function MaintenancePage() {
         <div className="space-y-6">
           <MaintenanceProgramsCard canControl={hasPermission('printers:control')} />
           <HardwareAdminCard canControl={hasPermission('printers:control')} />
+          <SetupChecklistCard />
           <PiHealthCard />
           <AlertChannelsCard canControl={hasPermission('settings:update')} />
           <PlateTuningCard canControl={hasPermission('settings:update')} />

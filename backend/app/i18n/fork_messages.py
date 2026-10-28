@@ -239,6 +239,21 @@ _RAW: list[tuple[str, str]] = [
     ),
     (r"Die Signaturprüfung hat zu lange gedauert\.", "The signature check took too long."),
     (r"Der Tag (?P<t>\S+) ist nicht gültig signiert ", r"The tag \g<t> is not validly signed "),
+    # --- Rechnungen ---------------------------------------------------------------------------------------
+    (
+        r"„(?P<f>Leistungsdatum|Zahlungsdatum)“ ist kein gültiges Datum \(JJJJ-MM-TT\)\.",
+        r"“\g<f>” is not a valid date (YYYY-MM-DD).",
+    ),
+    (r"Zu diesem Angebot gibt es schon eine Rechnung\.", "There is already an invoice for this quote."),
+    (r"Rechnung nicht gefunden\.", "Invoice not found."),
+    (r"Eine stornierte Rechnung kann nicht als bezahlt gelten\.", "A cancelled invoice cannot count as paid."),
+    (r"Eine stornierte Rechnung lässt sich nicht wieder öffnen\.", "A cancelled invoice cannot be reopened."),
+    (
+        r"Eine bezahlte Rechnung wird nicht storniert \(Gutschrift mit der Steuerberatung klären\)\.",
+        "A paid invoice is not cancelled (clarify a credit note with your tax advisor).",
+    ),
+    (r"Zahlungsziel muss eine ganze Zahl sein\.", "Payment term must be a whole number."),
+    (r"Zahlungsziel muss zwischen 0 und 365 Tagen liegen\.", "Payment term must be between 0 and 365 days."),
     # --- Meldewege ----------------------------------------------------------------------------------------
     (
         r"Meldewege nur mit eingeschalteter Anmeldung ändern\.",

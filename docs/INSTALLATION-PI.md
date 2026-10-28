@@ -54,6 +54,11 @@ Registry. In `docker-compose.yml` dann statt `build: .` die Zeile `image: ghcr.i
 
 ## Updates
 
+Unter **Einstellungen → System** stehen auch die automatischen **Sicherungen vor Updates** mit „Wiederherstellen“. Die
+Wiederherstellung läuft beim nächsten Start (PrintLab startet dafür neu), der Stand davor wird ebenfalls gesichert; sie geht
+nur mit eingeschalteter Anmeldung und dem Update-Schutz im Dienst. Nach einem Update zeigt die Oberfläche „startet neu“
+und lädt sich selbst neu, sobald PrintLab wieder antwortet.
+
 PrintLab prüft unter **Einstellungen → System** auf neue Versionen (Releases von `Luk1236/printlab`) und kann sie
 selbst einspielen. Das Repo ist öffentlich, ein Token ist nicht nötig (nur bei einem privaten Fork:
 `PRINTLAB_GITHUB_TOKEN`, beim Neuaufspielen mit `PRINTLAB_STORE_TOKEN=1` in `~/.config/printlab.env` mit Rechten 600).
@@ -69,7 +74,10 @@ Nach dem Update startet sich der Dienst von selbst neu. Voraussetzung: PrintLab 
 ## Überwachung und Meldung aufs Handy
 
 Der Installer richtet einen Timer ein (`printlab-watch.timer`), der jede Minute prüft, ob PrintLab antwortet. Nach 3
-Fehlschlägen startet er den Dienst neu und meldet es. Meldeweg in `~/.config/printlab.env` eintragen (Rechte 600):
+Fehlschlägen startet er den Dienst neu und meldet es. Den Meldeweg trägst du am einfachsten in PrintLab unter **Wartung →
+Meldung bei Ausfall** ein (Telegram-Bot-Token und Chat-Nummer oder eine ntfy-Adresse, dann „Testmeldung senden“); Token und
+Adressen werden nur gespeichert und nie wieder angezeigt. Alternativ in `~/.config/printlab.env` (Rechte 600, diese
+Variablen haben Vorrang):
 
 ```
 PRINTLAB_ALERT_TELEGRAM_TOKEN=<Bot-Token von @BotFather>
@@ -134,7 +142,9 @@ Der Plattenwechsel selbst (`swap`) bleibt gesperrt, bis die Bewegungsfolge der M
 
 ## Kamera einmessen
 
-Für „Platte frei automatisch bestätigen“: Fotos mit leerem Bett in einen Ordner `leer`, Fotos mit Teilen darauf in `belegt`
+Am einfachsten in PrintLab unter **Wartung → Kamera einmessen**: Drucker wählen, Fotos mit leerem und mit belegtem Bett
+hochladen, „Auswerten“, Vorschlag ansehen und „Schwellwert übernehmen“. Die Bilder werden nicht gespeichert; Voraussetzung ist
+eine Referenz des Druckers (Kamera-Seite). Dasselbe geht als Werkzeug auf dem Pi. Für „Platte frei automatisch bestätigen“: Fotos mit leerem Bett in einen Ordner `leer`, Fotos mit Teilen darauf in `belegt`
 legen (je 5 bis 10, verschiedenes Licht), dann `DATA_DIR=~/printlab/data .venv/bin/python werkzeuge/kamera_kalibrieren.py
 --printer-id 1 --leer leer --belegt belegt`. Das Werkzeug zeigt die Messwerte, einen Schwellwert und die Mindest-Sicherheit;
 mit `--anwenden` wird der Schwellwert gespeichert (`--zuruecksetzen` nimmt ihn zurück).
@@ -175,3 +185,16 @@ getestet, aber noch nicht an einem echten Tailnet; beim ersten Durchlauf bitte M
 
 - Pi 3 (1 GB): kein offizieller Betrieb; mit viel Swap möglich, aber Speichermangel ist ein bekanntes Risiko.
 - ARM-Image und Kamera-Prüfungen (OpenCV) wurden noch nicht auf dem Pi getestet.
+
+## Angebote und Rechnungen
+
+Unter „Kalkulation/Angebote" lassen sich Angebote speichern und als PDF ausgeben. Im Verlauf erzeugt „Rechnung" aus einem
+Angebot eine Rechnung (eigene, lückenlose Nummer; Zahlungsziel und Nummernformat unter „Firmendaten"). „Rechnungen" zeigt
+Status, Fälligkeit und Summen; Rechnungen werden nie gelöscht, nur storniert. Es werden **keine** elektronischen
+Rechnungsformate (XRechnung, ZUGFeRD) erzeugt, und die Pflichtangaben für den eigenen Betrieb (§ 14 UStG, Kleinunternehmer-
+hinweis, Aufbewahrung) sind mit der Steuerberatung zu klären.
+
+## Inbetriebnahme-Checkliste
+
+Einstellungen → System zeigt oben, was schon eingerichtet ist und was noch fehlt (Anmeldung, Drucker, Meldeweg, Sicherung
+nach außen, Update-Schutz, Signatur, SSD, Fernzugriff, HTTPS), jeweils mit dem Hinweis, wie man es erledigt.
