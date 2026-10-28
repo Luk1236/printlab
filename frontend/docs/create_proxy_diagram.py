@@ -290,9 +290,9 @@ def create_diagram():
     draw_cloud_icon(draw, internet_x, section_y, 80, INTERNET_COLOR)
     draw.text((internet_x, section_y + 55), "Internet", font=fonts['label'], fill=TEXT_LABEL, anchor="mm")
 
-    # === BAMBUDDY SERVER ===
+    # === PRINTLAB SERVER ===
     draw_rounded_rect(draw, printlab_box, 12, fill=CONTAINER_BG, outline=BAMBU_GREEN_DIM, width=2)
-    draw.text((printlab_x, 165), "BAMBUDDY SERVER", font=fonts['label'], fill=BAMBU_GREEN, anchor="mm")
+    draw.text((printlab_x, 165), "PRINTLAB SERVER", font=fonts['label'], fill=BAMBU_GREEN, anchor="mm")
 
     # Server icon
     draw_server_icon(draw, printlab_x, section_y - 50, 70, BAMBU_GREEN)

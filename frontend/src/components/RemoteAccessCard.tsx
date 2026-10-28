@@ -28,6 +28,11 @@ export function RemoteAccessCard({ canControl }: { canControl: boolean }) {
   const fail = (error: Error) => showToast(error.message, 'error');
   const setup = useMutation({ mutationFn: () => api.setupRemoteAccess(), onSuccess: update, onError: fail });
   const share = useMutation({ mutationFn: () => api.shareRemoteAccess(), onSuccess: update, onError: fail });
+  const https = useMutation({
+    mutationFn: (enabled: boolean) => api.setRemoteAccessHttps(enabled),
+    onSuccess: update,
+    onError: fail,
+  });
   const slicer = useMutation({
     mutationFn: (enabled: boolean) => api.setRemoteAccessSlicer(enabled),
     onSuccess: update,
@@ -37,8 +42,9 @@ export function RemoteAccessCard({ canControl }: { canControl: boolean }) {
 
   if (!status) return null;
 
-  const busy = setup.isPending || share.isPending || slicer.isPending || disable.isPending;
+  const busy = setup.isPending || share.isPending || https.isPending || slicer.isPending || disable.isPending;
   const address = status.ips[0] ? `http://${status.ips[0]}:${window.location.port || 8000}` : '';
+  const qrAddress = status.https && status.https_url ? status.https_url : address;
   const stateLabel = {
     off: t('remoteAccess.stateOff'),
     stopped: t('remoteAccess.stateStopped'),
@@ -99,12 +105,29 @@ export function RemoteAccessCard({ canControl }: { canControl: boolean }) {
           </div>
         )}
 
-        {status.state === 'connected' && status.serving && address && (
+        {status.state === 'connected' && status.serving && qrAddress && (
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-white p-2" data-testid="remote-access-qr">
-              <QRCodeSVG value={address} size={112} title={t('remoteAccess.qrTitle')} />
+              <QRCodeSVG value={qrAddress} size={112} title={t('remoteAccess.qrTitle')} />
             </div>
             <p className="text-xs text-bambu-gray">{t('remoteAccess.qrHint')}</p>
+          </div>
+        )}
+
+        {status.state === 'connected' && status.serving && (
+          <div className="space-y-1 border-t border-bambu-dark-tertiary pt-3">
+            <h3 className="text-sm font-medium text-white">{t('remoteAccess.httpsTitle')}</h3>
+            <p className="text-xs text-bambu-gray">
+              {status.https ? t('remoteAccess.httpsOn', { url: status.https_url }) : t('remoteAccess.httpsHint')}
+            </p>
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={!canControl || busy || !status.auth_enabled}
+              onClick={() => https.mutate(!status.https)}
+            >
+              {status.https ? t('remoteAccess.httpsDisable') : t('remoteAccess.httpsEnable')}
+            </Button>
           </div>
         )}
 

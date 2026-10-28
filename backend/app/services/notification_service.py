@@ -823,7 +823,7 @@ class NotificationService:
         ``body`` contains the substituted ``{finish_photo_url}`` value AND the
         finish-photo bytes are present, the message is built as
         ``multipart/related`` wrapping a ``multipart/alternative`` (plain + HTML)
-        plus an inline ``MIMEImage`` with ``Content-ID: <bambuddy-finish-photo>``.
+        plus an inline ``MIMEImage`` with ``Content-ID: <printlab-finish-photo>``.
         The HTML part replaces the URL with ``<img src="cid:...">``; the plain-
         text part keeps the URL as a clickable link. When the template doesn't
         reference ``{finish_photo_url}`` (or image bytes aren't available), the
@@ -869,7 +869,7 @@ class NotificationService:
                 escaped_body = html.escape(body).replace("\n", "<br>\n")
                 escaped_url = html.escape(finish_photo_url)
                 img_tag = (
-                    '<img src="cid:bambuddy-finish-photo" '
+                    '<img src="cid:printlab-finish-photo" '
                     'alt="Printer camera snapshot" '
                     'style="max-width:100%;height:auto;border:1px solid #ddd;border-radius:4px;">'
                 )
@@ -880,7 +880,7 @@ class NotificationService:
                 img = MIMEImage(image_data, _subtype="jpeg")
                 # Angle-bracketed Content-ID per RFC 2392, referenced from HTML
                 # without the brackets via ``cid:printlab-finish-photo``.
-                img.add_header("Content-ID", "<bambuddy-finish-photo>")
+                img.add_header("Content-ID", "<printlab-finish-photo>")
                 img.add_header("Content-Disposition", "inline", filename="finish-photo.jpg")
                 msg.attach(img)
             else:

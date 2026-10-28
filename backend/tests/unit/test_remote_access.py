@@ -349,3 +349,60 @@ class TestSlicerAccess:
     async def test_status_reports_the_slicer_flag(self):
         ra._write_config({"slicer": True})
         assert (await ra.status())["slicer"] is True
+
+
+class TestHttps:
+    @pytest.mark.asyncio
+    async def test_https_is_served_by_tailscale_to_the_local_port_only(self, monkeypatch):
+        seen = []
+
+        async def fake_ts(*args, timeout=30.0):
+            seen.append(args)
+            return 0, ""
+
+        monkeypatch.setattr(ra, "_ts", fake_ts)
+        await ra.share_https(8000)
+        assert seen == [("serve", "--bg", "--https=443", "http://127.0.0.1:8000")]
+        assert all("funnel" not in arg for call in seen for arg in call)  # nie ins öffentliche Internet
+        assert json.loads(ra.CONFIG_PATH.read_text())["https"] is True
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("port", [0, 70000])
+    async def test_bad_ports_are_refused(self, port):
+        with pytest.raises(ra.RemoteAccessError, match="Port"):
+            await ra.share_https(port)
+
+    @pytest.mark.asyncio
+    async def test_tailscale_message_is_passed_on_when_https_is_not_enabled(self, monkeypatch):
+        async def fake_ts(*args, timeout=30.0):
+            return 1, "HTTPS is not enabled on your tailnet"
+
+        monkeypatch.setattr(ra, "_ts", fake_ts)
+        with pytest.raises(ra.RemoteAccessError, match="HTTPS is not enabled"):
+            await ra.share_https(8000)
+
+    @pytest.mark.asyncio
+    async def test_unshare_turns_it_off_and_keeps_the_rest(self, monkeypatch):
+        seen = []
+
+        async def fake_ts(*args, timeout=30.0):
+            seen.append(args)
+            return 0, ""
+
+        monkeypatch.setattr(ra, "_ts", fake_ts)
+        ra._write_config({"enabled": True, "https": True, "slicer": True})
+        await ra.unshare_https()
+        assert seen == [("serve", "--https=443", "off")]
+        config = json.loads(ra.CONFIG_PATH.read_text())
+        assert config["https"] is False and config["enabled"] is True and config["slicer"] is True
+
+    @pytest.mark.asyncio
+    async def test_disable_clears_https_and_status_reports_the_address(self, monkeypatch):
+        async def fake_ts(*args, timeout=30.0):
+            return 0, ""
+
+        monkeypatch.setattr(ra, "_ts", fake_ts)
+        ra._write_config({"enabled": True, "https": True})
+        await ra.disable()
+        assert json.loads(ra.CONFIG_PATH.read_text())["https"] is False
+        assert (await ra.status())["https_url"] == ""

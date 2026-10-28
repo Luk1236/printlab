@@ -181,7 +181,7 @@ def send_email(
     body_text: str,
     body_html: str | None = None,
     image_data: bytes | None = None,
-    image_cid: str = "bambuddy-inline-photo",
+    image_cid: str = "printlab-inline-photo",
 ) -> None:
     """Send an email using SMTP.
 
@@ -651,7 +651,7 @@ async def send_user_print_notification(
     if inline_photo:
         escaped_url = html.escape(finish_photo_url)
         img_tag = (
-            '<img src="cid:bambuddy-user-print-photo" '
+            '<img src="cid:printlab-user-print-photo" '
             'alt="Printer camera snapshot" '
             'style="max-width:100%;height:auto;border:1px solid #ddd;border-radius:4px;">'
         )
@@ -682,7 +682,7 @@ async def send_user_print_notification(
             text_body,
             html_body,
             image_data=image_data if inline_photo else None,
-            image_cid="bambuddy-user-print-photo",
+            image_cid="printlab-user-print-photo",
         )
         logger.info("Sent %s notification email to %s", event_type, user_email)
     except Exception as e:

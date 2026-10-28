@@ -555,7 +555,7 @@ export function useWebSocket() {
       case 'queue_item_upload_progress':
       case 'queue_item_acked':
       case 'queue_item_failed':
-        window.dispatchEvent(new CustomEvent('bambuddy:dispatch-toast', { detail: message }));
+        window.dispatchEvent(new CustomEvent('printlab:dispatch-toast', { detail: message }));
         break;
       // Slicer Pipeline runs (#1425 PR C). State transitions on the run
       // refresh both the dashboard list AND the per-pipeline "Last run"

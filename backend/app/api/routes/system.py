@@ -596,6 +596,19 @@ async def get_storage_usage(
     return await _get_storage_usage_cached(refresh=refresh, max_age_seconds=max_age_seconds)
 
 
+@router.get("/pi-health")
+async def get_pi_health(
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.SYSTEM_READ),
+):
+    """Zustand des Rechners (Temperatur, Spannung, Speicherplatz und -art, Arbeitsspeicher, Sicherungen).
+
+    Werte, die es auf dem System nicht gibt (zum Beispiel unter Windows), sind ``null``.
+    """
+    from backend.app.services import pi_health
+
+    return await asyncio.to_thread(pi_health.snapshot, settings.base_dir)
+
+
 @router.get("/health", response_model=ScanResult)
 async def get_system_health(
     db: AsyncSession = Depends(get_db),

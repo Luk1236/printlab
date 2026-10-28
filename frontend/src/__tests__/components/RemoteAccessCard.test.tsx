@@ -18,6 +18,8 @@ const base = {
   serving: false,
   enabled: false,
   slicer: false,
+  https: false,
+  https_url: '',
   error: null,
   auth_enabled: true,
 };
@@ -32,6 +34,11 @@ function use(status: Record<string, unknown>, calls: string[] = []) {
     http.post('/api/v1/remote-access/share', () => {
       calls.push('share');
       return HttpResponse.json({ ...base, ...status, serving: true });
+    }),
+    http.post('/api/v1/remote-access/https', ({ request }) => {
+      const enabled = new URL(request.url).searchParams.get('enabled') === 'true';
+      calls.push(`https:${enabled}`);
+      return HttpResponse.json({ ...base, ...status, https: enabled, https_url: enabled ? 'https://printlab.t.ts.net' : '' });
     }),
     http.post('/api/v1/remote-access/slicer', ({ request }) => {
       const enabled = new URL(request.url).searchParams.get('enabled') === 'true';
@@ -128,5 +135,23 @@ describe('RemoteAccessCard', () => {
     render(<RemoteAccessCard canControl />);
     await screen.findByRole('button', { name: 'Share' });
     expect(screen.queryByText(/Share slicer access/)).not.toBeInTheDocument();
+  });
+
+  it('offers encrypted access and switches it on', async () => {
+    const calls: string[] = [];
+    use({ state: 'connected', ips: ['100.64.0.7'], serving: true, enabled: true }, calls);
+    render(<RemoteAccessCard canControl />);
+    expect(await screen.findByText(/HTTPS Certificates/i)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Enable HTTPS' }));
+    await waitFor(() => expect(calls).toContain('https:true'));
+  });
+
+  it('shows the encrypted address and can switch it off again', async () => {
+    const calls: string[] = [];
+    use({ state: 'connected', ips: ['100.64.0.7'], serving: true, enabled: true, https: true, https_url: 'https://printlab.t.ts.net' }, calls);
+    render(<RemoteAccessCard canControl />);
+    expect(await screen.findByText(/encrypted at https:\/\/printlab\.t\.ts\.net/i)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Disable HTTPS' }));
+    await waitFor(() => expect(calls).toContain('https:false'));
   });
 });

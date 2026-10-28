@@ -630,6 +630,8 @@ export function PrintModal({
   const perPlateReqsPending = perPlateReqQueries.some((q) => q.isPending);
   const perPlateReqsFailed = perPlateReqQueries.some((q) => q.isError);
 
+  // One string that changes exactly when any query's data changes (see the note on the memo below).
+  const perPlateReqStamps = perPlateReqQueries.map((q) => q.dataUpdatedAt).join('|');
   const perPlateReqs = useMemo(() => {
     const byPlate = new Map<number, FilamentReqsData>();
     selectedPlateIds.forEach((plateId, i) => {
@@ -641,7 +643,7 @@ export function PrintModal({
     // render) and not on a spread of their data (a dep array whose *length* changes
     // with the plate count, which React treats as always-changed and warns about).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedPlateIds, perPlateReqQueries.map((q) => q.dataUpdatedAt).join('|')]);
+  }, [selectedPlateIds, perPlateReqStamps]);
 
   // Per-plate twin of `mappingFilamentReqs`: slot ids are global to the file, so
   // one override applies to every plate that prints that slot (#3133).

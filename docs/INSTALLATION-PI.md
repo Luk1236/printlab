@@ -1,7 +1,8 @@
 # PrintLab auf dem Raspberry Pi (4/5)
 
-> **Stand:** Anleitung, noch nicht auf echter Hardware durchgespielt. Beim ersten Durchlauf bitte Abweichungen
-> notieren und hier nachtragen. Ein Raspberry Pi 3 mit 1 GB reicht nach heutigem Wissen **nicht** zuverlässig
+> **Stand:** auf einem Raspberry Pi 5 installiert und im Betrieb (Software, Fernzugriff, Updates). Die Teile mit
+> Mechanik (Tür-Servo, Endschalter, Plattenwechsler) und der Slicer über Tailscale sind noch nicht an echter Hardware
+> erprobt, siehe `docs/ABNAHME.md`. Ein Raspberry Pi 3 mit 1 GB reicht nach heutigem Wissen **nicht** zuverlässig
 > (Speicher).
 
 ## Voraussetzungen
@@ -38,7 +39,12 @@ Registry. In `docker-compose.yml` dann statt `build: .` die Zeile `image: ghcr.i
 ## Erster Start
 
 1. Einrichtung abschließen und **Anmeldung einschalten** (Passwort wählen). Ohne Anmeldung sind Hardware-Befehle
-   gesperrt, und jeder im Netz könnte Drucker steuern.
+   gesperrt, und jeder im Netz könnte Drucker steuern. Der Installer setzt dafür `PRINTLAB_REQUIRE_AUTH=1`: bis das
+   Passwort angelegt ist, ist die Schnittstelle gesperrt (403), nur die Einrichtungsseite `/setup` ist erreichbar, und sie
+   lässt sich nicht ohne Administrator und Passwort abschließen. Bei einer älteren Installation die Zeile
+   `Environment=PRINTLAB_REQUIRE_AUTH=1` in `~/.config/systemd/user/printlab.service` ergänzen und
+   `systemctl --user daemon-reload && systemctl --user restart printlab` ausführen. **Öffne die Einrichtung selbst, gleich
+   nach dem Start:** wer die Seite zuerst aufruft, legt den Administrator an.
 2. Drucker hinzufügen (IP, Seriennummer, Zugangscode).
 3. Optional PC-Slicer: auf dem Windows-PC `starte_pc_slicer.bat`, in den PrintLab-Einstellungen die Adresse des PCs
    eintragen. Auf dem PC `PC_SLICER_ALLOWED_IPS=<pi-ip>` setzen, sonst weist der Slicer den Pi ab. Sicherer als die
@@ -74,6 +80,33 @@ PRINTLAB_ALERT_TELEGRAM_CHAT=<deine Chat-Nummer>
 Der Timer liest die Datei bei jedem Lauf neu, ein Neustart ist nicht nötig. Status:
 `systemctl --user list-timers printlab-watch.timer`, Meldungen: `journalctl --user -u printlab-watch -n 20`.
 
+## Sicherung nach außen (USB-Stick, Festplatte, NAS)
+
+Sicherungen nur auf der SD-Karte schützen nicht vor einem Ausfall der Karte. Der Installer richtet deshalb einen
+Tages-Timer ein (`printlab-backup.timer`, 03:30 Uhr), der eine **geprüfte** Sicherung auf einen anderen Datenträger legt.
+Er tut nichts, solange kein Ziel eingestellt ist. In `~/.config/printlab.env` eintragen (Rechte 600):
+
+```
+PRINTLAB_BACKUP_TARGET=/media/usb/printlab-sicherung
+PRINTLAB_BACKUP_KEEP=7
+```
+
+Der Ordner muss auf dem Datenträger **schon existieren** (zum Beispiel `mkdir /media/usb/printlab-sicherung`). PrintLab legt
+ihn nie selbst an, damit bei nicht eingestecktem Stick nichts auf der SD-Karte landet. Liegt das Ziel auf demselben
+Datenträger wie die Daten, lehnt das Skript ab (`PRINTLAB_BACKUP_ALLOW_SAME_DISK=1` erlaubt es trotzdem). Jede Sicherung wird
+nach dem Schreiben geprüft (Datenbank-Integrität, gültiges JSON); eine beschädigte wird gelöscht und über den
+Überwachungs-Meldeweg gemeldet. Sofort ausführen: `systemctl --user start printlab-backup.service`, Ergebnis:
+`journalctl --user -u printlab-backup -n 20` und unter Wartung → Zustand des Geräts. Gesichert werden die Datenbanken und
+Einstellungsdateien, **nicht** `~/.config/printlab.env` (die Zugangsdaten bewahrst du selbst auf).
+
+## Zustand des Geräts
+
+Unter **Wartung → Zustand des Geräts** zeigt PrintLab Temperatur, Spannung (Unterspannung des Netzteils), freien
+Speicherplatz, Art des Datenträgers (SD-Karte, USB, NVMe), Arbeitsspeicher, Laufzeit und die letzten Sicherungen, mit
+Hinweisen bei Problemen. **SD-Karte:** sie verschleißt durch die vielen Schreibvorgänge der Datenbank; eine SSD per USB oder
+NVMe (Pi 5) ist deutlich haltbarer, und PrintLab weist darauf hin. Umzug auf eine SSD: Pi von der SSD starten, dann
+`pi_neu_installieren.sh` erneut ausführen (die Daten bleiben erhalten).
+
 ## Betrieb
 
 | Aufgabe | Befehl |
@@ -81,6 +114,7 @@ Der Timer liest die Datei bei jedem Lauf neu, ein Neustart ist nicht nötig. Sta
 | Protokoll ansehen | `docker compose logs -f printlab` |
 | Stoppen / Starten | `docker compose stop` / `docker compose start` |
 | Aktualisieren | `git pull && docker compose up -d --build` |
+| Alles prüfen | `~/printlab/.venv/bin/python ~/printlab/werkzeuge/abnahme.py` (siehe `docs/ABNAHME.md`) |
 | Sicherung | Einstellungen → Sicherung (lokale Sicherung) oder Volume `printlab_data` kopieren |
 
 ## Tür und Plattenwechsler am GPIO
@@ -122,6 +156,16 @@ im Tailnet frei. In Bambu Studio dann Drucker per IP hinzufügen: IP = Tailscale
 = der 8-stellige Code des virtuellen Druckers (Einstellungen → Virtueller Drucker, muss aktiviert sein). Der PC braucht
 Tailscale mit demselben Konto. Die Erkennung im Netz gibt es darüber nicht, nur das Hinzufügen per IP. Noch nicht an
 echter Hardware erprobt; bitte Meldungen aus Bambu Studio notieren. Beenden: „Slicer-Zugriff beenden".
+
+**HTTPS (verschlüsselt):** „HTTPS einschalten" in derselben Karte bietet PrintLab zusätzlich unter
+`https://<name>.<tailnet>.ts.net` mit einem echten Zertifikat an, damit Passwort und Sitzung auch im Browser
+geschützt sind. Voraussetzung: In der Tailscale-Verwaltung (login.tailscale.com → DNS) sind MagicDNS und **HTTPS-Zertifikate**
+eingeschaltet; sonst meldet Tailscale das, und die Meldung erscheint in PrintLab. Der QR-Code nimmt dann die HTTPS-Adresse.
+Das Angebot bleibt im privaten Tailnet, nichts geht ins öffentliche Internet.
+
+**Meldungen aufs Handy:** PrintLab hat dafür schon fertige Dienste (Einstellungen → Benachrichtigungen: ntfy, Pushover,
+Telegram, E-Mail u. a.), die ohne HTTPS funktionieren. Sie melden Druckereignisse. Für den Ausfall von PrintLab oder des Pi
+selbst (dann kann PrintLab nichts melden) gibt es die Überwachung von außen, siehe oben.
 
 Beim Neustart des Pi stellt PrintLab die Verbindung selbst wieder her. „Ausschalten“ beendet Freigabe und Dienst.
 Falls schon ein systemweites Tailscale läuft, benutzt PrintLab dieses unverändert. Stand: gegen die Tailscale-Befehle

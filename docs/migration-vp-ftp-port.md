@@ -46,7 +46,7 @@ a firewall, ensure these ports are open between the slicer and PrintLab.
 
 3. **Verify systemd service** has `AmbientCapabilities=CAP_NET_BIND_SERVICE`:
    ```bash
-   systemctl cat bambuddy | grep AmbientCapabilities
+   systemctl cat printlab | grep AmbientCapabilities
    ```
    If missing, add it to the `[Service]` section.
 

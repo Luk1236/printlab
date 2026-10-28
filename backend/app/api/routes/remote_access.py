@@ -76,6 +76,32 @@ async def share(
     return {**await remote_access.status(), "auth_enabled": True}
 
 
+@router.post("/https")
+async def https(
+    request: Request,
+    enabled: bool = Query(...),
+    port: int | None = Query(None, ge=1, le=65535),
+    _=RequirePermissionIfAuthEnabled(Permission.SETTINGS_UPDATE),
+    db: AsyncSession = Depends(get_db),
+):
+    """Weboberfläche zusätzlich über HTTPS (Tailscale-Zertifikat) im Tailnet anbieten oder wieder beenden."""
+    await _require_auth(db)
+    _guard_supported()
+    try:
+        current = await remote_access.status()
+        if current["state"] != "connected":
+            raise remote_access.RemoteAccessError("Noch nicht bei Tailscale angemeldet.")
+        if enabled:
+            await remote_access.share_https(port or request.url.port or 8000)
+        else:
+            await remote_access.unshare_https()
+    except remote_access.RemoteAccessError as exc:
+        audit_log.record("remote_access_https", False, str(exc))
+        raise HTTPException(400, str(exc)) from exc
+    audit_log.record("remote_access_https", True, "on" if enabled else "off")
+    return {**await remote_access.status(), "auth_enabled": True}
+
+
 @router.post("/slicer")
 async def slicer(
     enabled: bool = Query(...),

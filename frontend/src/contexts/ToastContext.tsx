@@ -300,8 +300,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       });
     };
 
-    window.addEventListener('bambuddy:dispatch-toast', onDispatchEvent);
-    return () => window.removeEventListener('bambuddy:dispatch-toast', onDispatchEvent);
+    window.addEventListener('printlab:dispatch-toast', onDispatchEvent);
+    return () => window.removeEventListener('printlab:dispatch-toast', onDispatchEvent);
   }, [t]);
 
   // Auto-dismiss the wrapper once every job has reached a terminal state.

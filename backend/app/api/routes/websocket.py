@@ -21,6 +21,7 @@ import logging
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 from sqlalchemy import select
 
+from backend.app.core import auth_policy
 from backend.app.core.auth import is_auth_enabled, verify_websocket_token
 from backend.app.core.database import async_session
 from backend.app.core.websocket import ws_manager
@@ -63,6 +64,11 @@ async def websocket_endpoint(websocket: WebSocket, token: str | None = Query(def
             auth_required = await is_auth_enabled(db)
     except Exception:  # SEC-AUTH-EXC: DB failure on auth probe → fail-closed (refuse connect), matches is_auth_enabled itself which returns True on error
         logger.error("WebSocket auth probe failed; refusing connection", exc_info=True)
+        await websocket.close(code=_WS_CLOSE_UNAUTHORIZED)
+        return
+
+    if not auth_required and auth_policy.is_required():
+        logger.info("WebSocket connect refused: authentication is required but not set up yet")
         await websocket.close(code=_WS_CLOSE_UNAUTHORIZED)
         return
 

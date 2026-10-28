@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from backend.app.api.routes.settings import get_external_login_url
+from backend.app.core import auth_policy
 from backend.app.core.auth import (
     ALGORITHM,
     SECRET_KEY,
@@ -273,6 +274,12 @@ async def setup_auth(request: SetupRequest, db: AsyncSession = Depends(get_db)):
 
         admin_created = False
 
+        if auth_policy.is_required() and not request.auth_enabled:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Für diese Installation ist die Anmeldung vorgeschrieben.",
+            )
+
         if request.auth_enabled:
             # Check if admin users already exist
             admin_users_result = await db.execute(select(User).where(User.role == "admin"))
@@ -399,7 +406,7 @@ async def get_auth_status(db: AsyncSession = Depends(get_db)):
     setup_completed = await is_setup_completed(db)
     # Only require setup if it hasn't been completed yet
     requires_setup = not setup_completed
-    return {"auth_enabled": auth_enabled, "requires_setup": requires_setup}
+    return {"auth_enabled": auth_enabled, "requires_setup": requires_setup, "auth_required": auth_policy.is_required()}
 
 
 @router.post("/disable", response_model=dict)

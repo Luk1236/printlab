@@ -141,6 +141,8 @@ async def status() -> dict[str, Any]:
         "serving": False,
         "enabled": bool(_read_config().get("enabled")),
         "slicer": bool(_read_config().get("slicer")),
+        "https": bool(_read_config().get("https")),
+        "https_url": "",
         "error": None,
     }
     if not info["supported"] or not info["installed"]:
@@ -162,6 +164,8 @@ async def status() -> dict[str, Any]:
     info["ips"] = [str(ip) for ip in (me.get("TailscaleIPs") or data.get("TailscaleIPs") or [])]
     info["dns_name"] = str(me.get("DNSName", "")).rstrip(".")
     info["login_url"] = data.get("AuthURL") or None
+    if info["https"] and info["dns_name"]:
+        info["https_url"] = f"https://{info['dns_name']}"
     info["state"] = {"Running": "connected", "NeedsLogin": "login", "Starting": "login", "Stopped": "stopped"}.get(
         backend, "off"
     )
@@ -293,6 +297,26 @@ async def share(port: int) -> None:
     _write_config({"enabled": True, "port": int(port)})
 
 
+async def share_https(port: int) -> None:
+    """Weboberfläche zusätzlich verschlüsselt (HTTPS mit echtem Zertifikat) im Tailnet anbieten.
+
+    Braucht in der Tailscale-Verwaltung (Einstellungen → DNS) eingeschaltete HTTPS-Zertifikate; sonst meldet Tailscale
+    das, und die Meldung wird weitergegeben.
+    """
+    if not 1 <= int(port) <= 65535:
+        raise RemoteAccessError("Ungültiger Port.")
+    code, out = await _ts("serve", "--bg", "--https=443", f"http://127.0.0.1:{int(port)}", timeout=60)
+    if code != 0:
+        raise RemoteAccessError(f"HTTPS-Freigabe fehlgeschlagen: {out.strip()[:300]}")
+    _write_config({"https": True})
+
+
+async def unshare_https() -> None:
+    """HTTPS-Freigabe beenden (die Freigabe über HTTP im Tailnet bleibt)."""
+    await _ts("serve", "--https=443", "off", timeout=30)  # nicht freigegeben ist kein Fehler
+    _write_config({"https": False})
+
+
 async def share_slicer() -> None:
     """Die Ports des virtuellen Druckers nur innerhalb des Tailnets freigeben (Versuch, noch nicht an echtem Slicer erprobt)."""
     for port in SLICER_PORTS:
@@ -332,7 +356,7 @@ async def disable() -> dict[str, Any]:
     except RemoteAccessError:
         pass
     stop_daemon()
-    _write_config({"enabled": False, "slicer": False})
+    _write_config({"enabled": False, "slicer": False, "https": False})
     return await status()
 
 
@@ -349,5 +373,7 @@ async def autostart() -> None:
             await share(int(config.get("port") or 8000))
             if config.get("slicer"):
                 await share_slicer()
+            if config.get("https"):
+                await share_https(int(config.get("port") or 8000))
     except RemoteAccessError as exc:
         logger.warning("[Fernzugriff] Autostart fehlgeschlagen: %s", exc)

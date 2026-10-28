@@ -2810,7 +2810,7 @@ class TestEmailProvider:
         assert ok is True
         assert "image/jpeg" not in captured["raw"]
         assert "multipart/related" not in captured["raw"]
-        assert "cid:bambuddy-finish-photo" not in captured["raw"]
+        assert "cid:printlab-finish-photo" not in captured["raw"]
         assert "Reason: unknown" in captured["raw"]
 
     @pytest.mark.asyncio
@@ -2836,7 +2836,7 @@ class TestEmailProvider:
         raw = captured["raw"]
         assert "image/jpeg" not in raw
         assert "multipart/related" not in raw
-        assert "cid:bambuddy-finish-photo" not in raw
+        assert "cid:printlab-finish-photo" not in raw
 
     @pytest.mark.asyncio
     async def test_email_inlines_when_template_uses_finish_photo_url(self, service, smtp_config):
@@ -2862,8 +2862,8 @@ class TestEmailProvider:
         assert "text/html" in raw
         assert "image/jpeg" in raw
         # HTML references the exact cid the Content-ID header registers
-        assert "Content-ID: <bambuddy-finish-photo>" in raw
-        assert 'src="cid:bambuddy-finish-photo"' in raw
+        assert "Content-ID: <printlab-finish-photo>" in raw
+        assert 'src="cid:printlab-finish-photo"' in raw
         # Inline disposition so renders embedded, not as download attachment
         assert 'Content-Disposition: inline; filename="finish-photo.jpg"' in raw
         # Plain-text body keeps the URL so non-HTML clients still get a clickable link
@@ -2938,7 +2938,7 @@ class TestEmailProvider:
         assert ok is True
         raw = captured["raw"]
         # The <img> tag appears in the HTML part
-        assert 'src="cid:bambuddy-finish-photo"' in raw
+        assert 'src="cid:printlab-finish-photo"' in raw
         # The escaped URL is the marker we replaced — the HTML part should not
         # contain BOTH the escaped URL AND the cid img (we swapped, not duplicated).
         # The plain-text part still has the URL; check it's there at least once.

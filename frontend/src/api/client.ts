@@ -4287,8 +4287,29 @@ export interface RemoteAccessStatus {
   serving: boolean;
   enabled: boolean;
   slicer: boolean;
+  https: boolean;
+  https_url: string;
   error: string | null;
   auth_enabled: boolean;
+}
+
+export interface PiHealthWarning {
+  level: 'warn' | 'crit';
+  code: string;
+  text: string;
+  params: Record<string, number>;
+}
+
+export interface PiHealth {
+  cpu_temp_c: number | null;
+  throttled: { value: number; flags: string[] } | null;
+  disk: { total: number; free: number } | null;
+  storage: { device: string; kind: 'sd' | 'usb' | 'nvme' | 'other' } | null;
+  memory: { total: number; available: number; swap_total: number; swap_free: number } | null;
+  uptime_seconds: number | null;
+  backup: { path: string; age_days: number } | null;
+  external_backup: { ok: boolean; detail: string; at: string } | null;
+  warnings: PiHealthWarning[];
 }
 
 export interface PriceListEntry {
@@ -4870,6 +4891,7 @@ export interface SetupResponse {
 export interface AuthStatus {
   auth_enabled: boolean;
   requires_setup: boolean;
+  auth_required?: boolean;
 }
 
 // API functions
@@ -7619,9 +7641,12 @@ export const api = {
     return { blob: await response.blob(), filename: match?.[1] ?? 'Angebot.pdf' };
   },
   deleteQuote: (id: string) => request<{ success: boolean }>(`/quote/history/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  getPiHealth: () => request<PiHealth>('/system/pi-health'),
   getRemoteAccess: () => request<RemoteAccessStatus>('/remote-access'),
   setupRemoteAccess: () => request<RemoteAccessStatus>('/remote-access/setup', { method: 'POST' }),
   shareRemoteAccess: () => request<RemoteAccessStatus>('/remote-access/share', { method: 'POST' }),
+  setRemoteAccessHttps: (enabled: boolean) =>
+    request<RemoteAccessStatus>(`/remote-access/https?enabled=${enabled}`, { method: 'POST' }),
   setRemoteAccessSlicer: (enabled: boolean) =>
     request<RemoteAccessStatus>(`/remote-access/slicer?enabled=${enabled}`, { method: 'POST' }),
   disableRemoteAccess: () => request<RemoteAccessStatus>('/remote-access/disable', { method: 'POST' }),

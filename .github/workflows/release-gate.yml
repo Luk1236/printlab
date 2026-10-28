@@ -1,0 +1,37 @@
+name: Release gate
+
+# Beim Pushen eines Tags vX.Y.Z: prüft, dass Version (config.py), Changelog und die gebaute Oberfläche (static/) zum Tag
+# passen. Nur wenn das stimmt, wird das GitHub-Release mit dem Text aus dem Changelog angelegt. Ein Release ist es, was
+# die Update-Funktion auf dem Pi findet; ein Tag mit veralteter Oberfläche wird also nie ausgeliefert.
+# Das Docker-Image baut der Workflow "Release (Docker-Image amd64 + arm64)" unabhängig davon.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  gate:
+    name: Check and publish the release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Check version, changelog and static/
+        run: python3 werkzeuge/release_pruefen.py "${GITHUB_REF_NAME}"
+
+      - name: Create the GitHub release (if none exists yet)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Das Release $TAG gibt es schon."
+            exit 0
+          fi
+          python3 werkzeuge/release_pruefen.py "$TAG" --notes > "$RUNNER_TEMP/notes.md"
+          flags=""
+          case "$TAG" in *b[0-9]*|*rc[0-9]*) flags="--prerelease" ;; esac
+          gh release create "$TAG" --title "PrintLab $TAG" --notes-file "$RUNNER_TEMP/notes.md" $flags

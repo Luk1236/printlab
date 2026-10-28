@@ -168,6 +168,7 @@ _RAW: list[tuple[str, str]] = [
     (r"Fernzugriff nur mit eingeschalteter Anmeldung\.", "Remote access requires authentication to be enabled."),
     (r"Fernzugriff gibt es nur unter Linux\.", "Remote access is only available on Linux."),
     (r"Slicer-Freigabe fehlgeschlagen \(Port (?P<p>\d+)\): ", r"Slicer sharing failed (port \g<p>): "),
+    (r"HTTPS-Freigabe fehlgeschlagen: ", "HTTPS sharing failed: "),
     (r"Tailscale ist nicht installiert\.", "Tailscale is not installed."),
     (r"Noch nicht bei Tailscale angemeldet\.", "Not signed in to Tailscale yet."),
     (

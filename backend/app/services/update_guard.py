@@ -104,6 +104,14 @@ def _copy_sqlite(source: Path, target: Path) -> None:
         src.close()
 
 
+def _restrict(path: Path, mode: int) -> None:
+    """Nur der Besitzer darf lesen: Sicherungen enthalten Zugangsdaten. Wirkt nicht unter Windows."""
+    try:
+        path.chmod(mode)
+    except OSError:
+        pass
+
+
 def verify_sqlite(path: Path) -> bool:
     """True, wenn die Datenbankdatei sich öffnen lässt und ``PRAGMA integrity_check`` "ok" meldet."""
     try:
@@ -131,6 +139,10 @@ def backup_data(data_dir: Path, backup_dir: Path) -> list[str]:
             continue
         shutil.copy2(cfg, backup_dir / cfg.name)
         saved.append(cfg.name)
+    _restrict(backup_dir.parent, 0o700)
+    _restrict(backup_dir, 0o700)
+    for name in saved:
+        _restrict(backup_dir / name, 0o600)
     return saved
 
 
@@ -222,6 +234,24 @@ def rollback(app_dir: Path, data_dir: Path, marker: dict, reason: str) -> bool:
     return True
 
 
+def reinstall_requirements(app_dir: Path, python: str, timeout: int = 600) -> bool:
+    """Nach dem Rückbau die Pakete des alten Stands wieder einspielen (best effort; Fehler sind kein Abbruch)."""
+    requirements = Path(app_dir) / "requirements.txt"
+    if not requirements.is_file():
+        return False
+    try:
+        result = subprocess.run(  # noqa: S603 - feste Argumentliste, keine Shell
+            [python, "-m", "pip", "install", "-q", "-r", str(requirements)],
+            cwd=str(app_dir),
+            capture_output=True,
+            timeout=timeout,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return result.returncode == 0
+
+
 def guard(app_dir: Path, data_dir: Path) -> str:
     """Beim Start des Dienstes (vor der App). Rückgabe: ``none``, ``counted`` oder ``rolled_back``/``rollback_failed``."""
     data_dir = Path(data_dir)
@@ -263,6 +293,8 @@ def ensure_systemd_guard(app_dir: Path, python: str, unit_path: Path | None = No
     if "update_guard.py" in text or "\nExecStart=" not in text:
         return False
     line = f"ExecStartPre=-{python} {Path(app_dir) / 'werkzeuge' / 'update_guard.py'}\n"
+    if "TimeoutStartSec" not in text:
+        line = "TimeoutStartSec=900\n" + line  # der Rückbau spielt bei Bedarf Pakete neu ein
     try:
         unit.write_text(text.replace("\nExecStart=", "\n" + line + "ExecStart=", 1), encoding="utf-8")
         subprocess.run(  # noqa: S603 - feste Argumentliste, keine Shell

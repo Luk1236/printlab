@@ -1,150 +1,47 @@
-# TODO — Bambuddy-Fork (Bambu-Monitor-Port)
+# TODO — PrintLab
 
-**Stand:** 27.10.2026
-**Basis:** Bambuddy 1.2.5.7 (AGPL-3.0)
-**Branch:** `bambu-monitor-port`
+**Stand:** 28.10.2026, Version 1.7.0 · **Basis:** Bambuddy 1.2.5.7 (AGPL-3.0, Herkunft: `NOTICE`) · **Branch:** `bambu-monitor-port`
 
-## Fertig
+Was fertig ist, steht mit Datum im `CHANGELOG.md`. Die ausführliche Bewertung (Risiken R1–R16, Verbesserungen, Erweiterungen)
+steht in `docs/ANALYSE-2026-10-28.md`, die Abnahme in `docs/ABNAHME.md`.
 
-- Wartungsprogramme: Öl verteilen, Gewindestangen schmieren (P2S, Sicherheitsprüfung,
-  Pflichtbestätigung „Platte frei“).
-- Tür-Servo und Plattenwechsler/Magazin: Simulations- und Befehlsmodus, Endschalterprüfung,
-  Not-Halt, Magazinstand in `data/magazine.json`.
-- Wartungsdruck: Bewegungs-3MF aus dem neuesten geslicten Archiv, ohne Heizung/Filament.
-- MakerWorld + PC-Slicen: FastAPI-Dienst (`backend/app/pc_slicer.py`) für Bambu Studio,
-  Bambuddy-Sidecar konfiguriert, echter Slice getestet.
-- Schicht-Stopp: Pause bei Zielschicht.
-- Bauteil-Wächter: Kamera-Vergleich Schicht 2 ↔ Druckmitte, nur Warnung.
-- Erste-Schicht-Inspektor: Helligkeit/Kontrast/Kanten der Schichten 1–5, nur Warnung.
-- Kamera-Einmessung: vier Plattenecken anklicken, Homographie in die
-  Plattenaufsicht; Bauteil-Wächter und Erste-Schicht-Inspektor erhalten das
-  entzerrte Bild (27.10.2026).
-- Automatischer Plattenwechsel: nach „completed" warten auf Abkühlung (45 °C),
-  Türprüfung, dann Wechsel; Fehlerzustand sichtbar in der Wartungskarte.
-  Schalter in der Wartungskarte, Konfiguration in `data/hardware.json`.
-- Angebotskalkulator: Material (Gramm × €/kg, Spoolman-Walzen rechnen mit dem
-  Walzenpreis), Energie (Dauer × Leistung × €/kWh), Stundenlohn, Aufschlag.
-  Karte auf der Finanz-Seite; Raten (Stundenlohn, Aufschlag, Leistung) direkt
-  in der Karte einstellbar. Neuer Endpunkt `GET /api/v1/quote`.
-- Sicherheit: Platte-frei-Pflicht, Tür-Endschalterprüfung, Not-Halt (auch bei Druck/offline).
-- Barrierefreiheit: WCAG-AA-Kontraste, Zoom erlaubt, Axe auf der Wartungsseite ohne Verstöße.
-- 64 neue Backend-Tests; Frontend-Suite, TypeScript, i18n-Parität und Build grün.
+## Läuft auf dem Pi (bestätigt)
 
-## Offen — nach Priorität
+PrintLab (Pi 5, nativ, systemd-Benutzerdienst), Fernzugriff über Tailscale, Updates aus der Oberfläche, Sicherung vor dem
+Update mit Rückbau, Überwachung mit Meldung, Angebote mit PDF, Kamera-Einmessung, Zustand des Geräts, Anmeldung vorgeschrieben.
 
-### P1 Optik abschließen
-- [x] Kamera-Einmessung über vier Plattenecken (Homographie) — erledigt 27.10.2026.
-- [x] Leerbett-Prüfung beim Druckstart (Referenz per Klick, Warn-Kanal) — 27.10.2026.
-- [x] Spaghetti-/Abbruch-Erkennung ab ~75 % der Schichten (Fleck-Verstreutheit,
-      zusammenhängende Komponenten, nur Warnung) — 27.10.2026.
-- [x] Part-Watcher pro Auftrag: Regeln „Namensfragment → Schwelle/an/aus",
-      erster Treffer gewinnt (`data/part_watcher.json` → overrides).
+## Offen, nur mit deiner Hand oder echter Hardware
 
-### P2 Queue und Automatik
-- [X] Automatischer Plattenwechsel nach Druckende (Abkühlung, Türprüfung, Fehlerzustand) — erledigt 27.10.2026.
-- [X] Wartungsdruck direkt in die Warteschlange — `queue=true` am
-      Wartungsdruck-Endpunkt; 3MF in der Bibliothek, Auftrag geplant.
-- [X] Hardware-Konfiguration in der UI (Befehle/Modus/Zeitlimit) — Hardware-Admin-Karte.
-- [X] Magazinverwaltung in der UI (Status klicken zum Wechseln, Etiketten).
-- [X] Audit-Log: `data/audit_log.jsonl` + Protokoll in der Karte (Benachrichtigungen
-      folgen mit dem Telegram/E-Mail-Ausbau).
-- [x] Automatik-Verfeinerungen (27.10.2026): `only_with_queue` wird jetzt wirklich
-      gespeichert (fehlte in `write_config`); Abbruch während der Abkühlwartezeit
-      (`POST /printers/{id}/hardware/auto-plate-change/cancel`, Not-Halt, neuer Druck);
-      Füllstand-Warnung (`low_supply_warning`, Standard 1) bei wenig frischen Platten
-      oder freien Ablagefächern. Offen: Schalter „Nur mit Auftrag" in der UI (braucht
-      i18n-Schlüssel in allen Sprachen); ein schon laufender Hardware-Schritt stoppt nur per Not-Halt.
+- [ ] **Signaturschlüssel erzeugen** und Tags signieren, Schlüssel auf dem Pi hinterlegen (`docs/UPDATE-SIGNATUR.md`).
+- [ ] **GitHub-Konto absichern:** Passkey/2FA, alte Tokens widerrufen, Regelsatz für Branch und Tags.
+- [ ] **Sicherung nach außen:** USB-Stick oder NAS als `PRINTLAB_BACKUP_TARGET` eintragen (`docs/INSTALLATION-PI.md`).
+- [ ] **Meldeweg** für Ausfälle (Telegram oder ntfy) in `~/.config/printlab.env` eintragen.
+- [ ] **HTTPS-Zertifikate** in der Tailscale-Verwaltung einschalten, dann „HTTPS einschalten" in PrintLab.
+- [ ] **SSD** statt SD-Karte für den Pi (Warnung erscheint unter Wartung → Zustand des Geräts).
+- [ ] **Hardware abnehmen:** Tür-Servo mit Endschaltern, Not-Halt, Slicer über Tailscale, Kamera-Einmessung an echten
+      Fotos (Checkliste in `docs/ABNAHME.md`).
+- [ ] **Plattenwechsel:** Bewegungsfolge vermessen und umsetzen; bis dahin bleibt `swap` gesperrt.
+- [ ] Übersetzungen der 13 Nebensprachen von Muttersprachlern gegenlesen lassen.
 
-### P3 PC-Slicer alltagstauglich
-- [X] Plattenwahl (`plate`): `--export-plate N`, Fallback auf alle Platten bei
-      älteren CLIs; G-code-Auszug wählt `plate_N.gcode`. (27.10.2026)
-- [x] Fortschritt: Seitecar meldet bewusst 404 → Bambuddy nutzt seine
-      Zeitüberwachung (dokumentiert im `pc_slicer.py`).
-- [x] Autostart als Windows-Dienst (Aufgabe ist vorhanden: `install_pc_slicer_task.ps1`).
-- [ ] Voller E2E-Test: MakerWorld → PC-Slicer → Queue.
-- [x] Zugriffsschutz des PC-Slicers (27.10.2026): Loopback immer erlaubt, andere Rechner nur
-      über `PC_SLICER_ALLOWED_IPS` (IPs/Netze) und/oder `PC_SLICER_TOKEN`, sonst 403.
-      Der Slicer-Client in PrintLab schickt seit v1.3.0 den Token mit (`PC_SLICER_TOKEN`
-      auf beiden Rechnern setzen). Offen: Windows-Firewallregel für Port 3001 beim
-      Wechsel auf `0.0.0.0`.
+## Technisch offen
 
-### P4 Engineering und Betrieb
-- [X] CI auf dem Fork-Branch: `.github/workflows/ci.yml` lauscht jetzt auch auf
-      `bambu-monitor-port` (Backend-Lint/-Test/Frontend wie Upstream).
-- [X] Lokales Backup: `werkzeuge/backup_erstellen.ps1` (getestet) +
-      tägliche Aufgabe `install_backup_task.ps1`. GitHub-Backup ist ohnehin
-      in Bambuddy selbst eingebaut (Einstellungen → Backup).
-- [ ] Volle Upstream-Suite auf Linux/CI (Windows scheitert an Pfad-Trennern).
-- [ ] Docker-/ARM-Build und Test auf Pi 4/5 (Anleitung: `docs/INSTALLATION-PI.md`, ungetestet).
-- [x] Frontend-Tests für die Wartungskarte (Hardware-Abschnitt: Magazin, Automatik,
-      Warnung, Fehler, Not-Halt, Rechte) — 27.10.2026.
-- [ ] Backend-Meldungen für alle 15 Sprachen.
-- [ ] Auth einschalten (wartet auf das Passwort), HTTPS/Tailscale. Hardware-Befehle sind bis dahin gesperrt.
-- [x] Kalkulator am Warteschlangen-Auftrag: Zeitstrahl lädt bei Hover
-      `GET /quote/for-archive/{id}` (Material/Energie/Arbeit/Aufschlag).
-- [x] Monats-Report: Statistik-Seite hat Monatsaggregation + CSV-Export
-      (vom Upstream; PDF-Report optional später).
-- [x] Preisliste: `data/price_list.json` + Editor in der Kalkulator-Karte;
-      `GET /quote?material=TPU` nimmt die Liste.
-- [ ] Release-Paket und Installationsanleitung für Pi 4/5.
+- [ ] Große Dateien schrittweise zerlegen (`main.py`, `PrintersPage.tsx`, `client.ts`, …); der Test
+      `test_file_size_budget.py` verhindert nur das Wachsen.
+- [ ] Volle E2E-Prüfung MakerWorld → PC-Slicer → Warteschlange.
+- [ ] Windows-Firewallregel für den PC-Slicer-Port 3001 beim Wechsel auf `0.0.0.0`.
+- [ ] Docker-/ARM-Image auf einem Pi 4/5 starten und prüfen.
+- [ ] Wartungskarte in einen eigenen Tab „Hardware & Optik" aufteilen; Mobilansicht prüfen.
 
-### P5 Oberfläche
-- [ ] Wartungskarte in einen eigenen Tab „Hardware & Optik“ aufteilen.
-- [ ] Mobilansicht der neuen Bedienelemente prüfen.
-- [ ] Fehlermeldungen/Fokus vereinheitlichen; Einrichtungsassistent für Hardware.
+## Bewusst nicht im Fokus
 
-### Optional (bewusst nicht im Fokus)
-- Verschlüsselte Sicherung, Angebotskalkulator, PV-/Tarifsteuerung, Kiosk, Drucker-Simulator.
-- Cloud-Steuerung/`fun`/Bambu Connect — passt nicht zu Bambuddys LAN-Only-Architektur;
-  dafür bleibt der Bambu-Monitor die richtige Wahl.
+- Cloud-Steuerung der Drucker und Kopplung der Bambu-Handy-App: deren QR-Code und PIN laufen über die Bambu-Cloud und
+  lassen sich nicht nachbauen. Von unterwegs nutzt man PrintLab im Browser über Tailscale.
+- PV-/Tarifsteuerung, Kiosk, Drucker-Simulator, verschlüsselte Sicherung.
 
-## Persönliche Anpassung (27.10.2026)
-
-- Rebrand als **PrintLab** (vorher „Bambu Monitor“), deutsche Oberfläche als
-  Standard, dunkles Design voreingestellt, eigene Logos/Icons.
-- **Prusa-Design** für hell + dunkel: Prusa-Orange (#fa6831, aus Prusa-Link-Web),
-  flache Kacheln, Prusa-Connect-Hellpalette, PrusaSlicer-Dunkelpalette.
-  Funktionen unverändert (Theming nur über die zentralen CSS-Variablen).
-- Versionsverwaltung: private Repo **Luk1236/printlab**, Tags + Releases
-  (Start: v1.0.0), Schema/Siehe `docs/VERSIONING.md`.
-- P2S aus der alten `config.ini` übernommen (IP, Seriennummer, Zugangscode, P2S, Werkstatt);
-  aktuell offline.
-- Einstellungen: EUR, 22 €/kg, 0,35 €/kWh, PC-Slicer `http://127.0.0.1:3001`.
-- **Login:** Das alte Passwort erfüllt Bambuddys Komplexitätsregel nicht (kein Großbuchstabe).
-  Ein neues Passwort wird **nicht** vom Assistenten gesetzt oder im Chat ausgegeben.
-  Stattdessen: `werkzeugedmin_passwort_setzen.py` ausführen, Passwort selbst eingeben
-  (getpass, keine Anzeige). Danach Server neu starten und mit `lukas` + neuem Passwort anmelden.
-  Notfall: `--deaktivieren`.
-- **Modellimport:** 2 Dateien in die Bibliothek übernommen
-  (`Einmess_Marken_P2S.gcode.3mf`, `Tuer_Oeffner_Kompakt.stl`).
-  3 Dateien (`Oel_verteilen`, `Wartung_Gewindestangen`, `Einmess_Marken_P2S.stl`) sind
-  OneDrive-Platzhalter und konnten nicht gelesen werden — OneDrive starten/hydratisieren.
-- Warteschlange/Historie/Protokolle noch nicht importiert (eigene Schema-Übernahme nötig).
-
-## Start
+## Start (Windows-Entwicklung)
 
 ```powershell
 cd C:\Users\lukas\OneDrive\Desktop\Bambuddy-Fork
 .venv\Scripts\python.exe -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --loop asyncio
-starte_pc_slicer.bat
+.venv\Scripts\python.exe werkzeuge\lokal_pruefen.py        # alles prüfen, was die CI prüft
 ```
-
-## Aufräumen (27.10.2026)
-
-Entfernt: Demo-Datenbank, `data/`, `logs/`, `maintenance/`, Laufzeit-JSONs
-(`hardware.json`, `magazine.json`, `layer_alerts.json`, `part_watcher.json`,
-`first_layer_inspector.json`), `__pycache__` sowie temporäre Screenshots/Testdateien.
-
-Behalten: Quellcode, `.venv`, `frontend/node_modules`, `static/` (Build), Doku.
-Der nächste Start von Bambuddy beginnt wieder mit der Einrichtung (Auth aus, keine
-Demo-Drucker). Die echten Daten des Bambu-Monitors wurden **nicht** angefasst.
-
-## Commits
-
-- `8c6eb57` Port der Monitor-Funktionen
-- `ba41320` Bauteil-Wächter
-- `c833ac4` Not-Halt und PC-Slicer-Autostart
-- `b35e3f2` Erste-Schicht-Inspektor
-
-Diese Commits sind inzwischen gepusht (Repository `Luk1236/printlab`, Tag v1.2.2 ff.).
-Lizenz: AGPL-3.0.

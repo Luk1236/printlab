@@ -1660,7 +1660,7 @@ class GitHubRestoreService:
                     "mqtt_port": int(stored.get("mqtt_port") or "1883"),
                     "mqtt_username": stored.get("mqtt_username") or "",
                     "mqtt_password": stored.get("mqtt_password") or "",
-                    "mqtt_topic_prefix": stored.get("mqtt_topic_prefix") or "bambuddy",
+                    "mqtt_topic_prefix": stored.get("mqtt_topic_prefix") or "printlab",
                     "mqtt_use_tls": (stored.get("mqtt_use_tls") or "false") == "true",
                 }
             )

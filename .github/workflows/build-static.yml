@@ -1,18 +1,38 @@
 name: Build static frontend
 
-# Baut die Oberfläche (frontend/) neu und legt das Ergebnis in static/ ab, das der Pi und jede Installation ohne Node
-# ausliefert. Nur von Hand starten (Actions -> Build static frontend -> Run workflow), nachdem sich etwas in frontend/
-# geändert hat. Das Ergebnis wird auf dem gewählten Branch als eigener Commit eingecheckt.
+# Baut die Oberfläche (frontend/) und legt das Ergebnis in static/ ab, das der Pi und jede Installation ohne Node
+# ausliefert. Läuft automatisch, sobald auf dem Branch bambu-monitor-port etwas an der Oberfläche geändert wird, und
+# kann von Hand gestartet werden (Actions -> Build static frontend -> Run workflow).
+# Das Ergebnis wird als eigener Commit eingecheckt (der Bot-Commit löst diesen Workflow nicht erneut aus), dazu die
+# Prüfsumme der Quellen in static/BUILD_SOURCE_SHA; der Release-Prüfer vergleicht sie beim Setzen eines Tags.
+# Nach einem Push erst den Bot-Commit abwarten (git pull), dann taggen.
 
 on:
   workflow_dispatch:
+  push:
+    branches: [bambu-monitor-port]
+    paths:
+      - "frontend/src/**"
+      - "!frontend/src/__tests__/**"
+      - "frontend/public/**"
+      - "frontend/index.html"
+      - "frontend/package.json"
+      - "frontend/package-lock.json"
+      - "frontend/vite.config.ts"
+      - "frontend/postcss.config.js"
+      - "frontend/tsconfig*.json"
 
 permissions:
   contents: write
 
+concurrency:
+  group: build-static
+  cancel-in-progress: false
+
 jobs:
   build:
     name: Build and commit static/
+    if: github.ref_type == 'branch' && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -32,6 +52,9 @@ jobs:
         working-directory: frontend
         run: npm run build
 
+      - name: Record the source hash
+        run: python3 werkzeuge/release_pruefen.py --write-static-hash
+
       - name: Commit the new build
         run: |
           if [ -z "$(git status --porcelain static)" ]; then
@@ -42,4 +65,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add static
           git commit -m "Rebuild static frontend"
-          git push
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

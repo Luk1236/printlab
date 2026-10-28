@@ -62,6 +62,14 @@ describe('HardwareAdminCard', () => {
     expect(screen.queryByText(/hardwareAdmin\./)).not.toBeInTheDocument();
   });
 
+  it('warns that command settings let a user run programs on the device', async () => {
+    setup();
+    render(<HardwareAdminCard canControl />);
+    const warning = await screen.findByTestId('command-trust-warning');
+    expect(warning).toHaveTextContent(/run programs on the device/i);
+    expect(warning).toHaveTextContent(/only to people you trust/i);
+  });
+
   it('cycles a slot status on click and saves it', async () => {
     const calls = setup();
     render(<HardwareAdminCard canControl />);

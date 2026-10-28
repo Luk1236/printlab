@@ -253,6 +253,9 @@ export function HardwareAdminCard({ canControl }: { canControl: boolean }) {
         <p className="text-xs text-bambu-gray">
           {t('hardwareAdmin.configHint')}
         </p>
+        <p className="text-xs text-amber-700 dark:text-amber-400" data-testid="command-trust-warning">
+          {t('hardwareAdmin.commandTrustWarning')}
+        </p>
       </CardContent>
     </Card>
   );

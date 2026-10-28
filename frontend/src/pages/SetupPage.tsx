@@ -13,8 +13,9 @@ export function SetupPage() {
   const { t } = useTranslation();
   const { showToast } = useToast();
   const { mode } = useTheme();
-  const { refreshAuth } = useAuth();
-  const [authEnabled, setAuthEnabled] = useState(false);
+  const { refreshAuth, authRequired } = useAuth();
+  const [authChoice, setAuthChoice] = useState(false);
+  const authEnabled = authRequired || authChoice;
   const [adminUsername, setAdminUsername] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -99,13 +100,15 @@ export function SetupPage() {
                 id="auth-enabled"
                 type="checkbox"
                 checked={authEnabled}
-                onChange={(e) => setAuthEnabled(e.target.checked)}
+                disabled={authRequired}
+                onChange={(e) => setAuthChoice(e.target.checked)}
                 className="h-4 w-4 text-bambu-green focus:ring-bambu-green border-bambu-dark-tertiary rounded bg-bambu-dark-secondary"
               />
               <label htmlFor="auth-enabled" className="ml-3 block text-sm font-medium text-white">
                 {t('setup.enableAuth')}
               </label>
             </div>
+            {authRequired && <p className="text-xs text-bambu-gray">{t('setup.authRequiredHint')}</p>}
 
             {authEnabled && (
               <div className="space-y-4 mt-4">

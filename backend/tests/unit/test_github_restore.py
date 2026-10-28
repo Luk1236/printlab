@@ -3022,7 +3022,7 @@ class TestMqttRelayReconfigure:
         assert sent["mqtt_port"] == 8883
         assert sent["mqtt_use_tls"] is True
         assert sent["mqtt_password"] == "kept"
-        assert sent["mqtt_topic_prefix"] == "bambuddy"
+        assert sent["mqtt_topic_prefix"] == "printlab"
         assert tally.notes == []
 
     @pytest.mark.asyncio

@@ -27,7 +27,7 @@ GH_TOKEN="${GH_TOKEN:-}"   # leer = öffentliches Repo, anonym
 step() { printf '\n== %s\n' "$1"; }
 
 step "1/7 Dienste stoppen"
-for unit in printlab-watch.timer printlab.service bambuddy.service; do
+for unit in printlab-backup.timer printlab-watch.timer printlab.service bambuddy.service; do
   systemctl --user disable --now "$unit" 2>/dev/null || true
 done
 
@@ -101,8 +101,12 @@ Environment=DATA_DIR=%h/printlab/data
 Environment=LOG_DIR=%h/printlab/logs
 # Nach einem Update in PrintLab beendet sich der Dienst sauber; Restart=always startet ihn mit dem neuen Stand
 Environment=PRINTLAB_AUTO_RESTART=1
+# Anmeldung vorgeschrieben: bis das Passwort angelegt ist, ist die Schnittstelle gesperrt (nur /setup ist erreichbar)
+Environment=PRINTLAB_REQUIRE_AUTH=1
 EnvironmentFile=-%h/.config/printlab.env
-# Update-Schutz: baut nach einem Update, das nicht anläuft, auf die vorherige Version zurück
+# Update-Schutz: baut nach einem Update, das nicht anläuft, auf die vorherige Version zurück (und spielt dabei
+# bei Bedarf Pakete neu ein, das kann dauern)
+TimeoutStartSec=900
 ExecStartPre=-%h/printlab/.venv/bin/python %h/printlab/werkzeuge/update_guard.py
 ExecStart=%h/printlab/.venv/bin/python -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --loop asyncio
 Restart=always
@@ -133,9 +137,34 @@ OnUnitActiveSec=1min
 [Install]
 WantedBy=timers.target
 EOF
+# Tägliche Sicherung auf einen Datenträger außerhalb der SD-Karte (nur aktiv, wenn PRINTLAB_BACKUP_TARGET in
+# ~/.config/printlab.env gesetzt ist, siehe werkzeuge/sicherung_extern.py)
+cat > "$HOME/.config/systemd/user/printlab-backup.service" <<'EOF'
+[Unit]
+Description=PrintLab Sicherung nach außen
+
+[Service]
+Type=oneshot
+Environment=DATA_DIR=%h/printlab/data
+EnvironmentFile=-%h/.config/printlab.env
+ExecStart=/usr/bin/python3 %h/printlab/werkzeuge/sicherung_extern.py
+EOF
+cat > "$HOME/.config/systemd/user/printlab-backup.timer" <<'EOF'
+[Unit]
+Description=PrintLab Sicherung nach außen jeden Tag
+
+[Timer]
+OnCalendar=*-*-* 03:30:00
+RandomizedDelaySec=10min
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
 systemctl --user daemon-reload
 systemctl --user enable --now printlab.service
 systemctl --user enable --now printlab-watch.timer
+systemctl --user enable --now printlab-backup.timer
 
 step "7/7 Prüfen"
 for _ in $(seq 1 90); do   # der erste Start dauert auf dem Pi gut eine Minute (Datenbank, Schlüssel, Kataloge)

@@ -6,6 +6,8 @@ interface AuthContextType {
   user: UserResponse | null;
   authEnabled: boolean;
   requiresSetup: boolean;
+  /** Server schreibt die Anmeldung vor (PRINTLAB_REQUIRE_AUTH): Einrichtung nicht überspringbar. */
+  authRequired: boolean;
   loading: boolean;
   isAdmin: boolean;
   /** Login with username/password. Returns LoginResponse (may include requires_2fa). */
@@ -27,6 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserResponse | null>(null);
   const [authEnabled, setAuthEnabled] = useState(false);
   const [requiresSetup, setRequiresSetup] = useState(false);
+  const [authRequired, setAuthRequired] = useState(false);
   const [loading, setLoading] = useState(true);
   const hasRedirectedRef = useRef(false);
   const mountedRef = useRef(true);
@@ -57,6 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!mountedRef.current) return;
       setAuthEnabled(status.auth_enabled);
       setRequiresSetup(status.requires_setup);
+      setAuthRequired(Boolean(status.auth_required));
 
       if (status.auth_enabled) {
         const token = getAuthToken();
@@ -151,18 +155,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Only redirect if setup is truly required (first time setup)
     // Don't redirect if user manually navigated to /setup or is on camera page
-    if (!loading && requiresSetup && !authEnabled) {
+    if (!loading && (requiresSetup || authRequired) && !authEnabled) {
       const currentPath = window.location.pathname;
       // Only redirect if not already on setup page or camera page, and haven't redirected yet
       if (currentPath !== '/setup' && !currentPath.startsWith('/camera/') && !hasRedirectedRef.current) {
         hasRedirectedRef.current = true;
         window.location.href = '/setup';
       }
-    } else if (!requiresSetup) {
+    } else if (!requiresSetup && !authRequired) {
       // Reset redirect flag when setup is no longer required
       hasRedirectedRef.current = false;
     }
-  }, [loading, requiresSetup, authEnabled]);
+  }, [loading, requiresSetup, authRequired, authEnabled]);
 
   const login = async (username: string, password: string, persistence: TokenPersistence = 'session'): Promise<LoginResponse> => {
     const response = await api.login({ username, password });
@@ -269,6 +273,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         authEnabled,
         requiresSetup,
+        authRequired,
         loading,
         isAdmin,
         login,

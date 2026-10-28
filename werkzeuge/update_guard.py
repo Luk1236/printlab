@@ -21,6 +21,8 @@ def main() -> int:
     result = update_guard.guard(APP_DIR, DATA_DIR)
     if result == "rolled_back":
         print("Update-Schutz: die neue Version startete nicht stabil, vorheriger Stand wiederhergestellt.")
+        ok = update_guard.reinstall_requirements(APP_DIR, sys.executable)
+        print("Update-Schutz: Pakete des alten Stands " + ("neu eingespielt." if ok else "nicht neu eingespielt."))
     elif result == "rollback_failed":
         print("Update-Schutz: Rückbau nicht möglich, bitte von Hand prüfen.", file=sys.stderr)
     elif result == "counted":

@@ -1544,6 +1544,48 @@ class TestProcessInfo:
             assert " " not in name, f"looks like a command line, not a name: {name!r}"
             assert "://" not in name
 
+    def test_open_files_is_never_called_on_windows(self):
+        """psutil.Process.open_files() crashes the interpreter natively on some Windows builds (access violation),
+        taking the whole PrintLab process down with it. On Windows the handle count is used instead."""
+        from unittest.mock import MagicMock, patch
+
+        import backend.app.api.routes.support as support_module
+
+        fake = MagicMock()
+        fake.memory_info.return_value = MagicMock(rss=1024, vms=2048)
+        fake.num_threads.return_value = 4
+        fake.create_time.return_value = 0.0
+        fake.num_handles.return_value = 321
+        fake.open_files.side_effect = AssertionError("open_files() darf unter Windows nicht aufgerufen werden")
+        fake.net_connections.return_value = []
+        fake.children.return_value = []
+        with (
+            patch("psutil.Process", return_value=fake),
+            patch.object(support_module.sys, "platform", "win32"),
+        ):
+            info = support_module._collect_process_info()
+        assert info["open_files"] == 321
+        fake.open_files.assert_not_called()
+
+    def test_open_files_is_used_on_other_systems(self):
+        from unittest.mock import MagicMock, patch
+
+        import backend.app.api.routes.support as support_module
+
+        fake = MagicMock()
+        fake.memory_info.return_value = MagicMock(rss=1024, vms=2048)
+        fake.num_threads.return_value = 4
+        fake.create_time.return_value = 0.0
+        fake.open_files.return_value = [object(), object()]
+        fake.net_connections.return_value = []
+        fake.children.return_value = []
+        with (
+            patch("psutil.Process", return_value=fake),
+            patch.object(support_module.sys, "platform", "linux"),
+        ):
+            info = support_module._collect_process_info()
+        assert info["open_files"] == 2
+
     def test_heap_census_is_skipped_on_a_large_process(self):
         """gc.get_objects() materialises every tracked object, so the census
         costs most on the process that can least afford it. A bundle generated

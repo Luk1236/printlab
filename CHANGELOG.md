@@ -3,6 +3,39 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.7.0 (28.10.2026) — Betriebssicherheit
+
+- **Anmeldung vorgeschrieben** (`PRINTLAB_REQUIRE_AUTH=1`, vom Pi-Installer gesetzt): bis der Administrator mit Passwort
+  angelegt ist, ist die Schnittstelle gesperrt (403, auch Bilder, Kamera und WebSocket); nur `/setup`, der Anmeldestatus
+  und die Versionsabfrage bleiben offen, und die Einrichtung lässt sich nicht ohne Passwort abschließen. Die Oberfläche
+  leitet auf `/setup` und sperrt die Wahl „ohne Anmeldung".
+- **HTTPS über Tailscale** (Fernzugriff-Karte): verschlüsselter Zugang mit echtem Zertifikat, QR-Code nimmt die HTTPS-Adresse.
+- **Zustand des Geräts** (Wartung): Temperatur, Unterspannung, Speicherplatz und -art (SD-Karte-Warnung), Arbeitsspeicher,
+  Laufzeit, Sicherungen; Schnittstelle `GET /api/v1/system/pi-health`.
+- **Sicherung nach außen** (`werkzeuge/sicherung_extern.py`, Tages-Timer): geprüfte Sicherung auf USB/NAS, legt das Ziel nie
+  selbst an, meldet Fehler über den Überwachungs-Meldeweg.
+- **Update-Schutz härter:** Sicherungen nur für den Besitzer lesbar (700/600), Rückbau spielt die Pakete des alten Stands neu
+  ein, systemd-Startzeit dafür verlängert.
+- **Abnahme-Check** (`werkzeuge/abnahme.py`, `docs/ABNAHME.md`): prüft auf dem Pi automatisch Dienst, Anmeldung, Dienst-Datei,
+  Signatur, Überwachung, Sicherungen, Gerätezustand und Ports; dazu die Checkliste für alles mit Hardware.
+- **Release-Automatik:** „Build static frontend" läuft automatisch bei Änderungen an `frontend/` und schreibt eine
+  Quell-Prüfsumme; „Release gate" prüft beim Tag Version, Changelog und `static/` und legt erst dann das GitHub-Release an
+  (Text aus dem Changelog). `werkzeuge/release_pruefen.py` macht dasselbe lokal.
+- **Wartbarkeit:** Größen-Grenze für die riesigen Dateien (Test), eigene Start- und Torprüfungen aus `main.py` in
+  `services/fork_startup.py`.
+- **Lokale Prüfung:** `werkzeuge/lokal_pruefen.py` führt alles aus, was die CI prüft, und fängt die bekannten
+  Windows-Eigenheiten ab.
+- **Fehler behoben:** Die Support-Information (`psutil.open_files()`) konnte unter Windows den ganzen Prozess mit einer
+  Zugriffsverletzung abstürzen lassen; dort wird jetzt die Handle-Zahl benutzt.
+- **Pakete aktualisiert** (Frontend, innerhalb der erlaubten Versionsbereiche) und die letzten 3 Warnungen von `npm audit`
+  behoben (vitest); `i18next` nicht mehr exakt festgenagelt.
+- **Branding:** interne Kennungen von Bambuddy auf PrintLab umgestellt (Toast-Ereignis, E-Mail-Bild-Kennungen,
+  Zertifikatsname, MQTT-Standardpräfix); Dokumente und Diagramm-Skript angepasst. Der Name `bambuddy.db` in alten
+  Sicherungen bleibt für das Zurückspielen erhalten.
+- **Übersetzungen:** Test, dass jede Sprache alle `{{Platzhalter}}` des englischen Textes behält.
+- **Hardware-Befehle:** deutlicher Hinweis in der Karte, dass Änderungsrecht gleich „Programme auf dem Gerät starten" heißt.
+- Einmal-Skripte `i18n_hwadmin.py` und `i18n_pricelist.py` entfernt; `TODO.md` neu geschrieben.
+
 ## v1.6.3 (28.10.2026) — Signierte Updates
 
 - **Updates nur von signierten Tags** (optional, aber empfohlen): Liegt auf dem Pi die Datei `update_allowed_signers` im

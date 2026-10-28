@@ -9,6 +9,7 @@ import logging
 import os
 import platform
 import re
+import sys
 import time
 import zipfile
 from datetime import datetime, timezone
@@ -358,7 +359,13 @@ def _collect_process_info() -> dict:
     except Exception:
         pass
     try:
-        out["open_files"] = len(proc.open_files())
+        if sys.platform == "win32":
+            # psutil's open_files() kann unter Windows nativ abstürzen (Zugriffsverletzung, beobachtet auf
+            # Windows ARM64 mit Python 3.13) und reißt dann den ganzen Prozess mit. Die Zahl der Handles ist das
+            # gleichwertige, sichere Maß.
+            out["open_files"] = proc.num_handles()
+        else:
+            out["open_files"] = len(proc.open_files())
     except Exception:
         pass
     try:

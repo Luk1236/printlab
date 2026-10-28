@@ -9643,34 +9643,10 @@ async def lifespan(app: FastAPI):
 
     await init_db()
 
-    # Fork: Ein offenes Update gilt als gelungen, sobald die App eine Weile stabil läuft (sonst baut
-    # werkzeuge/update_guard.py beim nächsten Dienststart auf die vorherige Version zurück).
-    try:
-        from backend.app.services.update_guard import schedule_confirmation
+    # Fork: Update bestätigen, Warnung bei offener Anmeldung (siehe services/fork_startup.py)
+    from backend.app.services import fork_startup
 
-        schedule_confirmation(app_settings.base_dir)
-    except Exception as exc:  # pragma: no cover - darf den Start nie verhindern
-        logging.getLogger(__name__).warning("Update-Bestätigung nicht geplant: %s", exc)
-
-    # Fork: Warnen, wenn die Anmeldung aus ist, das Backend aber nicht nur am
-    # Loopback lauscht (Docker/systemd binden standardmäßig an 0.0.0.0). Dann
-    # wäre die Instanz ungeschützt im Netz steuerbar.
-    try:
-        from backend.app.core.auth import is_auth_enabled
-
-        listen_host = (os.environ.get("HOST") or "127.0.0.1").strip()
-        if listen_host not in ("127.0.0.1", "localhost", "::1"):
-            async with async_session() as boot_db:
-                auth_on = await is_auth_enabled(boot_db)
-            if not auth_on:
-                logging.getLogger(__name__).warning(
-                    "[PrintLab] Anmeldung ist ausgeschaltet und HOST=%s: die Oberfläche ist "
-                    "für das gesamte Netz erreichbar. Anmeldung einschalten "
-                    "(werkzeuge\\admin_passwort_setzen.py) oder HOST auf 127.0.0.1 setzen.",
-                    listen_host,
-                )
-    except Exception as exc:  # noqa: BLE001 - Warnung darf den Start nie blockieren
-        logging.getLogger(__name__).debug("[PrintLab] Bindungs-/Anmeldeprüfung übersprungen: %s", exc)
+    await fork_startup.on_startup(app_settings.base_dir, async_session)
 
     # Browser download tokens expire after five minutes. Remove abandoned
     # prepared ZIPs at startup as well as before each new preparation so a
@@ -10703,6 +10679,14 @@ async def auth_middleware(request, call_next):
     # Allow public routes
     if path in PUBLIC_API_ROUTES:
         return await call_next(request)
+
+    # Fork: Bei vorgeschriebener Anmeldung (PRINTLAB_REQUIRE_AUTH=1) ist alles gesperrt, solange sie nicht
+    # eingerichtet ist, auch die sonst öffentlichen Bilder und Kamera-Adressen (services/fork_startup.py).
+    from backend.app.services import fork_startup
+
+    gate = await fork_startup.auth_gate(async_session, path)
+    if gate is not None:
+        return JSONResponse(status_code=gate[0], content=gate[1])
 
     # Allow public prefixes
     for prefix in PUBLIC_API_PREFIXES:

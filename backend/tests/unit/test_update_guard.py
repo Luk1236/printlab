@@ -1,9 +1,12 @@
 """Update-Schutz: Sicherung, Zähler, Rückbau auf den alten Git-Stand samt Datenbank, Bestätigung."""
 
 import asyncio
+import os
 import shutil
 import sqlite3
+import stat
 import subprocess
+from pathlib import Path
 
 import pytest
 
@@ -168,3 +171,56 @@ class TestSystemdUnit:
 
     def test_missing_unit_is_ignored(self, tmp_path):
         assert ug.ensure_systemd_guard(tmp_path, "python", tmp_path / "gibt-es-nicht.service") is False
+
+
+@pytest.mark.skipif(os.name == "nt", reason="Dateirechte nur unter POSIX")
+def test_backups_are_only_readable_by_the_owner(install):
+    app, data, _ = install
+    marker = ug.prepare(app, data, "v2", "1.0.0")
+    backup = Path(marker["backup_dir"])
+    assert stat.S_IMODE(backup.stat().st_mode) == 0o700
+    assert stat.S_IMODE(backup.parent.stat().st_mode) == 0o700
+    for name in marker["saved"]:
+        assert stat.S_IMODE((backup / name).stat().st_mode) == 0o600
+
+
+class TestReinstallRequirements:
+    def test_runs_pip_with_the_requirements_of_the_old_state(self, tmp_path, monkeypatch):
+        (tmp_path / "requirements.txt").write_text("fastapi\n")
+        seen = {}
+
+        def fake_run(cmd, **kwargs):
+            seen["cmd"], seen["cwd"] = cmd, kwargs.get("cwd")
+
+            class R:
+                returncode = 0
+
+            return R()
+
+        monkeypatch.setattr(ug.subprocess, "run", fake_run)
+        assert ug.reinstall_requirements(tmp_path, "/x/python") is True
+        assert seen["cmd"][:5] == ["/x/python", "-m", "pip", "install", "-q"] and seen["cmd"][-1].endswith(
+            "requirements.txt"
+        )
+
+    def test_failures_are_not_fatal(self, tmp_path, monkeypatch):
+        (tmp_path / "requirements.txt").write_text("fastapi\n")
+
+        def boom(*a, **k):
+            raise OSError("kein pip")
+
+        monkeypatch.setattr(ug.subprocess, "run", boom)
+        assert ug.reinstall_requirements(tmp_path, "python") is False
+        assert ug.reinstall_requirements(tmp_path / "leer", "python") is False
+
+
+def test_unit_gets_a_long_start_timeout_with_the_guard(tmp_path, monkeypatch):
+    monkeypatch.setattr(ug.subprocess, "run", lambda *a, **k: None)
+    unit = tmp_path / "printlab.service"
+    unit.write_text("[Service]\nExecStart=/x/python -m uvicorn app\n")
+    assert ug.ensure_systemd_guard(tmp_path / "app", "/x/python", unit) is True
+    text = unit.read_text()
+    assert "TimeoutStartSec=900" in text and text.index("TimeoutStartSec") < text.index("ExecStart=")
+    unit.write_text("[Service]\nTimeoutStartSec=30\nExecStart=/x/python app\n")
+    ug.ensure_systemd_guard(tmp_path / "app", "/x/python", unit)
+    assert unit.read_text().count("TimeoutStartSec") == 1  # eine vorhandene Einstellung bleibt

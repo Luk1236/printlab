@@ -125,3 +125,52 @@ class TestSlicerRoute:
         monkeypatch.setattr(ra, "share_slicer", failing)
         resp = await async_client.post("/api/v1/remote-access/slicer?enabled=true", headers={"Accept-Language": "en"})
         assert resp.status_code == 400 and "Slicer sharing failed (port 990)" in resp.json()["detail"]
+
+
+class TestHttpsRoute:
+    @pytest.mark.asyncio
+    async def test_needs_auth(self, async_client: AsyncClient):
+        assert (await async_client.post("/api/v1/remote-access/https?enabled=true")).status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_switches_the_service_on_and_off(self, async_client: AsyncClient, monkeypatch):
+        calls = []
+
+        async def fake_auth(db):
+            return True
+
+        async def connected():
+            return {"state": "connected", "https": True, "https_url": "https://printlab.example.ts.net"}
+
+        async def on(port):
+            calls.append(("on", port))
+
+        async def off():
+            calls.append(("off",))
+
+        monkeypatch.setattr(routes, "is_auth_enabled", fake_auth)
+        monkeypatch.setattr(ra, "supported", lambda: True)
+        monkeypatch.setattr(ra, "status", connected)
+        monkeypatch.setattr(ra, "share_https", on)
+        monkeypatch.setattr(ra, "unshare_https", off)
+        assert (await async_client.post("/api/v1/remote-access/https?enabled=true&port=8000")).status_code == 200
+        assert (await async_client.post("/api/v1/remote-access/https?enabled=false")).status_code == 200
+        assert calls == [("on", 8000), ("off",)]
+
+    @pytest.mark.asyncio
+    async def test_requires_a_connected_tailnet_and_translates_errors(self, async_client: AsyncClient, monkeypatch):
+        async def fake_auth(db):
+            return True
+
+        async def connected():
+            return {"state": "connected"}
+
+        async def failing(port):
+            raise ra.RemoteAccessError("HTTPS-Freigabe fehlgeschlagen: not enabled")
+
+        monkeypatch.setattr(routes, "is_auth_enabled", fake_auth)
+        monkeypatch.setattr(ra, "supported", lambda: True)
+        monkeypatch.setattr(ra, "status", connected)
+        monkeypatch.setattr(ra, "share_https", failing)
+        resp = await async_client.post("/api/v1/remote-access/https?enabled=true", headers={"Accept-Language": "en"})
+        assert resp.status_code == 400 and "HTTPS sharing failed: not enabled" in resp.json()["detail"]
