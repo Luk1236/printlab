@@ -141,7 +141,7 @@ async def set_hardware_config(
         raise HTTPException(
             403,
             "Befehle können nur mit eingeschalteter Anmeldung geändert werden "
-            "(Einstellungen → Benutzer, oder werkzeuge\admin_passwort_setzen.py).",
+            "(Einstellungen → Benutzer, oder werkzeuge\\admin_passwort_setzen.py).",
         )
     merged = dict(data)
     if "auto_plate_change" in data:

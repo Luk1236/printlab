@@ -149,7 +149,7 @@
 **Content:**
 - "Add a spool the way that suits you:"
   - **RFID scan** (Bambu spools) — load it in the AMS, PrintLab detects automatically. No manual entry needed.
-  - **SpoolBuddy kiosk** — if you have a SpoolBuddy box, scan RFID write tag for non-Bambu spools.
+  - **PrintLab Spool kiosk** — if you have a PrintLab Spool box, scan RFID write tag for non-Bambu spools.
   - **Manual entry** — brand, material, color, weight.
 - One-line note: "PrintLab ships with a color catalog covering the major brands — names autocomplete as you type."
 **Buttons:** `Add manually` → opens Add Spool modal / `Use RFID` → goes to printer card highlighting AMS row / `Skip` → continue
@@ -464,6 +464,6 @@ GitHub `invalid`-tagged issues this tour explicitly addresses:
 
 1. Should Step 1.2 include an interactive "test the access code without saving" button (calls a one-shot MQTT connect with the entered creds), so users get instant feedback before committing the printer row?
 2. Should Phase 3 be entirely opt-in (the user clicks "Show me power features" from Phase 5) instead of inline at the end of Phase 2?
-3. Should the SpoolBuddy steps (kiosk-related) appear in the main tour, or only after SpoolBuddy hardware is detected on the network?
+3. Should the PrintLab Spool steps (kiosk-related) appear in the main tour, or only after PrintLab Spool hardware is detected on the network?
 4. What's the right balance between "tour the page" (Phase 2.4 - 2.7) and "tooltips on the page itself"? Some of these could be inline help instead of tour steps.
 5. Does the mascot character set need a "wrong" / "warning" expression for the inline red callouts in Step 1.2, or do plain icons work?

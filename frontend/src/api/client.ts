@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import type { ArchivePlatesResponse, LibraryFilePlatesResponse } from '../types/plates';
 
 const API_BASE = '/api/v1';
@@ -156,6 +157,11 @@ async function request<T>(
   // Add auth token if available
   if (authToken) {
     headers['Authorization'] = `Bearer ${authToken}`;
+  }
+
+  // Sprache der Oberfläche: die PrintLab-Erweiterungen übersetzen ihre Meldungen danach (Deutsch/Englisch).
+  if (!headers['Accept-Language']) {
+    headers['Accept-Language'] = i18n.language || 'de';
   }
 
   const response = await fetch(`${API_BASE}${endpoint}`, {

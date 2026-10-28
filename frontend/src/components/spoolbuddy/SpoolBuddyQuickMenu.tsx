@@ -247,11 +247,11 @@ export function SpoolBuddyQuickMenu({ isOpen, onClose, deviceId, deviceOnline }:
                     ? t('spoolbuddy.quickMenu.confirmPlugOff', 'Turn off {{name}}?', { name: pendingConfirm.printer.name })
                     : t('spoolbuddy.quickMenu.confirmPlugOn', 'Turn on {{name}}?', { name: pendingConfirm.printer.name }))
                 : pendingConfirm.command === 'shutdown'
-                  ? t('spoolbuddy.quickMenu.confirmShutdown', 'Are you sure you want to shut down the SpoolBuddy? You will need physical access to turn it back on.')
+                  ? t('spoolbuddy.quickMenu.confirmShutdown', 'Are you sure you want to shut down the PrintLab Spool? You will need physical access to turn it back on.')
                   : pendingConfirm.command === 'reboot'
-                    ? t('spoolbuddy.quickMenu.confirmReboot', 'Are you sure you want to reboot the SpoolBuddy?')
+                    ? t('spoolbuddy.quickMenu.confirmReboot', 'Are you sure you want to reboot the PrintLab Spool?')
                     : pendingConfirm.command === 'restart_daemon'
-                      ? t('spoolbuddy.quickMenu.confirmRestartDaemon', 'Restart the SpoolBuddy daemon? NFC and scale will be temporarily unavailable.')
+                      ? t('spoolbuddy.quickMenu.confirmRestartDaemon', 'Restart the PrintLab Spool daemon? NFC and scale will be temporarily unavailable.')
                       : t('spoolbuddy.quickMenu.confirmRestartBrowser', 'Restart the kiosk browser? The display will briefly go blank.')}
             </p>
             <div className="flex gap-3">

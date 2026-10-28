@@ -424,7 +424,7 @@ function ScaleTab({ device, weight, weightStable, rawAdc }: {
       setAwaitingTareSince(null);
       setStatus({
         type: 'error',
-        msg: t('spoolbuddy.settings.tareTimedOut', 'Tare timed out — is the SpoolBuddy daemon running?'),
+        msg: t('spoolbuddy.settings.tareTimedOut', 'Tare timed out — is the PrintLab Spool daemon running?'),
       });
       scheduleStatusDismiss(5000);
     }, Math.max(0, TARE_TIMEOUT_MS - elapsed()));
@@ -1066,7 +1066,7 @@ export function SpoolBuddySettingsPage() {
         {!device ? (
           <div className="flex items-center justify-center h-32">
             <div className="text-center text-zinc-500">
-              <p className="text-sm">{t('spoolbuddy.settings.noDevice', 'No SpoolBuddy device found')}</p>
+              <p className="text-sm">{t('spoolbuddy.settings.noDevice', 'No PrintLab Spool device found')}</p>
             </div>
           </div>
         ) : (

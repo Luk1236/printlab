@@ -305,9 +305,9 @@ export function SpoolBuddyAmsPage() {
       api.unassignSpool(printerId, amsId, trayId),
     onSuccess: () => {
       // Two cache-key shapes coexist for spool assignments: this page and a
-      // few SpoolBuddy components key by printerId, while AssignSpoolModal
+      // few PrintLab Spool components key by printerId, while AssignSpoolModal
       // (and most of PrintLab) keys without it. Both must be invalidated
-      // here, otherwise after a SpoolBuddy unassign the modal opens with a
+      // here, otherwise after a PrintLab Spool unassign the modal opens with a
       // stale assignments list, sees the just-freed spool as still taken,
       // filters it out, and shows "no spools available" — even though it's
       // sitting in inventory ready to re-assign (#1133 follow-up).

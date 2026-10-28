@@ -1,5 +1,5 @@
 /**
- * Regression test for #1738 — SpoolBuddy's inventory search must match by
+ * Regression test for #1738 — PrintLab Spool's inventory search must match by
  * numeric spool ID, just like PrintLab's main InventoryPage. Both pages now
  * share `filterSpoolsByQuery` so behaviour stays in lockstep; this test fails
  * loudly if SpoolBuddyInventoryPage ever re-inlines its filter and drops
@@ -68,7 +68,7 @@ describe('SpoolBuddyInventoryPage search filter (#1738)', () => {
     expect(result.map((s) => s.id).sort((a, b) => a - b)).toEqual([100, 200, 1001]);
   });
 
-  it('still matches by the existing fields SpoolBuddy supported pre-fix', () => {
+  it('still matches by the existing fields PrintLab Spool supported pre-fix', () => {
     const spools = [
       makeSpool({ id: 1, material: 'PLA', brand: 'Bambu Lab', color_name: 'Red' }),
       makeSpool({ id: 2, material: 'PETG', brand: 'Polymaker', color_name: 'Blue' }),

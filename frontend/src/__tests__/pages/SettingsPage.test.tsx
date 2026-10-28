@@ -1099,7 +1099,7 @@ describe('SettingsPage', () => {
     });
   });
 
-  describe('SpoolBuddy tab badge', () => {
+  describe('PrintLab Spool tab badge', () => {
     const baseDevice = {
       id: 1,
       device_id: 'sb-0001',
@@ -1143,7 +1143,7 @@ describe('SettingsPage', () => {
 
       // Find the tab button (not the header) — it's the <button> containing the SpoolBuddy text
       const tabButton = await waitFor(() => {
-        const buttons = screen.getAllByRole('button').filter((b) => b.textContent?.includes('SpoolBuddy'));
+        const buttons = screen.getAllByRole('button').filter((b) => b.textContent?.includes('PrintLab Spool'));
         expect(buttons.length).toBeGreaterThan(0);
         return buttons[0];
       });
@@ -1168,7 +1168,7 @@ describe('SettingsPage', () => {
       render(<SettingsPage />);
 
       const tabButton = await waitFor(() => {
-        const buttons = screen.getAllByRole('button').filter((b) => b.textContent?.includes('SpoolBuddy'));
+        const buttons = screen.getAllByRole('button').filter((b) => b.textContent?.includes('PrintLab Spool'));
         expect(buttons.length).toBeGreaterThan(0);
         return buttons[0];
       });
@@ -1186,14 +1186,14 @@ describe('SettingsPage', () => {
       render(<SettingsPage />);
 
       const tabButton = await waitFor(() => {
-        const buttons = screen.getAllByRole('button').filter((b) => b.textContent?.includes('SpoolBuddy'));
+        const buttons = screen.getAllByRole('button').filter((b) => b.textContent?.includes('PrintLab Spool'));
         expect(buttons.length).toBeGreaterThan(0);
         return buttons[0];
       });
 
       // The only numeric content should NOT be present — tab label only
       await waitFor(() => {
-        expect(tabButton.textContent).toBe('SpoolBuddy');
+        expect(tabButton.textContent).toBe('PrintLab Spool');
       });
     });
   });

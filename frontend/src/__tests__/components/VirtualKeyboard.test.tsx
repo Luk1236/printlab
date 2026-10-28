@@ -3,7 +3,7 @@
  * bundler's CJS interop the default import can arrive as the module namespace
  * object rather than the Keyboard component, so rendering <Keyboard> throws
  * React #130 ("Element type is invalid ... got: object"). The on-screen keyboard
- * mounts on every SpoolBuddy screen the instant a text input is focused, so the
+ * mounts on every PrintLab Spool screen the instant a text input is focused, so the
  * crash hit inventory search and the write-tag New Spool fields alike.
  */
 

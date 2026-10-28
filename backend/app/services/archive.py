@@ -1381,7 +1381,7 @@ class ArchiveService:
         if "_thumbnail_data" in metadata:
             thumb_file = archive_dir / f"thumbnail{metadata['_thumbnail_ext']}"
             thumb_file.write_bytes(metadata["_thumbnail_data"])
-            thumbnail_path = str(thumb_file.relative_to(settings.base_dir))
+            thumbnail_path = thumb_file.relative_to(settings.base_dir).as_posix()
             del metadata["_thumbnail_data"]
             del metadata["_thumbnail_ext"]
 
@@ -1463,7 +1463,7 @@ class ArchiveService:
             # dropped markers no longer say.
             merged["recovered_no_3mf"] = True
             existing.filename = original_filename or source_file.name
-            existing.file_path = str(dest_file.relative_to(settings.base_dir))
+            existing.file_path = dest_file.relative_to(settings.base_dir).as_posix()
             existing.file_size = dest_file.stat().st_size
             existing.content_hash = content_hash
             existing.thumbnail_path = thumbnail_path
@@ -1510,7 +1510,7 @@ class ArchiveService:
         archive = PrintArchive(
             printer_id=printer_id,
             filename=original_filename or source_file.name,
-            file_path=str(dest_file.relative_to(settings.base_dir)),
+            file_path=dest_file.relative_to(settings.base_dir).as_posix(),
             file_size=dest_file.stat().st_size,
             content_hash=content_hash,
             thumbnail_path=thumbnail_path,
@@ -1878,7 +1878,7 @@ class ArchiveService:
         await asyncio.to_thread(timelapse_file.write_bytes, timelapse_data)
 
         # Update archive record
-        archive.timelapse_path = str(timelapse_file.relative_to(settings.base_dir))
+        archive.timelapse_path = timelapse_file.relative_to(settings.base_dir).as_posix()
         await self.db.commit()
 
         # For non-MP4 videos (e.g. AVI from P1S), kick off background conversion
@@ -1971,7 +1971,7 @@ async def _convert_timelapse_to_mp4(archive_id: int, source_path: Path) -> None:
             result = await db.execute(select(PrintArchive).where(PrintArchive.id == archive_id))
             archive = result.scalar_one_or_none()
             if archive:
-                archive.timelapse_path = str(mp4_path.relative_to(settings.base_dir))
+                archive.timelapse_path = mp4_path.relative_to(settings.base_dir).as_posix()
                 await db.commit()
 
         # Remove original non-MP4 file

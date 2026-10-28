@@ -1,4 +1,4 @@
-"""Configuration loader for SpoolBuddy daemon.
+"""Configuration loader for PrintLab Spool daemon.
 
 All configuration is via environment variables. The systemd service file
 or a shell wrapper sets these before launching the daemon.

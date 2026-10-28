@@ -78,7 +78,7 @@ describe('SpoolBuddyLayout', () => {
 
   it('renders the top bar with logo', () => {
     renderLayout();
-    const img = document.querySelector('img[alt="SpoolBuddy"]');
+    const img = document.querySelector('img[alt="PrintLab Spool"]');
     expect(img).not.toBeNull();
   });
 

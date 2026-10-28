@@ -157,7 +157,7 @@ describe('SpoolBuddyWriteTagPage', () => {
 
   it('shows device offline message in NFC panel', () => {
     renderPage();
-    expect(screen.getByText('SpoolBuddy is offline')).toBeDefined();
+    expect(screen.getByText('PrintLab Spool is offline')).toBeDefined();
   });
 
   it('shows idle prompt when device is online but no spool selected', () => {

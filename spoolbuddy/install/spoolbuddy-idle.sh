@@ -1,10 +1,10 @@
 #!/bin/bash
-# SpoolBuddy kiosk display idle watchdog.
+# PrintLab Spool kiosk display idle watchdog.
 #
 # Powers the HDMI output off via wlopm after the configured inactivity
 # timeout, driven by swayidle inside the labwc Wayland session. The timeout
 # value is fetched once from the PrintLab backend on startup so it matches
-# whatever the user picked in SpoolBuddy Settings → Display.
+# whatever the user picked in PrintLab Spool Settings → Display.
 #
 # Changes made in the UI are applied live: the daemon writes a
 # "reload-timeout N" line to /tmp/spoolbuddy-wake whenever it sees a new
@@ -90,7 +90,7 @@ if [ -n "$BACKEND_URL" ] && [ -n "$API_KEY" ] && [ -n "$DEVICE_ID" ]; then
     fi
 fi
 
-# FIFO for the SpoolBuddy daemon to talk to this watchdog from outside the
+# FIFO for the PrintLab Spool daemon to talk to this watchdog from outside the
 # Wayland session.  Two messages are understood:
 #   wake               — turn the display on (NFC tag scan, scale weight change)
 #   reload-timeout N   — kill swayidle and restart it with timeout=N

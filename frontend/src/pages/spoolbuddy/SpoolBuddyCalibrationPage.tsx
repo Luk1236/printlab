@@ -205,7 +205,7 @@ export function SpoolBuddyCalibrationPage() {
         {!device ? (
           <div className="flex items-center justify-center h-32">
             <div className="text-center text-zinc-500">
-              <p className="text-sm">{t('spoolbuddy.settings.noDevice', 'No SpoolBuddy device found')}</p>
+              <p className="text-sm">{t('spoolbuddy.settings.noDevice', 'No PrintLab Spool device found')}</p>
             </div>
           </div>
         ) : (

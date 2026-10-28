@@ -83,7 +83,7 @@ describe('AuthContext', () => {
       expect(result.current.user?.username).toBe('alice');
     });
 
-    it('still bootstraps and removes a SpoolBuddy login token', async () => {
+    it('still bootstraps and removes a PrintLab Spool login token', async () => {
       window.history.replaceState({}, '', '/spoolbuddy?token=kiosk-api-key&view=ams#top');
       server.use(http.get('/api/v1/auth/me', () => HttpResponse.json({
         id: 1, username: 'kiosk', is_active: true, permissions: [], groups: [],

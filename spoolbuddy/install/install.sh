@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 #
-# SpoolBuddy Installation Script for Raspberry Pi
+# PrintLab Spool Installation Script for Raspberry Pi
 #
 # Supports two scenarios:
-#   1) SpoolBuddy only — NFC/scale companion connecting to a remote PrintLab instance
-#   2) SpoolBuddy + PrintLab — both running natively on this Raspberry Pi
+#   1) PrintLab Spool only — NFC/scale companion connecting to a remote PrintLab instance
+#   2) PrintLab Spool + PrintLab — both running natively on this Raspberry Pi
 #
 # Usage:
 #   Interactive:  curl -fsSL https://raw.githubusercontent.com/Luk1236/printlab/main/spoolbuddy/install.sh -o install.sh && chmod +x install.sh && sudo ./install.sh
@@ -40,10 +40,10 @@ GITHUB_REPO="https://github.com/Luk1236/printlab.git"
 SPOOLBUDDY_SERVICE_USER="spoolbuddy"
 PRINTLAB_SERVICE_USER="printlab"
 
-# Packages needed for SpoolBuddy hardware (NFC reader + scale)
+# Packages needed for PrintLab Spool hardware (NFC reader + scale)
 SYSTEM_PACKAGES="python3 python3-pip python3-venv python3-dev python3-spidev python3-libgpiod gpiod libgpiod-dev i2c-tools git plymouth-themes"
 
-# Python packages for SpoolBuddy daemon
+# Python packages for PrintLab Spool daemon
 SPOOLBUDDY_PIP_PACKAGES="spidev gpiod smbus2 httpx"
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -188,12 +188,12 @@ prompt_yes_no() {
 }
 
 show_help() {
-    echo "SpoolBuddy Installation Script for Raspberry Pi"
+    echo "PrintLab Spool Installation Script for Raspberry Pi"
     echo ""
     echo "Usage: sudo $0 [OPTIONS]"
     echo ""
     echo "Options:"
-    echo "  --mode MODE          \"spoolbuddy\" (companion only) or \"full\" (PrintLab + SpoolBuddy)"
+    echo "  --mode MODE          \"spoolbuddy\" (companion only) or \"full\" (PrintLab + PrintLab Spool)"
     echo "  --repo URL           Git repository URL to install from"
     echo "  --ref REF            Git ref to install (branch/tag/commit)"
     echo "  --printlab-url URL   PrintLab server URL (required for spoolbuddy mode)"
@@ -208,7 +208,7 @@ show_help() {
     echo "  Interactive:"
     echo "    sudo ./install.sh"
     echo ""
-    echo "  SpoolBuddy companion (unattended):"
+    echo "  PrintLab Spool companion (unattended):"
     echo "    sudo ./install.sh --mode spoolbuddy --printlab-url http://192.168.1.100:8000 --api-key bb_xxx -y"
     echo ""
     echo "  Full install (unattended):"
@@ -390,21 +390,21 @@ configure_boot_config() {
 
     info "Configuring $boot_config..."
 
-    # Migrate legacy SpoolBuddy setting (bus 0 / i2c_vc) to bus 1 / i2c_arm.
+    # Migrate legacy PrintLab Spool setting (bus 0 / i2c_vc) to bus 1 / i2c_arm.
     if grep -q "^dtparam=i2c_vc=on" "$boot_config"; then
-        sed -i "s/^dtparam=i2c_vc=on$/# dtparam=i2c_vc=on (disabled by SpoolBuddy installer; use i2c_arm bus 1)/" "$boot_config"
+        sed -i "s/^dtparam=i2c_vc=on$/# dtparam=i2c_vc=on (disabled by PrintLab Spool installer; use i2c_arm bus 1)/" "$boot_config"
         REBOOT_NEEDED="true"
         success "Disabled legacy dtparam=i2c_vc=on"
     fi
 
-    if grep -q "^# SpoolBuddy: I2C bus 0 for NAU7802 scale (GPIO0/GPIO1)" "$boot_config"; then
-        sed -i "s/^# SpoolBuddy: I2C bus 0 for NAU7802 scale (GPIO0\/GPIO1)$/# SpoolBuddy: I2C bus 1 for NAU7802 scale (GPIO2\/GPIO3)/" "$boot_config"
+    if grep -q "^# PrintLab Spool: I2C bus 0 for NAU7802 scale (GPIO0/GPIO1)" "$boot_config"; then
+        sed -i "s/^# PrintLab Spool: I2C bus 0 for NAU7802 scale (GPIO0\/GPIO1)$/# PrintLab Spool: I2C bus 1 for NAU7802 scale (GPIO2\/GPIO3)/" "$boot_config"
     fi
 
     # Ensure I2C bus 1 (GPIO2/GPIO3) is enabled for NAU7802 scale
     if ! grep -q "^dtparam=i2c_arm=on" "$boot_config"; then
         echo "" >> "$boot_config"
-        echo "# SpoolBuddy: I2C bus 1 for NAU7802 scale (GPIO2/GPIO3)" >> "$boot_config"
+        echo "# PrintLab Spool: I2C bus 1 for NAU7802 scale (GPIO2/GPIO3)" >> "$boot_config"
         echo "dtparam=i2c_arm=on" >> "$boot_config"
         REBOOT_NEEDED="true"
         success "Added dtparam=i2c_arm=on"
@@ -415,7 +415,7 @@ configure_boot_config() {
     # Disable SPI auto chip-select (manual CS on GPIO23 for PN5180)
     if ! grep -q "^dtoverlay=spi0-0cs" "$boot_config"; then
         echo "" >> "$boot_config"
-        echo "# SpoolBuddy: Disable SPI auto CS (manual CS on GPIO23 for PN5180)" >> "$boot_config"
+        echo "# PrintLab Spool: Disable SPI auto CS (manual CS on GPIO23 for PN5180)" >> "$boot_config"
         echo "dtoverlay=spi0-0cs" >> "$boot_config"
         REBOOT_NEEDED="true"
         success "Added dtoverlay=spi0-0cs"
@@ -478,7 +478,7 @@ HELPEREOF
 
     cat > "$hook_file" << 'APTEOF'
 // Preserve NetworkManager WiFi connections across apt upgrades.
-// Installed by SpoolBuddy.
+// Installed by PrintLab Spool.
 DPkg::Pre-Invoke {"/usr/local/sbin/preserve-wifi backup";};
 DPkg::Post-Invoke {"/usr/local/sbin/preserve-wifi restore";};
 APTEOF
@@ -491,7 +491,7 @@ upgrade_system_packages() {
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SpoolBuddy Installation
+# PrintLab Spool Installation
 # ─────────────────────────────────────────────────────────────────────────────
 
 create_spoolbuddy_user() {
@@ -554,20 +554,20 @@ download_spoolbuddy() {
 setup_spoolbuddy_venv() {
     cd "$INSTALL_PATH/spoolbuddy"
 
-    run_with_progress "Creating SpoolBuddy venv" $PYTHON_CMD -m venv --system-site-packages venv
+    run_with_progress "Creating PrintLab Spool venv" $PYTHON_CMD -m venv --system-site-packages venv
     run_with_progress "Upgrading pip" "$INSTALL_PATH/spoolbuddy/venv/bin/pip" install --upgrade pip
-    run_with_progress "Installing SpoolBuddy packages" "$INSTALL_PATH/spoolbuddy/venv/bin/pip" install $SPOOLBUDDY_PIP_PACKAGES
+    run_with_progress "Installing PrintLab Spool packages" "$INSTALL_PATH/spoolbuddy/venv/bin/pip" install $SPOOLBUDDY_PIP_PACKAGES
 
     chown -R "$SPOOLBUDDY_SERVICE_USER:$SPOOLBUDDY_SERVICE_USER" "$INSTALL_PATH/spoolbuddy/venv"
 }
 
 create_spoolbuddy_env() {
-    info "Creating SpoolBuddy configuration..."
+    info "Creating PrintLab Spool configuration..."
 
     local env_file="$INSTALL_PATH/spoolbuddy/.env"
 
     cat > "$env_file" << EOF
-# SpoolBuddy Configuration
+# PrintLab Spool Configuration
 # Generated by install.sh on $(date)
 
 # PrintLab backend URL
@@ -592,7 +592,7 @@ ensure_kiosk_env_access() {
     local env_file="$INSTALL_PATH/spoolbuddy/.env"
 
     if [[ ! -f "$env_file" ]]; then
-        warn "SpoolBuddy env file not found at $env_file"
+        warn "PrintLab Spool env file not found at $env_file"
         return
     fi
 
@@ -612,7 +612,7 @@ ensure_kiosk_env_access() {
         error "Kiosk user '$KIOSK_USER' cannot read $env_file (required for dynamic kiosk URL). Check groups/permissions."
     fi
 
-    success "Verified kiosk user '$KIOSK_USER' can read SpoolBuddy env"
+    success "Verified kiosk user '$KIOSK_USER' can read PrintLab Spool env"
 }
 
 setup_ssh_key() {
@@ -643,7 +643,7 @@ setup_ssh_key() {
 }
 
 create_spoolbuddy_service() {
-    info "Creating SpoolBuddy systemd service..."
+    info "Creating PrintLab Spool systemd service..."
 
     local after_line="After=network-online.target"
     if [[ "$INSTALL_MODE" == "full" ]]; then
@@ -652,7 +652,7 @@ create_spoolbuddy_service() {
 
     cat > /etc/systemd/system/spoolbuddy.service << EOF
 [Unit]
-Description=SpoolBuddy - NFC Spool Management Daemon
+Description=PrintLab Spool - NFC Spool Management Daemon
 Documentation=https://github.com/Luk1236/printlab
 $after_line
 Wants=network-online.target
@@ -674,7 +674,7 @@ EOF
 
     systemctl daemon-reload
     systemctl enable spoolbuddy.service
-    success "SpoolBuddy service created and enabled"
+    success "PrintLab Spool service created and enabled"
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -834,14 +834,14 @@ EOF
 }
 
 bootstrap_spoolbuddy_kiosk_key() {
-    # Provision an API key for the local SpoolBuddy kiosk and write it into
+    # Provision an API key for the local PrintLab Spool kiosk and write it into
     # spoolbuddy/.env. Runs against the PrintLab DB directly (via the CLI),
     # so the printlab service does not need to be running yet.
-    info "Provisioning SpoolBuddy kiosk API key..."
+    info "Provisioning PrintLab Spool kiosk API key..."
 
     local env_file="$INSTALL_PATH/spoolbuddy/.env"
     if [[ ! -f "$env_file" ]]; then
-        warn "SpoolBuddy env file not found at $env_file — skipping kiosk key bootstrap"
+        warn "PrintLab Spool env file not found at $env_file — skipping kiosk key bootstrap"
         return
     fi
 
@@ -851,7 +851,7 @@ bootstrap_spoolbuddy_kiosk_key() {
     if ! kiosk_key="$(cd "$INSTALL_PATH" && sudo -u "$PRINTLAB_SERVICE_USER" \
             env DATA_DIR="$INSTALL_PATH/data" LOG_DIR="$INSTALL_PATH/logs" \
             "$INSTALL_PATH/venv/bin/python" -m backend.app.cli kiosk-bootstrap --force)"; then
-        error "Failed to bootstrap SpoolBuddy kiosk API key"
+        error "Failed to bootstrap PrintLab Spool kiosk API key"
     fi
 
     if [[ -z "$kiosk_key" || "$kiosk_key" != bb_* ]]; then
@@ -867,7 +867,7 @@ bootstrap_spoolbuddy_kiosk_key() {
     escaped_key=$(printf '%s\n' "$kiosk_key" | sed -e 's/[\/&]/\\&/g')
     sed -i "s/^SPOOLBUDDY_API_KEY=.*/SPOOLBUDDY_API_KEY=${escaped_key}/" "$env_file"
 
-    success "SpoolBuddy kiosk API key provisioned"
+    success "PrintLab Spool kiosk API key provisioned"
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1017,7 +1017,7 @@ setup_kiosk() {
     info "Kiosk user: $KIOSK_USER (home: $KIOSK_HOME)"
     info "Kiosk URL:  $KIOSK_URL"
 
-    # Allow kiosk user to read SpoolBuddy env so launcher can resolve backend URL
+    # Allow kiosk user to read PrintLab Spool env so launcher can resolve backend URL
     # and API key dynamically instead of using stale install-time fallback values.
     local spoolbuddy_env="$INSTALL_PATH/spoolbuddy/.env"
     if [[ -f "$spoolbuddy_env" ]]; then
@@ -1123,8 +1123,8 @@ setup_kiosk() {
     # Write .plymouth theme file
     cat > "$theme_dir/spoolbuddy.plymouth" << 'EOF'
 [Plymouth Theme]
-Name=SpoolBuddy
-Description=SpoolBuddy boot splash
+Name=PrintLab Spool
+Description=PrintLab Spool boot splash
 ModuleName=script
 
 [script]
@@ -1206,7 +1206,7 @@ EOF
 
         # ── Override Debian/RPi Chromium defaults for kiosk performance ──────
         cat > /etc/chromium.d/spoolbuddy-kiosk << 'CHROMIUM_EOF'
-# SpoolBuddy kiosk: add kiosk-specific flags on top of Pi defaults.
+# PrintLab Spool kiosk: add kiosk-specific flags on top of Pi defaults.
 # Preserves Pi GPU settings (gpu-rasterization, ANGLE/GLES) for stability.
 CHROMIUM_FLAGS="$CHROMIUM_FLAGS --disable-smooth-scrolling"
 CHROMIUM_FLAGS="$CHROMIUM_FLAGS --disable-extensions"
@@ -1314,7 +1314,7 @@ EOF
 wlr-randr --output HDMI-A-1 --custom-mode 1024x600@60 &
 
 # Idle watchdog: powers off HDMI via wlopm after the configured inactivity
-# timeout (SpoolBuddy Settings → Display → Screen blank timeout). Reads the
+# timeout (PrintLab Spool Settings → Display → Screen blank timeout). Reads the
 # current value from the backend on startup; UI changes take effect on the
 # next reboot / kiosk restart.
 $INSTALL_PATH/spoolbuddy/install/spoolbuddy-idle.sh &
@@ -1403,12 +1403,12 @@ ask_install_mode() {
     fi
 
     echo ""
-    echo -e "${BOLD}How would you like to set up SpoolBuddy?${NC}"
+    echo -e "${BOLD}How would you like to set up PrintLab Spool?${NC}"
     echo ""
-    echo -e "  ${CYAN}1)${NC} SpoolBuddy only"
+    echo -e "  ${CYAN}1)${NC} PrintLab Spool only"
     echo "     NFC reader + scale on this RPi, PrintLab runs on another device"
     echo ""
-    echo -e "  ${CYAN}2)${NC} SpoolBuddy + PrintLab"
+    echo -e "  ${CYAN}2)${NC} PrintLab Spool + PrintLab"
     echo "     Both running natively on this Raspberry Pi"
     echo ""
 
@@ -1483,7 +1483,7 @@ gather_config() {
     if [[ "$INSTALL_MODE" == "spoolbuddy" ]]; then
         # Need remote PrintLab URL and API key
         echo ""
-        info "SpoolBuddy needs to connect to your PrintLab server."
+        info "PrintLab Spool needs to connect to your PrintLab server."
         info "You can find/create an API key in PrintLab under Settings -> API Keys."
         echo ""
 
@@ -1515,7 +1515,7 @@ gather_config() {
     echo ""
     echo -e "${BOLD}Installation Summary${NC}"
     echo -e "${CYAN}─────────────────────────────────────────${NC}"
-    echo -e "  Mode:           ${GREEN}$([ "$INSTALL_MODE" == "full" ] && echo "PrintLab + SpoolBuddy" || echo "SpoolBuddy only")${NC}"
+    echo -e "  Mode:           ${GREEN}$([ "$INSTALL_MODE" == "full" ] && echo "PrintLab + PrintLab Spool" || echo "PrintLab Spool only")${NC}"
     echo -e "  Install path:   ${GREEN}$INSTALL_PATH${NC}"
     echo -e "  Git repo:       ${GREEN}$INSTALL_REPO${NC}"
     echo -e "  Git ref:        ${GREEN}$INSTALL_REF${NC}"
@@ -1612,8 +1612,8 @@ main() {
     setup_kiosk
     echo ""
 
-    # ── Step 4: SpoolBuddy setup ──────────────────────────────────────────
-    info "Setting up SpoolBuddy..."
+    # ── Step 4: PrintLab Spool setup ──────────────────────────────────────────
+    info "Setting up PrintLab Spool..."
     setup_spoolbuddy_venv
     create_spoolbuddy_env
     # Kiosk env access: only needed if actual kiosk hardware is available
@@ -1653,7 +1653,7 @@ main() {
     if [[ "$INSTALL_MODE" == "full" ]]; then
         echo -e "  ${BOLD}PrintLab:${NC}         ${CYAN}http://$ip_addr:$PRINTLAB_PORT${NC}"
     else
-        echo -e "  ${BOLD}SpoolBuddy:${NC}       Connecting to ${CYAN}$PRINTLAB_URL${NC}"
+        echo -e "  ${BOLD}PrintLab Spool:${NC}       Connecting to ${CYAN}$PRINTLAB_URL${NC}"
     fi
     echo -e "  ${BOLD}Kiosk URL:${NC}        ${CYAN}$KIOSK_URL${NC}"
     echo -e "  ${BOLD}Kiosk user:${NC}       ${CYAN}$KIOSK_USER${NC}"
@@ -1668,8 +1668,8 @@ main() {
 
     echo ""
     echo -e "  ${BOLD}Manage services:${NC}"
-    echo -e "    SpoolBuddy status:   ${CYAN}sudo systemctl status spoolbuddy${NC}"
-    echo -e "    SpoolBuddy logs:     ${CYAN}sudo journalctl -u spoolbuddy -f${NC}"
+    echo -e "    PrintLab Spool status:   ${CYAN}sudo systemctl status spoolbuddy${NC}"
+    echo -e "    PrintLab Spool logs:     ${CYAN}sudo journalctl -u spoolbuddy -f${NC}"
     if [[ "$INSTALL_MODE" == "full" ]]; then
         echo -e "    Bambuddy status:     ${CYAN}sudo systemctl status printlab${NC}"
         echo -e "    PrintLab logs:       ${CYAN}sudo journalctl -u printlab -f${NC}"

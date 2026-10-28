@@ -104,3 +104,32 @@ gesperrt, aber Drucker, Not-Halt und Plattenwechsler im Simulationsmodus sind im
 3. Vor dem Anschluss der Mechanik im Befehlsmodus: Anmeldung einschalten.
 4. Einmalig prüfen: Beim ersten Start mit der neuen Version benennt PrintLab `bambuddy.db` in `printlab.db` um. Vorher
    eine Kopie der Datenbank sichern (der Ordner `backup/` enthält schon eine).
+
+## 8. Nachtrag (Version 1.2.2, noch nicht committet)
+
+Umgesetzt, was nach v1.2.1 offen war:
+
+- **Meldungen auf Englisch:** Die Erweiterungs-Endpunkte übersetzen ihre Meldungen ins Englische, wenn die
+  Oberfläche nicht auf Deutsch steht (Antwortfilter `ForkI18nMiddleware`, Katalog in
+  `backend/app/i18n/fork_messages.py`, rund 90 Muster). Die Oberfläche schickt ihre Sprache als `Accept-Language`
+  mit. Wie in der Grundanwendung kennt der Server nur Deutsch und Englisch; alle anderen Sprachen bekommen Englisch,
+  unbekannte Texte bleiben deutsch.
+- **Echter Fehler gefunden:** Die Meldung zur gesperrten Befehls-Konfiguration enthielt ein Klingelzeichen statt
+  `\admin_passwort_setzen.py` (Backslash-Escape).
+- **Relative Pfade in der Datenbank** werden jetzt immer mit `/` gespeichert, damit Datenbank und Sicherungen
+  zwischen Windows und Linux/Pi austauschbar sind (vorher Backslashes unter Windows).
+- **SpoolBuddy** heißt in der Oberfläche jetzt „PrintLab Spool“ (Logo ersetzt, Texte in 15 Sprachen).
+- **Upstream-Tags** (`v1.2.5.x` usw., 77 Stück) aus dem lokalen Repo entfernt; es bleiben `v1.0.0` bis `v1.2.1`.
+  Der Remote `upstream` bleibt, damit sich spätere Korrekturen der Grundanwendung holen lassen.
+- **Release-Workflow** `.github/workflows/release.yml` (Docker-Image amd64 + arm64 bei Tag `v*`, ungetestet).
+- **Windows-Tests:** POSIX-Tests (procfs, Signale, chmod, Symlinks, Zeitzone, Dateisperren) werden unter Windows
+  übersprungen (`backend/tests/windows_skips.txt`) und laufen in der Linux-CI weiter; zwei Tests lasen Dateien mit
+  falscher Kodierung und sind korrigiert.
+
+**Prüfstand 1.2.2:** Frontend 4175 von 4175 Tests grün. Backend, in fünf Abschnitten: 0 Fehler in den
+Integrationstests (1748 + 1915 bestanden), Dienste-Tests 3106 bestanden; die übrigen Unit-Tests ergaben zehn
+Fehlschläge durch Windows-Dateisperren bei paralleler Ausführung bzw. falsche Kodierung — alle zehn bestehen
+einzeln oder sind korrigiert/übersprungen. `ruff`, TypeScript und die i18n-Parität sind sauber.
+
+**Weiterhin so:** `LICENSE`, `NOTICE` und die Urheberhinweise bleiben (AGPL-3.0). Das entfernt zu wollen, würde dir
+die Nutzungserlaubnis nehmen; ehrlich ist „PrintLab, basierend auf Bambuddy“.

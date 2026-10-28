@@ -1,4 +1,4 @@
-# SpoolBuddy Hardware Setup
+# PrintLab Spool Hardware Setup
 
 ## PN5180 NFC Reader (SPI)
 
@@ -56,10 +56,10 @@ ls /dev/i2c-*
 Add the following lines under the `[all]` section:
 
 ```
-# SpoolBuddy: I2C bus 1 for NAU7802 scale (GPIO2/GPIO3)
+# PrintLab Spool: I2C bus 1 for NAU7802 scale (GPIO2/GPIO3)
 dtparam=i2c_arm=on
 
-# SpoolBuddy: Disable SPI auto CS (manual CS on GPIO23 for PN5180)
+# PrintLab Spool: Disable SPI auto CS (manual CS on GPIO23 for PN5180)
 dtoverlay=spi0-0cs
 ```
 

@@ -121,7 +121,7 @@ function DeviceOfflineState() {
           {t('spoolbuddy.status.deviceOffline', 'Device Offline')}
         </p>
         <p className="text-sm text-zinc-600">
-          {t('spoolbuddy.status.connectDisplay', 'Connect the SpoolBuddy display to scan spools')}
+          {t('spoolbuddy.status.connectDisplay', 'Connect the PrintLab Spool display to scan spools')}
         </p>
       </div>
 
@@ -155,7 +155,7 @@ export function SpoolBuddyDashboard() {
     enabled: spoolmanSettings !== undefined,
   });
 
-  // Kiosk caveat: the SpoolBuddy display is a long-running browser window with
+  // Kiosk caveat: the PrintLab Spool display is a long-running browser window with
   // no focus/remount events, so a staleTime alone leaves this cache effectively
   // permanent. When slot assignments change from another client (PrintLab main
   // UI, direct Spoolman edit, AssignToAmsModal on a separate browser), the

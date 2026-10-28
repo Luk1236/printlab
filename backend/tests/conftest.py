@@ -885,3 +885,23 @@ def assert_no_log_errors(capture_logs):
     errors = capture_logs.get_errors()
     if errors:
         pytest.fail(f"Unexpected log errors:\n{capture_logs.format_errors()}")
+
+
+# --- Windows: Tests, die POSIX voraussetzen --------------------------------------------------------------
+# Die Anwendung läuft in Docker/Linux (und auf dem Pi). Diese Tests setzen POSIX-Funktionen voraus
+# (procfs, geteuid, Signale, chmod-Bits, tzset, getloadavg, Symlink-Rechte, "/"-Pfade) oder hängen unter
+# Windows beim Aufräumen an Dateisperren. Sie laufen in der Linux-CI weiter und werden nur auf Windows
+# übersprungen. Die Liste steht in windows_skips.txt (Eintrag = Test-Id oder ganze Datei).
+def pytest_collection_modifyitems(config, items):
+    if os.name != "nt":
+        return
+    skip_file = Path(__file__).with_name("windows_skips.txt")
+    try:
+        entries = {line.strip() for line in skip_file.read_text(encoding="utf-8").splitlines() if line.strip()}
+    except OSError:
+        return
+    marker = pytest.mark.skip(reason="setzt POSIX voraus; läuft in der Linux-CI (backend/tests/windows_skips.txt)")
+    for item in items:
+        nodeid = item.nodeid.replace("\\", "/")
+        if nodeid in entries or nodeid.split("::", 1)[0] in entries:
+            item.add_marker(marker)

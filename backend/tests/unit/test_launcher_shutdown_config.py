@@ -51,7 +51,7 @@ pytestmark = pytest.mark.skipif(
 def _read(rel: str) -> str:
     path = REPO / rel
     assert path.is_file(), f"launcher moved or was removed: {rel}"
-    return path.read_text()
+    return path.read_text(encoding="utf-8")
 
 
 def _uvicorn_lines(text: str) -> list[str]:

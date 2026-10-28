@@ -13,7 +13,7 @@ import { VirtualKeyboard } from '../VirtualKeyboard';
 import { useToast } from '../../contexts/ToastContext';
 
 export function SpoolBuddyLayout() {
-  // Cascade a re-render into all SpoolBuddy pages when the color catalog
+  // Cascade a re-render into all PrintLab Spool pages when the color catalog
   // loads, for the same reason as the main Layout — SpoolBuddyInventoryPage
   // renders spool color names on mount. See #857.
   useColorCatalogVersion();
@@ -76,7 +76,7 @@ export function SpoolBuddyLayout() {
     };
   }, []);
 
-  // Auto-check for SpoolBuddy daemon updates
+  // Auto-check for PrintLab Spool daemon updates
   const { data: updateCheck } = useQuery({
     queryKey: ['spoolbuddy-update-check', device?.device_id],
     queryFn: () => device ? spoolbuddyApi.checkDaemonUpdate(device.device_id) : Promise.resolve(null),
@@ -90,7 +90,7 @@ export function SpoolBuddyLayout() {
   const layoutAlertRef = useRef<string | null>(null);
   useEffect(() => {
     if (!effectiveDeviceOnline) {
-      const msg = 'SpoolBuddy device disconnected';
+      const msg = 'PrintLab Spool device disconnected';
       setAlert({ type: 'warning', message: msg });
       layoutAlertRef.current = msg;
     } else if (updateCheck?.update_available && updateCheck.latest_version) {

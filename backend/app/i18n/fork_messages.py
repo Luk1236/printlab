@@ -1,0 +1,196 @@
+"""Meldungen der PrintLab-Erweiterungen auf Englisch (Quelle der Meldungen ist Deutsch).
+
+Die Erweiterungen (Wartungsprogramme, Tür/Plattenwechsler, Automatik, Kamera-Prüfungen, Angebote) erzeugen ihre
+Meldungen auf Deutsch. Die Oberfläche schickt die gewählte Sprache als ``Accept-Language`` mit. Für alle Sprachen
+außer Deutsch ersetzt diese Schicht bekannte deutsche Meldungen in den JSON-Antworten dieser Endpunkte durch
+englische (wie die Grundanwendung, deren serverseitige Texte ebenfalls nur Deutsch und Englisch kennen).
+Unbekannte Texte bleiben unverändert (deutsch), es geht also nie eine Meldung verloren.
+"""
+from __future__ import annotations
+
+import json
+import re
+from typing import Any
+
+# (deutsches Muster, englische Ersetzung); längere/spezifischere Muster zuerst.
+_RAW: list[tuple[str, str]] = [
+    # --- Hardware: Tür und Plattenwechsler ---------------------------------------------------------
+    (r"Not-Halt aktiv — Hardware-Konfiguration neu laden oder Magazin auffüllen, um fortzufahren\.",
+     "Emergency stop active — reload the hardware configuration or refill the magazine to continue."),
+    (r"Letzter Wechsel unvollständig \((?P<s>[^)]*)\) — Mechanik prüfen, dann den Wechsel als geprüft bestätigen\.",
+     r"Last change incomplete (\g<s>) — check the mechanics, then confirm the change as checked."),
+    (r"Es läuft bereits ein Hardware-Vorgang\.", "A hardware operation is already running."),
+    (r"Hardware-Vorgang läuft bereits — kein automatischer Wechsel\.", "Hardware operation already running — no automatic change."),
+    (r"Tür geöffnet \(Simulation\)\.", "Door opened (simulation)."),
+    (r"Tür geschlossen \(Simulation\)\.", "Door closed (simulation)."),
+    (r"Tür geöffnet\.", "Door opened."),
+    (r"Tür geschlossen\.", "Door closed."),
+    (r"Tür-Endschalter meldet UNKNOWN\.", "Door limit switch reports UNKNOWN."),
+    (r"Tür ist nach dem Öffnen noch geschlossen\.", "Door is still closed after opening."),
+    (r"Tür ist nach dem Schließen noch offen\.", "Door is still open after closing."),
+    (r"Tür ist offen bzw\. unbestätigt — Plattenwechsel nicht angetreten\.", "Door is open or unconfirmed — plate change not started."),
+    (r"Keine frische Platte im Magazin\.", "No fresh plate in the magazine."),
+    (r"Kein freies Ablagefach\.", "No free storage slot."),
+    (r"Platte aus Fach (?P<n>\d+) eingesetzt \(Simulation\)\.", r"Plate from slot \g<n> inserted (simulation)."),
+    (r"Platte aus Fach (?P<n>\d+) eingesetzt\.", r"Plate from slot \g<n> inserted."),
+    (r" \(Platte getauscht, Magazin nachgeführt\)", " (plate swapped, magazine updated)"),
+    (r" — Wechsel unvollständig", " — change incomplete"),
+    (r"; Mechanik prüfen\.", "; check the mechanics."),
+    (r"Es gibt keinen unvollständigen Wechsel\.", "There is no incomplete change."),
+    (r"Unvollständiger Wechsel bestätigt\.", "Incomplete change confirmed."),
+    (r"Magazin aufgefüllt, Ablage geleert\.", "Magazine refilled, storage emptied."),
+    (r"Fach-Id fehlt oder ist keine Zahl\.", "Slot id is missing or not a number."),
+    (r"Unbekanntes Fach (?P<n>\d+)\.", r"Unknown slot \g<n>."),
+    (r"Fach (?P<n>\d+): Etikett '", r"Slot \g<n>: label '"),
+    (r"Unbekannter Status '(?P<s>[^']*)' für Fach (?P<n>\d+) \(erlaubt: ", r"Unknown status '\g<s>' for slot \g<n> (allowed: "),
+    (r"Fach (?P<n>\d+): (?P<s>ready|used|empty|occupied)", r"Slot \g<n>: \g<s>"),
+    (r"Keine gültigen Änderungen übermittelt\.", "No valid changes submitted."),
+    (r"Hardware-Konfiguration gespeichert\.", "Hardware configuration saved."),
+    (r"Konfiguration nicht gespeichert: ", "Configuration not saved: "),
+    (r"Unbekannte Schlüssel: ", "Unknown keys: "),
+    (r"Modus nur 'simulated' oder 'command'\.", "Mode must be 'simulated' or 'command'."),
+    (r"timeout_seconds muss eine Zahl sein\.", "timeout_seconds must be a number."),
+    (r"(?P<k>\w+_command) muss ein Text oder eine Liste von Texten sein\.", r"\g<k> must be a text or a list of texts."),
+    (r"Not-Halt-Sperre aufgehoben\.", "Emergency stop lock lifted."),
+    (r"Not-Halt ausgelöst \(Simulation\)\.", "Emergency stop triggered (simulation)."),
+    (r"Not-Halt ausgelöst\.", "Emergency stop triggered."),
+    (r"Kein Befehl konfiguriert\.", "No command configured."),
+    (r"Befehl fehlgeschlagen: Zeitlimit von (?P<n>[\d.]+) s überschritten\.", r"Command failed: timeout of \g<n> s exceeded."),
+    (r"Befehl fehlgeschlagen: ", "Command failed: "),
+    (r"Befehl wurde abgebrochen\.", "Command was aborted."),
+    (r"Befehl endete mit Code (?P<n>-?\d+)\.", r"Command exited with code \g<n>."),
+    (r"Konfigurationstext erwartet\.", "Configuration body expected."),
+    (r"Befehle können nur mit eingeschalteter Anmeldung geändert werden \(Einstellungen → Benutzer, oder werkzeuge\\admin_passwort_setzen\.py\)\.",
+     r"Commands can only be changed with authentication enabled (Settings → Users, or werkzeuge\\admin_passwort_setzen.py)."),
+    (r"\bTür öffnen\b", "Open door"),
+    (r"\bTür schließen\b", "Close door"),
+    (r"\bPlattenwechsel\b(?! nicht| abgebrochen)", "Plate change"),
+    # --- Automatik ----------------------------------------------------------------------------------
+    (r"Drucker getrennt — Automatik übersprungen\.", "Printer disconnected — automation skipped."),
+    (r"Neuer Druck hat begonnen — Plattenwechsel abgebrochen\.", "A new print has started — plate change cancelled."),
+    (r"Druckplatte bleibt über (?P<m>\d+)s über (?P<t>[\d.]+)°C \(aktuell (?P<b>[\d.]+)°C\) — kein Wechsel\.",
+     r"Bed stays above \g<t>°C for \g<m>s (currently \g<b>°C) — no change."),
+    (r"Automatischer Plattenwechsel abgebrochen\.", "Automatic plate change cancelled."),
+    (r"Kein weiterer Auftrag wartet — Wechsel übersprungen \(only_with_queue\)\.", "No further job is waiting — change skipped (only_with_queue)."),
+    (r"Magazin: ", "Magazine: "),
+    (r"keine frische Platte mehr", "no fresh plate left"),
+    (r"nur noch (?P<n>\d+) frische Platte\(n\)", r"only \g<n> fresh plate(s) left"),
+    (r"kein freies Ablagefach mehr", "no free storage slot left"),
+    (r"nur noch (?P<n>\d+) freies Ablagefach/-fächer", r"only \g<n> free storage slot(s) left"),
+    (r" — bitte auffüllen bzw\. leeren\.", " — please refill or empty."),
+    (r"Platte frei automatisch bestätigt \(Kamera, (?P<n>\d+)%\)\.", r"Plate clear confirmed automatically (camera, \g<n>%)."),
+    (r"Platte-frei war nicht angefordert\.", "Plate clear was not requested."),
+    (r"Drucker nicht gefunden\.", "Printer not found."),
+    (r"Keine Referenz für die Leerbett-Prüfung\.", "No reference for the blank-bed check."),
+    (r"Kamera sieht Objekte auf der Platte\.", "Camera sees objects on the plate."),
+    (r"Leerbett-Prüfung unsicher \((?P<n>\d+)%\)\.", r"Blank-bed check uncertain (\g<n>%)."),
+    (r"Leerbett-Prüfung nicht möglich\.", "Blank-bed check not possible."),
+    (r"Platte-frei bitte von Hand bestätigen\.", "Please confirm plate clear manually."),
+    # --- Wartungsprogramme ----------------------------------------------------------------------------
+    (r"Dieses Wartungsprogramm ist nur für den P2S eingerichtet\.", "This maintenance program is only set up for the P2S."),
+    (r"Der Drucker ist nicht verbunden\.", "The printer is not connected."),
+    (r"Der Druckerzustand ist noch unbekannt\. Bitte den ersten Status abwarten\.", "The printer state is still unknown. Please wait for the first status."),
+    (r"Das Wartungsprogramm ist während eines Drucks gesperrt\.", "The maintenance program is locked while printing."),
+    (r"Düse/Bett sind noch heiß \((?P<a>[\d.]+)/(?P<b>[\d.]+) °C\)\. ", r"Nozzle/bed are still hot (\g<a>/\g<b> °C). "),
+    (r"Unbekanntes Programm: ", "Unknown program: "),
+    (r"Auf diesem Drucker läuft bereits ein Wartungsprogramm\.", "A maintenance program is already running on this printer."),
+    (r"Grundposition wird angefahren …", "Moving to home position …"),
+    (r"Es läuft kein Wartungsprogramm\.", "No maintenance program is running."),
+    (r"Stopp angefordert – der aktuelle Schritt wird noch beendet\.", "Stop requested – the current step is being finished."),
+    (r"Wartungsprogramm wird gestoppt\.", "Maintenance program is being stopped."),
+    (r"Der Drucker hat den Befehl nicht angenommen\.", "The printer did not accept the command."),
+    (r"Bett fährt \((?P<i>\d+)/(?P<t>\d+)\) …", r"Bed moving (\g<i>/\g<t>) …"),
+    (r"Kopf fährt (?P<a>\w+) auf (?P<v>[\d.]+) mm …", r"Head moving \g<a> to \g<v> mm …"),
+    (r"(?P<n>\d+) s Pause – jetzt Öl auf die Gewindestangen geben\.", r"\g<n> s pause – apply oil to the threaded rods now."),
+    (r"(?P<n>\d+) s Pause – gleich folgt der nächste Durchgang\.", r"\g<n> s pause – the next pass follows shortly."),
+    (r"Vorlage ist keine \.3mf-Datei\.", "Template is not a .3mf file."),
+    (r"Vorlage nicht lesbar: ", "Template not readable: "),
+    (r"Zieldatei nicht schreibbar: ", "Target file not writable: "),
+    # --- Angebote ---------------------------------------------------------------------------------------
+    (r"Kundenname fehlt\.", "Customer name is missing."),
+    (r"Betrag „(?P<k>\w+)“ fehlt oder ist ungültig\.", r"Amount “\g<k>” is missing or invalid."),
+    (r"Angebot nicht gefunden\.", "Quote not found."),
+    # --- Kamera-Prüfungen ---------------------------------------------------------------------------------
+    (r"Keine Einmessung gespeichert\.", "No calibration saved."),
+    (r"Kein Kamerabild verfügbar\.", "No camera image available."),
+    (r"Warp fehlgeschlagen — Einmessung prüfen\.", "Warp failed — check the calibration."),
+]
+PATTERNS = [(re.compile(pattern), replacement) for pattern, replacement in _RAW]
+
+# Antworten dieser Endpunkte werden übersetzt (alle anderen bleiben unberührt).
+PATH_RX = re.compile(
+    r"^/api/v1/(printers/\d+/(hardware|maintenance-program|maintenance-print|bed-empty|spaghetti|part-watcher|"
+    r"first-layer|plate-calibration|layer-alert)|quote)"
+)
+
+
+def wants_english(accept_language: str | None) -> bool:
+    """Deutsch (oder keine Angabe) bleibt Originaltext; jede andere Sprache bekommt Englisch."""
+    if not accept_language:
+        return False
+    primary = accept_language.split(",")[0].strip().lower()
+    return bool(primary) and not primary.startswith("de") and primary != "*"
+
+
+def translate(text: str) -> str:
+    for pattern, replacement in PATTERNS:
+        text = pattern.sub(replacement, text)
+    return text
+
+
+def translate_json(value: Any) -> Any:
+    if isinstance(value, str):
+        return translate(value)
+    if isinstance(value, list):
+        return [translate_json(item) for item in value]
+    if isinstance(value, dict):
+        return {key: translate_json(item) for key, item in value.items()}
+    return value
+
+
+class ForkI18nMiddleware:
+    """Reiner ASGI-Filter: übersetzt JSON-Antworten der Erweiterungs-Endpunkte, wenn nicht Deutsch gewünscht ist."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http" or not PATH_RX.match(scope.get("path", "")):
+            return await self.app(scope, receive, send)
+        language = next((v.decode("latin-1") for k, v in scope.get("headers", []) if k == b"accept-language"), None)
+        if not wants_english(language):
+            return await self.app(scope, receive, send)
+
+        start: dict | None = None
+        chunks: list[bytes] = []
+
+        async def wrapped_send(message):
+            nonlocal start
+            if message["type"] == "http.response.start":
+                headers = {k.lower(): v for k, v in message.get("headers", [])}
+                if b"application/json" not in headers.get(b"content-type", b""):
+                    await send(message)
+                    start = {"passthrough": True}
+                    return
+                start = message
+                return
+            if message["type"] == "http.response.body" and start is not None and start.get("passthrough"):
+                await send(message)
+                return
+            if message["type"] == "http.response.body" and start is not None:
+                chunks.append(message.get("body", b""))
+                if message.get("more_body"):
+                    return
+                body = b"".join(chunks)
+                try:
+                    body = json.dumps(translate_json(json.loads(body)), ensure_ascii=False).encode("utf-8")
+                except ValueError:
+                    pass
+                headers = [(k, v) for k, v in start.get("headers", []) if k.lower() != b"content-length"]
+                headers.append((b"content-length", str(len(body)).encode()))
+                await send({**start, "headers": headers})
+                await send({"type": "http.response.body", "body": body})
+                return
+            await send(message)
+
+        await self.app(scope, receive, wrapped_send)

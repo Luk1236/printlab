@@ -214,7 +214,7 @@ These tests exercise the AMS slot UI, the AssignSpoolModal, and the ConfigureAms
 | B2.6 | Pick a spool whose `slicer_filament` is a PFUS\* cloud preset | Toast OK | Slicer shows the **cloud preset name**, not a generic fallback | tray_info_idx resolved via cloud lookup (check logs) | _ | _ |
 | B2.7 | Pick a spool whose K-profile cascades from RFID tag scan | K-profile auto-populates from tag, persists after assignment | Slicer cali_idx matches the cascaded K-profile (regression — Phase 13 fix) | k_profile row + assignment both correct | _ | _ |
 
-### B3. Assign spool to an **empty** AMS slot (deferral / SpoolBuddy primary workflow)
+### B3. Assign spool to an **empty** AMS slot (deferral / PrintLab Spool primary workflow)
 
 > Empty slot = printer reports `tray_type=""`. Bambu firmware silently drops MQTT for these, so PrintLab persists the assignment and replays MQTT when the spool is physically inserted.
 
@@ -256,9 +256,9 @@ These tests exercise the AMS slot UI, the AssignSpoolModal, and the ConfigureAms
 
 ---
 
-## C — SpoolBuddy frontend (`/spoolbuddy`)
+## C — PrintLab Spool frontend (`/spoolbuddy`)
 
-These tests run on a **paired SpoolBuddy device** (kiosk on a Pi or a desktop browser pointed at `/spoolbuddy`). Same Local-vs-Spoolman pass.
+These tests run on a **paired PrintLab Spool device** (kiosk on a Pi or a desktop browser pointed at `/spoolbuddy`). Same Local-vs-Spoolman pass.
 
 > **Reminder before you start C:** rows that touch AMS slot config (especially C4 weigh-and-assign and C5 AMS page) must be run with **both** a Bambu Lab spool and a non-Bambu Lab spool, and verified in the slicer per [How to verify in the slicer](#how-to-verify-in-the-slicer). Use OrcaSlicer if at all possible.
 
@@ -292,21 +292,21 @@ These tests run on a **paired SpoolBuddy device** (kiosk on a Pi or a desktop br
 | C4.5 | Insert spool into slot | After AMS push, full configuration replayed | **Slicer slot detail shows correct preset + K-value + cali_idx** | fingerprint stamped; full publish in logs | _ | _ |
 | C4.6 | Pick a **loaded** AMS slot → confirm | Toast: "Assigned!" | Slicer immediately reflects new spool's preset + K-profile | row with `pending_config=false` | _ | _ |
 
-### C5. SpoolBuddy AMS page
+### C5. PrintLab Spool AMS page
 
 | # | Step | Verify | Pass 1 (Local) | Pass 2 (Spoolman) |
 |---|---|---|---|---|
 | C5.1 | Open AMS page | All paired printers listed; tap a printer → its AMS units shown | _ | _ |
 | C5.2 | Tap a slot card | Same Configure-Slot modal as desktop (or unified equivalent) | _ | _ |
-| C5.3 | Apply changes from SpoolBuddy AMS page | Same effect + slicer visibility as B4 | _ | _ |
+| C5.3 | Apply changes from PrintLab Spool AMS page | Same effect + slicer visibility as B4 | _ | _ |
 
-### C6. SpoolBuddy inventory page
+### C6. PrintLab Spool inventory page
 
 | # | Step | Verify | Pass 1 (Local) | Pass 2 (Spoolman) |
 |---|---|---|---|---|
-| C6.1 | Open Inventory page in SpoolBuddy | Spool list mirrors desktop /inventory (same backend, same mode) | _ | _ |
+| C6.1 | Open Inventory page in PrintLab Spool | Spool list mirrors desktop /inventory (same backend, same mode) | _ | _ |
 | C6.2 | (Regression) UI labels on Local vs Spoolman views are unified — same wording, no mode-specific divergence (#`05d819d1`) | "Spool weight", "Storage location", "Tag UID" reads identical in both | _ | _ |
-| C6.3 | Edit spool from SpoolBuddy → save | Reflects in desktop /inventory after refresh | _ | _ |
+| C6.3 | Edit spool from PrintLab Spool → save | Reflects in desktop /inventory after refresh | _ | _ |
 
 ---
 
@@ -372,7 +372,7 @@ For each F row, please post a comment on issue **TBD** with:
 
 ## Skip / N/A guidance
 
-- **No SpoolBuddy hardware:** skip Section C entirely in both passes. Note this at the top of your report.
+- **No PrintLab Spool hardware:** skip Section C entirely in both passes. Note this at the top of your report.
 - **No Spoolman instance:** skip Pass 2 (Spoolman) entirely, plus row D11. Run only Pass 1 (Local).
 - **Single AMS unit:** skip B6, but still run B1–B5 on that one unit (in both passes).
 - **Single printer:** skip B1.4 in both passes. Still run all per-printer tests on the one you have.

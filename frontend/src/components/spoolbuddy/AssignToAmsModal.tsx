@@ -120,7 +120,7 @@ export function AssignToAmsModal({
   }, [isOpen, printerId, spool.id]);
 
   // Printer selection and visual presentation are separate concerns: the
-  // SpoolBuddy kiosk must stay full-screen even when no printer is online and
+  // PrintLab Spool kiosk must stay full-screen even when no printer is online and
   // the picker is shown.
   const showPrinterPicker = printerId === null;
   const requiresSlotConfirmation = showPrinterPicker;

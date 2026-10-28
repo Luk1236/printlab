@@ -3,7 +3,7 @@
  * - Renders "Scale Calibration" heading
  * - Shows current weight display
  * - Shows Tare and Calibrate buttons
- * - Shows "No SpoolBuddy device found" when no device
+ * - Shows "No PrintLab Spool device found" when no device
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -129,11 +129,11 @@ describe('SpoolBuddyCalibrationPage', () => {
     });
   });
 
-  it('shows "No SpoolBuddy device found" when no device', async () => {
+  it('shows "No PrintLab Spool device found" when no device', async () => {
     mockDevices = [];
     renderPage();
     await waitFor(() => {
-      expect(screen.getByText('No SpoolBuddy device found')).toBeDefined();
+      expect(screen.getByText('No PrintLab Spool device found')).toBeDefined();
     });
   });
 

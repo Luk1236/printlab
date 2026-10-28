@@ -1,4 +1,4 @@
-"""Display brightness and screen blanking control for SpoolBuddy kiosk.
+"""Display brightness and screen blanking control for PrintLab Spool kiosk.
 
 Brightness: DSI backlights are controlled via sysfs /sys/class/backlight/*/brightness.
             HDMI brightness is handled by the frontend via CSS filter.

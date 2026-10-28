@@ -29,6 +29,12 @@ Der erste Bau dauert auf dem Pi mehrere Minuten (Frontend und Python-Pakete). Pr
 Für Drucker-Erkennung und virtuellen Drucker muss der Container im Host-Netzwerk laufen (`network_mode: host`,
 siehe Kommentare in `docker-compose.yml`).
 
+### Alternative: fertiges Image
+
+Nach dem ersten Release-Lauf (Tag pushen, Workflow „Release“) liegt ein Multi-Arch-Image in der GitHub Container
+Registry. In `docker-compose.yml` dann statt `build: .` die Zeile `image: ghcr.io/luk1236/printlab:latest` verwenden und
+`docker compose pull && docker compose up -d` ausführen (bei einem privaten Repo vorher `docker login ghcr.io`).
+
 ## Erster Start
 
 1. Einrichtung abschließen und **Anmeldung einschalten** (Passwort wählen). Ohne Anmeldung sind Hardware-Befehle

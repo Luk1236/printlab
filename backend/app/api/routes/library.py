@@ -203,7 +203,7 @@ def to_relative_path(absolute_path: Path | str) -> str:
     abs_path = Path(absolute_path)
     base_dir = Path(app_settings.base_dir)
     try:
-        return str(abs_path.relative_to(base_dir))
+        return abs_path.relative_to(base_dir).as_posix()
     except ValueError:
         # Path is not under base_dir, return as-is (shouldn't happen normally)
         return str(abs_path)
@@ -1848,7 +1848,7 @@ async def scan_external_folder(
         for cf in all_child_folders:
             if cf.id == fid and cf.external_path:
                 try:
-                    rel = str(Path(cf.external_path).relative_to(ext_path))
+                    rel = Path(cf.external_path).relative_to(ext_path).as_posix()
                     if rel != ".":
                         folder_cache[rel] = cf.id
                 except ValueError:
@@ -1867,7 +1867,7 @@ async def scan_external_folder(
         if not folder.external_show_hidden:
             dirnames[:] = [d for d in dirnames if not d.startswith(".")]
 
-        rel_dir = str(Path(dirpath).relative_to(ext_path))
+        rel_dir = Path(dirpath).relative_to(ext_path).as_posix()
         if rel_dir == ".":
             rel_dir = ""
         seen_rel_dirs.add(rel_dir)
@@ -4903,7 +4903,7 @@ async def slice_and_persist_as_archive(
     if source_plate_bytes:
         thumb_dest = archive_dir / "thumbnail.png"
         thumb_dest.write_bytes(source_plate_bytes)
-        thumbnail_path = str(thumb_dest.relative_to(app_settings.base_dir))
+        thumbnail_path = thumb_dest.relative_to(app_settings.base_dir).as_posix()
 
     try:
         parser = ThreeMFParser(str(out_path), plate_number=plate_num)
@@ -4914,7 +4914,7 @@ async def slice_and_persist_as_archive(
             if thumb_data:
                 thumb_dest = archive_dir / f"thumbnail{thumb_ext}"
                 thumb_dest.write_bytes(thumb_data)
-                thumbnail_path = str(thumb_dest.relative_to(app_settings.base_dir))
+                thumbnail_path = thumb_dest.relative_to(app_settings.base_dir).as_posix()
         parsed_metadata = {k: v for k, v in parsed.items() if not k.startswith("_")}
     except Exception as exc:
         logger.warning("Failed to parse sliced 3MF metadata for %s: %s", out_filename, exc)
@@ -4964,7 +4964,7 @@ async def slice_and_persist_as_archive(
         printer_id=new_printer_id,
         project_id=source_archive.project_id,
         filename=out_filename,
-        file_path=str(out_path.relative_to(app_settings.base_dir)),
+        file_path=out_path.relative_to(app_settings.base_dir).as_posix(),
         file_size=len(result.content),
         content_hash=hashlib.sha256(result.content).hexdigest(),
         thumbnail_path=thumbnail_path,

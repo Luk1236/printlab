@@ -170,7 +170,7 @@ describe('SpoolBuddyDashboard', () => {
     renderPage({ deviceOnline: false });
     await waitFor(() => {
       expect(screen.getByText('Device Offline')).toBeDefined();
-      expect(screen.getByText('Connect the SpoolBuddy display to scan spools')).toBeDefined();
+      expect(screen.getByText('Connect the PrintLab Spool display to scan spools')).toBeDefined();
     });
   });
 

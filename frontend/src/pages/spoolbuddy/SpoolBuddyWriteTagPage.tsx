@@ -219,7 +219,7 @@ export function SpoolBuddyWriteTagPage() {
   const handleWriteTag = async () => {
     if (!selectedSpool || !device) return;
     setWriteStatus('writing');
-    setWriteMessage(t('spoolbuddy.writeTag.waiting', 'Waiting for SpoolBuddy...'));
+    setWriteMessage(t('spoolbuddy.writeTag.waiting', 'Waiting for PrintLab Spool...'));
     try {
       const resp = await spoolbuddyApi.writeTag(device.device_id, selectedSpool.id);
       if (resp?.warnings?.length) {
@@ -1147,7 +1147,7 @@ function NfcStatusPanel({ writeStatus, writeMessage, selectedSpool, tagOnReader,
     return (
       <div className="flex flex-col items-center text-center space-y-3">
         <NfcIcon className="w-12 h-12 text-zinc-600" />
-        <p className="text-zinc-500 text-sm">{t('spoolbuddy.writeTag.deviceOffline', 'SpoolBuddy is offline')}</p>
+        <p className="text-zinc-500 text-sm">{t('spoolbuddy.writeTag.deviceOffline', 'PrintLab Spool is offline')}</p>
       </div>
     );
   }

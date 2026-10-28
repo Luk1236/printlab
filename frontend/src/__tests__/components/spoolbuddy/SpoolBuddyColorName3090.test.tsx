@@ -2,7 +2,7 @@
  * The kiosk shows the colour the rest of PrintLab shows (#3090).
  *
  * Reported by @Sawtaytoes: scan a Bambu RFID spool that PrintLab's inventory
- * calls "Candy Red" and SpoolBuddy's dialog says "Unknown color" — with the
+ * calls "Candy Red" and PrintLab Spool's dialog says "Unknown color" — with the
  * right red swatch beside it. The name was never in the spool record. Bambu's tags frequently carry none, so PrintLab resolves the swatch's
  * own hex against the colour catalog; the kiosk was printing the empty column.
  *
@@ -57,7 +57,7 @@ const modalProps = {
   onAddToInventory: vi.fn(),
 };
 
-describe('SpoolBuddy colour names (#3090)', () => {
+describe('PrintLab Spool colour names (#3090)', () => {
   beforeEach(() => {
     __resetColorCatalogForTests();
     setColorCatalog({ d02727: 'Candy Red' });

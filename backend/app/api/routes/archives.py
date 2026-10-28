@@ -3264,7 +3264,7 @@ async def process_timelapse(
             final_path = archive.timelapse_path
             message = "Timelapse replaced successfully"
         else:
-            final_path = str(output_path.relative_to(settings.base_dir))
+            final_path = output_path.relative_to(settings.base_dir).as_posix()
             message = f"Saved as {output_path.name}"
 
         return ProcessResponse(
@@ -5144,7 +5144,7 @@ async def upload_source_3mf(
     source_path.write_bytes(content)
 
     # Update archive with source path (relative to base_dir)
-    archive.source_3mf_path = str(source_path.relative_to(settings.base_dir))
+    archive.source_3mf_path = source_path.relative_to(settings.base_dir).as_posix()
 
     await db.commit()
     await db.refresh(archive)
@@ -5358,7 +5358,7 @@ async def upload_source_3mf_by_name(
     source_path.write_bytes(content)
 
     # Update archive with source path
-    archive.source_3mf_path = str(source_path.relative_to(settings.base_dir))
+    archive.source_3mf_path = source_path.relative_to(settings.base_dir).as_posix()
     await db.commit()
     await db.refresh(archive)
 
@@ -5447,7 +5447,7 @@ async def upload_f3d(
     f3d_path.write_bytes(content)
 
     # Update archive with F3D path (relative to base_dir)
-    archive.f3d_path = str(f3d_path.relative_to(settings.base_dir))
+    archive.f3d_path = f3d_path.relative_to(settings.base_dir).as_posix()
 
     await db.commit()
     await db.refresh(archive)

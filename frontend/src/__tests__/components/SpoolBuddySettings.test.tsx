@@ -122,7 +122,7 @@ describe('SpoolBuddySettings', () => {
     await user.click(unregisterButtons[1]);
 
     // Confirm modal opens with title
-    expect(await screen.findByText(/unregister spoolbuddy device/i)).toBeInTheDocument();
+    expect(await screen.findByText(/unregister printlab spool device/i)).toBeInTheDocument();
 
     // Click the confirm button inside the modal
     const confirmButtons = screen.getAllByRole('button', { name: /^unregister$/i });
@@ -157,6 +157,6 @@ describe('SpoolBuddySettings', () => {
 
     render(<SpoolBuddySettings />);
 
-    expect(await screen.findByText(/no spoolbuddy devices/i)).toBeInTheDocument();
+    expect(await screen.findByText(/no printlab spool devices/i)).toBeInTheDocument();
   });
 });

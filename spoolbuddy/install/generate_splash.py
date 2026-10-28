@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Generate a polished SpoolBuddy boot splash image (1024x600).
+"""Generate a polished PrintLab Spool boot splash image (1024x600).
 
-Uses the SpoolBuddy logo with baked-in glow, radial gradient background,
+Uses the PrintLab Spool logo with baked-in glow, radial gradient background,
 subtle light rays, and vignette effects for a premium kiosk boot screen.
 
 Usage:
@@ -20,7 +20,7 @@ from PIL import Image, ImageDraw, ImageFilter
 WIDTH, HEIGHT = 1024, 600
 BG_CENTER = (55, 55, 55)  # Notably lighter center
 BG_EDGE = (2, 2, 2)  # Nearly black edges
-ACCENT = (0, 200, 75)  # Brighter SpoolBuddy green
+ACCENT = (0, 200, 75)  # Brighter PrintLab Spool green
 ACCENT_GLOW = (0, 255, 100)  # Vivid glow core
 LOGO_SCALE = 0.50  # Scale logo to 50% of canvas width
 GLOW_RADIUS = 160  # Very wide glow spread
@@ -147,7 +147,7 @@ def generate_splash(output_path):
     )
 
     # 3. Load and scale logo
-    print("  Loading SpoolBuddy logo...")
+    print("  Loading PrintLab Spool logo...")
     script_dir = os.path.dirname(os.path.abspath(__file__))
     logo_paths = [
         os.path.join(script_dir, "..", "..", "frontend", "public", "spoolbuddy_logo_dark.png"),

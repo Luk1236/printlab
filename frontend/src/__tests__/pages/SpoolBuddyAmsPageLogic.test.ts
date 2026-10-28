@@ -1,5 +1,5 @@
 /**
- * Tests for SpoolBuddy AMS page logic:
+ * Tests for PrintLab Spool AMS page logic:
  * - External slot active state (tray_now=255 bug fix)
  * - Fill level override fallback chain (inventory → AMS remain)
  *

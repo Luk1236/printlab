@@ -149,7 +149,7 @@ describe('SpoolBuddyQuickMenu', () => {
     fireEvent.click(screen.getByText('Reboot'));
 
     await waitFor(() => {
-      expect(screen.getByText('Are you sure you want to reboot the SpoolBuddy?')).toBeInTheDocument();
+      expect(screen.getByText('Are you sure you want to reboot the PrintLab Spool?')).toBeInTheDocument();
     });
   });
 
@@ -188,12 +188,12 @@ describe('SpoolBuddyQuickMenu', () => {
 
     fireEvent.click(screen.getByText('Reboot'));
     await waitFor(() => {
-      expect(screen.getByText('Are you sure you want to reboot the SpoolBuddy?')).toBeInTheDocument();
+      expect(screen.getByText('Are you sure you want to reboot the PrintLab Spool?')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getByText('Cancel'));
     await waitFor(() => {
-      expect(screen.queryByText('Are you sure you want to reboot the SpoolBuddy?')).not.toBeInTheDocument();
+      expect(screen.queryByText('Are you sure you want to reboot the PrintLab Spool?')).not.toBeInTheDocument();
     });
   });
 
@@ -202,7 +202,7 @@ describe('SpoolBuddyQuickMenu', () => {
 
     fireEvent.click(screen.getByText('Reboot'));
     await waitFor(() => {
-      expect(screen.getByText('Are you sure you want to reboot the SpoolBuddy?')).toBeInTheDocument();
+      expect(screen.getByText('Are you sure you want to reboot the PrintLab Spool?')).toBeInTheDocument();
     });
 
     // Click the Confirm button (not the title)

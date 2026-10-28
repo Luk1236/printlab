@@ -10462,6 +10462,12 @@ _STEP_WORKER_ASSET_RE = re.compile(r"^/assets/stepPreview\.worker-[\w-]+\.js$")
 _PDF_WORKER_ASSET_RE = re.compile(r"^/assets/pdf\.worker\.min-[\w-]+\.js$")
 
 
+# PrintLab: Meldungen der Erweiterungs-Endpunkte auf Englisch, wenn die Oberfläche nicht Deutsch ist.
+from backend.app.i18n.fork_messages import ForkI18nMiddleware  # noqa: E402
+
+app.add_middleware(ForkI18nMiddleware)
+
+
 @app.middleware("http")
 async def security_headers_middleware(request, call_next):
     """Add standard HTTP security headers to every response."""

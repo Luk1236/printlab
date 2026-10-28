@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SpoolBuddy daemon — reads NFC tags and scale, pushes events to PrintLab backend."""
+"""PrintLab Spool daemon — reads NFC tags and scale, pushes events to PrintLab backend."""
 
 import asyncio
 import logging
@@ -155,7 +155,7 @@ async def nfc_poll_loop(config: Config, api: APIClient, shared: dict):
                     shared.pop("pending_write", None)
                 else:
                     # Fail fast when a non-NTAG is presented during write mode.
-                    # Without this, UI can appear stuck on "waiting for SpoolBuddy".
+                    # Without this, UI can appear stuck on "waiting for PrintLab Spool".
                     sak = nfc.current_sak
                     await api.write_tag_result(
                         device_id=config.device_id,
@@ -425,7 +425,7 @@ async def heartbeat_loop(config: Config, api: APIClient, start_time: float, shar
 async def main():
     config = Config.load()
     logger.info(
-        "SpoolBuddy daemon v%s starting (device=%s, backend=%s)", __version__, config.device_id, config.backend_url
+        "PrintLab Spool daemon v%s starting (device=%s, backend=%s)", __version__, config.device_id, config.backend_url
     )
 
     api = APIClient(config.backend_url, config.api_key)

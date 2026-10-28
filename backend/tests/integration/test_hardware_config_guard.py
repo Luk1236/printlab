@@ -38,3 +38,15 @@ class TestCommandConfigGuard:
         )
         assert resp.status_code == 200
         assert isolated_hardware(printer.id).config()["timeout_seconds"] == 20.0
+
+
+class TestMessageLanguage:
+    @pytest.mark.asyncio
+    async def test_the_guard_message_follows_the_ui_language(self, async_client: AsyncClient, printer_factory, isolated_hardware):
+        printer = await printer_factory(name="P2S")
+        url = f"/api/v1/printers/{printer.id}/hardware/config"
+        body = {"mode": "command", "door_open_command": "calc.exe"}
+        german = await async_client.put(url, json=body)
+        english = await async_client.put(url, json=body, headers={"Accept-Language": "en-US"})
+        assert "Anmeldung" in german.json()["detail"]
+        assert "authentication enabled" in english.json()["detail"]

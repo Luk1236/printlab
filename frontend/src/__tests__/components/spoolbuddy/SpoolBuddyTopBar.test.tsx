@@ -50,9 +50,9 @@ function renderTopBar(deviceOnline = false) {
 describe('SpoolBuddyTopBar', () => {
   it('renders the logo image', () => {
     renderTopBar();
-    const img = screen.getByAltText('SpoolBuddy');
+    const img = screen.getByAltText('PrintLab Spool');
     expect(img).toBeDefined();
-    expect(img.getAttribute('src')).toBe('/img/spoolbuddy_logo_dark_small.png');
+    expect(img.getAttribute('src')).toBe('/img/printlab_dark.png');
   });
 
   it('renders the printer selector', () => {

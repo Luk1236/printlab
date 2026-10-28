@@ -1,5 +1,5 @@
 /**
- * The SpoolBuddy screens paint a spool the way the Filament page does (#3033).
+ * The PrintLab Spool screens paint a spool the way the Filament page does (#3033).
  */
 
 import { describe, it, expect } from 'vitest';
