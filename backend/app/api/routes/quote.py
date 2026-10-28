@@ -15,8 +15,8 @@ from __future__ import annotations
 
 import re
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import Response
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi.responses import FileResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.api.routes.settings import DEFAULT_SETTINGS, get_setting
@@ -67,7 +67,8 @@ async def save_quote(
     _=RequirePermissionIfAuthEnabled(Permission.ARCHIVES_UPDATE_ALL),
 ):
     try:
-        return quote_history.add(payload, prefix=company_profile.read()["number_prefix"])
+        company = company_profile.read()
+        return quote_history.add(payload, prefix=company["number_prefix"], number_format=company["number_format"])
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
 
@@ -91,6 +92,37 @@ async def set_company(
         raise HTTPException(400, str(exc)) from exc
 
 
+@router.get("/company/logo")
+async def get_company_logo(
+    _=RequirePermissionIfAuthEnabled(Permission.ARCHIVES_READ),
+):
+    path = company_profile.logo_path()
+    if path is None:
+        raise HTTPException(404, "Kein Logo hinterlegt.")
+    return FileResponse(path, media_type="image/png")
+
+
+@router.put("/company/logo")
+async def set_company_logo(
+    file: UploadFile = File(...),
+    _=RequirePermissionIfAuthEnabled(Permission.SETTINGS_UPDATE),
+):
+    """Logo für den Briefkopf hochladen (PNG oder JPEG, höchstens 2 MB); wird als sauberes PNG abgelegt."""
+    data = await file.read(company_profile.MAX_LOGO_BYTES + 1)
+    try:
+        company_profile.save_logo(data)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    return {"has_logo": True}
+
+
+@router.delete("/company/logo")
+async def delete_company_logo(
+    _=RequirePermissionIfAuthEnabled(Permission.SETTINGS_UPDATE),
+):
+    return {"deleted": company_profile.delete_logo()}
+
+
 @router.get("/history/{entry_id}/pdf")
 async def quote_pdf_for_entry(
     entry_id: str,
@@ -101,7 +133,8 @@ async def quote_pdf_for_entry(
     entry = quote_history.get(entry_id)
     if entry is None:
         raise HTTPException(404, "Angebot nicht gefunden.")
-    pdf = quote_pdf.render(entry, company_profile.read(), lang)
+    company = {**company_profile.read(), "_logo_path": company_profile.logo_path()}
+    pdf = quote_pdf.render(entry, company, lang)
     name = re.sub(r"[^A-Za-z0-9._-]", "_", str(entry.get("number") or entry_id))
     return Response(
         pdf,

@@ -596,6 +596,12 @@ export const handlers = [
       warnings: [],
     })
   ),
+  http.get('/api/v1/updates/backups', () =>
+    HttpResponse.json({ backups: [], restore_pending: null, restored: null, can_restore: false })
+  ),
+  http.get('/api/v1/system/alerts', () =>
+    HttpResponse.json({ telegram: false, telegram_chat: '', ntfy: false, ntfy_host: '' })
+  ),
   http.get('/api/v1/updates/version', () =>
     HttpResponse.json({ version: '0.1.5', commit: 'test' })
   ),

@@ -35,6 +35,7 @@ export function QuoteCalculator() {
   const [priceListDraft, setPriceListDraft] = useState<PriceListEntry[] | null>(null);
   const [customer, setCustomer] = useState('');
   const [description, setDescription] = useState('');
+  const [customerAddress, setCustomerAddress] = useState('');
   const [companyOpen, setCompanyOpen] = useState(false);
   const [companyDraft, setCompanyDraft] = useState<CompanyProfile | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -50,6 +51,7 @@ export function QuoteCalculator() {
       api.saveQuote({
         customer,
         description: description.trim(),
+        customer_address: customerAddress.trim(),
         currency: data.currency,
         material: data.material,
         energy: data.energy,
@@ -75,6 +77,23 @@ export function QuoteCalculator() {
       queryClient.invalidateQueries({ queryKey: ['quoteCompany'] });
     },
     onError: (error: Error) => showToast(error.message),
+  });
+  const logoMutation = useMutation({
+    mutationFn: (file: File) => api.uploadCompanyLogo(file),
+    onSuccess: () => {
+      showToast(t('common.success'));
+      setCompanyDraft(null);
+      queryClient.invalidateQueries({ queryKey: ['quoteCompany'] });
+    },
+    onError: (error: Error) => showToast(error.message, 'error'),
+  });
+  const logoDelete = useMutation({
+    mutationFn: () => api.deleteCompanyLogo(),
+    onSuccess: () => {
+      setCompanyDraft(null);
+      queryClient.invalidateQueries({ queryKey: ['quoteCompany'] });
+    },
+    onError: (error: Error) => showToast(error.message, 'error'),
   });
   const downloadPdf = async (id: string) => {
     try {
@@ -453,6 +472,40 @@ export function QuoteCalculator() {
                     />
                   </label>
                 </div>
+                <label className="text-xs text-bambu-gray block">
+                  {t('quote.companyNumberFormat')}
+                  <input
+                    type="text"
+                    value={draft.number_format}
+                    onChange={(event) => setCompanyDraft({ ...draft, number_format: event.target.value })}
+                    className="mt-1 w-full bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm font-mono"
+                  />
+                  <span className="block mt-1">{t('quote.companyNumberFormatHint')}</span>
+                </label>
+                <div className="flex flex-wrap items-center gap-2 text-xs text-bambu-gray">
+                  <span>
+                    {t('quote.companyLogo')}: {draft.has_logo ? t('quote.companyLogoSet') : t('quote.companyLogoNone')}
+                  </span>
+                  <label className="cursor-pointer rounded-lg bg-bambu-dark-tertiary px-2 py-1 text-white hover:opacity-90">
+                    {t('quote.companyLogoUpload')}
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg"
+                      className="sr-only"
+                      aria-label={t('quote.companyLogoUpload')}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) logoMutation.mutate(file);
+                        event.target.value = '';
+                      }}
+                    />
+                  </label>
+                  {draft.has_logo && (
+                    <Button size="sm" variant="ghost" onClick={() => logoDelete.mutate()}>
+                      {t('quote.companyLogoRemove')}
+                    </Button>
+                  )}
+                </div>
                 <Button size="sm" disabled={companyMutation.isPending} onClick={() => companyMutation.mutate(draft)}>
                   {t('common.save')}
                 </Button>
@@ -586,6 +639,17 @@ export function QuoteCalculator() {
                   onChange={(event) => setCustomer(event.target.value)}
                   className="mt-1 w-full bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm"
                   aria-label={t('quote.customer')}
+                />
+              </label>
+              <label className="text-xs text-bambu-gray w-full">
+                {t('quote.customerAddress')}
+                <textarea
+                  value={customerAddress}
+                  maxLength={240}
+                  rows={2}
+                  onChange={(event) => setCustomerAddress(event.target.value)}
+                  className="mt-1 w-full bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm"
+                  aria-label={t('quote.customerAddress')}
                 />
               </label>
               <label className="text-xs text-bambu-gray flex-1 min-w-40">

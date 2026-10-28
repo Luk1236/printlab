@@ -54,7 +54,19 @@ def _counter_path():
     return HISTORY_PATH.with_name("quote_counter.json")
 
 
-def _next_number(prefix: str) -> str:
+def format_number(number_format: str, prefix: str, year: int, sequence: int) -> str:
+    """Setzt Präfix, Jahr und laufende Nummer in das Format ein (nur die bekannten Platzhalter)."""
+    return (
+        number_format.replace("{prefix}", prefix)
+        .replace("{year}", str(year))
+        .replace("{yy}", f"{year % 100:02d}")
+        .replace("{seq4}", f"{sequence:04d}")
+        .replace("{seq5}", f"{sequence:05d}")
+        .replace("{seq}", str(sequence))
+    )
+
+
+def _next_number(prefix: str, number_format: str = "{prefix}-{year}-{seq4}") -> str:
     """Laufende Angebotsnummer ``PRÄFIX-JAHR-0001``; der Zähler beginnt jedes Jahr neu und fällt nie zurück,
     auch wenn Angebote gelöscht werden (aufrufen unter ``_lock``)."""
     year = datetime.now(timezone.utc).year
@@ -69,14 +81,14 @@ def _next_number(prefix: str) -> str:
         if match and int(match.group(1)) == year:
             sequence = max(sequence, int(match.group(2)) + 1)
     _counter_path().write_text(json.dumps({"year": year, "seq": sequence}), encoding="utf-8")
-    return f"{prefix}-{year}-{sequence:04d}"
+    return format_number(number_format, prefix, year, sequence)
 
 
 def get(entry_id: str) -> dict[str, Any] | None:
     return next((e for e in _read() if e.get("id") == entry_id), None)
 
 
-def add(payload: dict[str, Any], prefix: str = "A") -> dict[str, Any]:
+def add(payload: dict[str, Any], prefix: str = "A", number_format: str = "{prefix}-{year}-{seq4}") -> dict[str, Any]:
     """Angebot speichern; ungültige Beträge werden abgelehnt (ValueError)."""
     customer = str(payload.get("customer", "")).strip()[:80]
     if not customer:
@@ -91,6 +103,7 @@ def add(payload: dict[str, Any], prefix: str = "A") -> dict[str, Any]:
         "id": uuid.uuid4().hex[:12],
         "ts": datetime.now(timezone.utc).isoformat(),
         "customer": customer,
+        "customer_address": str(payload.get("customer_address", "")).strip()[:240],
         "description": str(payload.get("description", "")).strip()[:200],
         "currency": str(payload.get("currency", "EUR")).strip()[:8] or "EUR",
         **amounts,
@@ -99,7 +112,7 @@ def add(payload: dict[str, Any], prefix: str = "A") -> dict[str, Any]:
     if isinstance(inputs, dict):
         entry["inputs"] = {str(k)[:40]: v for k, v in list(inputs.items())[:20] if _number(v) is not None}
     with _lock:
-        entry["number"] = _next_number(prefix or "A")
+        entry["number"] = _next_number(prefix or "A", number_format)
         _write([entry, *_read()])
     return entry
 

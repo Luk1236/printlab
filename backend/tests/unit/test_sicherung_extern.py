@@ -110,7 +110,7 @@ class TestMain:
         sent = []
         monkeypatch.setattr(se, "DATA_DIR", data)
         monkeypatch.setenv("PRINTLAB_BACKUP_TARGET", str(tmp_path / "weg"))
-        monkeypatch.setattr(se.ueberwachung, "make_notifier", lambda: sent.append)
+        monkeypatch.setattr(se.ueberwachung, "make_notifier", lambda **kw: sent.append)
         assert se.main() == 1
         assert sent and "fehlgeschlagen" in sent[0]
         status = json.loads((data / "last_external_backup.json").read_text())
@@ -122,7 +122,7 @@ class TestMain:
         target.mkdir()
         monkeypatch.setattr(se, "DATA_DIR", data)
         monkeypatch.setenv("PRINTLAB_BACKUP_TARGET", str(target))
-        monkeypatch.setattr(se.ueberwachung, "make_notifier", lambda: sent.append)
+        monkeypatch.setattr(se.ueberwachung, "make_notifier", lambda **kw: sent.append)
         assert se.main() == 0
         assert not sent
         assert json.loads((data / "last_external_backup.json").read_text())["ok"] is True
@@ -133,7 +133,7 @@ class TestMain:
         monkeypatch.setattr(se, "DATA_DIR", data)
         monkeypatch.setenv("PRINTLAB_BACKUP_TARGET", str(target))
         monkeypatch.setenv("PRINTLAB_BACKUP_KEEP", "viele")
-        monkeypatch.setattr(se.ueberwachung, "make_notifier", lambda: print)
+        monkeypatch.setattr(se.ueberwachung, "make_notifier", lambda **kw: print)
         assert se.main() == 0
 
     @pytest.mark.skipif(os.name == "nt", reason="Dateirechte nur unter POSIX")

@@ -87,10 +87,23 @@ def render(entry: dict[str, Any], company: dict[str, Any], lang: str = "de") -> 
     y = height - MARGIN
 
     # Briefkopf links
+    name_y = y - 4 * mm
+    logo = company.get("_logo_path")
+    if logo:
+        try:
+            from reportlab.lib.utils import ImageReader
+
+            image = ImageReader(str(logo))
+            width_px, height_px = image.getSize()
+            scale = min(45 * mm / width_px, 18 * mm / height_px)
+            pdf.drawImage(image, MARGIN, y - 18 * mm, width=width_px * scale, height=height_px * scale, mask="auto")
+            name_y = y - 22 * mm
+        except Exception:  # ein unlesbares Logo darf das Angebot nie verhindern
+            name_y = y - 4 * mm
     pdf.setFont("Helvetica-Bold", 15)
-    pdf.drawString(MARGIN, y - 4 * mm, company.get("name") or "")
+    pdf.drawString(MARGIN, name_y, company.get("name") or "")
     pdf.setFont("Helvetica", 9)
-    line_y = y - 10 * mm
+    line_y = name_y - 6 * mm
     for line in [
         *str(company.get("address") or "").splitlines(),
         company.get("email") or "",
@@ -122,7 +135,13 @@ def render(entry: dict[str, Any], company: dict[str, Any], lang: str = "de") -> 
     pdf.drawString(MARGIN, y, t["to"])
     pdf.setFont("Helvetica-Bold", 11)
     pdf.drawString(MARGIN, y - 5.5 * mm, str(entry.get("customer", "")))
-    y -= 18 * mm
+    pdf.setFont("Helvetica", 10)
+    address_y = y - 10.5 * mm
+    for line in str(entry.get("customer_address") or "").splitlines()[:6]:
+        if line.strip():
+            pdf.drawString(MARGIN, address_y, line.strip())
+            address_y -= 4.6 * mm
+    y = min(y - 18 * mm, address_y - 6 * mm)
 
     # Leistung
     description = str(entry.get("description") or "").strip()

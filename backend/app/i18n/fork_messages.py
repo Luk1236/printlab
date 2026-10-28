@@ -127,6 +127,16 @@ _RAW: list[tuple[str, str]] = [
         "The printer state is still unknown. Please wait for the first status.",
     ),
     (r"Das Wartungsprogramm ist während eines Drucks gesperrt\.", "The maintenance program is locked while printing."),
+    (
+        r"Bitte zuerst bestätigen, dass die Druckplatte frei ist\.",
+        "Please confirm first that the build plate is clear.",
+    ),
+    (r"Wartungsdruck ist nur für den P2S eingerichtet\.", "The maintenance print is only set up for the P2S."),
+    (
+        r"Kein geslictes Archiv als Vorlage\. Bitte zuerst einen Druck archivieren\.",
+        "No sliced archive to use as a template. Please archive a print first.",
+    ),
+    (r"Die Archivdatei ist nicht mehr vorhanden\.", "The archive file no longer exists."),
     (r"Düse/Bett sind noch heiß \((?P<a>[\d.]+)/(?P<b>[\d.]+) °C\)\. ", r"Nozzle/bed are still hot (\g<a>/\g<b> °C). "),
     (r"Unbekanntes Programm: ", "Unknown program: "),
     (
@@ -155,6 +165,17 @@ _RAW: list[tuple[str, str]] = [
     (r"Kundenname fehlt\.", "Customer name is missing."),
     (r"Betrag „(?P<k>\w+)“ fehlt oder ist ungültig\.", r"Amount “\g<k>” is missing or invalid."),
     (r"Angebot nicht gefunden\.", "Quote not found."),
+    (r"Kein Logo hinterlegt\.", "No logo stored."),
+    (r"Das Logo ist leer oder größer als 2 MB\.", "The logo is empty or larger than 2 MB."),
+    (r"Nur PNG oder JPEG sind als Logo erlaubt\.", "Only PNG or JPEG are allowed as a logo."),
+    (
+        r"Das Logo konnte nicht gelesen werden \(kein gültiges PNG oder JPEG\)\.",
+        "The logo could not be read (not a valid PNG or JPEG).",
+    ),
+    (
+        r"Das Nummernformat braucht \{seq\}, \{seq4\} oder \{seq5\} und darf nur \{prefix\}, \{year\}, \{yy\} enthalten\.",
+        "The number format needs {seq}, {seq4} or {seq5} and may only contain {prefix}, {year}, {yy}.",
+    ),
     (
         r"„(?P<k>\w+)“ ist zu lang \(höchstens (?P<n>\d+) Zeichen\)\.",
         r"“\g<k>” is too long (at most \g<n> characters).",
@@ -190,7 +211,79 @@ _RAW: list[tuple[str, str]] = [
     (r"Ungültiger Port\.", "Invalid port."),
     (r"Zeitüberschreitung beim Aufruf von tailscale\.", "Timeout while calling tailscale."),
     (r"Programm nicht startbar: ", "Program could not be started: "),
+    # --- Update-Schutz und Signaturprüfung ----------------------------------------------------------------
+    (r"Der aktuelle Git-Stand ist nicht lesbar\.", "The current Git state cannot be read."),
+    (r"Sicherung nicht möglich: ", "Backup not possible: "),
+    (r"Die Sicherung von (?P<f>\S+) ist nicht in Ordnung\.", r"The backup of \g<f> is not valid."),
+    (r"Ungültiger Name der Sicherung\.", "Invalid backup name."),
+    (r"Diese Sicherung gibt es nicht mehr\.", "This backup no longer exists."),
+    (r"Die Sicherung enthält keine Datenbank\.", "The backup contains no database."),
+    (
+        r"Die Sicherung ist beschädigt \((?P<f>[^)]*)\) und wird nicht eingespielt\.",
+        r"The backup is damaged (\g<f>) and will not be restored.",
+    ),
+    (r"Wiederherstellen nur mit eingeschalteter Anmeldung\.", "Restoring requires authentication to be enabled."),
+    (
+        r"Wiederherstellen geht nur mit dem Update-Schutz im Dienst \(Installer erneut ausführen\)\.",
+        "Restoring needs the update guard in the service (run the installer again).",
+    ),
+    (r"Ungültiger Tag-Name\.", "Invalid tag name."),
+    (r"Der Release-Name ist ungültig\.", "The release name is invalid."),
+    (
+        r"Die Datei mit den erlaubten Schlüsseln enthält keinen gültigen Schlüssel\.",
+        "The file with the allowed keys contains no valid key.",
+    ),
+    (
+        r"ssh-keygen fehlt \(Paket openssh-client\); die Signatur kann nicht geprüft werden\.",
+        "ssh-keygen is missing (package openssh-client); the signature cannot be checked.",
+    ),
+    (r"Die Signaturprüfung hat zu lange gedauert\.", "The signature check took too long."),
+    (r"Der Tag (?P<t>\S+) ist nicht gültig signiert ", r"The tag \g<t> is not validly signed "),
+    # --- Meldewege ----------------------------------------------------------------------------------------
+    (
+        r"Meldewege nur mit eingeschalteter Anmeldung ändern\.",
+        "Alert channels can only be changed with authentication enabled.",
+    ),
+    (
+        r"Meldewege nur mit eingeschalteter Anmeldung testen\.",
+        "Alert channels can only be tested with authentication enabled.",
+    ),
+    (r"Es ist noch kein Meldeweg eingerichtet\.", "No alert channel is set up yet."),
+    (
+        r"Die ntfy-Adresse muss mit http:// oder https:// beginnen\.",
+        "The ntfy address must start with http:// or https://.",
+    ),
+    (
+        r"Diese ntfy-Adresse ist nicht erlaubt \(lokal oder Link-Local\)\.",
+        "This ntfy address is not allowed (local or link-local).",
+    ),
+    (
+        r"Der Telegram-Token hat nicht die Form 123456789:ABC… \(von @BotFather\)\.",
+        "The Telegram token does not look like 123456789:ABC… (from @BotFather).",
+    ),
+    (
+        r"Die Telegram-Chat-Nummer ist ungültig \(Zahl oder @Kanalname\)\.",
+        "The Telegram chat ID is invalid (number or @channelname).",
+    ),
     # --- Kamera-Prüfungen ---------------------------------------------------------------------------------
+    (r"Bilder fehlen: (?P<g>.+)\.", r"Images are missing: \g<g>."),
+    (r"Höchstens (?P<n>\d+) Bilder je Gruppe\.", r"At most \g<n> images per group."),
+    (r"Nur Bilder \(JPEG oder PNG\) sind erlaubt: ", "Only images (JPEG or PNG) are allowed: "),
+    (r"Bild zu groß \(höchstens 8 MB\): ", "Image too large (8 MB at most): "),
+    (r"Leeres Bild: ", "Empty image: "),
+    (
+        r"Keine Referenz für diesen Drucker: erst eine Referenz aufnehmen\.",
+        "No reference for this printer: capture a reference first.",
+    ),
+    (
+        r"Schwellwert muss eine Zahl zwischen 0,05 und 50 Prozent sein\.",
+        "The threshold must be a number between 0.05 and 50 percent.",
+    ),
+    (
+        r"Es werden Bilder mit leerem UND mit belegtem Bett gebraucht\.",
+        "Images with an empty AND with an occupied bed are needed.",
+    ),
+    (r"Abweichungen können nicht negativ sein\.", "Differences cannot be negative."),
     (r"Keine Einmessung gespeichert\.", "No calibration saved."),
     (r"Kein Kamerabild verfügbar\.", "No camera image available."),
     (r"Warp fehlgeschlagen — Einmessung prüfen\.", "Warp failed — check the calibration."),
@@ -200,7 +293,7 @@ PATTERNS = [(re.compile(pattern), replacement) for pattern, replacement in _RAW]
 # Antworten dieser Endpunkte werden übersetzt (alle anderen bleiben unberührt).
 PATH_RX = re.compile(
     r"^/api/v1/(printers/\d+/(hardware|maintenance-program|maintenance-print|bed-empty|spaghetti|part-watcher|"
-    r"first-layer|plate-calibration|layer-alert)|quote|remote-access)"
+    r"first-layer|plate-calibration|layer-alert|camera/plate-detection/tuning)|quote|remote-access|updates|system/alerts)"
 )
 
 

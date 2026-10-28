@@ -64,6 +64,7 @@ from backend.app.api.routes import (
     part_watcher,
     pending_uploads,
     pipeline_runs,
+    plate_tuning,
     print_log,
     print_queue,
     printer_sensor_history,
@@ -10903,6 +10904,7 @@ app.include_router(quote_router.router, prefix=app_settings.api_prefix)
 app.include_router(first_layer_inspector.router, prefix=app_settings.api_prefix)
 app.include_router(hardware.router, prefix=app_settings.api_prefix)
 app.include_router(camera.router, prefix=app_settings.api_prefix)
+app.include_router(plate_tuning.router, prefix=app_settings.api_prefix)
 app.include_router(camwall.router, prefix=app_settings.api_prefix)
 app.include_router(external_links.router, prefix=app_settings.api_prefix)
 app.include_router(projects.router, prefix=app_settings.api_prefix)

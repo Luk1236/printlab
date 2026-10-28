@@ -3,6 +3,23 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.8.0 (28.10.2026) — Verbesserungen im Alltag
+
+- **Sicherungen vor Updates in der Oberfläche** (Einstellungen → System): Liste mit Größe und Dateien, „Wiederherstellen" mit
+  Rückfrage. Die Wiederherstellung läuft beim nächsten Start, bevor die App die Datenbank öffnet; der Stand davor wird
+  ebenfalls gesichert. Nur mit eingeschalteter Anmeldung und mit dem Update-Schutz im Dienst.
+- **Meldewege in der Oberfläche** (Wartung → „Meldung bei Ausfall"): Telegram und ntfy eintragen, Testmeldung senden.
+  Token und Adressen werden nur geschrieben und nie zurückgegeben; Überwachung und Sicherung nach außen nutzen sie mit.
+  Gefährliche ntfy-Adressen (lokal, Link-Local) werden abgelehnt.
+- **Kamera einmessen in der Oberfläche** (Wartung): Fotos mit leerem und belegtem Bett hochladen, Messwerte und Vorschlag
+  ansehen, Schwellwert übernehmen oder zurücksetzen; die Bilder werden nicht gespeichert.
+- **Angebote:** Kundenanschrift (im PDF), einstellbares Nummernformat (`{prefix}`, `{year}`, `{yy}`, `{seq}`, `{seq4}`,
+  `{seq5}`) und Firmenlogo (PNG/JPEG, wird als sauberes PNG abgelegt) im Briefkopf.
+- **Update ohne Absturz-Eindruck:** nach dem Update zeigt die Oberfläche „startet neu" und lädt sich von selbst neu, sobald
+  PrintLab wieder antwortet.
+- **Übersetzungen der Fehlermeldungen:** ein Test verlangt für jede deutsche Meldung der Erweiterungen eine englische Regel;
+  dabei fehlende Regeln ergänzt, dazu die neuen Update-, Meldeweg- und Logo-Meldungen.
+
 ## v1.7.0 (28.10.2026) — Betriebssicherheit
 
 - **Anmeldung vorgeschrieben** (`PRINTLAB_REQUIRE_AUTH=1`, vom Pi-Installer gesetzt): bis der Administrator mit Passwort

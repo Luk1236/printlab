@@ -20,9 +20,13 @@ import socket
 import subprocess
 import sys
 import time
-import urllib.parse
 import urllib.request
 from pathlib import Path
+
+APP_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(APP_DIR))
+
+from backend.app.services import alert_channels  # noqa: E402
 
 FAILS_BEFORE_RESTART = 3
 MIN_SECONDS_BETWEEN_RESTARTS = 600
@@ -72,12 +76,8 @@ def run_check(state: dict, *, probe, restart, notify, now: float, free_bytes: in
     return state
 
 
-def _is_web_url(url: str) -> bool:
-    return url.lower().startswith(("http://", "https://"))  # nie file:// oder andere Schemata öffnen
-
-
 def http_probe(url: str, timeout: float = 8.0) -> bool:
-    if not _is_web_url(url):
+    if not url.lower().startswith(("http://", "https://")):  # nie file:// oder andere Schemata öffnen
         return False
     try:
         with urllib.request.urlopen(url, timeout=timeout) as response:  # noqa: S310 - feste, lokale Adresse
@@ -99,34 +99,20 @@ def systemd_restart() -> bool:
     return result.returncode == 0
 
 
-def make_notifier(environ=os.environ):
-    """Baut die Meldefunktion aus den Umgebungsvariablen. Fehler beim Senden werden nur ins Journal geschrieben."""
-    token = environ.get("PRINTLAB_ALERT_TELEGRAM_TOKEN", "").strip()
-    chat = environ.get("PRINTLAB_ALERT_TELEGRAM_CHAT", "").strip()
-    ntfy = environ.get("PRINTLAB_ALERT_NTFY_URL", "").strip()
+def make_notifier(environ=os.environ, data_dir=None):
+    """Baut die Meldefunktion. Wege kommen aus ``alert_channels.json`` im Datenordner (Oberfläche) und aus den
+    Umgebungsvariablen (diese haben Vorrang). Fehler beim Senden werden nur ins Journal geschrieben, nie mit Adresse."""
+    config = alert_channels.effective(data_dir, environ)
     host = socket.gethostname()
 
     def notify(message: str) -> None:
         text = f"[{host}] {message}"
         print(text, flush=True)
-        if token and chat:
-            data = urllib.parse.urlencode({"chat_id": chat, "text": text}).encode()
-            _post(f"https://api.telegram.org/bot{token}/sendMessage", data)
-        if ntfy.startswith(("https://", "http://")):
-            _post(ntfy, text.encode("utf-8"))
+        result = alert_channels.send(config, text)
+        for error in result["errors"]:
+            print(f"Meldung konnte nicht gesendet werden: {error}", file=sys.stderr, flush=True)
 
     return notify
-
-
-def _post(url: str, data: bytes) -> None:
-    if not _is_web_url(url):
-        return
-    try:
-        request = urllib.request.Request(url, data=data, method="POST")  # noqa: S310 - Adresse aus der eigenen Konfiguration
-        urllib.request.urlopen(request, timeout=10).close()  # noqa: S310
-    except (OSError, ValueError) as exc:
-        # Nie die Adresse ausgeben: bei Telegram steckt der Bot-Token darin.
-        print(f"Meldung konnte nicht gesendet werden: {type(exc).__name__}", file=sys.stderr, flush=True)
 
 
 def load_state(path: Path) -> dict:
@@ -160,7 +146,7 @@ def main() -> int:
         load_state(state_path),
         probe=lambda: http_probe(url),
         restart=systemd_restart,
-        notify=make_notifier(),
+        notify=make_notifier(data_dir=data_dir),
         now=time.time(),
         free_bytes=free,
         fail_limit=fail_limit,

@@ -47,6 +47,8 @@ import { MaintenanceProgramsCard } from '../components/MaintenanceProgramsCard';
 import { HardwareAdminCard } from '../components/HardwareAdminCard';
 import { RemoteAccessCard } from '../components/RemoteAccessCard';
 import { PiHealthCard } from '../components/PiHealthCard';
+import { AlertChannelsCard } from '../components/AlertChannelsCard';
+import { PlateTuningCard } from '../components/PlateTuningCard';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -1283,6 +1285,8 @@ export function MaintenancePage() {
           <MaintenanceProgramsCard canControl={hasPermission('printers:control')} />
           <HardwareAdminCard canControl={hasPermission('printers:control')} />
           <PiHealthCard />
+          <AlertChannelsCard canControl={hasPermission('settings:update')} />
+          <PlateTuningCard canControl={hasPermission('settings:update')} />
           <RemoteAccessCard canControl={hasPermission('settings:update')} />
           {overview && overview.length > 0 ? (
             [...overview].sort((a, b) => {

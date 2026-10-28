@@ -44,6 +44,8 @@ import { SpoolCatalogSettings } from '../components/SpoolCatalogSettings';
 import { ColorCatalogSettings } from '../components/ColorCatalogSettings';
 import { ExternalLinksSettings } from '../components/ExternalLinksSettings';
 import { VirtualPrinterList } from '../components/VirtualPrinterList';
+import { UpdateRestartWatcher } from '../components/UpdateRestartWatcher';
+import { UpdateBackupsCard } from '../components/UpdateBackupsCard';
 import { SpoolBuddySettings } from '../components/SpoolBuddySettings';
 import { GitHubBackupSettings } from '../components/GitHubBackupSettings';
 import { FailureDetectionSettings } from '../components/FailureDetectionSettings';
@@ -2977,6 +2979,7 @@ export function SettingsPage() {
                         {updateStatus.signature_enforced ? t('settings.updateSignatureOn') : t('settings.updateSignatureOff')}
                       </p>
                     )}
+                    <UpdateBackupsCard canRestore={hasPermission('settings:update')} />
                     {updateStatus?.rolled_back && (
                       <div className="mt-3 p-2 bg-yellow-500/20 rounded text-sm text-yellow-700 dark:text-yellow-400 flex items-start justify-between gap-3">
                         <span>
@@ -3005,6 +3008,8 @@ export function SettingsPage() {
                           />
                         </div>
                       </div>
+                    ) : updateStatus?.status === 'complete' && updateStatus.restarting ? (
+                      <UpdateRestartWatcher currentVersion={updateCheck?.current_version} />
                     ) : updateStatus?.status === 'complete' ? (
                       <div className="mt-3 p-2 bg-bambu-green/20 rounded text-sm text-bambu-green">
                         {updateStatus.message}

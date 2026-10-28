@@ -28,6 +28,9 @@ logger = logging.getLogger(__name__)
 
 MARKER_NAME = "update_pending.json"
 ROLLED_BACK_NAME = "update_rolled_back.json"
+RESTORE_NAME = "restore_pending.json"
+RESTORED_NAME = "restore_done.json"
+BACKUP_NAME_RX = re.compile(r"\d{8}-\d{6}")
 BACKUP_FOLDER = "update-backups"
 KEEP_BACKUPS = 3
 MAX_STARTS = 3  # ab dem vierten Start ohne Bestätigung wird zurückgebaut
@@ -191,6 +194,93 @@ def confirm(data_dir: Path) -> bool:
     return existed
 
 
+def list_backups(data_dir: Path) -> list[dict]:
+    """Sicherungen aus ``update-backups`` (neueste zuerst) mit Dateien und Größe."""
+    root = _in(data_dir, BACKUP_FOLDER)
+    out: list[dict] = []
+    try:
+        folders = sorted((p for p in root.iterdir() if p.is_dir() and BACKUP_NAME_RX.fullmatch(p.name)), reverse=True)
+    except OSError:
+        return out
+    for folder in folders:
+        files = [f for f in folder.iterdir() if f.is_file()]
+        out.append(
+            {
+                "name": folder.name,
+                "created": time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(folder.stat().st_mtime)),
+                "files": sorted(f.name for f in files),
+                "size_bytes": sum(f.stat().st_size for f in files),
+            }
+        )
+    return out
+
+
+def restore_pending(data_dir: Path) -> str | None:
+    marker = _read_json(_in(data_dir, RESTORE_NAME))
+    return str(marker["name"]) if marker and isinstance(marker.get("name"), str) else None
+
+
+def request_restore(data_dir: Path, name: str) -> None:
+    """Merkt eine Wiederherstellung für den nächsten Start vor (``guard`` führt sie aus, bevor die App die Datenbank
+    öffnet). Wirft ``UpdateGuardError``, wenn die Sicherung nicht existiert oder nicht in Ordnung ist."""
+    data_dir = Path(data_dir)
+    if not BACKUP_NAME_RX.fullmatch(str(name)):
+        raise UpdateGuardError("Ungültiger Name der Sicherung.")
+    folder = _in(data_dir, BACKUP_FOLDER, name)
+    if not folder.is_dir():
+        raise UpdateGuardError("Diese Sicherung gibt es nicht mehr.")
+    databases = list(folder.glob("*.db"))
+    if not databases:
+        raise UpdateGuardError("Die Sicherung enthält keine Datenbank.")
+    for db in databases:
+        if not verify_sqlite(db):
+            raise UpdateGuardError(f"Die Sicherung ist beschädigt ({db.name}) und wird nicht eingespielt.")
+    _write_json(_in(data_dir, RESTORE_NAME), {"name": name, "requested_at": time.strftime("%Y-%m-%dT%H:%M:%S")})
+
+
+def read_restore_notice(data_dir: Path) -> dict | None:
+    return _read_json(_in(data_dir, RESTORED_NAME))
+
+
+def clear_restore_notice(data_dir: Path) -> None:
+    _in(data_dir, RESTORED_NAME).unlink(missing_ok=True)
+
+
+def apply_restore(data_dir: Path) -> str:
+    """Eine vorgemerkte Wiederherstellung ausführen. ``none``, ``restored`` oder ``restore_failed``."""
+    data_dir = Path(data_dir)
+    name = restore_pending(data_dir)
+    if name is None:
+        return "none"
+    _in(data_dir, RESTORE_NAME).unlink(missing_ok=True)  # nie zweimal versuchen, auch nicht bei einem Fehler
+    folder = _in(data_dir, BACKUP_FOLDER, name)
+    if not BACKUP_NAME_RX.fullmatch(name) or not folder.is_dir():
+        return "restore_failed"
+    try:
+        # Zuerst den jetzigen Stand sichern, damit man die Wiederherstellung zurücknehmen kann
+        safety = _in(data_dir, BACKUP_FOLDER, time.strftime("%Y%m%d-%H%M%S"))
+        if not safety.exists():
+            backup_data(data_dir, safety)
+        restored = _restore_data(data_dir, folder)
+    except (OSError, sqlite3.Error) as exc:
+        logger.error("Wiederherstellung fehlgeschlagen: %s", exc)
+        return "restore_failed"
+    _write_json(
+        _in(data_dir, RESTORED_NAME),
+        {"name": name, "restored": restored, "at": time.strftime("%Y-%m-%dT%H:%M:%S")},
+    )
+    return "restored"
+
+
+def guard_in_unit(unit_path: Path | None = None) -> bool:
+    """True, wenn die systemd-Unit den Update-Schutz (und damit die Wiederherstellung beim Start) enthält."""
+    unit = unit_path or Path.home() / ".config" / "systemd" / "user" / "printlab.service"
+    try:
+        return "update_guard.py" in unit.read_text(encoding="utf-8")
+    except OSError:
+        return False
+
+
 def _restore_data(data_dir: Path, backup_dir: Path) -> list[str]:
     restored: list[str] = []
     if not backup_dir.is_dir():
@@ -257,6 +347,9 @@ def reinstall_requirements(app_dir: Path, python: str, timeout: int = 600) -> bo
 def guard(app_dir: Path, data_dir: Path) -> str:
     """Beim Start des Dienstes (vor der App). Rückgabe: ``none``, ``counted`` oder ``rolled_back``/``rollback_failed``."""
     data_dir = Path(data_dir)
+    restore = apply_restore(data_dir)
+    if restore != "none":
+        return restore
     marker = read_marker(data_dir)
     if marker is None:
         return "none"

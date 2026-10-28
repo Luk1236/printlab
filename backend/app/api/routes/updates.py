@@ -11,11 +11,11 @@ import sys
 import time
 
 import httpx
-from fastapi import APIRouter, BackgroundTasks, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.core.auth import RequirePermissionIfAuthEnabled
+from backend.app.core.auth import RequirePermissionIfAuthEnabled, is_auth_enabled
 from backend.app.core.config import GITHUB_REPO, PRINTLAB_VERSION, settings
 from backend.app.core.database import get_db
 from backend.app.core.permissions import Permission
@@ -1015,6 +1015,7 @@ async def _perform_update(target_ref: str):
             if restarting
             else "Update complete! Please restart the application.",
             "error": None,
+            "restarting": restarting,
         }
 
         logger.info("Update completed successfully")
@@ -1124,6 +1125,52 @@ async def get_update_status(
         "rolled_back": update_guard.read_rollback_notice(settings.base_dir),
         "signature_enforced": update_signature.policy(settings.base_dir)["enforced"],
     }
+
+
+@router.get("/backups")
+async def list_update_backups(
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.SYSTEM_READ),
+):
+    """Die automatischen Sicherungen vor Updates (neueste zuerst) und ob sich eine wiederherstellen lässt."""
+    return {
+        "backups": await asyncio.to_thread(update_guard.list_backups, settings.base_dir),
+        "restore_pending": update_guard.restore_pending(settings.base_dir),
+        "restored": update_guard.read_restore_notice(settings.base_dir),
+        "can_restore": update_guard.guard_in_unit() and os.environ.get("PRINTLAB_AUTO_RESTART") == "1",
+    }
+
+
+@router.post("/backups/{name}/restore")
+async def restore_update_backup(
+    name: str,
+    db: AsyncSession = Depends(get_db),
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.SETTINGS_UPDATE),
+):
+    """Eine Sicherung beim nächsten Start wiederherstellen und den Dienst dafür neu starten.
+
+    Nur mit eingeschalteter Anmeldung: das Einspielen ersetzt die Datenbank samt Benutzern.
+    """
+    if not await is_auth_enabled(db):
+        raise HTTPException(403, "Wiederherstellen nur mit eingeschalteter Anmeldung.")
+    if not (update_guard.guard_in_unit() and os.environ.get("PRINTLAB_AUTO_RESTART") == "1"):
+        raise HTTPException(
+            409, "Wiederherstellen geht nur mit dem Update-Schutz im Dienst (Installer erneut ausführen)."
+        )
+    try:
+        await asyncio.to_thread(update_guard.request_restore, settings.base_dir, name)
+    except update_guard.UpdateGuardError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    logger.warning("Wiederherstellung der Sicherung %s angefordert", name)
+    _schedule_restart_after_update()
+    return {"success": True, "name": name}
+
+
+@router.post("/restore-notice/dismiss")
+async def dismiss_restore_notice(
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.SETTINGS_UPDATE),
+):
+    update_guard.clear_restore_notice(settings.base_dir)
+    return {"ok": True}
 
 
 @router.post("/rollback-notice/dismiss")

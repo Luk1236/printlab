@@ -4050,6 +4050,8 @@ export interface UpdateStatus {
   message: string;
   error: string | null;
   signature_enforced?: boolean;
+  /** Der Dienst startet sich nach dem Update selbst neu (PRINTLAB_AUTO_RESTART). */
+  restarting?: boolean;
   rolled_back?: { from_ref: string | null; to_version: string | null; reason: string; at: string } | null;
 }
 
@@ -4266,6 +4268,8 @@ export interface CompanyProfile {
   vat_note: string;
   valid_days: number;
   number_prefix: string;
+  number_format: string;
+  has_logo: boolean;
 }
 
 export interface QuoteCustomerTotal {
@@ -4291,6 +4295,43 @@ export interface RemoteAccessStatus {
   https_url: string;
   error: string | null;
   auth_enabled: boolean;
+}
+
+export interface AlertChannelsStatus {
+  telegram: boolean;
+  telegram_chat: string;
+  ntfy: boolean;
+  ntfy_host: string;
+}
+
+export interface PlateTuningAnalysis {
+  empty: { name: string; score: number }[];
+  occupied: { name: string; score: number }[];
+  suggestion: {
+    threshold: number;
+    min_confidence: number;
+    separable: boolean;
+    quality: 'good' | 'ok' | 'weak' | 'overlap';
+    missed_objects: number;
+    false_alarms: number;
+    empty_max: number;
+    occupied_min: number;
+    message: string;
+  };
+}
+
+export interface UpdateBackup {
+  name: string;
+  created: string;
+  files: string[];
+  size_bytes: number;
+}
+
+export interface UpdateBackups {
+  backups: UpdateBackup[];
+  restore_pending: string | null;
+  restored: { name: string; restored: string[]; at: string } | null;
+  can_restore: boolean;
 }
 
 export interface PiHealthWarning {
@@ -7333,6 +7374,42 @@ export const api = {
       method: 'POST',
     }),
   getUpdateStatus: () => request<UpdateStatus>('/updates/status'),
+  getPlateTuning: (printerId: number) =>
+    request<{ saved: number | null; default: number; effective: number }>(
+      `/printers/${printerId}/camera/plate-detection/tuning`
+    ),
+  analyzePlateTuning: async (printerId: number, empty: File[], occupied: File[]): Promise<PlateTuningAnalysis> => {
+    const form = new FormData();
+    empty.forEach((file) => form.append('empty', file));
+    occupied.forEach((file) => form.append('occupied', file));
+    const headers: Record<string, string> = {};
+    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+    const response = await fetch(`${API_BASE}/printers/${printerId}/camera/plate-detection/tuning/analyze`, {
+      method: 'POST',
+      headers,
+      body: form,
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(typeof error.detail === 'string' ? error.detail : `HTTP ${response.status}`);
+    }
+    return response.json();
+  },
+  savePlateTuning: (printerId: number, threshold: number) =>
+    request<{ saved: number }>(`/printers/${printerId}/camera/plate-detection/tuning`, {
+      method: 'PUT',
+      body: JSON.stringify({ threshold }),
+    }),
+  resetPlateTuning: (printerId: number) =>
+    request<{ reset: boolean }>(`/printers/${printerId}/camera/plate-detection/tuning`, { method: 'DELETE' }),
+  getAlertChannels: () => request<AlertChannelsStatus>('/system/alerts'),
+  saveAlertChannels: (update: Record<string, string>) =>
+    request<AlertChannelsStatus>('/system/alerts', { method: 'PUT', body: JSON.stringify(update) }),
+  testAlertChannels: () => request<{ sent: string[]; errors: string[] }>('/system/alerts/test', { method: 'POST' }),
+  getUpdateBackups: () => request<UpdateBackups>('/updates/backups'),
+  restoreUpdateBackup: (name: string) =>
+    request<{ success: boolean; name: string }>(`/updates/backups/${encodeURIComponent(name)}/restore`, { method: 'POST' }),
+  dismissRestoreNotice: () => request<{ ok: boolean }>('/updates/restore-notice/dismiss', { method: 'POST' }),
   dismissRollbackNotice: () => request<{ ok: boolean }>('/updates/rollback-notice/dismiss', { method: 'POST' }),
 
   // Maintenance
@@ -7626,6 +7703,19 @@ export const api = {
     ),
   saveQuote: (payload: Record<string, unknown>) =>
     request<QuoteHistoryEntry>('/quote/history', { method: 'POST', body: JSON.stringify(payload) }),
+  uploadCompanyLogo: async (file: File): Promise<{ has_logo: boolean }> => {
+    const form = new FormData();
+    form.append('file', file);
+    const headers: Record<string, string> = {};
+    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+    const response = await fetch(`${API_BASE}/quote/company/logo`, { method: 'PUT', headers, body: form });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(typeof error.detail === 'string' ? error.detail : `HTTP ${response.status}`);
+    }
+    return response.json();
+  },
+  deleteCompanyLogo: () => request<{ deleted: boolean }>('/quote/company/logo', { method: 'DELETE' }),
   getCompanyProfile: () => request<CompanyProfile>('/quote/company'),
   saveCompanyProfile: (data: Partial<CompanyProfile>) =>
     request<CompanyProfile>('/quote/company', { method: 'PUT', body: JSON.stringify(data) }),

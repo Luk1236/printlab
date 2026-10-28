@@ -1019,3 +1019,95 @@ class TestUpdatesAPI:
             body = (await async_client.get("/api/v1/updates/check")).json()
         assert body["update_method"] == "git"
         assert body["compose_dir_detected"] is None
+
+
+class TestBackupsApi:
+    @pytest.fixture(autouse=True)
+    def _data_dir(self, tmp_path):
+        from backend.app.api.routes import updates as updates_module
+
+        data = tmp_path / "data"
+        data.mkdir()
+        with patch.object(updates_module.settings, "base_dir", data):
+            yield data
+
+    def make_backup(self, data, name="20260101-120000"):
+        import sqlite3
+
+        folder = data / "update-backups" / name
+        folder.mkdir(parents=True)
+        con = sqlite3.connect(folder / "printlab.db")
+        con.execute("create table t (v)")
+        con.commit()
+        con.close()
+
+    @pytest.mark.asyncio
+    async def test_lists_backups_and_the_restore_capability(self, async_client: AsyncClient, _data_dir):
+        self.make_backup(_data_dir)
+        with (
+            patch("backend.app.services.update_guard.guard_in_unit", return_value=True),
+            patch.dict("os.environ", {"PRINTLAB_AUTO_RESTART": "1"}),
+        ):
+            data = (await async_client.get("/api/v1/updates/backups")).json()
+        assert [b["name"] for b in data["backups"]] == ["20260101-120000"]
+        assert data["can_restore"] is True and data["restore_pending"] is None
+
+    @pytest.mark.asyncio
+    async def test_cannot_restore_without_the_guard(self, async_client: AsyncClient, _data_dir):
+        self.make_backup(_data_dir)
+        with patch("backend.app.services.update_guard.guard_in_unit", return_value=False):
+            data = (await async_client.get("/api/v1/updates/backups")).json()
+        assert data["can_restore"] is False
+
+    @pytest.mark.asyncio
+    async def test_restore_needs_authentication(self, async_client: AsyncClient, _data_dir):
+        self.make_backup(_data_dir)
+        resp = await async_client.post("/api/v1/updates/backups/20260101-120000/restore")
+        assert resp.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_restore_is_queued_and_the_service_restarts(self, async_client: AsyncClient, _data_dir):
+        from backend.app.api.routes import updates as updates_module
+
+        self.make_backup(_data_dir)
+
+        async def auth_on(db):
+            return True
+
+        with (
+            patch.object(updates_module, "is_auth_enabled", auth_on),
+            patch("backend.app.services.update_guard.guard_in_unit", return_value=True),
+            patch.dict("os.environ", {"PRINTLAB_AUTO_RESTART": "1"}),
+            patch.object(updates_module, "_schedule_restart_after_update", return_value=True) as restart,
+        ):
+            resp = await async_client.post("/api/v1/updates/backups/20260101-120000/restore")
+        assert resp.status_code == 200 and resp.json()["name"] == "20260101-120000"
+        restart.assert_called_once()
+        assert (_data_dir / "restore_pending.json").exists()
+
+    @pytest.mark.asyncio
+    async def test_restore_refuses_without_the_guard_or_with_a_bad_backup(self, async_client: AsyncClient, _data_dir):
+        from backend.app.api.routes import updates as updates_module
+
+        async def auth_on(db):
+            return True
+
+        with (
+            patch.object(updates_module, "is_auth_enabled", auth_on),
+            patch("backend.app.services.update_guard.guard_in_unit", return_value=False),
+        ):
+            resp = await async_client.post("/api/v1/updates/backups/20260101-120000/restore")
+        assert resp.status_code == 409
+        with (
+            patch.object(updates_module, "is_auth_enabled", auth_on),
+            patch("backend.app.services.update_guard.guard_in_unit", return_value=True),
+            patch.dict("os.environ", {"PRINTLAB_AUTO_RESTART": "1"}),
+        ):
+            gone = await async_client.post("/api/v1/updates/backups/20260101-120000/restore")
+        assert gone.status_code == 400 and not (_data_dir / "restore_pending.json").exists()
+
+    @pytest.mark.asyncio
+    async def test_dismiss_restore_notice(self, async_client: AsyncClient, _data_dir):
+        (_data_dir / "restore_done.json").write_text('{"name": "x"}')
+        assert (await async_client.post("/api/v1/updates/restore-notice/dismiss")).status_code == 200
+        assert not (_data_dir / "restore_done.json").exists()

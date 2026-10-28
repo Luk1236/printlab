@@ -215,3 +215,101 @@ describe('QuoteCalculator company data and PDF', () => {
     expect(calls.saved[0]).toMatchObject({ name: 'PrintLab Neu', vat_percent: 19, number_prefix: 'A' });
   });
 });
+
+describe('QuoteCalculator number format, logo and customer address', () => {
+  const company = {
+    name: 'PrintLab Muster',
+    address: '',
+    tax_id: '',
+    email: '',
+    phone: '',
+    iban: '',
+    bic: '',
+    footer: '',
+    vat_percent: 0,
+    vat_note: '',
+    valid_days: 14,
+    number_prefix: 'A',
+    number_format: '{prefix}-{year}-{seq4}',
+    has_logo: false,
+  };
+
+  function setupExtras(calls: { saved: unknown[]; logo: string[]; quote: unknown[] }, hasLogo = false) {
+    server.use(
+      http.get('/api/v1/settings/', () => HttpResponse.json({ currency: 'EUR' })),
+      http.get('/api/v1/quote/price-list', () => HttpResponse.json({ entries: [] })),
+      http.get('/api/v1/quote/company', () => HttpResponse.json({ ...company, has_logo: hasLogo })),
+      http.put('/api/v1/quote/company', async ({ request }) => {
+        const body = await request.json();
+        calls.saved.push(body);
+        return HttpResponse.json(body);
+      }),
+      http.put('/api/v1/quote/company/logo', () => {
+        calls.logo.push('upload');
+        return HttpResponse.json({ has_logo: true });
+      }),
+      http.delete('/api/v1/quote/company/logo', () => {
+        calls.logo.push('delete');
+        return HttpResponse.json({ deleted: true });
+      }),
+      http.get('/api/v1/quote', () =>
+        HttpResponse.json({ currency: 'EUR', inputs: {}, material: 1, energy: 1, labor: 1, subtotal: 3, markup: 0.6, total: 3.6 }),
+      ),
+      http.post('/api/v1/quote/history', async ({ request }) => {
+        calls.quote.push(await request.json());
+        return HttpResponse.json({ id: 'a1', number: 'A-2026-0001' });
+      }),
+    );
+  }
+
+  it('edits and saves the number format', async () => {
+    const calls = { saved: [] as unknown[], logo: [] as string[], quote: [] as unknown[] };
+    setupExtras(calls);
+    render(<QuoteCalculator />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Company details' }));
+    const format = await screen.findByLabelText(/Number format/);
+    expect(format).toHaveValue('{prefix}-{year}-{seq4}');
+    await userEvent.clear(format);
+    await userEvent.type(format, '{{prefix}{{yy}/{{seq}');
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(calls.saved.length).toBe(1));
+    expect(calls.saved[0]).toMatchObject({ number_format: '{prefix}{yy}/{seq}' });
+  });
+
+  it('uploads a logo', async () => {
+    const calls = { saved: [] as unknown[], logo: [] as string[], quote: [] as unknown[] };
+    setupExtras(calls);
+    render(<QuoteCalculator />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Company details' }));
+    expect(await screen.findByText(/^Logo: none$/)).toBeInTheDocument();
+    await userEvent.upload(
+      screen.getByLabelText('Upload logo (PNG/JPEG)'),
+      new File(['x'], 'logo.png', { type: 'image/png' }),
+    );
+    await waitFor(() => expect(calls.logo).toEqual(['upload']));
+  });
+
+  it('shows a stored logo and can remove it', async () => {
+    const calls = { saved: [] as unknown[], logo: [] as string[], quote: [] as unknown[] };
+    setupExtras(calls, true);
+    render(<QuoteCalculator />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Company details' }));
+    expect(await screen.findByText(/^Logo: stored$/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Remove logo' }));
+    await waitFor(() => expect(calls.logo).toEqual(['delete']));
+  });
+
+  it('sends the customer address with a saved quote', async () => {
+    const calls = { saved: [] as unknown[], logo: [] as string[], quote: [] as unknown[] };
+    setupExtras(calls);
+    render(<QuoteCalculator />);
+    await userEvent.type(await screen.findByLabelText('Filament'), '100');
+    await userEvent.type(screen.getByLabelText('Print time'), '60');
+    await userEvent.click(screen.getByRole('button', { name: /Calculate/i }));
+    await userEvent.type(await screen.findByLabelText('Customer'), 'Müller GmbH');
+    await userEvent.type(screen.getByLabelText('Customer address (optional)'), 'Musterweg 3');
+    await userEvent.click(screen.getByRole('button', { name: 'Save quote' }));
+    await waitFor(() => expect(calls.quote.length).toBe(1));
+    expect(calls.quote[0]).toMatchObject({ customer: 'Müller GmbH', customer_address: 'Musterweg 3' });
+  });
+});

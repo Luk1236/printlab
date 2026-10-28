@@ -9,11 +9,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import psutil
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.core.auth import RequirePermissionIfAuthEnabled
+from backend.app.core.auth import RequirePermissionIfAuthEnabled, is_auth_enabled
 from backend.app.core.config import APP_VERSION, settings
 from backend.app.core.database import get_db
 from backend.app.core.local_config import read_local_toml, read_ntp_gate
@@ -607,6 +607,49 @@ async def get_pi_health(
     from backend.app.services import pi_health
 
     return await asyncio.to_thread(pi_health.snapshot, settings.base_dir)
+
+
+@router.get("/alerts")
+async def get_alert_channels(
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.SETTINGS_READ),
+):
+    """Welche Meldewege für Ausfälle eingerichtet sind (ohne Token und Adressen)."""
+    from backend.app.services import alert_channels
+
+    return alert_channels.status(settings.base_dir)
+
+
+@router.put("/alerts")
+async def set_alert_channels(
+    payload: dict,
+    db: AsyncSession = Depends(get_db),
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.SETTINGS_UPDATE),
+):
+    """Telegram und ntfy für Ausfallmeldungen speichern; ein leerer Wert löscht, ein fehlender lässt unverändert."""
+    from backend.app.services import alert_channels
+
+    if not await is_auth_enabled(db):
+        raise HTTPException(403, "Meldewege nur mit eingeschalteter Anmeldung ändern.")
+    try:
+        return alert_channels.write(settings.base_dir, payload)
+    except alert_channels.AlertConfigError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@router.post("/alerts/test")
+async def send_test_alert(
+    db: AsyncSession = Depends(get_db),
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.SETTINGS_UPDATE),
+):
+    """Eine Testmeldung an alle eingerichteten Wege schicken; liefert, was ankam und was nicht."""
+    from backend.app.services import alert_channels
+
+    if not await is_auth_enabled(db):
+        raise HTTPException(403, "Meldewege nur mit eingeschalteter Anmeldung testen.")
+    config = alert_channels.effective(settings.base_dir)
+    if not (config.get("ntfy_url") or (config.get("telegram_token") and config.get("telegram_chat"))):
+        raise HTTPException(400, "Es ist noch kein Meldeweg eingerichtet.")
+    return await asyncio.to_thread(alert_channels.send, config, "PrintLab: Testmeldung. Der Meldeweg funktioniert.")
 
 
 @router.get("/health", response_model=ScanResult)

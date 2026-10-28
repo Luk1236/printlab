@@ -25,6 +25,10 @@ def main() -> int:
         print("Update-Schutz: Pakete des alten Stands " + ("neu eingespielt." if ok else "nicht neu eingespielt."))
     elif result == "rollback_failed":
         print("Update-Schutz: Rückbau nicht möglich, bitte von Hand prüfen.", file=sys.stderr)
+    elif result == "restored":
+        print("Update-Schutz: die vorgemerkte Sicherung wurde wiederhergestellt (der Stand davor ist auch gesichert).")
+    elif result == "restore_failed":
+        print("Update-Schutz: Wiederherstellung nicht möglich, der bisherige Stand bleibt.", file=sys.stderr)
     elif result == "counted":
         print("Update-Schutz: Start nach dem Update gezählt.")
     return 0

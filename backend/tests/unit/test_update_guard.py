@@ -224,3 +224,96 @@ def test_unit_gets_a_long_start_timeout_with_the_guard(tmp_path, monkeypatch):
     unit.write_text("[Service]\nTimeoutStartSec=30\nExecStart=/x/python app\n")
     ug.ensure_systemd_guard(tmp_path / "app", "/x/python", unit)
     assert unit.read_text().count("TimeoutStartSec") == 1  # eine vorhandene Einstellung bleibt
+
+
+class TestRestore:
+    def backup_with(self, data, label="20260101-120000", value="gesichert"):
+        folder = data / ug.BACKUP_FOLDER / label
+        folder.mkdir(parents=True)
+        con = sqlite3.connect(folder / "printlab.db")
+        con.execute("create table t (v text)")
+        con.execute("insert into t values (?)", (value,))
+        con.commit()
+        con.close()
+        (folder / "hardware.json").write_text('{"gpio": 7}')
+        return folder
+
+    def test_lists_backups_newest_first_and_ignores_foreign_folders(self, install):
+        _, data, _ = install
+        self.backup_with(data, "20260101-120000")
+        self.backup_with(data, "20260301-120000")
+        (data / ug.BACKUP_FOLDER / "meine-fotos").mkdir()
+        listed = ug.list_backups(data)
+        assert [b["name"] for b in listed] == ["20260301-120000", "20260101-120000"]
+        assert listed[0]["files"] == ["hardware.json", "printlab.db"] and listed[0]["size_bytes"] > 0
+
+    def test_listing_without_backups_is_empty(self, install):
+        _, data, _ = install
+        assert ug.list_backups(data) == []
+
+    def test_request_marks_the_restore_for_the_next_start(self, install):
+        _, data, _ = install
+        self.backup_with(data)
+        ug.request_restore(data, "20260101-120000")
+        assert ug.restore_pending(data) == "20260101-120000"
+
+    @pytest.mark.parametrize("name", ["", "../daten", "..\\x", "20260101-12000", "abc", "20260101-120000/../x"])
+    def test_bad_names_are_refused(self, install, name):
+        _, data, _ = install
+        with pytest.raises(ug.UpdateGuardError):
+            ug.request_restore(data, name)
+        assert ug.restore_pending(data) is None
+
+    def test_unknown_empty_or_damaged_backups_are_refused(self, install):
+        _, data, _ = install
+        with pytest.raises(ug.UpdateGuardError, match="nicht mehr"):
+            ug.request_restore(data, "20260101-120000")
+        folder = data / ug.BACKUP_FOLDER / "20260102-120000"
+        folder.mkdir(parents=True)
+        with pytest.raises(ug.UpdateGuardError, match="keine Datenbank"):
+            ug.request_restore(data, "20260102-120000")
+        (folder / "printlab.db").write_bytes(b"kaputt" * 100)
+        with pytest.raises(ug.UpdateGuardError, match="beschädigt"):
+            ug.request_restore(data, "20260102-120000")
+        assert ug.restore_pending(data) is None
+
+    def test_guard_applies_the_restore_and_keeps_a_safety_copy(self, install):
+        app, data, _ = install
+        self.backup_with(data, "20260101-120000", value="alt")
+        ug.request_restore(data, "20260101-120000")
+        con = sqlite3.connect(data / "printlab.db")
+        con.execute("update t set v = 'neu-und-falsch'")
+        con.commit()
+        con.close()
+        assert ug.guard(app, data) == "restored"
+        assert _db_value(data) == "alt"
+        assert (data / "hardware.json").read_text() == '{"gpio": 7}'
+        assert ug.restore_pending(data) is None
+        assert ug.read_restore_notice(data)["name"] == "20260101-120000"
+        # die Sicherung des Zustands davor ist vorhanden und enthält den "falschen" Wert
+        names = [b["name"] for b in ug.list_backups(data)]
+        assert len(names) == 2
+        newest = data / ug.BACKUP_FOLDER / names[0]
+        con = sqlite3.connect(newest / "printlab.db")
+        assert con.execute("select v from t").fetchone()[0] == "neu-und-falsch"
+        con.close()
+        assert ug.guard(app, data) == "none"  # nur einmal
+        ug.clear_restore_notice(data)
+        assert ug.read_restore_notice(data) is None
+
+    def test_a_vanished_backup_fails_without_touching_anything(self, install):
+        app, data, _ = install
+        self.backup_with(data)
+        ug.request_restore(data, "20260101-120000")
+        shutil.rmtree(data / ug.BACKUP_FOLDER / "20260101-120000")
+        assert ug.guard(app, data) == "restore_failed"
+        assert _db_value(data) == "vorher"
+        assert ug.restore_pending(data) is None  # kein zweiter Versuch beim nächsten Start
+
+    def test_guard_in_unit(self, tmp_path):
+        unit = tmp_path / "printlab.service"
+        assert ug.guard_in_unit(unit) is False
+        unit.write_text("[Service]\nExecStart=x\n")
+        assert ug.guard_in_unit(unit) is False
+        unit.write_text("[Service]\nExecStartPre=-x update_guard.py\nExecStart=x\n")
+        assert ug.guard_in_unit(unit) is True

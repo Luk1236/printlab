@@ -108,35 +108,49 @@ def test_enough_disk_space_is_silent():
 
 def test_notifier_sends_to_telegram_and_ntfy_without_leaking_the_token(monkeypatch, capsys):
     sent = []
-    monkeypatch.setattr(ue, "_post", lambda url, data: sent.append((url, data)))
+    monkeypatch.setattr(ue.alert_channels, "_post", lambda url, data, timeout=10.0: sent.append((url, data)))
+    token = "123456789:" + "A" * 35
     notify = ue.make_notifier(
         {
-            "PRINTLAB_ALERT_TELEGRAM_TOKEN": "123:abc",
+            "PRINTLAB_ALERT_TELEGRAM_TOKEN": token,
             "PRINTLAB_ALERT_TELEGRAM_CHAT": "42",
             "PRINTLAB_ALERT_NTFY_URL": "https://ntfy.sh/meins",
         }
     )
     notify("Test")
     urls = [u for u, _ in sent]
-    assert urls == ["https://api.telegram.org/bot123:abc/sendMessage", "https://ntfy.sh/meins"]
+    assert urls == [f"https://api.telegram.org/bot{token}/sendMessage", "https://ntfy.sh/meins"]
     assert b"chat_id=42" in sent[0][1]
-    assert "123:abc" not in capsys.readouterr().out
+    assert token not in capsys.readouterr().out
 
 
 def test_notifier_without_channels_only_prints(monkeypatch, capsys):
-    monkeypatch.setattr(ue, "_post", lambda *a: pytest.fail("darf nichts senden"))
+    monkeypatch.setattr(ue.alert_channels, "_post", lambda *a, **k: pytest.fail("darf nichts senden"))
     ue.make_notifier({})("Hallo")
     assert "Hallo" in capsys.readouterr().out
 
 
-def test_post_failure_never_prints_the_url(monkeypatch, capsys):
+def test_notifier_uses_the_channels_saved_in_the_data_folder(monkeypatch, tmp_path):
+    sent = []
+    monkeypatch.setattr(ue.alert_channels, "_post", lambda url, data, timeout=10.0: sent.append(url))
+    ue.alert_channels.write(tmp_path, {"ntfy_url": "https://ntfy.sh/aus-der-oberflaeche"})
+    ue.make_notifier({}, data_dir=tmp_path)("Test")
+    assert sent == ["https://ntfy.sh/aus-der-oberflaeche"]
+    # eine Umgebungsvariable hat Vorrang
+    sent.clear()
+    ue.make_notifier({"PRINTLAB_ALERT_NTFY_URL": "https://ntfy.sh/aus-der-umgebung"}, data_dir=tmp_path)("Test")
+    assert sent == ["https://ntfy.sh/aus-der-umgebung"]
+
+
+def test_send_failure_never_prints_the_address_or_token(monkeypatch, capsys):
     def boom(*a, **k):
         raise OSError("kaputt")
 
-    monkeypatch.setattr(ue.urllib.request, "urlopen", boom)
-    ue._post("https://api.telegram.org/bot123:abc/sendMessage", b"x")
+    token = "123456789:" + "A" * 35
+    monkeypatch.setattr(ue.alert_channels.urllib.request, "urlopen", boom)
+    ue.make_notifier({"PRINTLAB_ALERT_TELEGRAM_TOKEN": token, "PRINTLAB_ALERT_TELEGRAM_CHAT": "42"})("Test")
     err = capsys.readouterr().err
-    assert "OSError" in err and "123:abc" not in err
+    assert "OSError" in err and token not in err
 
 
 def test_state_roundtrip_and_broken_file(tmp_path):
@@ -155,7 +169,8 @@ def test_probe_false_when_nothing_listens():
 def test_only_web_urls_are_ever_opened(monkeypatch):
     opened = []
     monkeypatch.setattr(ue.urllib.request, "urlopen", lambda *a, **k: opened.append(a))
+    monkeypatch.setattr(ue.alert_channels.urllib.request, "urlopen", lambda *a, **k: opened.append(a))
     assert ue.http_probe("file:///etc/passwd") is False
-    ue._post("file:///etc/passwd", b"x")
-    ue._post("ftp://example.com/x", b"x")
+    ue.make_notifier({"PRINTLAB_ALERT_NTFY_URL": "file:///etc/passwd"})("x")
+    ue.make_notifier({"PRINTLAB_ALERT_NTFY_URL": "ftp://example.com/x"})("x")
     assert opened == []

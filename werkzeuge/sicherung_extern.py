@@ -94,7 +94,7 @@ def main() -> int:
         keep = max(1, int(os.environ.get("PRINTLAB_BACKUP_KEEP", "7")))
     except ValueError:
         keep = 7
-    notify = ueberwachung.make_notifier()
+    notify = ueberwachung.make_notifier(data_dir=DATA_DIR)
     try:
         result = run_backup(DATA_DIR, Path(target_text), keep, os.environ.get("PRINTLAB_BACKUP_ALLOW_SAME_DISK") == "1")
     except RuntimeError as exc:
