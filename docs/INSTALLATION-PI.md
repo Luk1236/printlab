@@ -195,6 +195,16 @@ weicht PrintLab dann automatisch auf `git ls-remote` aus. Bei älteren Ständen:
 (`v1.9.1` durch die gewünschte Version ersetzen). Alternativ ein Token mit Leserecht in `PRINTLAB_GITHUB_TOKEN` setzen
 (5000 statt 60 Abfragen pro Stunde).
 
+## Warteschlange mit mehreren Druckern
+
+- **Priorität:** Beim Einreihen wählst du *Eilig*, *Standard* oder *Niedrig*. Eilig kommt immer vor Standard, Standard vor
+  Niedrig; innerhalb einer Stufe zählt die Reihenfolge der Warteschlange. Das Ziehen ändert die Reihenfolge nur innerhalb
+  einer Stufe. Filter und Plakette in der Warteschlange zeigen die Stufe.
+- **Liefertermin:** Optional. Er warnt nur („Termin überschritten", „Termin wird nicht gehalten") und ändert nichts an der
+  Reihenfolge. Die Warnung „wird nicht gehalten" rechnet mit der Druckzeit ab jetzt, ohne Wartezeit vor dem Start.
+- **Verteilung:** Bei „irgendein Drucker dieses Modells" nimmt PrintLab unter den freien passenden Druckern den mit der
+  geringsten Betriebszeit. Die Gesamt-Betriebsstunden eines Druckers kannst du auf der Wartungsseite (Reiter Status, Stunden bearbeiten) anpassen, zum Beispiel für einen gebraucht gekauften Drucker.
+
 ## Virtuelle Drucker, Filament-Profile, MakerWorld, Orca Cloud
 
 - **Mehrere virtuelle Drucker für einen Zieldrucker:** Beim Anlegen (Einstellungen → Virtueller Drucker) lässt sich der

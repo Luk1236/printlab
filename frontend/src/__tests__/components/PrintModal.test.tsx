@@ -1889,6 +1889,47 @@ describe('PrintModal — per-plate filament mapping (#2551 follow-up)', () => {
     queued.forEach((q) => expect(q.ams_mapping ?? null).toBeNull());
   });
 
+  it('sends the chosen priority and due date with a queued job', async () => {
+    const queued: { priority?: number; due_at?: string | null }[] = [];
+    server.use(
+      http.post('/api/v1/queue/', async ({ request }) => {
+        queued.push((await request.json()) as { priority?: number; due_at?: string | null });
+        return HttpResponse.json({ id: queued.length, status: 'pending' });
+      }),
+    );
+    const user = userEvent.setup();
+    render(<PrintModal mode="create" archiveId={1} archiveName="Two.gcode.3mf" onClose={mockOnClose} />);
+
+    await waitFor(() => expect(screen.getByText('X1 Carbon')).toBeInTheDocument());
+    await user.click(screen.getByText('X1 Carbon'));
+    await user.selectOptions(screen.getByLabelText('Priority'), '2');
+    fireEvent.change(screen.getByLabelText('Due date (optional)'), { target: { value: '2026-11-05T09:30' } });
+    await user.click(document.querySelector('button[type="submit"]') as HTMLElement);
+
+    await waitFor(() => expect(queued.length).toBeGreaterThan(0));
+    expect(queued[0].priority).toBe(2);
+    expect(new Date(queued[0].due_at as string).getTime()).toBe(new Date('2026-11-05T09:30').getTime());
+  });
+
+  it('queues with normal priority and no due date by default', async () => {
+    const queued: { priority?: number; due_at?: string | null }[] = [];
+    server.use(
+      http.post('/api/v1/queue/', async ({ request }) => {
+        queued.push((await request.json()) as { priority?: number; due_at?: string | null });
+        return HttpResponse.json({ id: queued.length, status: 'pending' });
+      }),
+    );
+    const user = userEvent.setup();
+    render(<PrintModal mode="create" archiveId={1} archiveName="Two.gcode.3mf" onClose={mockOnClose} />);
+
+    await waitFor(() => expect(screen.getByText('X1 Carbon')).toBeInTheDocument());
+    await user.click(screen.getByText('X1 Carbon'));
+    await user.click(document.querySelector('button[type="submit"]') as HTMLElement);
+
+    await waitFor(() => expect(queued.length).toBeGreaterThan(0));
+    expect(queued[0]).toMatchObject({ priority: 1, due_at: null });
+  });
+
   it('sends no mapping for a model-assigned multi-plate job, leaving it to the scheduler', async () => {
     const queued: { ams_mapping?: number[] | null }[] = [];
     server.use(
@@ -1906,8 +1947,9 @@ describe('PrintModal — per-plate filament mapping (#2551 follow-up)', () => {
     await waitFor(() => expect(screen.getByText('Plate 2')).toBeInTheDocument());
     await user.click(screen.getByText('Plate 2'));
     await user.click(screen.getByRole('button', { name: /any model/i }));
-    await waitFor(() => expect(screen.getByRole('combobox')).toBeInTheDocument());
-    await user.selectOptions(screen.getByRole('combobox'), 'X1C');
+    // The schedule options carry their own priority select, so find the model select by its option.
+    await waitFor(() => expect(screen.getByRole('option', { name: 'X1C' })).toBeInTheDocument());
+    await user.selectOptions(screen.getByRole('option', { name: 'X1C' }).closest('select') as HTMLSelectElement, 'X1C');
 
     await user.click(document.querySelector('button[type="submit"]') as HTMLElement);
 

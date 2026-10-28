@@ -80,6 +80,8 @@ class PrintQueueItemCreate(BaseModel):
     require_previous_success: bool = False
     auto_off_after: bool = False  # Power off printer after print completes
     manual_start: bool = False  # Requires manual trigger to start (staged)
+    priority: int = Field(1, ge=0, le=2)  # 0 niedrig, 1 normal, 2 eilig (PrintLab)
+    due_at: datetime | None = None  # optionaler Liefertermin, nur Warnung (PrintLab)
     insert_at_top: bool = False  # Insert ahead of other pending items (one queue order across all printers, #3200)
     insert_position: int | None = None  # 1-indexed insertion position for priority queueing
     # Persistent "Print Anyway" acknowledgement (#1698-followup). When set,
@@ -147,6 +149,8 @@ class PrintQueueItemUpdate(BaseModel):
     require_previous_success: bool | None = None
     auto_off_after: bool | None = None
     manual_start: bool | None = None
+    priority: int | None = Field(None, ge=0, le=2)
+    due_at: datetime | None = None
     ams_mapping: list[int] | None = None
     plate_id: int | None = None
     # Print options
@@ -274,6 +278,9 @@ class PrintQueueItemResponse(BaseModel):
 
     # Shortest-job-first scheduling
     been_jumped: bool = False
+    priority: int = 1
+    due_at: datetime | None = None
+    due_warning: str | None = None  # overdue | too_late
 
     # Auto-print G-code injection
     gcode_injection: bool = False

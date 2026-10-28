@@ -2650,6 +2650,9 @@ export interface PrintQueueItem {
   require_previous_success: boolean;
   auto_off_after: boolean;
   manual_start: boolean;  // Requires manual trigger to start (staged)
+  priority?: number;  // 0 niedrig, 1 normal, 2 eilig
+  due_at?: string | null;  // optionaler Liefertermin (nur Warnung)
+  due_warning?: 'overdue' | 'too_late' | null;
   // Set by the dispatch scheduler when the assigned spool can't satisfy
   // any required slot's grams (#1496). Surfaced on the queue row as a
   // "filament short" badge; cleared on a successful ▶ click (live recheck).
@@ -2791,6 +2794,8 @@ export interface PrintQueueItemCreate {
   require_previous_success?: boolean;
   auto_off_after?: boolean;
   manual_start?: boolean;  // Requires manual trigger to start (staged)
+  priority?: number;
+  due_at?: string | null;
   insert_at_top?: boolean;  // Insert ahead of other pending items (one queue order across all printers, #3200)
   insert_position?: number | null;  // 1-indexed insertion position for priority queueing
   // PrintModal "Print Anyway" on the deficit warning — persisted so the
@@ -2886,6 +2891,8 @@ export interface PrintQueueItemUpdate {
   require_previous_success?: boolean;
   auto_off_after?: boolean;
   manual_start?: boolean;
+  priority?: number;
+  due_at?: string | null;
   ams_mapping?: number[];
   plate_id?: number | null;  // Plate ID for multi-plate 3MF files
   // Print options

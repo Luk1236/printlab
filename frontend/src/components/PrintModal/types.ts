@@ -109,6 +109,8 @@ export interface ScheduleOptions {
   staggerEnabled: boolean;
   staggerGroupSize: number;
   staggerIntervalMinutes: number;
+  priority: number;
+  dueAt: string;
 }
 
 /**
@@ -124,6 +126,8 @@ export const DEFAULT_SCHEDULE_OPTIONS: ScheduleOptions = {
   staggerEnabled: false,
   staggerGroupSize: 2,
   staggerIntervalMinutes: 5,
+  priority: 1,
+  dueAt: '',
 };
 
 /**

@@ -1619,6 +1619,19 @@ export default {
 
   // Queue page
   queue: {
+    priority: {
+      label: '優先順序',
+      urgent: '緊急',
+      normal: '普通',
+      low: '低',
+      filterAll: '所有優先順序',
+    },
+    due: {
+      label: '交付日期（選填）',
+      hint: '僅作提醒，不改變順序。',
+      overdue: '已逾期',
+      tooLate: '無法如期完成',
+    },
     filamentShort: {
       rowBadge: '所分配料盤的線材不足',
       rowTooltip: '調度程式已標記此項目。點擊播放查看各槽位的不足量，並決定是否仍要列印。',

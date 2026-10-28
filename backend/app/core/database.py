@@ -3579,6 +3579,12 @@ async def run_migrations(conn):
     await _safe_execute(conn, "ALTER TABLE print_queue ADD COLUMN print_time_seconds INTEGER")
     await _safe_execute(conn, "ALTER TABLE print_queue ADD COLUMN been_jumped BOOLEAN DEFAULT FALSE NOT NULL")
 
+    # Migration (PrintLab): Auftrags-Priorität und Liefertermin
+    await _safe_execute(conn, "ALTER TABLE print_queue ADD COLUMN priority INTEGER DEFAULT 1 NOT NULL")
+    await _safe_execute(
+        conn, "ALTER TABLE print_queue ADD COLUMN due_at " + ("DATETIME" if is_sqlite() else "TIMESTAMP")
+    )
+
     # Migration: Auto-print G-code injection (#422)
     await _safe_execute(conn, "ALTER TABLE print_queue ADD COLUMN gcode_injection BOOLEAN DEFAULT FALSE NOT NULL")
 

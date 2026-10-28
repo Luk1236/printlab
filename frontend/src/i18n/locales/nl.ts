@@ -1629,6 +1629,19 @@ export default {
 
   // Queue page
   queue: {
+    priority: {
+      label: 'Prioriteit',
+      urgent: 'Spoed',
+      normal: 'Gewoon',
+      low: 'Laag',
+      filterAll: 'Alle prioriteiten',
+    },
+    due: {
+      label: 'Leverdatum (optioneel)',
+      hint: 'Waarschuwt alleen; verandert de volgorde niet.',
+      overdue: 'Te laat',
+      tooLate: 'Haalt de leverdatum niet',
+    },
     title: 'Afdrukwachtrij',
     subtitle: 'Plan en beheer je afdruktaken',
     filamentShort: {

@@ -1619,6 +1619,19 @@ export default {
   },
 
   queue: {
+    priority: {
+      label: 'Öncelik',
+      urgent: 'Acil',
+      normal: 'Olağan',
+      low: 'Düşük',
+      filterAll: 'Tüm öncelikler',
+    },
+    due: {
+      label: 'Teslim tarihi (isteğe bağlı)',
+      hint: 'Yalnızca uyarır; sırayı değiştirmez.',
+      overdue: 'Gecikmiş',
+      tooLate: 'Teslim tarihine yetişmeyecek',
+    },
     title: 'Baskı Kuyruğu',
     subtitle: 'Baskı işlerinizi zamanlayın ve yönetin',
     filamentShort: {

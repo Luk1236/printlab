@@ -1619,6 +1619,19 @@ export default {
 
   // Queue page
   queue: {
+    priority: {
+      label: 'Prioridade',
+      urgent: 'Urgente',
+      normal: 'Padrão',
+      low: 'Baixa',
+      filterAll: 'Todas as prioridades',
+    },
+    due: {
+      label: 'Prazo de entrega (opcional)',
+      hint: 'Apenas avisa; não altera a ordem.',
+      overdue: 'Atrasado',
+      tooLate: 'Não cumprirá o prazo',
+    },
     filamentShort: {
       rowBadge: 'Filamento insuficiente para a bobina atribuida',
       rowTooltip: 'O escalonador sinalizou este item. Clique em Play para ver o deficit por slot e decidir se quer imprimir mesmo assim.',

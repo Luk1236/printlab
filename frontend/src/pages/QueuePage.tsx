@@ -83,6 +83,7 @@ import { QueueStatsBar } from '../components/QueueStatsBar';
 import { CompactHistoryRow } from '../components/CompactHistoryRow';
 import { QueueTimelineView } from '../components/QueueTimelineView';
 import { compareQueueOrder } from '../utils/queueOrder';
+import { QueueItemFlags, QueuePriorityFilter } from '../components/QueuePriority';
 import { BatchOrdersView } from '../components/BatchOrdersView';
 import { buildLoadedFilaments, type LoadedFilament } from '../hooks/useFilamentMapping';
 
@@ -1017,6 +1018,8 @@ function SortableQueueItem({
             );
           })()}
 
+          <QueueItemFlags item={item} />
+
           {/* Waiting reason for model-based assignments */}
           {item.waiting_reason && item.status === 'pending' && (
             <p className="text-[10px] sm:text-xs text-purple-700 dark:text-purple-400 mt-1.5 sm:mt-2 flex items-start gap-1">
@@ -1677,6 +1680,7 @@ export function QueuePage() {
   const [filterPrinter, setFilterPrinter] = useState<number | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('');
   const [filterLocation, setFilterLocation] = useState<string>('');
+  const [filterPriority, setFilterPriority] = useState('');
   const [showClearHistoryConfirm, setShowClearHistoryConfirm] = useState(false);
   const [editItem, setEditItem] = useState<PrintQueueItem | null>(null);
   const [requeueItem, setRequeueItem] = useState<PrintQueueItem | null>(null);
@@ -2039,6 +2043,7 @@ export function QueuePage() {
 
   const pendingItems = useMemo(() => {
     let items = queue?.filter(i => i.status === 'pending') || [];
+    if (filterPriority) items = items.filter((i) => String(i.priority ?? 1) === filterPriority);
 
     // Apply location filter
     if (filterLocation) {
@@ -2071,11 +2076,11 @@ export function QueuePage() {
         // Sort by scheduled start time (when print will begin)
         cmp = getScheduledTime(a) - getScheduledTime(b);
       } else {
-        cmp = a.position - b.position;
+        cmp = compareQueueOrder(a, b, false);
       }
       return pendingSortAsc ? cmp : -cmp;
     });
-  }, [queue, pendingSortBy, pendingSortAsc, matchesLocationFilter, filterLocation, settings?.queue_shortest_first]);
+  }, [queue, pendingSortBy, pendingSortAsc, matchesLocationFilter, filterLocation, filterPriority, settings?.queue_shortest_first]);
 
   const handleSelectAll = () => {
     const allPendingIds = pendingItems.map(i => i.id);
@@ -2724,6 +2729,8 @@ export function QueuePage() {
             ))}
           </select>
         )}
+
+        <QueuePriorityFilter value={filterPriority} onChange={setFilterPriority} />
 
         <div className="hidden sm:block flex-1" />
 

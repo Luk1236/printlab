@@ -55,6 +55,7 @@ from backend.app.services.print_batch import (
 )
 from backend.app.services.print_cost_estimate import estimate_queue_source_cost
 from backend.app.services.queue_position import lock_queue_positions, max_queue_position
+from backend.app.services.queue_priority import due_warning
 from backend.app.utils.printer_models import (
     is_gcode_compatible,
 )
@@ -489,6 +490,10 @@ def _enrich_response(item: PrintQueueItem) -> PrintQueueItemResponse:
         "batch_name": item.batch.name if item.batch else None,
         # SJF scheduling
         "been_jumped": item.been_jumped,
+        # Priorität und Liefertermin (PrintLab)
+        "priority": item.priority if item.priority is not None else 1,
+        "due_at": item.due_at,
+        "due_warning": due_warning(item.due_at, item.status, item.print_time_seconds),
         # Auto-print G-code injection
         "gcode_injection": item.gcode_injection,
         # H2C rack-swap nozzle pick (#1780)
@@ -621,7 +626,7 @@ async def list_queue(
         # printer card's "Next in queue" shows. Sorting by printer first put
         # every "Any <model>" job (no printer_id) ahead of a job pinned to that
         # printer, whatever their positions.
-        .order_by(PrintQueueItem.position, PrintQueueItem.id)
+        .order_by(PrintQueueItem.priority.desc(), PrintQueueItem.position, PrintQueueItem.id)
     )
     if user is not None and not can_read_all:
         query = query.where(PrintQueueItem.created_by_id == user.id)
@@ -1154,6 +1159,8 @@ async def add_to_queue(
             require_previous_success=data.require_previous_success,
             auto_off_after=data.auto_off_after,
             manual_start=data.manual_start,
+            priority=data.priority,
+            due_at=data.due_at,
             skip_filament_check=data.skip_filament_check,
             ams_mapping=ams_mapping_json,
             nozzle_rack_choice=nozzle_rack_choice_json,

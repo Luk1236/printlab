@@ -1618,6 +1618,19 @@ export default {
 
   // Queue page
   queue: {
+    priority: {
+      label: '優先度',
+      urgent: '至急',
+      normal: '通常',
+      low: '低',
+      filterAll: 'すべての優先度',
+    },
+    due: {
+      label: '納期（任意）',
+      hint: '警告のみで、順序は変わりません。',
+      overdue: '納期超過',
+      tooLate: '納期に間に合いません',
+    },
     filamentShort: {
       rowBadge: '割り当てられたスプールのフィラメントが不足しています',
       rowTooltip: 'スケジューラーがこのアイテムをフラグしました。再生ボタンをクリックしてスロットごとの不足量を確認し、それでも印刷するか判断してください。',

@@ -69,6 +69,11 @@ class PrintQueueItem(Base):
     print_time_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)  # Cached from archive/library
     been_jumped: Mapped[bool] = mapped_column(Boolean, default=False)  # Starvation guard for SJF
 
+    # PrintLab: Auftrags-Priorität (0 niedrig, 1 normal, 2 eilig; sortiert vor der Position) und optionaler
+    # Liefertermin (nur Warnung, siehe services/queue_priority.py)
+    priority: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    due_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
     # Auto-print G-code injection (#422)
     gcode_injection: Mapped[bool] = mapped_column(Boolean, default=False)
 

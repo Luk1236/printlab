@@ -14,6 +14,7 @@ import {
   type TimeFormat,
 } from '../../utils/date';
 import { NumberInput } from '../NumberInput';
+import { QueuePriorityFields } from './QueuePriorityFields';
 
 /**
  * Schedule options component for queue items.
@@ -243,6 +244,8 @@ export function ScheduleOptionsPanel({
           </label>
         </div>
       )}
+
+      <QueuePriorityFields options={options} onChange={onChange} />
 
       {/* Require previous success */}
       <div className="flex items-center gap-2">

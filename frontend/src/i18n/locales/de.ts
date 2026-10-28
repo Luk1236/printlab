@@ -1619,6 +1619,19 @@ export default {
 
   // Queue page
   queue: {
+    priority: {
+      label: 'Priorität',
+      urgent: 'Eilig',
+      normal: 'Standard',
+      low: 'Niedrig',
+      filterAll: 'Alle Prioritäten',
+    },
+    due: {
+      label: 'Liefertermin (optional)',
+      hint: 'Warnt nur, ändert die Reihenfolge nicht.',
+      overdue: 'Termin überschritten',
+      tooLate: 'Termin wird nicht gehalten',
+    },
     filamentShort: {
       rowBadge: 'Filament fuer die zugewiesene Spule reicht nicht',
       rowTooltip: 'Der Dispatcher hat diese Position markiert. Klicke auf Play, um den Pro-Slot-Fehlbestand zu sehen und zu entscheiden, ob trotzdem gedruckt werden soll.',

@@ -1571,6 +1571,19 @@ export default {
   },
 
   queue: {
+    priority: {
+      label: '우선순위',
+      urgent: '긴급',
+      normal: '보통',
+      low: '낮음',
+      filterAll: '모든 우선순위',
+    },
+    due: {
+      label: '납기일(선택)',
+      hint: '경고만 표시하며 순서는 바뀌지 않습니다.',
+      overdue: '납기 초과',
+      tooLate: '납기를 맞추지 못함',
+    },
     title: '인쇄 대기열',
     subtitle: '인쇄 작업을 예약하고 관리하세요',
     editQueueItem: '대기열 항목 편집',

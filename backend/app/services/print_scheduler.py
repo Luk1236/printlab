@@ -60,6 +60,7 @@ from backend.app.services.printer_manager import (
     supports_drying,
     supports_drying_while_printing,
 )
+from backend.app.services.queue_priority import printer_usage_seconds
 from backend.app.services.smart_plug_manager import smart_plug_manager
 from backend.app.services.spool_assignment_notifications import (
     _global_tray_from_assignment,
@@ -1425,6 +1426,7 @@ class PrintScheduler:
                         selectinload(PrintQueueItem.variants).selectinload(PrintQueueVariant.library_file),
                     )
                     .order_by(
+                        PrintQueueItem.priority.desc(),
                         PrintQueueItem.been_jumped.desc(),
                         PrintQueueItem.print_time_seconds.asc().nullslast(),
                         PrintQueueItem.position,
@@ -1445,7 +1447,7 @@ class PrintScheduler:
                         # raise in async.
                         selectinload(PrintQueueItem.variants).selectinload(PrintQueueVariant.library_file),
                     )
-                    .order_by(PrintQueueItem.position, PrintQueueItem.id)
+                    .order_by(PrintQueueItem.priority.desc(), PrintQueueItem.position, PrintQueueItem.id)
                 )
             items = list(result.scalars().all())
 
@@ -2737,7 +2739,12 @@ class PrintScheduler:
         if target_location:
             query = query.where(Printer.location == target_location)
         result = await db.execute(query)
-        return list(result.scalars().all())
+        # PrintLab: gleichmäßig auslasten. Der Drucker mit der geringsten Betriebszeit kommt zuerst dran, denn der
+        # Planer nimmt bei gleicher Eignung den ersten freien (und der Aufwecker den ersten ausgeschalteten).
+        return sorted(
+            result.scalars().all(),
+            key=lambda p: (printer_usage_seconds(p.runtime_seconds, p.print_hours_offset), p.id),
+        )
 
     async def _wakeable_printer_ids(self, db: AsyncSession) -> set[int]:
         """Printer IDs that at least one enabled ``auto_on`` plug can power on.

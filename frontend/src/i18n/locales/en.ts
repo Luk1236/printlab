@@ -1629,6 +1629,19 @@ export default {
 
   // Queue page
   queue: {
+    priority: {
+      label: 'Priority',
+      urgent: 'Urgent',
+      normal: 'Normal',
+      low: 'Low',
+      filterAll: 'All priorities',
+    },
+    due: {
+      label: 'Due date (optional)',
+      hint: 'Only warns; does not change the order.',
+      overdue: 'Overdue',
+      tooLate: 'Will miss the due date',
+    },
     title: 'Print Queue',
     subtitle: 'Schedule and manage your print jobs',
     filamentShort: {

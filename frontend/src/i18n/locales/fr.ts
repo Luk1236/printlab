@@ -1619,6 +1619,19 @@ export default {
 
   // Queue page
   queue: {
+    priority: {
+      label: 'Priorité',
+      urgent: 'Prioritaire',
+      normal: 'Normale',
+      low: 'Basse',
+      filterAll: 'Toutes les priorités',
+    },
+    due: {
+      label: 'Date de livraison (facultatif)',
+      hint: 'Avertit seulement ; ne change pas l\'ordre.',
+      overdue: 'En retard',
+      tooLate: 'La date de livraison ne sera pas tenue',
+    },
     filamentShort: {
       rowBadge: 'Filament insuffisant pour la bobine assignee',
       rowTooltip: "Le planificateur a signale cet element. Cliquez sur Lecture pour voir le deficit par emplacement et decider de lancer quand meme l'impression.",

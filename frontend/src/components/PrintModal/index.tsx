@@ -21,6 +21,7 @@ import { isGcodeCompatible, isPrinterCurrentlyDispatchable } from '../../utils/p
 import { getCurrencySymbol } from '../../utils/currency';
 import { getBedTypeInfo } from '../../utils/bedType';
 import { toDateTimeLocalValue, parseUTCDate } from '../../utils/date';
+import { queuePriorityPayload } from '../../utils/queuePriority';
 import { isPlaceholderDate, effectivePreferLowest } from '../../utils/amsHelpers';
 import { resolveArchiveSlicerAmsMapping } from './archiveAmsMapping';
 import { FilamentMapping } from './FilamentMapping';
@@ -202,6 +203,8 @@ export function PrintModal({
         scheduleType,
         scheduledTime,
         requireManualStart: queueItem.manual_start,
+        priority: queueItem.priority ?? DEFAULT_SCHEDULE_OPTIONS.priority,
+        dueAt: queueItem.due_at ? toDateTimeLocalValue(parseUTCDate(queueItem.due_at) ?? new Date()) : '',
         requirePreviousSuccess: queueItem.require_previous_success,
         autoOffAfter: queueItem.auto_off_after,
         gcodeInjection: queueItem.gcode_injection ?? false,
@@ -1171,6 +1174,7 @@ export function PrintModal({
           auto_off_after: scheduleOptions.autoOffAfter,
           gcode_injection: scheduleOptions.gcodeInjection,
           manual_start: scheduleOptions.scheduleType === 'queue' && scheduleOptions.requireManualStart,
+          ...queuePriorityPayload(scheduleOptions),
           scheduled_time: scheduleOptions.scheduleType === 'scheduled' && scheduleOptions.scheduledTime
             ? new Date(scheduleOptions.scheduledTime).toISOString()
             : undefined,
@@ -1272,6 +1276,7 @@ export function PrintModal({
       auto_off_after: scheduleOptions.autoOffAfter,
       gcode_injection: scheduleOptions.gcodeInjection,
       manual_start: scheduleOptions.scheduleType === 'queue' && scheduleOptions.requireManualStart,
+      ...queuePriorityPayload(scheduleOptions),
       // When the user clicks "Print Anyway" on the frontend deficit warning,
       // persist that acknowledgement so the scheduler doesn't immediately
       // re-flag the item on its first dispatch tick (#1698-followup).
@@ -1315,6 +1320,7 @@ export function PrintModal({
               auto_off_after: scheduleOptions.autoOffAfter,
               gcode_injection: scheduleOptions.gcodeInjection,
               manual_start: scheduleOptions.scheduleType === 'queue' && scheduleOptions.requireManualStart,
+              ...queuePriorityPayload(scheduleOptions),
               ams_mapping: undefined,
               plate_id: plateId,
               scheduled_time: scheduleOptions.scheduleType === 'scheduled' && scheduleOptions.scheduledTime
@@ -1377,6 +1383,7 @@ export function PrintModal({
                 auto_off_after: scheduleOptions.autoOffAfter,
                 gcode_injection: scheduleOptions.gcodeInjection,
                 manual_start: scheduleOptions.scheduleType === 'queue' && scheduleOptions.requireManualStart,
+                ...queuePriorityPayload(scheduleOptions),
                 ams_mapping: printerMapping,
                 // null, not undefined: an operator who cleared their picks
                 // means "assign these again", and undefined would leave the

@@ -1619,6 +1619,19 @@ export default {
 
   // Queue page
   queue: {
+    priority: {
+      label: '优先级',
+      urgent: '紧急',
+      normal: '普通',
+      low: '低',
+      filterAll: '所有优先级',
+    },
+    due: {
+      label: '交付日期（可选）',
+      hint: '仅作提醒，不改变顺序。',
+      overdue: '已逾期',
+      tooLate: '无法按期完成',
+    },
     filamentShort: {
       rowBadge: '所分配料盘的耀丝不足',
       rowTooltip: '调度程序已标记该项。点击播放查看各插槽的赤字并决定是否仍要打印。',

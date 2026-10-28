@@ -3,6 +3,17 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.9.3 (in Arbeit) — Mehrere Drucker
+
+- **Auftrags-Priorität in der Warteschlange:** Stufen *Eilig*, *Standard* und *Niedrig* beim Einreihen (und später im
+  Bearbeiten-Dialog). Eine höhere Stufe kommt immer zuerst dran, innerhalb einer Stufe gilt die bisherige Reihenfolge
+  (oder „kürzeste zuerst", wenn aktiv). Plakette am Auftrag und Filter „Priorität" in der Warteschlange.
+- **Liefertermin (optional):** beim Einreihen setzbar; warnt in der Warteschlange mit „Termin überschritten" oder „Termin
+  wird nicht gehalten" (selbst bei sofortigem Start zu spät), ändert die Reihenfolge aber nicht.
+- **Gleichmäßige Auslastung:** Passen mehrere freie Drucker („irgendein X1C"), bekommt der mit der geringsten
+  Betriebszeit (gezählte Laufzeit plus eingetragener Sockel) den Auftrag; der Aufwecker per Steckdose nimmt ebenfalls den
+  am wenigsten genutzten.
+
 ## v1.9.2 (28.10.2026) — Virtuelle Drucker und Filament-Profile
 
 - **Virtuelle Drucker:** Beim Anlegen lässt sich der Zieldrucker jetzt für jeden Modus wählen (Archiv, Prüfen,

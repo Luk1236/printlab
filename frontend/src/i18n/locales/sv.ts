@@ -1629,6 +1629,19 @@ export default {
 
   // Queue page
   queue: {
+    priority: {
+      label: 'Prioritet',
+      urgent: 'Brådskande',
+      normal: 'Vanlig',
+      low: 'Låg',
+      filterAll: 'Alla prioriteter',
+    },
+    due: {
+      label: 'Leveransdatum (valfritt)',
+      hint: 'Varnar bara; ändrar inte ordningen.',
+      overdue: 'Försenad',
+      tooLate: 'Hinner inte till leveransdatumet',
+    },
     title: 'Utskriftskö',
     subtitle: 'Schemalägg och hantera dina utskriftsjobb',
     filamentShort: {
