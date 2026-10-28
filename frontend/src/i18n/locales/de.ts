@@ -237,6 +237,17 @@ export default {
       overlap: 'Leer und belegt überlappen: kein sauberer Schwellwert möglich. Referenz neu aufnehmen oder das Licht vereinheitlichen.',
     },
   },
+  setupWizard: {
+    title: 'Einrichtungsassistent',
+    step: 'Schritt {{current}} von {{total}}',
+    back: 'Zurück',
+    next: 'Weiter',
+    openPage: 'Seite öffnen',
+    showCard: 'Zur Karte',
+    onThePi: 'Das erledigst du am Pi selbst; die Anleitung steht in der Installationsanleitung.',
+    banner: 'Die Einrichtung ist nicht fertig: {{count}} Pflichtpunkt(e) offen.',
+    openAssistant: 'Assistent öffnen',
+  },
   setupChecklist: {
     title: 'Inbetriebnahme',
     progress: '{{done}} von {{total}} erledigt',
@@ -2158,6 +2169,10 @@ export default {
     // Tabs
     statusTab: 'Status',
     settingsTab: 'Einstellungen',
+    hardwareTab: 'Hardware & Optik',
+    systemTab: 'System & Betrieb',
+    hardwareSubtitle: 'Tür, Plattenwechsler, Wartungsprogramme und Kamera-Einmessung',
+    systemSubtitle: 'Zustand des Geräts, Meldewege, Fernzugriff und Inbetriebnahme',
     // Status
     overdueCount: '{{count}} überfällig',
     dueSoonCount: '{{count}} bald fällig',

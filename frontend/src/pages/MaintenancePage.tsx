@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -48,6 +49,7 @@ import { HardwareAdminCard } from '../components/HardwareAdminCard';
 import { RemoteAccessCard } from '../components/RemoteAccessCard';
 import { PiHealthCard } from '../components/PiHealthCard';
 import { SetupChecklistCard } from '../components/SetupChecklistCard';
+import { SetupBanner, SetupWizardCard } from '../components/SetupWizardCard';
 import { AlertChannelsCard } from '../components/AlertChannelsCard';
 import { PlateTuningCard } from '../components/PlateTuningCard';
 import { useToast } from '../contexts/ToastContext';
@@ -1088,14 +1090,18 @@ function SettingsSection({
   );
 }
 
-type TabType = 'status' | 'settings';
+type TabType = 'status' | 'hardware' | 'system' | 'settings';
+const TABS: TabType[] = ['status', 'hardware', 'system', 'settings'];
 
 export function MaintenancePage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { hasPermission } = useAuth();
-  const [activeTab, setActiveTab] = useState<TabType>('status');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedTab = searchParams.get('tab') as TabType | null;
+  const activeTab: TabType = requestedTab && TABS.includes(requestedTab) ? requestedTab : 'status';
+  const setActiveTab = (tab: TabType) => setSearchParams(tab === 'status' ? {} : { tab }, { replace: true });
 
   const { data: overview, isLoading } = useQuery({
     queryKey: ['maintenanceOverview'],
@@ -1250,46 +1256,55 @@ export function MaintenancePage() {
               {totalWarning > 0 && <span className="text-amber-700 dark:text-amber-400">{t('maintenance.warningCount', { count: totalWarning })}</span>}
               {totalDue === 0 && totalWarning === 0 && <span className="text-bambu-green">{t('maintenance.allOk')}</span>}
             </>
-          ) : (
+          ) : activeTab === 'settings' ? (
             t('maintenance.configureSettings')
+          ) : (
+            t(`maintenance.${activeTab}Subtitle`)
           )}
         </p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 border-b border-bambu-dark-tertiary">
-        <button
-          onClick={() => setActiveTab('status')}
-          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
-            activeTab === 'status'
-              ? 'text-bambu-green border-bambu-green'
-              : 'text-bambu-gray border-transparent hover:text-white'
-          }`}
-        >
-          {t('maintenance.statusTab')}
-        </button>
-        <button
-          onClick={() => setActiveTab('settings')}
-          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
-            activeTab === 'settings'
-              ? 'text-bambu-green border-bambu-green'
-              : 'text-bambu-gray border-transparent hover:text-white'
-          }`}
-        >
-          {t('maintenance.settingsTab')}
-        </button>
+      <div className="flex gap-1 mb-6 border-b border-bambu-dark-tertiary overflow-x-auto whitespace-nowrap" role="tablist">
+        {TABS.map((tab) => (
+          <button
+            key={tab}
+            role="tab"
+            aria-selected={activeTab === tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors shrink-0 ${
+              activeTab === tab
+                ? 'text-bambu-green border-bambu-green'
+                : 'text-bambu-gray border-transparent hover:text-white'
+            }`}
+          >
+            {t(`maintenance.${tab}Tab`)}
+          </button>
+        ))}
       </div>
 
       {/* Tab content */}
-      {activeTab === 'status' ? (
+      {activeTab === 'hardware' ? (
         <div className="space-y-6">
           <MaintenanceProgramsCard canControl={hasPermission('printers:control')} />
           <HardwareAdminCard canControl={hasPermission('printers:control')} />
+          <PlateTuningCard canControl={hasPermission('settings:update')} />
+        </div>
+      ) : activeTab === 'system' ? (
+        <div className="space-y-6">
+          <SetupWizardCard />
           <SetupChecklistCard />
           <PiHealthCard />
-          <AlertChannelsCard canControl={hasPermission('settings:update')} />
-          <PlateTuningCard canControl={hasPermission('settings:update')} />
-          <RemoteAccessCard canControl={hasPermission('settings:update')} />
+          <div id="setup-alerts">
+            <AlertChannelsCard canControl={hasPermission('settings:update')} />
+          </div>
+          <div id="setup-remote">
+            <RemoteAccessCard canControl={hasPermission('settings:update')} />
+          </div>
+        </div>
+      ) : activeTab === 'status' ? (
+        <div className="space-y-6">
+          <SetupBanner onOpen={() => setActiveTab('system')} />
           {overview && overview.length > 0 ? (
             [...overview].sort((a, b) => {
               // Sort printers with issues first

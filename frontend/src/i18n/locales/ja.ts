@@ -237,6 +237,17 @@ export default {
       overlap: '空と物ありが重なっており、適切なしきい値はありません。基準画像を撮り直すか照明を揃えてください。',
     },
   },
+  setupWizard: {
+    title: 'セットアップアシスタント',
+    step: 'ステップ {{current}} / {{total}}',
+    back: '戻る',
+    next: '次へ',
+    openPage: 'ページを開く',
+    showCard: 'カードを表示',
+    onThePi: 'これは Pi 本体で行います。インストールガイドを参照してください。',
+    banner: 'セットアップが未完了です：必須項目が {{count}} 件残っています。',
+    openAssistant: 'アシスタントを開く',
+  },
   setupChecklist: {
     title: '初期設定チェックリスト',
     progress: '{{total}}件中{{done}}件完了',
@@ -2157,6 +2168,10 @@ export default {
     // Tabs
     statusTab: 'ステータス',
     settingsTab: '設定',
+    hardwareTab: 'ハードウェアと光学',
+    systemTab: 'システムと運用',
+    hardwareSubtitle: 'ドア、プレートチェンジャー、メンテナンスプログラム、カメラ調整',
+    systemSubtitle: '機器の状態、通知先、リモートアクセス、初期設定',
     // Status
     overdueCount: '{{count}}件超過',
     dueSoonCount: '{{count}}件まもなく期限',

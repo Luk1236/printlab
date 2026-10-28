@@ -196,7 +196,9 @@ einem Angebot und stellt die Ist-Kosten dem Angebotspreis gegenüber. Es werden 
 Rechnungsformate (XRechnung, ZUGFeRD) erzeugt, und die Pflichtangaben für den eigenen Betrieb (§ 14 UStG, Kleinunternehmer-
 hinweis, Aufbewahrung) sind mit der Steuerberatung zu klären.
 
-## Inbetriebnahme-Checkliste
+## Inbetriebnahme-Checkliste und Assistent
 
 Einstellungen → System zeigt oben, was schon eingerichtet ist und was noch fehlt (Anmeldung, Drucker, Meldeweg, Sicherung
 nach außen, Update-Schutz, Signatur, SSD, Fernzugriff, HTTPS), jeweils mit dem Hinweis, wie man es erledigt.
+Seit v1.9.0 steht sie auf der Wartungsseite im Reiter „System & Betrieb"; der **Einrichtungsassistent** darüber zeigt die
+offenen Punkte nacheinander (Pflicht zuerst) mit einem Knopf zur passenden Stelle. Ändern tut er nichts selbst.

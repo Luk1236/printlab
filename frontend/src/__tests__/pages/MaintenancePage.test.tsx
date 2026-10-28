@@ -2,8 +2,9 @@
  * Tests for the MaintenancePage component.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { render } from '../utils';
 import { MaintenancePage } from '../../pages/MaintenancePage';
 import { http, HttpResponse } from 'msw';
@@ -145,6 +146,40 @@ describe('MaintenancePage', () => {
         // Should show printer name in tabs
         expect(screen.getByText('X1 Carbon')).toBeInTheDocument();
       });
+    });
+  });
+
+  describe('tabs', () => {
+    afterEach(() => window.history.replaceState({}, '', '/'));
+
+    it('offers status, hardware, system and settings tabs', async () => {
+      render(<MaintenancePage />);
+      const tabs = await screen.findAllByRole('tab');
+      expect(tabs.map((tab) => tab.textContent)).toEqual(['Status', 'Hardware & optics', 'System & operation', 'Settings']);
+      expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
+    });
+
+    it('keeps the printers on the status tab and moves the system cards to their own tab', async () => {
+      server.use(http.get('/api/v1/system/pi-health', () => HttpResponse.json({ warnings: [] })));
+      render(<MaintenancePage />);
+      await screen.findByText('X1 Carbon');
+      expect(screen.queryByText('Setup checklist')).not.toBeInTheDocument();
+      await userEvent.click(screen.getByRole('tab', { name: 'System & operation' }));
+      expect(await screen.findByText('Setup checklist')).toBeInTheDocument();
+      expect(window.location.search).toBe('?tab=system');
+      expect(screen.queryByText('X1 Carbon')).not.toBeInTheDocument();
+    });
+
+    it('opens the tab named in the address', async () => {
+      window.history.replaceState({}, '', '/?tab=settings');
+      render(<MaintenancePage />);
+      expect((await screen.findByRole('tab', { name: 'Settings' })).getAttribute('aria-selected')).toBe('true');
+    });
+
+    it('falls back to status for an unknown tab', async () => {
+      window.history.replaceState({}, '', '/?tab=nonsense');
+      render(<MaintenancePage />);
+      expect((await screen.findByRole('tab', { name: 'Status' })).getAttribute('aria-selected')).toBe('true');
     });
   });
 });

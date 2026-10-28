@@ -237,6 +237,17 @@ export default {
       overlap: 'Vazia e ocupada se sobrepõem: não há limite limpo. Refaça a referência ou uniformize a luz.',
     },
   },
+  setupWizard: {
+    title: 'Assistente de configuração',
+    step: 'Passo {{current}} de {{total}}',
+    back: 'Voltar',
+    next: 'Avançar',
+    openPage: 'Abrir página',
+    showCard: 'Ir ao cartão',
+    onThePi: 'Isso é feito no próprio Pi; veja o guia de instalação.',
+    banner: 'A configuração não está concluída: {{count}} item(ns) obrigatório(s) em aberto.',
+    openAssistant: 'Abrir assistente',
+  },
   setupChecklist: {
     title: 'Lista de colocação em serviço',
     progress: '{{done}} de {{total}} concluídos',
@@ -2157,6 +2168,10 @@ export default {
     // Tabs
     statusTab: 'Status',
     settingsTab: 'Configurações',
+    hardwareTab: 'Hardware e óptica',
+    systemTab: 'Sistema e operação',
+    hardwareSubtitle: 'Porta, trocador de placas, programas de manutenção e calibração da câmera',
+    systemSubtitle: 'Estado do aparelho, canais de aviso, acesso remoto e configuração inicial',
     // Status
     overdueCount: '{{count}} atrasado',
     dueSoonCount: '{{count}} prestes a vencer',

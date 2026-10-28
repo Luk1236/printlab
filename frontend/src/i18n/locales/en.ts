@@ -237,6 +237,17 @@ export default {
       overlap: 'Empty and occupied overlap: no clean threshold is possible. Retake the reference or even out the lighting.',
     },
   },
+  setupWizard: {
+    title: 'Setup assistant',
+    step: 'Step {{current}} of {{total}}',
+    back: 'Back',
+    next: 'Next',
+    openPage: 'Open page',
+    showCard: 'Show card',
+    onThePi: 'This is done on the Pi itself; see the installation guide.',
+    banner: 'Setup is not finished: {{count}} required item(s) open.',
+    openAssistant: 'Open assistant',
+  },
   setupChecklist: {
     title: 'Setup checklist',
     progress: '{{done}} of {{total}} done',
@@ -2176,6 +2187,10 @@ export default {
     // Tabs
     statusTab: 'Status',
     settingsTab: 'Settings',
+    hardwareTab: 'Hardware & optics',
+    systemTab: 'System & operation',
+    hardwareSubtitle: 'Door, plate changer, maintenance programs and camera calibration',
+    systemSubtitle: 'Device health, alert channels, remote access and setup',
     // Status
     overdueCount: '{{count}} overdue',
     dueSoonCount: '{{count}} due soon',

@@ -237,6 +237,17 @@ export default {
       overlap: 'Vide et occupé se chevauchent : aucun seuil net possible. Refaites la référence ou uniformisez l\'éclairage.',
     },
   },
+  setupWizard: {
+    title: 'Assistant de configuration',
+    step: 'Étape {{current}} sur {{total}}',
+    back: 'Retour',
+    next: 'Suivant',
+    openPage: 'Ouvrir la page',
+    showCard: 'Aller à la carte',
+    onThePi: 'Cela se fait sur le Pi lui-même ; voir le guide d\'installation.',
+    banner: 'La configuration n\'est pas terminée : {{count}} point(s) obligatoire(s) ouvert(s).',
+    openAssistant: 'Ouvrir l\'assistant',
+  },
   setupChecklist: {
     title: 'Liste de mise en service',
     progress: '{{done}} sur {{total}} faits',
@@ -2157,6 +2168,10 @@ export default {
     // Tabs
     statusTab: 'Statut',
     settingsTab: 'Paramètres',
+    hardwareTab: 'Matériel et optique',
+    systemTab: 'Système et exploitation',
+    hardwareSubtitle: 'Porte, changeur de plateau, programmes de maintenance et étalonnage de la caméra',
+    systemSubtitle: 'État de l\'appareil, alertes, accès à distance et mise en service',
     // Status
     overdueCount: '{{count}} en retard',
     dueSoonCount: '{{count}} bientôt',

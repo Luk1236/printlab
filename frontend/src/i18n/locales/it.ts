@@ -237,6 +237,17 @@ export default {
       overlap: 'Vuoto e occupato si sovrappongono: nessuna soglia netta possibile. Rifai il riferimento o uniforma la luce.',
     },
   },
+  setupWizard: {
+    title: 'Assistente di configurazione',
+    step: 'Passo {{current}} di {{total}}',
+    back: 'Indietro',
+    next: 'Avanti',
+    openPage: 'Apri pagina',
+    showCard: 'Vai alla scheda',
+    onThePi: 'Si fa sul Pi stesso; vedi la guida all\'installazione.',
+    banner: 'La configurazione non è completa: {{count}} punto/i obbligatorio/i aperto/i.',
+    openAssistant: 'Apri assistente',
+  },
   setupChecklist: {
     title: 'Lista di messa in servizio',
     progress: '{{done}} di {{total}} completati',
@@ -2157,6 +2168,10 @@ export default {
     // Tabs
     statusTab: 'Stato',
     settingsTab: 'Impostazioni',
+    hardwareTab: 'Hardware e ottica',
+    systemTab: 'Sistema e funzionamento',
+    hardwareSubtitle: 'Porta, cambio piastra, programmi di manutenzione e taratura della telecamera',
+    systemSubtitle: 'Stato del dispositivo, avvisi, accesso remoto e messa in servizio',
     // Status
     overdueCount: '{{count}} in ritardo',
     dueSoonCount: '{{count}} in scadenza',

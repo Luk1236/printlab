@@ -237,6 +237,17 @@ export default {
       overlap: 'Tom och belagd överlappar: inget rent tröskelvärde. Ta om referensen eller jämna ut ljuset.',
     },
   },
+  setupWizard: {
+    title: 'Installationsguide',
+    step: 'Steg {{current}} av {{total}}',
+    back: 'Tillbaka',
+    next: 'Nästa',
+    openPage: 'Öppna sidan',
+    showCard: 'Visa kortet',
+    onThePi: 'Det här görs på själva Pi:n; se installationsguiden.',
+    banner: 'Installationen är inte klar: {{count}} obligatorisk(a) punkt(er) öppen/öppna.',
+    openAssistant: 'Öppna guiden',
+  },
   setupChecklist: {
     title: 'Checklista för driftsättning',
     progress: '{{done}} av {{total}} klara',
@@ -2175,6 +2186,10 @@ export default {
     // Tabs
     statusTab: 'Status',
     settingsTab: 'Inställningar',
+    hardwareTab: 'Hårdvara och optik',
+    systemTab: 'System och drift',
+    hardwareSubtitle: 'Dörr, plattväxlare, underhållsprogram och kamerakalibrering',
+    systemSubtitle: 'Enhetens status, aviseringskanaler, fjärråtkomst och driftsättning',
     // Status
     overdueCount: '{{count}} försenade',
     dueSoonCount: '{{count}} förfaller snart',

@@ -237,6 +237,17 @@ export default {
       overlap: '空床與有物體重疊：無法得到清晰的閾值。請重新拍攝參考圖或統一光線。',
     },
   },
+  setupWizard: {
+    title: '設定精靈',
+    step: '第 {{current}} 步，共 {{total}} 步',
+    back: '上一步',
+    next: '下一步',
+    openPage: '開啟頁面',
+    showCard: '前往卡片',
+    onThePi: '這需要在 Pi 本機上完成；請參閱安裝指南。',
+    banner: '設定尚未完成：還有 {{count}} 個必填項目未處理。',
+    openAssistant: '開啟精靈',
+  },
   setupChecklist: {
     title: '啟用檢查清單',
     progress: '已完成 {{done}} / {{total}}',
@@ -2157,6 +2168,10 @@ export default {
     // Tabs
     statusTab: '狀態',
     settingsTab: '設定',
+    hardwareTab: '硬體與光學',
+    systemTab: '系統與運作',
+    hardwareSubtitle: '門、換板器、維護程式與攝影機校準',
+    systemSubtitle: '裝置狀態、通知管道、遠端存取與初始設定',
     // Status
     overdueCount: '{{count}} 個逾期',
     dueSoonCount: '{{count}} 個即將到期',

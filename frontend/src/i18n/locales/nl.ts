@@ -237,6 +237,17 @@ export default {
       overlap: 'Leeg en bezet overlappen: geen nette drempel mogelijk. Maak de referentie opnieuw of maak het licht gelijkmatig.',
     },
   },
+  setupWizard: {
+    title: 'Installatie-assistent',
+    step: 'Stap {{current}} van {{total}}',
+    back: 'Terug',
+    next: 'Volgende',
+    openPage: 'Pagina openen',
+    showCard: 'Naar de kaart',
+    onThePi: 'Dit doe je op de Pi zelf; zie de installatiehandleiding.',
+    banner: 'De installatie is niet af: {{count}} verplicht(e) punt(en) open.',
+    openAssistant: 'Assistent openen',
+  },
   setupChecklist: {
     title: 'Ingebruiknamelijst',
     progress: '{{done}} van {{total}} gedaan',
@@ -2176,6 +2187,10 @@ export default {
     // Tabs
     statusTab: 'Status',
     settingsTab: 'Instellingen',
+    hardwareTab: 'Hardware en optiek',
+    systemTab: 'Systeem en bedrijf',
+    hardwareSubtitle: 'Deur, plaatwisselaar, onderhoudsprogramma\'s en cameracalibratie',
+    systemSubtitle: 'Apparaatstatus, meldkanalen, toegang op afstand en ingebruikname',
     // Status
     overdueCount: '{{count}} te laat',
     dueSoonCount: '{{count}} binnenkort te doen',

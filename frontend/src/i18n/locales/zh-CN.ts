@@ -237,6 +237,17 @@ export default {
       overlap: '空床与有物体重叠：无法得到清晰的阈值。请重新拍摄参考图或统一光线。',
     },
   },
+  setupWizard: {
+    title: '设置向导',
+    step: '第 {{current}} 步，共 {{total}} 步',
+    back: '上一步',
+    next: '下一步',
+    openPage: '打开页面',
+    showCard: '前往卡片',
+    onThePi: '这需要在 Pi 本机上完成；请参阅安装指南。',
+    banner: '设置尚未完成：还有 {{count}} 个必填项未处理。',
+    openAssistant: '打开向导',
+  },
   setupChecklist: {
     title: '启用检查清单',
     progress: '已完成 {{done}} / {{total}}',
@@ -2157,6 +2168,10 @@ export default {
     // Tabs
     statusTab: '状态',
     settingsTab: '设置',
+    hardwareTab: '硬件与光学',
+    systemTab: '系统与运行',
+    hardwareSubtitle: '门、换板器、维护程序和摄像头校准',
+    systemSubtitle: '设备状态、通知渠道、远程访问和初始设置',
     // Status
     overdueCount: '{{count}} 个逾期',
     dueSoonCount: '{{count}} 个即将到期',

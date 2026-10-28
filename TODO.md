@@ -30,7 +30,7 @@ Update mit Rückbau, Überwachung mit Meldung, Angebote mit PDF, Kamera-Einmessu
 - [ ] Volle E2E-Prüfung MakerWorld → PC-Slicer → Warteschlange.
 - [ ] Windows-Firewallregel für den PC-Slicer-Port 3001 beim Wechsel auf `0.0.0.0`.
 - [ ] Docker-/ARM-Image auf einem Pi 4/5 starten und prüfen.
-- [ ] Wartungskarte in einen eigenen Tab „Hardware & Optik" aufteilen; Mobilansicht prüfen.
+- [x] Wartungsseite in Reiter aufgeteilt (Status, Hardware & Optik, System & Betrieb, Einstellungen); Mobilansicht am Gerät noch ansehen.
 
 ## Bewusst nicht im Fokus
 

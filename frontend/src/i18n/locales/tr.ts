@@ -237,6 +237,17 @@ export default {
       overlap: 'Boş ve dolu çakışıyor: temiz bir eşik yok. Referansı yeniden alın veya ışığı eşitleyin.',
     },
   },
+  setupWizard: {
+    title: 'Kurulum sihirbazı',
+    step: 'Adım {{current}} / {{total}}',
+    back: 'Geri',
+    next: 'İleri',
+    openPage: 'Sayfayı aç',
+    showCard: 'Karta git',
+    onThePi: 'Bu işlem Pi üzerinde yapılır; kurulum kılavuzuna bakın.',
+    banner: 'Kurulum bitmedi: {{count}} zorunlu madde açık.',
+    openAssistant: 'Sihirbazı aç',
+  },
   setupChecklist: {
     title: 'Devreye alma kontrol listesi',
     progress: '{{total}} maddeden {{done}} tamam',
@@ -2159,6 +2170,10 @@ export default {
     // Sekmeler
     statusTab: 'Durum',
     settingsTab: 'Ayarlar',
+    hardwareTab: 'Donanım ve optik',
+    systemTab: 'Sistem ve işletim',
+    hardwareSubtitle: 'Kapı, plaka değiştirici, bakım programları ve kamera ayarı',
+    systemSubtitle: 'Cihaz durumu, bildirim kanalları, uzaktan erişim ve kurulum',
     // Durum
     overdueCount: '{{count}} gecikmiş',
     dueSoonCount: '{{count}} yakında',
