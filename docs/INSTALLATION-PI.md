@@ -190,7 +190,9 @@ getestet, aber noch nicht an einem echten Tailnet; beim ersten Durchlauf bitte M
 
 Unter „Kalkulation/Angebote" lassen sich Angebote speichern und als PDF ausgeben. Im Verlauf erzeugt „Rechnung" aus einem
 Angebot eine Rechnung (eigene, lückenlose Nummer; Zahlungsziel und Nummernformat unter „Firmendaten"). „Rechnungen" zeigt
-Status, Fälligkeit und Summen; Rechnungen werden nie gelöscht, nur storniert. Es werden **keine** elektronischen
+Status, Fälligkeit und Summen; Rechnungen werden nie gelöscht, nur storniert. Zusätzliche Positionen (Versand,
+Konstruktion …) lassen sich im Rechner anfügen. Im Verlauf verknüpft „Nachkalkulation" gedruckte Jobs aus dem Archiv mit
+einem Angebot und stellt die Ist-Kosten dem Angebotspreis gegenüber. Es werden **keine** elektronischen
 Rechnungsformate (XRechnung, ZUGFeRD) erzeugt, und die Pflichtangaben für den eigenen Betrieb (§ 14 UStG, Kleinunternehmer-
 hinweis, Aufbewahrung) sind mit der Steuerberatung zu klären.
 

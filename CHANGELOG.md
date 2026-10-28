@@ -3,6 +3,14 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.9.0 (in Arbeit) — Angebote
+
+- **Zusätzliche Positionen im Angebot** (Versand, Konstruktion, Nachbearbeitung …): Beschreibung, Menge, Einzelpreis, ohne
+  Aufschlag auf die Summe; im Rechner, in der Druckansicht, im Angebots-PDF und in der Rechnung.
+- **Nachkalkulation:** Druckjobs aus dem Archiv mit einem Angebot verknüpfen (Verlauf → „Nachkalkulation"); zeigt Ist-Kosten
+  für Material und Energie gegen den Angebotspreis, Abweichung und Gewinn. Fehlende Archivkosten werden aus Gramm und
+  Druckzeit geschätzt (als „geschätzt" markiert); die Arbeitszeit bleibt wie im Angebot.
+
 ## v1.8.0 (28.10.2026) — Verbesserungen im Alltag
 
 - **Sicherungen vor Updates in der Oberfläche** (Einstellungen → System): Liste mit Größe und Dateien, „Wiederherstellen" mit

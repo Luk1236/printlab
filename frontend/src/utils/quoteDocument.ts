@@ -14,7 +14,12 @@ const escapeHtml = (text: string) =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 /** Druckfertiges Angebotsdokument (reines HTML ohne Skripte; Werte und Beschriftungen werden maskiert). */
-export function buildQuoteDocument(quote: QuoteResponse, labels: QuoteLabels, date: Date): string {
+export function buildQuoteDocument(
+  quote: QuoteResponse,
+  labels: QuoteLabels,
+  date: Date,
+  extras: Array<[string, number]> = [],
+): string {
   const money = (value: number) =>
     new Intl.NumberFormat(undefined, { style: 'currency', currency: quote.currency || 'EUR' }).format(value || 0);
   const rows: Array<[string, number]> = [
@@ -23,6 +28,7 @@ export function buildQuoteDocument(quote: QuoteResponse, labels: QuoteLabels, da
     [labels.labor, quote.labor],
     [labels.subtotal, quote.subtotal],
     [labels.markup, quote.markup],
+    ...extras,
   ];
   const body = rows
     .map(([label, value]) => `<tr><td>${escapeHtml(label)}</td><td class="n">${escapeHtml(money(value))}</td></tr>`)

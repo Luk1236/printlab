@@ -21,6 +21,8 @@ logger = logging.getLogger(__name__)
 
 HISTORY_PATH = settings.base_dir / "quote_history.json"
 MAX_ENTRIES = 1000
+MAX_ITEMS = 20
+MAX_LINKED = 50
 AMOUNT_KEYS = ("material", "energy", "labor", "subtotal", "markup", "total")
 _lock = threading.Lock()
 
@@ -48,6 +50,37 @@ def _number(value: Any) -> float | None:
     except (TypeError, ValueError):
         return None
     return number if number == number and abs(number) < 1e9 else None  # NaN und absurde Werte raus
+
+
+def clean_items(raw: Any) -> list[dict[str, Any]]:
+    """Zusätzliche Positionen (Beschreibung, Menge, Einzelpreis) prüfen und mit Betrag versehen (ValueError)."""
+    if raw in (None, []):
+        return []
+    if not isinstance(raw, list):
+        raise ValueError("Positionen müssen eine Liste sein.")
+    if len(raw) > MAX_ITEMS:
+        raise ValueError(f"Höchstens {MAX_ITEMS} Positionen.")
+    items: list[dict[str, Any]] = []
+    for index, item in enumerate(raw, start=1):
+        data = item if isinstance(item, dict) else {}
+        description = str(data.get("description", "")).strip()[:80]
+        if not description:
+            raise ValueError(f"Position {index}: Beschreibung fehlt.")
+        quantity = _number(data.get("quantity"))
+        if quantity is None or not 0 < quantity <= 1_000_000:
+            raise ValueError(f"Position {index}: Menge muss größer als 0 sein.")
+        price = _number(data.get("unit_price"))
+        if price is None or not 0 <= price <= 10_000_000:
+            raise ValueError(f"Position {index}: Preis ist ungültig.")
+        items.append(
+            {
+                "description": description,
+                "quantity": round(quantity, 3),
+                "unit_price": round(price, 2),
+                "amount": round(quantity * price, 2),
+            }
+        )
+    return items
 
 
 def _counter_path():
@@ -99,6 +132,7 @@ def add(payload: dict[str, Any], prefix: str = "A", number_format: str = "{prefi
         if number is None or number < 0:
             raise ValueError(f"Betrag „{key}“ fehlt oder ist ungültig.")
         amounts[key] = round(number, 2)
+    items = clean_items(payload.get("items"))
     entry: dict[str, Any] = {
         "id": uuid.uuid4().hex[:12],
         "ts": datetime.now(timezone.utc).isoformat(),
@@ -108,6 +142,11 @@ def add(payload: dict[str, Any], prefix: str = "A", number_format: str = "{prefi
         "currency": str(payload.get("currency", "EUR")).strip()[:8] or "EUR",
         **amounts,
     }
+    if items:
+        # ``total`` aus der Kalkulation ist der Preis der Druckleistung; die Positionen kommen ohne Aufschlag dazu.
+        entry["items"] = items
+        entry["extras"] = round(sum(i["amount"] for i in items), 2)
+        entry["total"] = round(entry["total"] + entry["extras"], 2)
     inputs = payload.get("inputs")
     if isinstance(inputs, dict):
         entry["inputs"] = {str(k)[:40]: v for k, v in list(inputs.items())[:20] if _number(v) is not None}
@@ -123,6 +162,28 @@ def entries(customer: str | None = None, limit: int = 100) -> list[dict[str, Any
         needle = customer.strip().lower()
         items = [e for e in items if needle in str(e.get("customer", "")).lower()]
     return items[: max(1, min(int(limit), MAX_ENTRIES))]
+
+
+def set_archives(entry_id: str, ids: Any) -> dict[str, Any] | None:
+    """Druckjobs (Archiv-Nummern) mit dem Angebot verknüpfen; ``None``, wenn es das Angebot nicht gibt."""
+    if not isinstance(ids, list):
+        raise ValueError("Archiv-Nummern müssen eine Liste sein.")
+    clean: list[int] = []
+    for value in ids:
+        if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+            raise ValueError("Archiv-Nummern müssen positive ganze Zahlen sein.")
+        if value not in clean:
+            clean.append(value)
+    if len(clean) > MAX_LINKED:
+        raise ValueError(f"Höchstens {MAX_LINKED} Drucke pro Angebot.")
+    with _lock:
+        stored = _read()
+        for entry in stored:
+            if entry.get("id") == entry_id:
+                entry["archive_ids"] = clean
+                _write(stored)
+                return entry
+    return None
 
 
 def delete(entry_id: str) -> bool:

@@ -10,6 +10,10 @@ import { Card, CardContent } from './Card';
 import { useToast } from '../contexts/ToastContext';
 import { buildQuoteDocument } from '../utils/quoteDocument';
 import { InvoicesPanel } from './InvoicesPanel';
+import { QuoteActualsPanel } from './QuoteActualsPanel';
+import { QuoteExtraItems } from './QuoteExtraItems';
+import { extrasTotal, itemAmount, validItems } from '../utils/quoteItems';
+import type { ExtraItemDraft } from '../utils/quoteItems';
 
 const fmt = (value: number, currency: string) =>
   new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(value || 0);
@@ -42,6 +46,8 @@ export function QuoteCalculator() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [invoicesOpen, setInvoicesOpen] = useState(false);
   const [historyFilter, setHistoryFilter] = useState('');
+  const [actualsFor, setActualsFor] = useState<string | null>(null);
+  const [extraItems, setExtraItems] = useState<ExtraItemDraft[]>([]);
 
   const { data: history } = useQuery({
     queryKey: ['quoteHistory', historyFilter],
@@ -61,9 +67,11 @@ export function QuoteCalculator() {
         subtotal: data.subtotal,
         markup: data.markup,
         total: data.total,
+        items: validItems(extraItems),
         inputs: data.inputs,
       }),
     onSuccess: () => {
+      setExtraItems([]);
       showToast(t('quote.saved'));
       queryClient.invalidateQueries({ queryKey: ['quoteHistory'] });
     },
@@ -142,6 +150,11 @@ export function QuoteCalculator() {
 
   const { data: settings } = useQuery({ queryKey: ['quoteSettings'], queryFn: api.getSettings });
   const currency = settings?.currency ?? 'EUR';
+  const extras = extrasTotal(extraItems);
+  const extraRows = validItems(extraItems).map((item) => ({
+    label: `${item.description} (${item.quantity} × ${fmt(item.unit_price, currency)})`,
+    amount: itemAmount(item),
+  }));
   const defaultRate = settings?.default_filament_cost ?? '';
 
   const [laborRate, setLaborRate] = useState('');
@@ -182,7 +195,7 @@ export function QuoteCalculator() {
   // Angebot als eigenes Druckfenster öffnen; „Als PDF speichern“ im Druckdialog erzeugt das PDF.
   const printQuote = (data: QuoteResponse) => {
     const html = buildQuoteDocument(
-      data,
+      { ...data, total: Math.round((data.total + extras) * 100) / 100 },
       {
         title: t('quote.title'),
         material: t('quote.material'),
@@ -193,6 +206,7 @@ export function QuoteCalculator() {
         total: t('quote.total'),
       },
       new Date(),
+      extraRows.map((r): [string, number] => [r.label, r.amount]),
     );
     const win = window.open('', '_blank', 'width=800,height=900');
     if (!win) {
@@ -339,11 +353,20 @@ export function QuoteCalculator() {
             ) : (
               <div className="space-y-1 max-h-60 overflow-y-auto">
                 {(history?.entries ?? []).map((entry) => (
-                  <div key={entry.id} className="flex items-center gap-2 text-xs">
+                  <div key={entry.id}>
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
                     <span className="text-bambu-gray whitespace-nowrap">{new Date(entry.ts).toLocaleDateString()}</span>
                     {entry.number && <span className="text-bambu-gray whitespace-nowrap">{entry.number}</span>}
                     <span className="font-medium text-white truncate">{entry.customer}</span>
                     <span className="ml-auto text-bambu-gray-light">{fmt(entry.total, entry.currency)}</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      aria-label={`${t('quote.actuals')} ${entry.customer}`}
+                      onClick={() => setActualsFor(actualsFor === entry.id ? null : entry.id)}
+                    >
+                      {t('quote.actuals')}
+                    </Button>
                     <Button
                       size="sm"
                       variant="ghost"
@@ -370,6 +393,8 @@ export function QuoteCalculator() {
                     >
                       ✕
                     </Button>
+                  </div>
+                  {actualsFor === entry.id && <QuoteActualsPanel quoteId={entry.id} />}
                   </div>
                 ))}
               </div>
@@ -681,10 +706,17 @@ export function QuoteCalculator() {
             {row('quote.labor', quote.labor)}
             {row('quote.subtotal', quote.subtotal)}
             {row('quote.markup', quote.markup)}
+            {extraRows.map((r, index) => (
+              <div key={index} className="flex justify-between text-sm">
+                <span className="text-bambu-gray">{r.label}</span>
+                <span className="text-bambu-gray-light font-medium">{fmt(r.amount, currency)}</span>
+              </div>
+            ))}
             <div className="flex justify-between text-base font-semibold text-white pt-1">
               <span>{t('quote.total')}</span>
-              <span>{fmt(quote.total, quote.currency)}</span>
+              <span>{fmt(Math.round((quote.total + extras) * 100) / 100, quote.currency)}</span>
             </div>
+            <QuoteExtraItems items={extraItems} onChange={setExtraItems} />
             <div className="flex flex-wrap items-end justify-between gap-2 pt-1">
               <label className="text-xs text-bambu-gray flex-1 min-w-40">
                 {t('quote.customer')}

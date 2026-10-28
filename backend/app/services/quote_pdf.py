@@ -70,6 +70,13 @@ LABELS = {
 MARGIN = 20 * mm
 
 
+def _as_float(value: Any, default: float) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def money(value: float, currency: str, lang: str = "de") -> str:
     text = f"{value:,.2f}"
     if lang == "de":
@@ -190,6 +197,13 @@ def render(entry: dict[str, Any], company: dict[str, Any], lang: str = "de", kin
         row(t[key], float(entry.get(key, 0) or 0))
     row(t["subtotal"], float(entry.get("subtotal", 0) or 0), line_above=True)
     row(t["markup"], float(entry.get("markup", 0) or 0))
+    for item in entry.get("items") or []:
+        if not isinstance(item, dict):
+            continue
+        quantity = _as_float(item.get("quantity"), 1.0)
+        unit = _as_float(item.get("unit_price"), 0.0)
+        label = f"{str(item.get('description', ''))[:55]} ({quantity:g} × {money(unit, currency, lang)})"
+        row(label, _as_float(item.get("amount"), quantity * unit))
     total = float(entry.get("total", 0) or 0)
     vat_percent = float(company.get("vat_percent") or 0)
     if vat_percent > 0:

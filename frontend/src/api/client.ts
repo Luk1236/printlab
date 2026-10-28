@@ -1,4 +1,5 @@
 import { createForkApi } from './forkApi';
+import type { QuoteItem } from './forkApi';
 export type {
   RemoteAccessStatus,
   CompanyProfile,
@@ -11,6 +12,9 @@ export type {
   PlateTuningAnalysis,
   Invoice,
   InvoicesResponse,
+  QuoteItem,
+  QuoteActuals,
+  QuoteActualsLine,
 } from './forkApi';
 import i18n from '../i18n';
 import type { ArchivePlatesResponse, LibraryFilePlatesResponse } from '../types/plates';
@@ -4267,6 +4271,8 @@ export interface QuoteHistoryEntry {
   subtotal: number;
   markup: number;
   total: number;
+  items?: QuoteItem[];
+  extras?: number;
 }
 
 export interface QuoteCustomerTotal {

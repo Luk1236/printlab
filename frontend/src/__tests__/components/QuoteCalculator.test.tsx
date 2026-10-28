@@ -133,6 +133,40 @@ describe('QuoteCalculator history', () => {
     expect(calls.saved[0]).toMatchObject({ customer: 'Müller GmbH', total: 9.24, currency: 'EUR' });
   });
 
+  it('adds extra items to the total and sends only complete ones', async () => {
+    const calls = { saved: [] as unknown[], deleted: [] as string[] };
+    setupHistory(calls);
+    render(<QuoteCalculator />);
+    await userEvent.type(await screen.findByLabelText('Filament'), '100');
+    await userEvent.type(screen.getByLabelText('Print time'), '60');
+    await userEvent.click(screen.getByRole('button', { name: /Calculate/i }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Add item' }));
+    await userEvent.type(screen.getByLabelText('Item name 1'), 'Versand');
+    await userEvent.clear(screen.getByLabelText('Quantity 1'));
+    await userEvent.type(screen.getByLabelText('Quantity 1'), '2');
+    await userEvent.type(screen.getByLabelText('Unit price 1'), '4.5');
+    await userEvent.click(screen.getByRole('button', { name: 'Add item' }));
+    await userEvent.type(screen.getByLabelText('Item name 2'), 'ohne Preis');
+    expect(await screen.findByText(/18[.,]24/)).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText('Customer'), 'Müller GmbH');
+    await userEvent.click(screen.getByRole('button', { name: 'Save quote' }));
+    await waitFor(() => expect(calls.saved.length).toBe(1));
+    expect(calls.saved[0]).toMatchObject({ total: 9.24, items: [{ description: 'Versand', quantity: 2, unit_price: 4.5 }] });
+    expect((calls.saved[0] as { items: unknown[] }).items).toHaveLength(1);
+  });
+
+  it('removes an extra item again', async () => {
+    setup();
+    render(<QuoteCalculator />);
+    await userEvent.type(await screen.findByLabelText('Filament'), '100');
+    await userEvent.type(screen.getByLabelText('Print time'), '60');
+    await userEvent.click(screen.getByRole('button', { name: /Calculate/i }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Add item' }));
+    expect(screen.getByLabelText('Item name 1')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Remove item 1' }));
+    expect(screen.queryByLabelText('Item name 1')).not.toBeInTheDocument();
+  });
+
   it('shows the history with totals per customer and deletes an entry', async () => {
     const calls = { saved: [] as unknown[], deleted: [] as string[] };
     setupHistory(calls);

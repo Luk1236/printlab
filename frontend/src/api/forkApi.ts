@@ -106,6 +106,42 @@ export interface PlateTuningAnalysis {
   };
 }
 
+export interface QuoteItem {
+  description: string;
+  quantity: number;
+  unit_price: number;
+  amount: number;
+}
+
+export interface QuoteActualsLine {
+  archive_id: number;
+  filename: string;
+  status: string;
+  grams: number;
+  minutes: number;
+  material: number;
+  energy: number;
+  estimated: boolean;
+}
+
+export interface QuoteActuals {
+  quote_id: string;
+  currency: string;
+  linked: number;
+  lines: QuoteActualsLine[];
+  grams: number;
+  minutes: number;
+  material: number;
+  energy: number;
+  labor: number;
+  actual_cost: number;
+  quoted_cost: number;
+  deviation: number;
+  revenue: number;
+  profit: number;
+  missing_ids: number[];
+}
+
 export interface Invoice {
   id: string;
   number: string;
@@ -137,6 +173,12 @@ export interface ForkApiDeps {
 
 export function createForkApi({ request, apiBase, getAuthToken }: ForkApiDeps) {
   return {
+    getQuoteActuals: (id: string) => request<QuoteActuals>(`/quote/history/${encodeURIComponent(id)}/actuals`),
+    linkQuoteArchives: (id: string, archiveIds: number[]) =>
+      request<{ archive_ids: number[] }>(`/quote/history/${encodeURIComponent(id)}/archives`, {
+        method: 'PUT',
+        body: JSON.stringify({ archive_ids: archiveIds }),
+      }),
     getInvoices: () => request<InvoicesResponse>('/quote/invoices'),
     createInvoice: (quoteId: string, serviceDate?: string) =>
       request<Invoice>(`/quote/history/${encodeURIComponent(quoteId)}/invoice`, {

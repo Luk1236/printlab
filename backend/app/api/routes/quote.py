@@ -23,7 +23,7 @@ from backend.app.api.routes.settings import DEFAULT_SETTINGS, get_setting
 from backend.app.core.auth import RequirePermissionIfAuthEnabled
 from backend.app.core.database import get_db
 from backend.app.core.permissions import Permission
-from backend.app.services import company_profile, invoices, price_list, quote_history, quote_pdf
+from backend.app.services import company_profile, invoices, price_list, quote_actuals, quote_history, quote_pdf
 
 router = APIRouter(prefix="/quote", tags=["quote"])
 
@@ -71,6 +71,72 @@ async def save_quote(
         return quote_history.add(payload, prefix=company["number_prefix"], number_format=company["number_format"])
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
+
+
+@router.put("/history/{entry_id}/archives")
+async def link_quote_archives(
+    entry_id: str,
+    payload: dict,
+    _=RequirePermissionIfAuthEnabled(Permission.ARCHIVES_UPDATE_ALL),
+    db: AsyncSession = Depends(get_db),
+):
+    """Druckjobs aus dem Archiv mit dem Angebot verknüpfen (ersetzt die bisherige Liste)."""
+    from sqlalchemy import select
+
+    from backend.app.models.archive import PrintArchive
+
+    ids = payload.get("archive_ids", [])
+    try:
+        entry = quote_history.set_archives(entry_id, ids)
+        if entry is None:
+            raise HTTPException(404, "Angebot nicht gefunden.")
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    known = set((await db.scalars(select(PrintArchive.id).where(PrintArchive.id.in_(entry["archive_ids"])))).all())
+    unknown = [i for i in entry["archive_ids"] if i not in known]
+    if unknown:
+        quote_history.set_archives(entry_id, [i for i in entry["archive_ids"] if i in known])
+        raise HTTPException(400, f"Archiv {unknown[0]} nicht gefunden.")
+    return entry
+
+
+@router.get("/history/{entry_id}/actuals")
+async def quote_actual_costs(
+    entry_id: str,
+    _=RequirePermissionIfAuthEnabled(Permission.ARCHIVES_READ),
+    db: AsyncSession = Depends(get_db),
+):
+    """Nachkalkulation: Ist-Kosten der verknüpften Druckjobs gegen den Angebotspreis."""
+    from sqlalchemy import select
+
+    from backend.app.models.archive import PrintArchive
+
+    entry = quote_history.get(entry_id)
+    if entry is None:
+        raise HTTPException(404, "Angebot nicht gefunden.")
+    ids = [i for i in entry.get("archive_ids", []) if isinstance(i, int)]
+    rows = (await db.scalars(select(PrintArchive).where(PrintArchive.id.in_(ids)))).all() if ids else []
+    by_id = {row.id: row for row in rows}
+    archives = [
+        {
+            "id": row.id,
+            "filename": row.print_name or row.filename,
+            "status": row.status,
+            "filament_used_grams": row.filament_used_grams,
+            "print_time_seconds": row.print_time_seconds,
+            "cost": row.cost,
+            "energy_cost": row.energy_cost,
+        }
+        for row in (by_id[i] for i in ids if i in by_id)
+    ]
+    rates = {
+        "material_per_kg": await _float_setting(db, "default_filament_cost"),
+        "energy_per_kwh": await _float_setting(db, "energy_cost_per_kwh"),
+        "power_watts": await _float_setting(db, "printer_power_watts"),
+    }
+    result = quote_actuals.compute(entry, archives, rates)
+    result["missing_ids"] = [i for i in ids if i not in by_id]
+    return result
 
 
 @router.get("/company")

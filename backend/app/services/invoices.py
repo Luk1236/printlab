@@ -114,6 +114,7 @@ def create_from_quote(
             "paid_at": None,
             **{k: quote.get(k, "") for k in ("customer", "customer_address", "description", "currency")},
             **{k: quote.get(k, 0) for k in quote_history.AMOUNT_KEYS},
+            **{k: quote[k] for k in ("items", "extras") if k in quote},
         }
         _write([invoice, *_read()])
     return invoice
