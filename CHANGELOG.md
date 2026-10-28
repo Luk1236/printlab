@@ -3,7 +3,7 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
-## v1.9.3 (in Arbeit) — Mehrere Drucker
+## v1.9.3 (28.10.2026) — Mehrere Drucker
 
 - **Auftrags-Priorität in der Warteschlange:** Stufen *Eilig*, *Standard* und *Niedrig* beim Einreihen (und später im
   Bearbeiten-Dialog). Eine höhere Stufe kommt immer zuerst dran, innerhalb einer Stufe gilt die bisherige Reihenfolge
