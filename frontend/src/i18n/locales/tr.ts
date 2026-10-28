@@ -149,6 +149,8 @@ export default {
     share: 'Paylaş',
     disable: 'Kapat',
     deviceHint: 'Aynı hesapla bilgisayarınıza veya telefonunuza Tailscale kurun, sonra bu adresi açın.',
+    qrTitle: 'PrintLab adresinin QR kodu',
+    qrHint: 'PrintLab\'i açmak için telefonunuzla tarayın. Telefonda Tailscale aynı hesapla oturum açmış olmalıdır. Ardından sayfayı yer imine veya ana ekrana ekleyin.',
   },
 
   common: {

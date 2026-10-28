@@ -149,6 +149,8 @@ export default {
     share: 'Delen',
     disable: 'Uitschakelen',
     deviceHint: 'Installeer Tailscale op je pc of telefoon met hetzelfde account en open dan dit adres.',
+    qrTitle: 'QR-code van het PrintLab-adres',
+    qrHint: 'Scan met je telefoon om PrintLab te openen. Tailscale moet op de telefoon met hetzelfde account zijn aangemeld. Voeg de pagina daarna toe als bladwijzer of aan het startscherm.',
   },
 
   common: {

@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Globe } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
 import { api } from '../api/client';
 import type { RemoteAccessStatus } from '../api/client';
@@ -90,6 +91,15 @@ export function RemoteAccessCard({ canControl }: { canControl: boolean }) {
             )}
             <p>{status.serving ? t('remoteAccess.shared') : t('remoteAccess.notShared')}</p>
             <p>{t('remoteAccess.deviceHint')}</p>
+          </div>
+        )}
+
+        {status.state === 'connected' && status.serving && address && (
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-white p-2" data-testid="remote-access-qr">
+              <QRCodeSVG value={address} size={112} title={t('remoteAccess.qrTitle')} />
+            </div>
+            <p className="text-xs text-bambu-gray">{t('remoteAccess.qrHint')}</p>
           </div>
         )}
 

@@ -149,6 +149,8 @@ export default {
     share: '分享',
     disable: '關閉',
     deviceHint: '在電腦或手機上用同一帳號安裝 Tailscale，然後開啟此位址。',
+    qrTitle: 'PrintLab 位址 QR 碼',
+    qrHint: '用手機掃描即可開啟 PrintLab。手機上的 Tailscale 必須使用同一帳號登入。之後可將頁面加入書籤或主畫面。',
   },
 
   common: {

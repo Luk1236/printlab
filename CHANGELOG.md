@@ -3,6 +3,12 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.6.1 (28.10.2026) — QR-Code für den Handy-Zugriff
+
+- **QR-Code in der Fernzugriff-Karte:** Mit dem Handy scannen, um PrintLab über Tailscale zu öffnen (Tailscale auf dem
+  Handy mit demselben Konto anmelden, Seite als Lesezeichen oder zum Home-Bildschirm hinzufügen). Die Bambu-Handy-App
+  selbst lässt sich nicht mit PrintLab koppeln: Ihr QR-Code und die PIN laufen über die Bambu-Cloud.
+
 ## v1.6.0 (28.10.2026) — Sicherheit beim Update, Überwachung, Hardware, Angebote
 
 - **Update mit Sicherung und Rückbau:** Vor jedem Update in PrintLab werden Datenbank und Einstellungsdateien gesichert

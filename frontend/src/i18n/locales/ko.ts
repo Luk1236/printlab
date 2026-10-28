@@ -146,6 +146,8 @@ export default {
     share: '공유',
     disable: '끄기',
     deviceHint: '같은 계정으로 PC나 휴대폰에 Tailscale을 설치한 뒤 이 주소를 여세요.',
+    qrTitle: 'PrintLab 주소 QR 코드',
+    qrHint: '휴대폰으로 스캔하면 PrintLab이 열립니다. 휴대폰의 Tailscale에 같은 계정으로 로그인되어 있어야 합니다. 이후 페이지를 북마크하거나 홈 화면에 추가하세요.',
   },
 
   common: {

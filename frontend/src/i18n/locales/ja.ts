@@ -149,6 +149,8 @@ export default {
     share: '共有する',
     disable: 'オフにする',
     deviceHint: '同じアカウントで PC またはスマホに Tailscale をインストールし、このアドレスを開いてください。',
+    qrTitle: 'PrintLabのアドレスのQRコード',
+    qrHint: 'スマートフォンでスキャンするとPrintLabが開きます。スマートフォンのTailscaleに同じアカウントでサインインしておく必要があります。その後、ページをブックマークまたはホーム画面に追加してください。',
   },
 
   common: {

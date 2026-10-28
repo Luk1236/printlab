@@ -149,6 +149,8 @@ export default {
     share: '共享',
     disable: '关闭',
     deviceHint: '在电脑或手机上用同一账号安装 Tailscale，然后打开此地址。',
+    qrTitle: 'PrintLab 地址二维码',
+    qrHint: '用手机扫描即可打开 PrintLab。手机上的 Tailscale 必须使用同一账号登录。之后可将页面添加为书签或主屏幕快捷方式。',
   },
 
   common: {

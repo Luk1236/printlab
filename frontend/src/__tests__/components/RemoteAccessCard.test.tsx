@@ -64,6 +64,7 @@ describe('RemoteAccessCard', () => {
     render(<RemoteAccessCard canControl />);
     expect(await screen.findByText(/:\d+$/, { selector: 'span' })).toHaveTextContent('http://100.64.0.7:');
     expect(screen.getByText('printlab.tail1234.ts.net')).toBeInTheDocument();
+    expect(screen.queryByTestId('remote-access-qr')).not.toBeInTheDocument(); // erst nach der Freigabe
     await userEvent.click(screen.getByRole('button', { name: 'Share' }));
     await waitFor(() => expect(calls).toContain('share'));
   });
@@ -74,6 +75,7 @@ describe('RemoteAccessCard', () => {
     render(<RemoteAccessCard canControl />);
     await screen.findByText(/shared in the Tailscale network/i);
     expect(screen.queryByRole('button', { name: 'Share' })).not.toBeInTheDocument();
+    expect(screen.getByTestId('remote-access-qr')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Turn off' }));
     await waitFor(() => expect(calls).toContain('disable'));
   });
