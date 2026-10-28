@@ -5,7 +5,7 @@ Aufruf im Projektordner:
     .venv\Scripts\python.exe werkzeuge\admin_passwort_setzen.py
 
 Das Passwort wird mit getpass abgefragt (keine Anzeige, nicht im Verlauf) und
-nur als PBKDF2-Hash in ``bambuddy.db`` gespeichert. Es erfüllt PrintLabs
+nur als PBKDF2-Hash in ``printlab.db`` gespeichert. Es erfüllt PrintLabs
 Komplexitätsregel (Groß-/Kleinbuchstaben, Ziffer, Sonderzeichen, mind. 8 Zeichen).
 
 Notfall (Anmeldung wieder aus):
@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import getpass
+import os
 import sqlite3
 import string
 from pathlib import Path
@@ -22,7 +23,9 @@ from pathlib import Path
 from passlib.context import CryptContext
 
 PROJEKT = Path(__file__).resolve().parent.parent
-DB = PROJEKT / "bambuddy.db"
+# Datenordner wie die Anwendung: DATA_DIR, sonst der Projektordner; Datei printlab.db (früher bambuddy.db).
+DATENORDNER = Path(os.environ.get("DATA_DIR") or PROJEKT)
+DB = next((p for p in (DATENORDNER / "printlab.db", DATENORDNER / "bambuddy.db") if p.exists()), DATENORDNER / "printlab.db")
 
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
