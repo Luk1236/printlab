@@ -1619,6 +1619,24 @@ export default {
 
   // Queue page
   queue: {
+    forecast: {
+      title: 'Charge et heure de fin',
+      finishAll: 'Tout devrait être terminé : {{time}}',
+      totalLoad: '{{count}} travaux · {{duration}} d\'impression',
+      nothing: 'Aucun travail ne démarre seul.',
+      freeAt: 'Libre à partir de {{time}}',
+      queued: '{{count}} en file · {{duration}}',
+      load: 'Charge (24 h) : {{percent}} %',
+      doneAround: 'Terminé vers {{time}}',
+      unknown: '{{count}} travail/travaux sans durée d\'impression ne sont pas comptés.',
+      unplaced: '{{count}} travail/travaux sans imprimante adaptée ne sont pas comptés.',
+      note: 'Estimation d\'après le temps restant, les durées d\'impression et l\'ordre de la file. Échecs, changements de plateau et préchauffage non inclus.',
+      state: {
+        printing: 'Impression, libre dans {{duration}}',
+        idle: 'Libre',
+        offline: 'Pas d\'état',
+      },
+    },
     priority: {
       label: 'Priorité',
       urgent: 'Prioritaire',

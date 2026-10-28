@@ -1619,6 +1619,24 @@ export default {
 
   // Queue page
   queue: {
+    forecast: {
+      title: 'Auslastung und Fertigzeit',
+      finishAll: 'Alles voraussichtlich fertig: {{time}}',
+      totalLoad: '{{count}} Aufträge · {{duration}} Druckzeit',
+      nothing: 'Keine Aufträge, die von allein starten.',
+      freeAt: 'Frei ab {{time}}',
+      queued: '{{count}} in der Warteschlange · {{duration}}',
+      load: 'Auslastung (24 h): {{percent}} %',
+      doneAround: 'Fertig um {{time}}',
+      unknown: '{{count}} Auftrag/Aufträge ohne Druckzeit sind nicht eingerechnet.',
+      unplaced: '{{count}} Auftrag/Aufträge ohne passenden Drucker sind nicht eingerechnet.',
+      note: 'Schätzung aus Restzeit, Druckzeiten und Reihenfolge der Warteschlange. Fehlschläge, Plattenwechsel und Aufheizen sind nicht enthalten.',
+      state: {
+        printing: 'Druckt, frei in {{duration}}',
+        idle: 'Frei',
+        offline: 'Kein Status',
+      },
+    },
     priority: {
       label: 'Priorität',
       urgent: 'Eilig',

@@ -1629,6 +1629,24 @@ export default {
 
   // Queue page
   queue: {
+    forecast: {
+      title: 'Utilization and finish time',
+      finishAll: 'Everything expected to finish: {{time}}',
+      totalLoad: '{{count}} jobs · {{duration}} of print time',
+      nothing: 'No jobs that start on their own.',
+      freeAt: 'Free from {{time}}',
+      queued: '{{count}} queued · {{duration}}',
+      load: 'Load (24 h): {{percent}}%',
+      doneAround: 'Done around {{time}}',
+      unknown: '{{count}} job(s) without a print time are not included.',
+      unplaced: '{{count}} job(s) without a matching printer are not included.',
+      note: 'Estimate from remaining time, print times and queue order. Failures, plate changes and warm-up are not included.',
+      state: {
+        printing: 'Printing, free in {{duration}}',
+        idle: 'Free',
+        offline: 'No status',
+      },
+    },
     priority: {
       label: 'Priority',
       urgent: 'Urgent',

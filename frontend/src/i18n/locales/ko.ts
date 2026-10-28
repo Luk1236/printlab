@@ -1571,6 +1571,24 @@ export default {
   },
 
   queue: {
+    forecast: {
+      title: '가동률과 완료 시각',
+      finishAll: '모두 완료 예상: {{time}}',
+      totalLoad: '{{count}}건 · 출력 시간 {{duration}}',
+      nothing: '자동으로 시작하는 작업이 없습니다.',
+      freeAt: '{{time}}부터 사용 가능',
+      queued: '대기 {{count}}건 · {{duration}}',
+      load: '부하(24시간): {{percent}}%',
+      doneAround: '{{time}}경 완료',
+      unknown: '출력 시간이 없는 작업 {{count}}건은 포함되지 않았습니다.',
+      unplaced: '맞는 프린터가 없는 작업 {{count}}건은 포함되지 않았습니다.',
+      note: '남은 시간, 출력 시간, 대기열 순서로 계산한 추정치입니다. 실패, 플레이트 교체, 예열은 포함되지 않습니다.',
+      state: {
+        printing: '출력 중, {{duration}} 후 사용 가능',
+        idle: '사용 가능',
+        offline: '상태 없음',
+      },
+    },
     priority: {
       label: '우선순위',
       urgent: '긴급',

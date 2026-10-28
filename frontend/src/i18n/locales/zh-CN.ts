@@ -1619,6 +1619,24 @@ export default {
 
   // Queue page
   queue: {
+    forecast: {
+      title: '利用率与完成时间',
+      finishAll: '预计全部完成：{{time}}',
+      totalLoad: '{{count}} 个任务 · 打印时间 {{duration}}',
+      nothing: '没有会自动开始的任务。',
+      freeAt: '{{time}} 起空闲',
+      queued: '队列中 {{count}} 个 · {{duration}}',
+      load: '负载（24 小时）：{{percent}}%',
+      doneAround: '约 {{time}} 完成',
+      unknown: '没有打印时间的 {{count}} 个任务未计入。',
+      unplaced: '没有匹配打印机的 {{count}} 个任务未计入。',
+      note: '根据剩余时间、打印时间和队列顺序估算。不包含失败、换板和预热。',
+      state: {
+        printing: '打印中，{{duration}} 后空闲',
+        idle: '空闲',
+        offline: '无状态',
+      },
+    },
     priority: {
       label: '优先级',
       urgent: '紧急',

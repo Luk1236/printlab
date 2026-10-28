@@ -3,6 +3,16 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.9.4 (in Arbeit) — Auslastung und Fertigzeit
+
+- **Übersicht „Auslastung und Fertigzeit"** über der Warteschlange: je Drucker der laufende Druck mit Restzeit, „frei ab",
+  Auslastung der nächsten 24 Stunden und die Aufträge in der Warteschlange; dazu eine Zeile mit der voraussichtlichen
+  Fertigzeit aller Aufträge. Die Prognose folgt der Planer-Reihenfolge (Priorität zuerst) und verteilt Aufträge für „irgendein
+  Drucker dieses Modells" auf den Drucker, der zuerst frei wird.
+- **Fertigzeit je Auftrag:** Jede Zeile der Warteschlange zeigt „Fertig um …".
+- **Termin-Warnung mit Warteschlange:** „Termin wird nicht gehalten" rechnet jetzt mit der Prognose (Aufträge davor
+  eingerechnet) statt nur mit der Druckzeit ab jetzt. Die Schnittstelle behält ihre einfache Warnung für andere Programme.
+
 ## v1.9.3 (28.10.2026) — Mehrere Drucker
 
 - **Auftrags-Priorität in der Warteschlange:** Stufen *Eilig*, *Standard* und *Niedrig* beim Einreihen (und später im

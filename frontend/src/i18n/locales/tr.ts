@@ -1619,6 +1619,24 @@ export default {
   },
 
   queue: {
+    forecast: {
+      title: 'Kullanım ve bitiş zamanı',
+      finishAll: 'Her şeyin bitmesi beklenen zaman: {{time}}',
+      totalLoad: '{{count}} iş · {{duration}} baskı süresi',
+      nothing: 'Kendiliğinden başlayan iş yok.',
+      freeAt: '{{time}} itibarıyla boş',
+      queued: 'Kuyrukta {{count}} · {{duration}}',
+      load: 'Yük (24 sa): %{{percent}}',
+      doneAround: 'Yaklaşık {{time}} bitecek',
+      unknown: 'Baskı süresi olmayan {{count}} iş dahil edilmedi.',
+      unplaced: 'Uygun yazıcısı olmayan {{count}} iş dahil edilmedi.',
+      note: 'Kalan süre, baskı süreleri ve kuyruk sırasından tahmin. Hatalar, plaka değişimi ve ısınma dahil değildir.',
+      state: {
+        printing: 'Basıyor, {{duration}} sonra boş',
+        idle: 'Boş',
+        offline: 'Durum yok',
+      },
+    },
     priority: {
       label: 'Öncelik',
       urgent: 'Acil',

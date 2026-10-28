@@ -1629,6 +1629,24 @@ export default {
 
   // Queue page
   queue: {
+    forecast: {
+      title: 'Bezetting en eindtijd',
+      finishAll: 'Alles naar verwachting klaar: {{time}}',
+      totalLoad: '{{count}} opdrachten · {{duration}} printtijd',
+      nothing: 'Geen opdrachten die vanzelf starten.',
+      freeAt: 'Vrij vanaf {{time}}',
+      queued: '{{count}} in de wachtrij · {{duration}}',
+      load: 'Belasting (24 u): {{percent}}%',
+      doneAround: 'Klaar rond {{time}}',
+      unknown: '{{count}} opdracht(en) zonder printtijd zijn niet meegeteld.',
+      unplaced: '{{count}} opdracht(en) zonder passende printer zijn niet meegeteld.',
+      note: 'Schatting op basis van resterende tijd, printtijden en wachtrijvolgorde. Mislukte prints, plaatwissels en opwarmen zijn niet inbegrepen.',
+      state: {
+        printing: 'Bezig, vrij over {{duration}}',
+        idle: 'Vrij',
+        offline: 'Geen status',
+      },
+    },
     priority: {
       label: 'Prioriteit',
       urgent: 'Spoed',

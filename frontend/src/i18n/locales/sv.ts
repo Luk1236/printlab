@@ -1629,6 +1629,24 @@ export default {
 
   // Queue page
   queue: {
+    forecast: {
+      title: 'Belastning och sluttid',
+      finishAll: 'Allt väntas vara klart: {{time}}',
+      totalLoad: '{{count}} jobb · {{duration}} utskriftstid',
+      nothing: 'Inga jobb som startar av sig självt.',
+      freeAt: 'Ledig från {{time}}',
+      queued: '{{count}} i kön · {{duration}}',
+      load: 'Belastning (24 h): {{percent}} %',
+      doneAround: 'Klart omkring {{time}}',
+      unknown: '{{count}} jobb utan utskriftstid ingår inte.',
+      unplaced: '{{count}} jobb utan passande skrivare ingår inte.',
+      note: 'Uppskattning av återstående tid, utskriftstider och köordning. Misslyckanden, plattbyten och uppvärmning ingår inte.',
+      state: {
+        printing: 'Skriver ut, ledig om {{duration}}',
+        idle: 'Ledig',
+        offline: 'Ingen status',
+      },
+    },
     priority: {
       label: 'Prioritet',
       urgent: 'Brådskande',

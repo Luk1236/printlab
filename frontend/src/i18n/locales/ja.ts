@@ -1618,6 +1618,24 @@ export default {
 
   // Queue page
   queue: {
+    forecast: {
+      title: '稼働率と完了時刻',
+      finishAll: 'すべて完了見込み：{{time}}',
+      totalLoad: '{{count}} 件 · 印刷時間 {{duration}}',
+      nothing: '自動で開始するジョブはありません。',
+      freeAt: '{{time}} 以降空き',
+      queued: '待機 {{count}} 件 · {{duration}}',
+      load: '稼働率（24時間）：{{percent}}%',
+      doneAround: '{{time}} ごろ完了',
+      unknown: '印刷時間のない {{count}} 件は含まれていません。',
+      unplaced: '適合するプリンターのない {{count}} 件は含まれていません。',
+      note: '残り時間・印刷時間・キュー順からの見積もりです。失敗、プレート交換、予熱は含まれません。',
+      state: {
+        printing: '印刷中、あと {{duration}} で空き',
+        idle: '空き',
+        offline: '状態なし',
+      },
+    },
     priority: {
       label: '優先度',
       urgent: '至急',

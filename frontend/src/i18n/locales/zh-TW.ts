@@ -1619,6 +1619,24 @@ export default {
 
   // Queue page
   queue: {
+    forecast: {
+      title: '利用率與完成時間',
+      finishAll: '預計全部完成：{{time}}',
+      totalLoad: '{{count}} 個任務 · 列印時間 {{duration}}',
+      nothing: '沒有會自動開始的任務。',
+      freeAt: '{{time}} 起空閒',
+      queued: '佇列中 {{count}} 個 · {{duration}}',
+      load: '負載（24 小時）：{{percent}}%',
+      doneAround: '約 {{time}} 完成',
+      unknown: '沒有列印時間的 {{count}} 個任務未計入。',
+      unplaced: '沒有符合印表機的 {{count}} 個任務未計入。',
+      note: '依剩餘時間、列印時間與佇列順序估算。不含失敗、換板與預熱。',
+      state: {
+        printing: '列印中，{{duration}} 後空閒',
+        idle: '空閒',
+        offline: '無狀態',
+      },
+    },
     priority: {
       label: '優先順序',
       urgent: '緊急',

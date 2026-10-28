@@ -202,6 +202,10 @@ weicht PrintLab dann automatisch auf `git ls-remote` aus. Bei älteren Ständen:
   einer Stufe. Filter und Plakette in der Warteschlange zeigen die Stufe.
 - **Liefertermin:** Optional. Er warnt nur („Termin überschritten", „Termin wird nicht gehalten") und ändert nichts an der
   Reihenfolge. Die Warnung „wird nicht gehalten" rechnet mit der Druckzeit ab jetzt, ohne Wartezeit vor dem Start.
+- **Auslastung und Fertigzeit:** Über der Warteschlange zeigt eine Übersicht pro Drucker, wann er frei wird und wie voll
+  die nächsten 24 Stunden sind, dazu die voraussichtliche Fertigzeit aller Aufträge und je Auftrag „Fertig um …". Das ist
+  eine Schätzung aus Restzeit, Druckzeiten und Reihenfolge: Fehlschläge, Plattenwechsel und Aufheizen sind nicht enthalten,
+  Aufträge zum manuellen Start und solche ohne Druckzeit zählen nicht mit. Die Termin-Warnung nutzt diese Prognose.
 - **Verteilung:** Bei „irgendein Drucker dieses Modells" nimmt PrintLab unter den freien passenden Druckern den mit der
   geringsten Betriebszeit. Die Gesamt-Betriebsstunden eines Druckers kannst du auf der Wartungsseite (Reiter Status, Stunden bearbeiten) anpassen, zum Beispiel für einen gebraucht gekauften Drucker.
 

@@ -1619,6 +1619,24 @@ export default {
 
   // Queue page
   queue: {
+    forecast: {
+      title: 'Utilización y hora de finalización',
+      finishAll: 'Todo terminará aproximadamente: {{time}}',
+      totalLoad: '{{count}} trabajos · {{duration}} de impresión',
+      nothing: 'No hay trabajos que empiecen solos.',
+      freeAt: 'Libre desde {{time}}',
+      queued: '{{count}} en cola · {{duration}}',
+      load: 'Carga (24 h): {{percent}} %',
+      doneAround: 'Listo hacia {{time}}',
+      unknown: '{{count}} trabajo(s) sin tiempo de impresión no se cuentan.',
+      unplaced: '{{count}} trabajo(s) sin impresora adecuada no se cuentan.',
+      note: 'Estimación a partir del tiempo restante, los tiempos de impresión y el orden de la cola. No incluye fallos, cambios de placa ni calentamiento.',
+      state: {
+        printing: 'Imprimiendo, libre en {{duration}}',
+        idle: 'Libre',
+        offline: 'Sin estado',
+      },
+    },
     priority: {
       label: 'Prioridad',
       urgent: 'Urgente',

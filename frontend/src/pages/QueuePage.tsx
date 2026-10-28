@@ -84,6 +84,7 @@ import { CompactHistoryRow } from '../components/CompactHistoryRow';
 import { QueueTimelineView } from '../components/QueueTimelineView';
 import { compareQueueOrder } from '../utils/queueOrder';
 import { QueueItemFlags, QueuePriorityFilter } from '../components/QueuePriority';
+import { QueueForecastPanel } from '../components/QueueForecastPanel';
 import { BatchOrdersView } from '../components/BatchOrdersView';
 import { buildLoadedFilaments, type LoadedFilament } from '../hooks/useFilamentMapping';
 
@@ -1019,7 +1020,6 @@ function SortableQueueItem({
           })()}
 
           <QueueItemFlags item={item} />
-
           {/* Waiting reason for model-based assignments */}
           {item.waiting_reason && item.status === 'pending' && (
             <p className="text-[10px] sm:text-xs text-purple-700 dark:text-purple-400 mt-1.5 sm:mt-2 flex items-start gap-1">
@@ -2731,7 +2731,6 @@ export function QueuePage() {
         )}
 
         <QueuePriorityFilter value={filterPriority} onChange={setFilterPriority} />
-
         <div className="hidden sm:block flex-1" />
 
         {activeTab === 'history' && historyItems.length > 0 && (
@@ -2795,6 +2794,7 @@ export function QueuePage() {
         </div>
       )}
 
+      {activeTab === 'queue' && <QueueForecastPanel items={queue ?? []} printers={printers ?? []} statuses={printerStatusMap} sjfEnabled={settings?.queue_shortest_first ?? false} />}
       {/* Pipelines tab short-circuits before the queue-empty branch so the
           dashboard renders even when the regular queue is empty. */}
       {activeTab === 'pipelines' ? (
