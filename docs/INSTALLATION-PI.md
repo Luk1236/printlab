@@ -195,6 +195,19 @@ weicht PrintLab dann automatisch auf `git ls-remote` aus. Bei älteren Ständen:
 (`v1.9.1` durch die gewünschte Version ersetzen). Alternativ ein Token mit Leserecht in `PRINTLAB_GITHUB_TOKEN` setzen
 (5000 statt 60 Abfragen pro Stunde).
 
+## Virtuelle Drucker, Filament-Profile, MakerWorld, Orca Cloud
+
+- **Mehrere virtuelle Drucker für einen Zieldrucker:** Beim Anlegen (Einstellungen → Virtueller Drucker) lässt sich der
+  Zieldrucker für jeden Modus wählen (Archiv, Prüfen, Warteschlange; bei Proxy Pflicht). Jeder virtuelle Drucker braucht im
+  Slicer eine eigene IP-Adresse („Bind-IP", nach dem Anlegen einstellen).
+- **Filament-Profile zuordnen:** Filamentverwaltung → „Profile zuordnen" ordnet Spulen ohne Profil automatisch das passende
+  Bambu-/Orca-/lokale Profil zu; vor dem Übernehmen prüfst du die Liste.
+- **MakerWorld:** Es gibt Link-Import (Platten wählen, in die Bibliothek, direkt im Slicer öffnen), aber keine Suche und kein
+  Stöbern: MakerWorld liefert Servern dafür leere Ergebnisse.
+- **Orca Cloud:** Verbinden über die Seite „Profile" → Orca Cloud: Code anzeigen lassen, auf cloud.orcaslicer.com
+  bestätigen. PrintLab liest die Profile nur (Lese-Zugriff). Der Dienst antwortet; schlägt das Verbinden fehl, hilft die
+  genaue Fehlermeldung.
+
 ## Angebote und Rechnungen
 
 Unter „Kalkulation/Angebote" lassen sich Angebote speichern und als PDF ausgeben. Im Verlauf erzeugt „Rechnung" aus einem

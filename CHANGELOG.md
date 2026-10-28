@@ -3,11 +3,16 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
-## v1.9.2 (in Arbeit)
+## v1.9.2 (28.10.2026) — Virtuelle Drucker und Filament-Profile
 
 - **Virtuelle Drucker:** Beim Anlegen lässt sich der Zieldrucker jetzt für jeden Modus wählen (Archiv, Prüfen,
   Warteschlange; bei Proxy bleibt er Pflicht). So gibt es mehrere virtuelle Drucker mit unterschiedlichen Modi für
   denselben Zieldrucker. Ein Hinweis erklärt, dass jeder im Slicer eine eigene IP-Adresse (Bind-IP) braucht.
+- **Filament-Profile den Spulen zuordnen** (Filamentverwaltung → „Profile zuordnen"): sucht für Spulen ohne Slicer-Profil
+  das passende Profil aus Bambu Cloud, Orca Cloud, lokalen und eingebauten Profilen (nach Marke, Material und Sorte; bei
+  Varianten wie „@BBL X1C" gewinnt das Modell eines vorhandenen Druckers). Vorschlagsliste zum Prüfen, „generisch" ist
+  nicht vorangehakt, dann gesammelt übernehmen. Die Zuordnung der Profile braucht eine Anmeldung bei der Bambu Cloud, sonst
+  gelten nur die eingebauten Standardprofile.
 
 ## v1.9.1 (28.10.2026) — Update-Prüfung
 
