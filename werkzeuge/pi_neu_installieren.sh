@@ -99,7 +99,7 @@ systemctl --user daemon-reload
 systemctl --user enable --now printlab.service
 
 step "7/7 Prüfen"
-for _ in $(seq 1 30); do
+for _ in $(seq 1 90); do   # der erste Start dauert auf dem Pi gut eine Minute (Datenbank, Schlüssel, Kataloge)
   if curl -fsS -m 5 http://localhost:8000/api/v1/updates/version 2>/dev/null; then
     echo
     echo "PrintLab läuft: http://$(hostname -I | awk '{print $1}'):8000"
