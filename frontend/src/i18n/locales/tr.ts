@@ -151,6 +151,11 @@ export default {
     deviceHint: 'Aynı hesapla bilgisayarınıza veya telefonunuza Tailscale kurun, sonra bu adresi açın.',
     qrTitle: 'PrintLab adresinin QR kodu',
     qrHint: 'PrintLab\'i açmak için telefonunuzla tarayın. Telefonda Tailscale aynı hesapla oturum açmış olmalıdır. Ardından sayfayı yer imine veya ana ekrana ekleyin.',
+    slicerTitle: 'Her yerden dilimleyici (deneysel)',
+    slicerHint: 'Bambu Studio veya OrcaSlicer\'ın her yerden gönderebilmesi için sanal yazıcının bağlantı noktalarını özel Tailscale ağınızda açar. Sanal yazıcı ayarlardan etkinleştirilmiş olmalıdır. Gerçek donanımda henüz denenmedi.',
+    slicerOn: 'Paylaşıldı. Bambu Studio\'da: IP ile yazıcı ekleyin, {{ip}} IP\'sini ve sanal yazıcının 8 karakterlik erişim kodunu girin. Bilgisayarda aynı hesapla Tailscale gerekir. Gerçek donanımda henüz denenmedi.',
+    slicerEnable: 'Dilimleyici erişimini paylaş',
+    slicerDisable: 'Dilimleyici erişimini durdur',
   },
 
   common: {

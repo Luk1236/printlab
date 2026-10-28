@@ -3,6 +3,14 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.6.2 (28.10.2026) — Slicer von unterwegs (Versuch)
+
+- **Slicer-Zugriff über Tailscale** (Wartung → Fernzugriff, nur nach der Freigabe der Weboberfläche): gibt die Ports des
+  virtuellen Druckers (3000, 3002, 990, 8883 und den FTP-Datenbereich 50000–50029) nur im privaten Tailnet frei. In
+  Bambu Studio / OrcaSlicer dann „Drucker per IP hinzufügen" mit der Tailscale-Adresse des Pi und dem 8-stelligen
+  Zugangscode des virtuellen Druckers. **Noch nicht an echter Hardware erprobt**; ob der Slicer die Verbindung über
+  Tailscale annimmt (Zertifikate, Passiv-Modus des FTP), zeigt erst ein Test.
+
 ## v1.6.1 (28.10.2026) — QR-Code für den Handy-Zugriff
 
 - **QR-Code in der Fernzugriff-Karte:** Mit dem Handy scannen, um PrintLab über Tailscale zu öffnen (Tailscale auf dem

@@ -4285,6 +4285,7 @@ export interface RemoteAccessStatus {
   dns_name: string;
   serving: boolean;
   enabled: boolean;
+  slicer: boolean;
   error: string | null;
   auth_enabled: boolean;
 }
@@ -7620,6 +7621,8 @@ export const api = {
   getRemoteAccess: () => request<RemoteAccessStatus>('/remote-access'),
   setupRemoteAccess: () => request<RemoteAccessStatus>('/remote-access/setup', { method: 'POST' }),
   shareRemoteAccess: () => request<RemoteAccessStatus>('/remote-access/share', { method: 'POST' }),
+  setRemoteAccessSlicer: (enabled: boolean) =>
+    request<RemoteAccessStatus>(`/remote-access/slicer?enabled=${enabled}`, { method: 'POST' }),
   disableRemoteAccess: () => request<RemoteAccessStatus>('/remote-access/disable', { method: 'POST' }),
   getPriceList: () => request<{ entries: PriceListEntry[] }>('/quote/price-list'),
   setPriceList: (entries: PriceListEntry[]) =>

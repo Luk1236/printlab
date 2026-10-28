@@ -50,6 +50,11 @@ ARCH = {"aarch64": "arm64", "arm64": "arm64", "x86_64": "amd64", "amd64": "amd64
 LOGIN_URL_RX = re.compile(r"https://login\.tailscale\.com/a/[A-Za-z0-9]+")
 _ENV = {k: v for k, v in os.environ.items() if k in {"PATH", "HOME", "USER", "LANG", "LC_ALL", "TMPDIR"}}
 
+# Ports des virtuellen Druckers für Slicer von unterwegs (Bambu Studio / OrcaSlicer mit IP und Zugangscode):
+# Erkennung (3000/3002), Datei-Upload (FTPS 990), Steuerung (MQTT 8883) und die FTP-Datenports der ersten drei
+# virtuellen Drucker (je 10 Ports ab 50000, siehe ftp_server.compute_passive_port_slice).
+SLICER_PORTS = (3000, 3002, 990, 8883, *range(50000, 50030))
+
 _daemon: subprocess.Popen | None = None
 
 
@@ -135,6 +140,7 @@ async def status() -> dict[str, Any]:
         "dns_name": "",
         "serving": False,
         "enabled": bool(_read_config().get("enabled")),
+        "slicer": bool(_read_config().get("slicer")),
         "error": None,
     }
     if not info["supported"] or not info["installed"]:
@@ -287,6 +293,22 @@ async def share(port: int) -> None:
     _write_config({"enabled": True, "port": int(port)})
 
 
+async def share_slicer() -> None:
+    """Die Ports des virtuellen Druckers nur innerhalb des Tailnets freigeben (Versuch, noch nicht an echtem Slicer erprobt)."""
+    for port in SLICER_PORTS:
+        code, out = await _ts("serve", "--bg", f"--tcp={port}", f"tcp://localhost:{port}", timeout=30)
+        if code != 0:
+            raise RemoteAccessError(f"Slicer-Freigabe fehlgeschlagen (Port {port}): {out.strip()[:200]}")
+    _write_config({"slicer": True})
+
+
+async def unshare_slicer() -> None:
+    """Freigabe der Slicer-Ports beenden (die Freigabe der Weboberfläche bleibt)."""
+    for port in SLICER_PORTS:
+        await _ts("serve", f"--tcp={port}", "off", timeout=30)  # nicht freigegebene Ports sind kein Fehler
+    _write_config({"slicer": False})
+
+
 async def setup(port: int) -> dict[str, Any]:
     """Alles in einem Schritt: installieren (falls nötig), starten, Anmeldung anstoßen, ggf. freigeben."""
     if not (_local_binaries() or _system_cli()):
@@ -310,7 +332,7 @@ async def disable() -> dict[str, Any]:
     except RemoteAccessError:
         pass
     stop_daemon()
-    _write_config({"enabled": False})
+    _write_config({"enabled": False, "slicer": False})
     return await status()
 
 
@@ -325,5 +347,7 @@ async def autostart() -> None:
         current = await status()
         if current["state"] == "connected":
             await share(int(config.get("port") or 8000))
+            if config.get("slicer"):
+                await share_slicer()
     except RemoteAccessError as exc:
         logger.warning("[Fernzugriff] Autostart fehlgeschlagen: %s", exc)

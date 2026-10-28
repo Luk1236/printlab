@@ -151,6 +151,11 @@ export default {
     deviceHint: '在电脑或手机上用同一账号安装 Tailscale，然后打开此地址。',
     qrTitle: 'PrintLab 地址二维码',
     qrHint: '用手机扫描即可打开 PrintLab。手机上的 Tailscale 必须使用同一账号登录。之后可将页面添加为书签或主屏幕快捷方式。',
+    slicerTitle: '随时随地使用切片软件（实验性）',
+    slicerHint: '在您的私有 Tailscale 网络内开放虚拟打印机端口，使 Bambu Studio 或 OrcaSlicer 可以从任何地方发送。需在设置中启用虚拟打印机。尚未在真实硬件上测试。',
+    slicerOn: '已共享。在 Bambu Studio 中通过 IP 添加打印机，填入 IP {{ip}} 和虚拟打印机的 8 位访问码。电脑需要使用同一账号的 Tailscale。尚未在真实硬件上测试。',
+    slicerEnable: '共享切片软件访问',
+    slicerDisable: '停止切片软件访问',
   },
 
   common: {

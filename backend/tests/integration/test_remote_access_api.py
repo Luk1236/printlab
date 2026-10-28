@@ -61,3 +61,67 @@ class TestRemoteAccessApi:
         monkeypatch.setattr(ra, "setup", failing)
         resp = await async_client.post("/api/v1/remote-access/setup")
         assert resp.status_code == 400 and "Prüfsumme" in resp.json()["detail"]
+
+
+class TestSlicerRoute:
+    @pytest.mark.asyncio
+    async def test_needs_auth(self, async_client: AsyncClient):
+        resp = await async_client.post("/api/v1/remote-access/slicer?enabled=true")
+        assert resp.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_requires_a_connected_tailnet(self, async_client: AsyncClient, monkeypatch):
+        async def fake_auth(db):
+            return True
+
+        async def disconnected():
+            return {"state": "off"}
+
+        monkeypatch.setattr(routes, "is_auth_enabled", fake_auth)
+        monkeypatch.setattr(ra, "supported", lambda: True)
+        monkeypatch.setattr(ra, "status", disconnected)
+        resp = await async_client.post("/api/v1/remote-access/slicer?enabled=true")
+        assert resp.status_code == 400 and "angemeldet" in resp.json()["detail"]
+
+    @pytest.mark.asyncio
+    async def test_switches_the_service_on_and_off(self, async_client: AsyncClient, monkeypatch):
+        calls = []
+
+        async def fake_auth(db):
+            return True
+
+        async def connected():
+            return {"state": "connected", "slicer": True}
+
+        async def on():
+            calls.append("on")
+
+        async def off():
+            calls.append("off")
+
+        monkeypatch.setattr(routes, "is_auth_enabled", fake_auth)
+        monkeypatch.setattr(ra, "supported", lambda: True)
+        monkeypatch.setattr(ra, "status", connected)
+        monkeypatch.setattr(ra, "share_slicer", on)
+        monkeypatch.setattr(ra, "unshare_slicer", off)
+        assert (await async_client.post("/api/v1/remote-access/slicer?enabled=true")).status_code == 200
+        assert (await async_client.post("/api/v1/remote-access/slicer?enabled=false")).status_code == 200
+        assert calls == ["on", "off"]
+
+    @pytest.mark.asyncio
+    async def test_service_errors_become_400_with_a_translated_message(self, async_client: AsyncClient, monkeypatch):
+        async def fake_auth(db):
+            return True
+
+        async def connected():
+            return {"state": "connected"}
+
+        async def failing():
+            raise ra.RemoteAccessError("Slicer-Freigabe fehlgeschlagen (Port 990): nope")
+
+        monkeypatch.setattr(routes, "is_auth_enabled", fake_auth)
+        monkeypatch.setattr(ra, "supported", lambda: True)
+        monkeypatch.setattr(ra, "status", connected)
+        monkeypatch.setattr(ra, "share_slicer", failing)
+        resp = await async_client.post("/api/v1/remote-access/slicer?enabled=true", headers={"Accept-Language": "en"})
+        assert resp.status_code == 400 and "Slicer sharing failed (port 990)" in resp.json()["detail"]

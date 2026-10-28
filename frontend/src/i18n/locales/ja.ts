@@ -151,6 +151,11 @@ export default {
     deviceHint: '同じアカウントで PC またはスマホに Tailscale をインストールし、このアドレスを開いてください。',
     qrTitle: 'PrintLabのアドレスのQRコード',
     qrHint: 'スマートフォンでスキャンするとPrintLabが開きます。スマートフォンのTailscaleに同じアカウントでサインインしておく必要があります。その後、ページをブックマークまたはホーム画面に追加してください。',
+    slicerTitle: '外出先からスライサー（試験的）',
+    slicerHint: 'プライベートなTailscaleネットワーク内で仮想プリンターのポートを開き、Bambu StudioやOrcaSlicerが外出先から送信できるようにします。設定で仮想プリンターを有効にしておく必要があります。実機では未検証です。',
+    slicerOn: '共有中。Bambu StudioでIPからプリンターを追加し、IP {{ip}} と仮想プリンターの8文字のアクセスコードを入力してください。パソコンには同じアカウントのTailscaleが必要です。実機では未検証です。',
+    slicerEnable: 'スライサーアクセスを共有',
+    slicerDisable: 'スライサーアクセスを停止',
   },
 
   common: {

@@ -17,6 +17,7 @@ const base = {
   dns_name: '',
   serving: false,
   enabled: false,
+  slicer: false,
   error: null,
   auth_enabled: true,
 };
@@ -31,6 +32,11 @@ function use(status: Record<string, unknown>, calls: string[] = []) {
     http.post('/api/v1/remote-access/share', () => {
       calls.push('share');
       return HttpResponse.json({ ...base, ...status, serving: true });
+    }),
+    http.post('/api/v1/remote-access/slicer', ({ request }) => {
+      const enabled = new URL(request.url).searchParams.get('enabled') === 'true';
+      calls.push(`slicer:${enabled}`);
+      return HttpResponse.json({ ...base, ...status, slicer: enabled });
     }),
     http.post('/api/v1/remote-access/disable', () => {
       calls.push('disable');
@@ -97,5 +103,30 @@ describe('RemoteAccessCard', () => {
     use({ state: 'connected', ips: ['100.64.0.7'], enabled: true });
     render(<RemoteAccessCard canControl={false} />);
     expect(await screen.findByRole('button', { name: 'Turn off' })).toBeDisabled();
+  });
+
+  it('offers slicer access only once shared, and switches it on', async () => {
+    const calls: string[] = [];
+    use({ state: 'connected', ips: ['100.64.0.7'], serving: true, enabled: true }, calls);
+    render(<RemoteAccessCard canControl />);
+    expect(await screen.findByText(/experimental/i)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Share slicer access' }));
+    await waitFor(() => expect(calls).toContain('slicer:true'));
+  });
+
+  it('shows the address for the slicer and can switch it off again', async () => {
+    const calls: string[] = [];
+    use({ state: 'connected', ips: ['100.64.0.7'], serving: true, enabled: true, slicer: true }, calls);
+    render(<RemoteAccessCard canControl />);
+    expect(await screen.findByText(/IP 100\.64\.0\.7/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Stop slicer access' }));
+    await waitFor(() => expect(calls).toContain('slicer:false'));
+  });
+
+  it('hides slicer access while the web interface is not shared yet', async () => {
+    use({ state: 'connected', ips: ['100.64.0.7'], serving: false, enabled: true });
+    render(<RemoteAccessCard canControl />);
+    await screen.findByRole('button', { name: 'Share' });
+    expect(screen.queryByText(/Share slicer access/)).not.toBeInTheDocument();
   });
 });

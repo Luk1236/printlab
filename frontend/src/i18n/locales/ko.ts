@@ -148,6 +148,11 @@ export default {
     deviceHint: '같은 계정으로 PC나 휴대폰에 Tailscale을 설치한 뒤 이 주소를 여세요.',
     qrTitle: 'PrintLab 주소 QR 코드',
     qrHint: '휴대폰으로 스캔하면 PrintLab이 열립니다. 휴대폰의 Tailscale에 같은 계정으로 로그인되어 있어야 합니다. 이후 페이지를 북마크하거나 홈 화면에 추가하세요.',
+    slicerTitle: '외출 중 슬라이서 사용(실험적)',
+    slicerHint: '비공개 Tailscale 네트워크 안에서 가상 프린터 포트를 열어 Bambu Studio 또는 OrcaSlicer가 어디서든 전송할 수 있게 합니다. 설정에서 가상 프린터가 켜져 있어야 합니다. 실제 장비에서는 아직 시험하지 않았습니다.',
+    slicerOn: '공유 중. Bambu Studio에서 IP로 프린터를 추가하고 IP {{ip}} 와 가상 프린터의 8자리 접속 코드를 입력하세요. 컴퓨터에는 같은 계정의 Tailscale이 필요합니다. 실제 장비에서는 아직 시험하지 않았습니다.',
+    slicerEnable: '슬라이서 접근 공유',
+    slicerDisable: '슬라이서 접근 중지',
   },
 
   common: {

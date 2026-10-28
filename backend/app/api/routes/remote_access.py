@@ -76,6 +76,30 @@ async def share(
     return {**await remote_access.status(), "auth_enabled": True}
 
 
+@router.post("/slicer")
+async def slicer(
+    enabled: bool = Query(...),
+    _=RequirePermissionIfAuthEnabled(Permission.SETTINGS_UPDATE),
+    db: AsyncSession = Depends(get_db),
+):
+    """Ports des virtuellen Druckers im Tailnet freigeben oder wieder schließen (für Bambu Studio von unterwegs)."""
+    await _require_auth(db)
+    _guard_supported()
+    try:
+        current = await remote_access.status()
+        if current["state"] != "connected":
+            raise remote_access.RemoteAccessError("Noch nicht bei Tailscale angemeldet.")
+        if enabled:
+            await remote_access.share_slicer()
+        else:
+            await remote_access.unshare_slicer()
+    except remote_access.RemoteAccessError as exc:
+        audit_log.record("remote_access_slicer", False, str(exc))
+        raise HTTPException(400, str(exc)) from exc
+    audit_log.record("remote_access_slicer", True, "on" if enabled else "off")
+    return {**await remote_access.status(), "auth_enabled": True}
+
+
 @router.post("/disable")
 async def disable(
     _=RequirePermissionIfAuthEnabled(Permission.SETTINGS_UPDATE),

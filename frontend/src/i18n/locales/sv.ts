@@ -151,6 +151,11 @@ export default {
     deviceHint: 'Installera Tailscale på din dator eller telefon med samma konto och öppna sedan den här adressen.',
     qrTitle: 'QR-kod för PrintLab-adressen',
     qrHint: 'Skanna med telefonen för att öppna PrintLab. Tailscale måste vara inloggat med samma konto på telefonen. Lägg sedan till sidan som bokmärke eller på startskärmen.',
+    slicerTitle: 'Slicer var som helst (experimentellt)',
+    slicerHint: 'Öppnar den virtuella skrivarens portar i ditt privata Tailscale-nätverk så att Bambu Studio eller OrcaSlicer kan skicka var som helst. Den virtuella skrivaren måste vara aktiverad i inställningarna. Ännu inte testat på riktig hårdvara.',
+    slicerOn: 'Delad. I Bambu Studio: lägg till en skrivare via IP, ange IP {{ip}} och den virtuella skrivarens åttateckenskod. Datorn behöver Tailscale med samma konto. Ännu inte testat på riktig hårdvara.',
+    slicerEnable: 'Dela slicer-åtkomst',
+    slicerDisable: 'Avsluta slicer-åtkomst',
   },
 
   common: {

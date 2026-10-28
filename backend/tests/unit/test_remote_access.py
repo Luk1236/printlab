@@ -286,3 +286,66 @@ class TestCommands:
         monkeypatch.setattr(ra, "start_daemon", fake_start)
         await ra.autostart()
         assert called == []
+
+
+class TestSlicerAccess:
+    @pytest.mark.asyncio
+    async def test_all_virtual_printer_ports_are_shared_inside_the_tailnet_only(self, monkeypatch):
+        seen = []
+
+        async def fake_ts(*args, timeout=30.0):
+            seen.append(args)
+            return 0, ""
+
+        monkeypatch.setattr(ra, "_ts", fake_ts)
+        await ra.share_slicer()
+        assert len(seen) == len(ra.SLICER_PORTS)
+        assert ("serve", "--bg", "--tcp=990", "tcp://localhost:990") in seen
+        assert ("serve", "--bg", "--tcp=8883", "tcp://localhost:8883") in seen
+        assert all("funnel" not in arg for call in seen for arg in call)  # nie ins öffentliche Internet
+        assert json.loads(ra.CONFIG_PATH.read_text())["slicer"] is True
+
+    def test_ports_cover_discovery_upload_control_and_passive_data(self):
+        assert {3000, 3002, 990, 8883} <= set(ra.SLICER_PORTS)
+        assert {50000, 50029} <= set(ra.SLICER_PORTS)
+        assert 8000 not in ra.SLICER_PORTS
+
+    @pytest.mark.asyncio
+    async def test_a_failing_port_is_reported_with_its_number(self, monkeypatch):
+        async def fake_ts(*args, timeout=30.0):
+            return (2, "kaputt") if "--tcp=990" in args else (0, "")
+
+        monkeypatch.setattr(ra, "_ts", fake_ts)
+        with pytest.raises(ra.RemoteAccessError, match="Port 990"):
+            await ra.share_slicer()
+
+    @pytest.mark.asyncio
+    async def test_unshare_turns_the_ports_off_and_keeps_the_web_share(self, monkeypatch):
+        seen = []
+
+        async def fake_ts(*args, timeout=30.0):
+            seen.append(args)
+            return 0, ""
+
+        monkeypatch.setattr(ra, "_ts", fake_ts)
+        ra._write_config({"enabled": True, "port": 8000, "slicer": True})
+        await ra.unshare_slicer()
+        assert ("serve", "--tcp=990", "off") in seen
+        assert all("--tcp=8000" not in call for call in seen)
+        config = json.loads(ra.CONFIG_PATH.read_text())
+        assert config["slicer"] is False and config["enabled"] is True
+
+    @pytest.mark.asyncio
+    async def test_disable_also_clears_the_slicer_flag(self, monkeypatch):
+        async def fake_ts(*args, timeout=30.0):
+            return 0, ""
+
+        monkeypatch.setattr(ra, "_ts", fake_ts)
+        ra._write_config({"enabled": True, "slicer": True})
+        await ra.disable()
+        assert json.loads(ra.CONFIG_PATH.read_text())["slicer"] is False
+
+    @pytest.mark.asyncio
+    async def test_status_reports_the_slicer_flag(self):
+        ra._write_config({"slicer": True})
+        assert (await ra.status())["slicer"] is True

@@ -117,6 +117,12 @@ ohne Docker-Änderungen und öffnet nichts im öffentlichen Internet.
    Adresse (`http://100.x.y.z:8000`).
 4. Auf PC oder Handy Tailscale mit **demselben Konto** installieren und die Adresse öffnen.
 
+**Slicer von unterwegs (Versuch):** In derselben Karte gibt „Slicer-Zugriff freigeben" die Ports des virtuellen Druckers
+im Tailnet frei. In Bambu Studio dann Drucker per IP hinzufügen: IP = Tailscale-Adresse des Pi (`100.x.y.z`), Zugangscode
+= der 8-stellige Code des virtuellen Druckers (Einstellungen → Virtueller Drucker, muss aktiviert sein). Der PC braucht
+Tailscale mit demselben Konto. Die Erkennung im Netz gibt es darüber nicht, nur das Hinzufügen per IP. Noch nicht an
+echter Hardware erprobt; bitte Meldungen aus Bambu Studio notieren. Beenden: „Slicer-Zugriff beenden".
+
 Beim Neustart des Pi stellt PrintLab die Verbindung selbst wieder her. „Ausschalten“ beendet Freigabe und Dienst.
 Falls schon ein systemweites Tailscale läuft, benutzt PrintLab dieses unverändert. Stand: gegen die Tailscale-Befehle
 getestet, aber noch nicht an einem echten Tailnet; beim ersten Durchlauf bitte Meldungen notieren.
