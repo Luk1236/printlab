@@ -483,6 +483,78 @@ class TestUpdatesAPI:
             f"Captured fetch call: {fetch_calls[0]['args']}"
         )
 
+    def _run_update(self, tmp_path, tag, policy, verify=None):
+        """Run _perform_update with fake git; returns the recorded git calls and the final status."""
+        import asyncio
+
+        from backend.app.api.routes import updates as updates_module
+
+        app_dir = tmp_path / "app"
+        data_dir = app_dir / "data"
+        data_dir.mkdir(parents=True)
+        (app_dir / "requirements.txt").write_text("fastapi\n")
+        calls: list[tuple] = []
+
+        async def fake_exec(*args, **kwargs):
+            calls.append(args)
+            proc = MagicMock()
+            out = f"git@github.com:{GITHUB_REPO}.git\n".encode() if "get-url" in args else b""
+            proc.communicate = AsyncMock(return_value=(out, b""))
+            proc.returncode = 0
+            return proc
+
+        signers = tmp_path / "allowed"
+        signers.write_text('x namespaces="git" ssh-ed25519 AAAA\n')
+        with (
+            patch.object(updates_module.settings, "base_dir", data_dir),
+            patch.object(updates_module.settings, "app_dir", app_dir),
+            patch.object(updates_module, "_find_executable", return_value="/usr/bin/git"),
+            patch.object(updates_module.asyncio, "create_subprocess_exec", side_effect=fake_exec),
+            patch.object(updates_module.update_signature, "policy", return_value=policy),
+            patch.object(updates_module.update_signature, "signers_file", return_value=signers),
+            patch.object(
+                updates_module.update_signature, "verify_tag", new=verify or AsyncMock(return_value=(True, ""))
+            ),
+        ):
+            asyncio.run(updates_module._perform_update(tag))
+            return calls, dict(updates_module._update_status)
+
+    def test_unsigned_release_is_refused_and_nothing_is_changed(self, tmp_path):
+        verify = AsyncMock(return_value=(False, "Der Tag v9.9.9 ist nicht gültig signiert (keine Signatur)."))
+        calls, status = self._run_update(tmp_path, "v9.9.9", {"enforced": True, "reason": None}, verify)
+        assert status["status"] == "error" and "not signed" in status["message"]
+        assert not [c for c in calls if "reset" in c], "ohne gültige Signatur darf nie zurückgesetzt werden"
+
+    def test_signed_release_is_installed_from_exactly_the_verified_tag(self, tmp_path):
+        calls, status = self._run_update(tmp_path, "v9.9.9", {"enforced": True, "reason": None})
+        resets = [c for c in calls if "reset" in c and "--hard" in c]
+        assert resets and resets[0][-1] == "refs/tags/v9.9.9"
+        assert status["status"] != "error"
+
+    def test_unusable_signers_file_blocks_the_update(self, tmp_path):
+        calls, status = self._run_update(tmp_path, "v9.9.9", {"enforced": True, "reason": "keine Schlüssel"})
+        assert status["status"] == "error" and status["error"] == "keine Schlüssel"
+        assert not [c for c in calls if "reset" in c]
+
+    def test_without_a_signers_file_updates_work_as_before(self, tmp_path):
+        calls, status = self._run_update(tmp_path, "v9.9.9", {"enforced": False, "reason": None})
+        resets = [c for c in calls if "reset" in c and "--hard" in c]
+        assert resets and resets[0][-1] == "v9.9.9"
+
+    @pytest.mark.parametrize("tag", ["--upload-pack=evil", "-x", "v1..2", "v1;rm"])
+    def test_dangerous_release_names_are_never_passed_to_git(self, tmp_path, tag):
+        calls, status = self._run_update(tmp_path, tag, {"enforced": False, "reason": None})
+        assert status["status"] == "error"
+        assert not [c for c in calls if "reset" in c]
+
+    @pytest.mark.asyncio
+    async def test_status_reports_whether_signatures_are_enforced(self, async_client: AsyncClient):
+        from backend.app.api.routes import updates as updates_module
+
+        with patch.object(updates_module.update_signature, "policy", return_value={"enforced": True, "reason": None}):
+            data = (await async_client.get("/api/v1/updates/status")).json()
+        assert data["signature_enforced"] is True
+
     @pytest.mark.asyncio
     async def test_apply_update_passes_discovered_release_to_perform_update(self, async_client: AsyncClient):
         """End-to-end glue: the route handler calls `_discover_target_release`

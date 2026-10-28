@@ -2670,6 +2670,8 @@ export default {
     viewReleaseOnGitHub: "Yayını GitHub'da görüntüle",
     updateRolledBack: 'Güncelleme otomatik olarak geri alındı: yeni sürüm kararlı şekilde başlamadı. Güncelleme öncesindeki kod ve veriler geri yüklendi.',
     updateRolledBackDismiss: 'Anladım',
+    updateSignatureOn: 'Güncellemeler yalnızca geçerli imzayla yüklenir.',
+    updateSignatureOff: 'Güncelleme imza denetimi kapalı: GitHub\'daki her sürüm kabul edilir. Kılavuz: docs/UPDATE-SIGNATUR.md.',
     turnAllPlugsOn: 'Tüm prizleri aç',
     turnAllPlugsOff: 'Tüm prizleri kapat',
     // Modal: Günlükleri temizle

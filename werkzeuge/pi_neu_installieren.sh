@@ -12,6 +12,8 @@
 # Optionen (Umgebungsvariablen):
 #   PRINTLAB_REF=v1.2.2        Tag oder Branch (Standard: bambu-monitor-port)
 #   PRINTLAB_FRESH_DATA=1      gesicherte Daten NICHT zurückspielen (leere Datenbank)
+#   PRINTLAB_UPDATE_PUBKEY="ssh-ed25519 AAAA..."   öffentlicher Signaturschlüssel: Updates werden dann nur noch von
+#                              Tags angenommen, die damit signiert sind (siehe docs/UPDATE-SIGNATUR.md)
 #   PRINTLAB_STORE_TOKEN=1     (nur mit GH_TOKEN) Token in ~/.config/printlab.env (nur für dich lesbar) speichern,
 #                              damit die Update-Funktion in PrintLab ein privates Repo erreicht
 set -euo pipefail
@@ -61,6 +63,18 @@ mkdir -p "$DIR/data" "$DIR/logs"
 if [ -z "${PRINTLAB_FRESH_DATA:-}" ] && [ -d "$BACKUP/printlab-data" ]; then
   step "   Daten zurückspielen"
   cp -a "$BACKUP/printlab-data/." "$DIR/data/"
+fi
+
+if [ -n "${PRINTLAB_UPDATE_PUBKEY:-}" ]; then
+  step "   Update-Signaturschlüssel hinterlegen"
+  if printf '%s' "$PRINTLAB_UPDATE_PUBKEY" | grep -Eq '^(ssh-ed25519|ssh-rsa|ecdsa-sha2-nistp[0-9]+) [A-Za-z0-9+/=]+( [^"]*)?$'; then
+    printf 'printlab namespaces="git" %s
+' "$PRINTLAB_UPDATE_PUBKEY" > "$DIR/data/update_allowed_signers"
+    command -v ssh-keygen >/dev/null || echo "Hinweis: ssh-keygen fehlt (sudo apt install openssh-client), sonst lehnt PrintLab alle Updates ab."
+    echo "Updates werden ab jetzt nur noch mit gültiger Signatur eingespielt."
+  else
+    echo "PRINTLAB_UPDATE_PUBKEY sieht nicht wie ein öffentlicher SSH-Schlüssel aus, nicht hinterlegt." >&2
+  fi
 fi
 
 step "5/7 Python-Umgebung und Pakete (dauert einige Minuten)"

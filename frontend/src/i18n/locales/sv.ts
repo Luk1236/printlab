@@ -2686,6 +2686,8 @@ export default {
     viewReleaseOnGitHub: 'Visa release på GitHub',
     updateRolledBack: 'Uppdateringen återställdes automatiskt: den nya versionen startade inte stabilt. Koden och data från före uppdateringen har återställts.',
     updateRolledBackDismiss: 'Uppfattat',
+    updateSignatureOn: 'Uppdateringar installeras bara med giltig signatur.',
+    updateSignatureOff: 'Signaturkontrollen av uppdateringar är avstängd: alla versioner från GitHub accepteras. Guide: docs/UPDATE-SIGNATUR.md.',
     turnAllPlugsOn: 'Sätt på alla kontakter',
     turnAllPlugsOff: 'Stäng av alla kontakter',
     // Modal: Clear logs

@@ -2667,6 +2667,8 @@ export default {
     viewReleaseOnGitHub: 'Release auf GitHub anzeigen',
     updateRolledBack: 'Das Update wurde automatisch zurückgenommen: die neue Version startete nicht stabil. Stand und Daten von vor dem Update sind wiederhergestellt.',
     updateRolledBackDismiss: 'Verstanden',
+    updateSignatureOn: 'Updates werden nur mit gültiger Signatur eingespielt.',
+    updateSignatureOff: 'Die Signaturprüfung der Updates ist aus: jedes Release von GitHub wird angenommen. Anleitung: docs/UPDATE-SIGNATUR.md.',
     turnAllPlugsOn: 'Alle Stecker einschalten',
     turnAllPlugsOff: 'Alle Stecker ausschalten',
     // Modal: Clear logs

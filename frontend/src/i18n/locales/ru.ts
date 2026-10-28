@@ -2544,6 +2544,8 @@ export default {
     viewReleaseOnGitHub: "Открыть выпуск на GitHub",
     updateRolledBack: 'Обновление автоматически откатено: новая версия не запустилась стабильно. Код и данные до обновления восстановлены.',
     updateRolledBackDismiss: 'Понятно',
+    updateSignatureOn: 'Обновления устанавливаются только с действительной подписью.',
+    updateSignatureOff: 'Проверка подписи обновлений выключена: принимается любой релиз с GitHub. Инструкция: docs/UPDATE-SIGNATUR.md.',
     turnAllPlugsOn: "Включить все розетки",
     turnAllPlugsOff: "Выключить все розетки",
     clearNotificationLogs: "Очистить журнал уведомлений",

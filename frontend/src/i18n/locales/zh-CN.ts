@@ -2667,6 +2667,8 @@ export default {
     viewReleaseOnGitHub: '在 GitHub 上查看发布',
     updateRolledBack: '更新已自动回滚：新版本未能稳定启动。更新前的代码和数据已恢复。',
     updateRolledBackDismiss: '知道了',
+    updateSignatureOn: '仅安装带有有效签名的更新。',
+    updateSignatureOff: '更新签名校验已关闭：将接受来自 GitHub 的任何发行版。说明：docs/UPDATE-SIGNATUR.md。',
     turnAllPlugsOn: '开启所有插座',
     turnAllPlugsOff: '关闭所有插座',
     // Modal: Clear logs

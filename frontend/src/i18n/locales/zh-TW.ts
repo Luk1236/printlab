@@ -2667,6 +2667,8 @@ export default {
     viewReleaseOnGitHub: '在 GitHub 上檢視發布',
     updateRolledBack: '更新已自動還原：新版本未能穩定啟動。更新前的程式碼與資料已恢復。',
     updateRolledBackDismiss: '知道了',
+    updateSignatureOn: '僅安裝具有有效簽章的更新。',
+    updateSignatureOff: '更新簽章檢查已關閉：將接受來自 GitHub 的任何版本。說明：docs/UPDATE-SIGNATUR.md。',
     turnAllPlugsOn: '開啟所有插座',
     turnAllPlugsOff: '關閉所有插座',
     // Modal: Clear logs

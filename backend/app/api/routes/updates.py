@@ -21,7 +21,7 @@ from backend.app.core.database import get_db
 from backend.app.core.permissions import Permission
 from backend.app.models.settings import Settings
 from backend.app.models.user import User
-from backend.app.services import update_guard
+from backend.app.services import update_guard, update_signature
 
 logger = logging.getLogger(__name__)
 
@@ -859,6 +859,34 @@ async def _perform_update(target_ref: str):
             }
             return
 
+        # Signaturprüfung: nur ein Tag, der mit einem auf dem Pi hinterlegten Schlüssel signiert ist, wird eingespielt.
+        if not update_signature.is_safe_ref_name(target_ref):
+            _update_status = {
+                "status": "error",
+                "progress": 0,
+                "message": "Update refused: invalid release name",
+                "error": "Der Release-Name ist ungültig.",
+            }
+            return
+        signature = update_signature.policy(settings.base_dir)
+        if signature["enforced"]:
+            signers = update_signature.signers_file(settings.base_dir)
+            ok, reason = (
+                (False, signature["reason"])
+                if signature["reason"] or signers is None
+                else await update_signature.verify_tag(git_path, app_dir, target_ref, signers)
+            )
+            if not ok:
+                logger.error("Update abgelehnt, Signatur nicht gültig: %s", reason)
+                _update_status = {
+                    "status": "error",
+                    "progress": 0,
+                    "message": "Update refused: the release is not signed by a trusted key",
+                    "error": reason,
+                }
+                return
+            target_ref = f"refs/tags/{target_ref}"  # genau der geprüfte Tag, kein gleichnamiger Branch
+
         # Vor dem Wechsel: Git-Stand merken und Daten sichern. Scheitert das, wird nichts verändert.
         try:
             marker = await asyncio.to_thread(
@@ -1091,7 +1119,11 @@ async def get_update_status(
     _: User | None = RequirePermissionIfAuthEnabled(Permission.SYSTEM_READ),
 ):
     """Get current update status (plus a notice if the last update was rolled back automatically)."""
-    return {**_update_status, "rolled_back": update_guard.read_rollback_notice(settings.base_dir)}
+    return {
+        **_update_status,
+        "rolled_back": update_guard.read_rollback_notice(settings.base_dir),
+        "signature_enforced": update_signature.policy(settings.base_dir)["enforced"],
+    }
 
 
 @router.post("/rollback-notice/dismiss")

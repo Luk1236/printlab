@@ -2687,6 +2687,8 @@ export default {
     viewReleaseOnGitHub: 'View release on GitHub',
     updateRolledBack: 'The update was rolled back automatically: the new version did not start reliably. The code and data from before the update have been restored.',
     updateRolledBackDismiss: 'Got it',
+    updateSignatureOn: 'Updates are only installed with a valid signature.',
+    updateSignatureOff: 'Update signature checking is off: any release from GitHub is accepted. Guide: docs/UPDATE-SIGNATUR.md.',
     turnAllPlugsOn: 'Turn all plugs on',
     turnAllPlugsOff: 'Turn all plugs off',
     // Modal: Clear logs

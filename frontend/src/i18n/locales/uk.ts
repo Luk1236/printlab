@@ -2685,6 +2685,8 @@ export default {
     viewReleaseOnGitHub: "Переглянути випуск на GitHub",
     updateRolledBack: 'Оновлення автоматично скасовано: нова версія не запустилася стабільно. Код і дані до оновлення відновлено.',
     updateRolledBackDismiss: 'Зрозуміло',
+    updateSignatureOn: 'Оновлення встановлюються лише з дійсним підписом.',
+    updateSignatureOff: 'Перевірку підпису оновлень вимкнено: приймається будь-який реліз з GitHub. Інструкція: docs/UPDATE-SIGNATUR.md.',
     turnAllPlugsOn: "Увімкнути усі розетки",
     turnAllPlugsOff: "Вимкнути усі розетки",
     // Modal: Clear logs

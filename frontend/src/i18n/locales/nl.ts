@@ -2687,6 +2687,8 @@ export default {
     viewReleaseOnGitHub: 'Release bekijken op GitHub',
     updateRolledBack: 'De update is automatisch teruggedraaid: de nieuwe versie startte niet stabiel. De code en gegevens van vóór de update zijn hersteld.',
     updateRolledBackDismiss: 'Begrepen',
+    updateSignatureOn: 'Updates worden alleen met een geldige handtekening geïnstalleerd.',
+    updateSignatureOff: 'Handtekeningcontrole van updates staat uit: elke release van GitHub wordt geaccepteerd. Handleiding: docs/UPDATE-SIGNATUR.md.',
     turnAllPlugsOn: 'Alle stekkers inschakelen',
     turnAllPlugsOff: 'Alle stekkers uitschakelen',
     // Modal: Clear logs

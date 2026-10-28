@@ -2969,6 +2969,14 @@ export function SettingsPage() {
                       </div>
                     </div>
 
+                    {updateStatus?.signature_enforced !== undefined && (
+                      <p
+                        className={`mt-3 text-xs ${updateStatus.signature_enforced ? 'text-bambu-green' : 'text-bambu-gray'}`}
+                        data-testid="update-signature-hint"
+                      >
+                        {updateStatus.signature_enforced ? t('settings.updateSignatureOn') : t('settings.updateSignatureOff')}
+                      </p>
+                    )}
                     {updateStatus?.rolled_back && (
                       <div className="mt-3 p-2 bg-yellow-500/20 rounded text-sm text-yellow-700 dark:text-yellow-400 flex items-start justify-between gap-3">
                         <span>

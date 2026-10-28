@@ -526,6 +526,32 @@ describe('SettingsPage', () => {
       });
     };
 
+    const nativeCheck = {
+      update_available: true,
+      current_version: '1.6.1',
+      latest_version: '1.6.2',
+      release_name: '1.6.2',
+      release_notes: '',
+      release_url: 'https://example.invalid/r',
+      published_at: '2099-01-01T00:00:00Z',
+      is_docker: false,
+      is_ha_addon: false,
+      update_method: 'git',
+    };
+
+    it.each([
+      [true, /only installed with a valid signature/i],
+      [false, /signature checking is off/i],
+    ])('tells whether update signatures are enforced (%s)', async (enforced, text) => {
+      server.use(
+        http.get('/api/v1/updates/status', () =>
+          HttpResponse.json({ status: 'idle', progress: 0, message: '', error: null, signature_enforced: enforced }),
+        ),
+      );
+      await renderWithUpdateCheck(nativeCheck);
+      expect(await screen.findByText(text)).toBeInTheDocument();
+    });
+
     it('shows the HA Supervisor message when running as an HA addon', async () => {
       await renderWithUpdateCheck({
         update_available: true,

@@ -2540,6 +2540,8 @@ export default {
     viewReleaseOnGitHub: 'GitHub에서 릴리스 보기',
     updateRolledBack: '새 버전이 안정적으로 시작되지 않아 업데이트가 자동으로 되돌려졌습니다. 업데이트 이전의 코드와 데이터가 복원되었습니다.',
     updateRolledBackDismiss: '확인',
+    updateSignatureOn: '유효한 서명이 있는 업데이트만 설치됩니다.',
+    updateSignatureOff: '업데이트 서명 확인이 꺼져 있습니다. GitHub의 모든 릴리스가 허용됩니다. 안내: docs/UPDATE-SIGNATUR.md.',
     turnAllPlugsOn: '모든 플러그 켜기',
     turnAllPlugsOff: '모든 플러그 끄기',
     clearNotificationLogs: '알림 로그 지우기',

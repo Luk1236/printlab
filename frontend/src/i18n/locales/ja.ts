@@ -2666,6 +2666,8 @@ export default {
     viewReleaseOnGitHub: 'GitHubでリリースを表示',
     updateRolledBack: '新しいバージョンが安定して起動しなかったため、アップデートを自動的に元に戻しました。更新前のコードとデータを復元しました。',
     updateRolledBackDismiss: '了解',
+    updateSignatureOn: 'アップデートは有効な署名がある場合のみインストールされます。',
+    updateSignatureOff: 'アップデートの署名確認はオフです。GitHubのどのリリースでも受け入れられます。手順: docs/UPDATE-SIGNATUR.md。',
     turnAllPlugsOn: 'すべてのプラグをオン',
     turnAllPlugsOff: 'すべてのプラグをオフ',
     // Modal: Clear logs

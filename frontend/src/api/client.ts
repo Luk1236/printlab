@@ -4049,6 +4049,7 @@ export interface UpdateStatus {
   progress: number;
   message: string;
   error: string | null;
+  signature_enforced?: boolean;
   rolled_back?: { from_ref: string | null; to_version: string | null; reason: string; at: string } | null;
 }
 

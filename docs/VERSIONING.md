@@ -19,8 +19,8 @@
 
 ```powershell
 # 1. Commits fertig und getestet (Build, relevante Tests); PRINTLAB_VERSION in config.py erhöhen
-# 2. Tag setzen (annotated)
-git tag v1.1.0 -a -m "PrintLab v1.1.0 — Kurzbeschreibung"
+# 2. Tag setzen: signiert (-s), sonst lehnt ein Pi mit Signaturprüfung das Update ab (docs/UPDATE-SIGNATUR.md)
+git tag v1.1.0 -s -m "PrintLab v1.1.0 — Kurzbeschreibung"
 # 3. Branch und Tag hochladen
 git push origin bambu-monitor-port v1.1.0
 # 4. Release anlegen (Notes im Editor oder --notes)

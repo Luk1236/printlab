@@ -3,6 +3,18 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.6.3 (28.10.2026) — Signierte Updates
+
+- **Updates nur von signierten Tags** (optional, aber empfohlen): Liegt auf dem Pi die Datei `update_allowed_signers` im
+  Datenordner (öffentlicher SSH-Schlüssel), spielt PrintLab nur Tags ein, die mit diesem Schlüssel signiert sind, und
+  setzt genau auf den geprüften Tag zurück. Die Schlüssel liegen bewusst auf dem Pi, nicht im Repo und nicht bei GitHub:
+  wer das GitHub-Konto übernimmt, kann dort eigene Schlüssel eintragen, aber nicht diese Datei ändern. Ohne Datei bleibt
+  alles wie bisher; die Oberfläche zeigt, ob die Prüfung aktiv ist. Anleitung: `docs/UPDATE-SIGNATUR.md`.
+- Release-Namen werden vor dem Update geprüft (nie als Option an git); der Installer nimmt den Schlüssel mit
+  `PRINTLAB_UPDATE_PUBKEY` entgegen.
+- Aus der Gesamtanalyse: Slicer-Dateiname wird auf den reinen Namen reduziert, Rückbau akzeptiert nur Git-Hashes,
+  Überwachung öffnet nur http(s), CI-Korrekturen (siehe `docs/ANALYSE-2026-10-28.md`).
+
 ## v1.6.2 (28.10.2026) — Slicer von unterwegs (Versuch)
 
 - **Slicer-Zugriff über Tailscale** (Wartung → Fernzugriff, nur nach der Freigabe der Weboberfläche): gibt die Ports des

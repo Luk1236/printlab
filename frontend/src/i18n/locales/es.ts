@@ -2670,6 +2670,8 @@ export default {
     viewReleaseOnGitHub: 'Ver la versión en GitHub',
     updateRolledBack: 'La actualización se revirtió automáticamente: la nueva versión no arrancó de forma estable. Se restauraron el código y los datos anteriores.',
     updateRolledBackDismiss: 'Entendido',
+    updateSignatureOn: 'Las actualizaciones solo se instalan con una firma válida.',
+    updateSignatureOff: 'La comprobación de firma de actualizaciones está desactivada: se acepta cualquier versión de GitHub. Guía: docs/UPDATE-SIGNATUR.md.',
     turnAllPlugsOn: 'Encender todos los enchufes',
     turnAllPlugsOff: 'Apagar todos los enchufes',
     // Modal: Clear logs

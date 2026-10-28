@@ -2622,6 +2622,8 @@ export default {
     viewReleaseOnGitHub: 'Vedi release su GitHub',
     updateRolledBack: 'L\'aggiornamento è stato annullato automaticamente: la nuova versione non si avviava in modo stabile. Codice e dati precedenti sono stati ripristinati.',
     updateRolledBackDismiss: 'Capito',
+    updateSignatureOn: 'Gli aggiornamenti vengono installati solo con una firma valida.',
+    updateSignatureOff: 'Il controllo della firma degli aggiornamenti è disattivato: qualsiasi versione da GitHub viene accettata. Guida: docs/UPDATE-SIGNATUR.md.',
     turnAllPlugsOn: 'Accendi tutte le prese',
     turnAllPlugsOff: 'Spegni tutte le prese',
     // Modal: Clear logs
