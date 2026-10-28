@@ -41,6 +41,22 @@ _GITHUB_RATE_LIMIT_FALLBACK_SECONDS = 3600
 _github_rate_limit_until: float = 0.0
 
 
+def _github_headers() -> dict[str, str]:
+    """Header für GitHub-API-Aufrufe, mit Token falls konfiguriert.
+
+    Fork: das eigene Repo ist privat — ohne Token antwortet GitHub mit 404
+    („keine Releases“), auch wenn Releases existieren. ``PRINTLAB_GITHUB_TOKEN``
+    setzt die Authentifizierung (die ältere ``BAMBUDDY_GITHUB_TOKEN`` gilt
+    weiter); authentifizierte Aufrufe haben darüber hinaus ein höheres Limit
+    (5000 statt 60 je Stunde).
+    """
+    headers = {"Accept": "application/vnd.github.v3+json"}
+    token = (os.environ.get("PRINTLAB_GITHUB_TOKEN") or "").strip()
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    return headers
+
+
 def _seconds_until_github_unblocked() -> float:
     """Return seconds remaining until GitHub backoff lifts, or 0 if unblocked."""
     remaining = _github_rate_limit_until - time.time()
@@ -497,7 +513,7 @@ async def check_for_updates(
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 f"https://api.github.com/repos/{GITHUB_REPO}/releases?per_page=20",
-                headers={"Accept": "application/vnd.github.v3+json"},
+                headers=_github_headers(),
                 timeout=10.0,
             )
 
@@ -654,7 +670,7 @@ async def _discover_target_release(db: AsyncSession) -> str | None:
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 f"https://api.github.com/repos/{GITHUB_REPO}/releases?per_page=20",
-                headers={"Accept": "application/vnd.github.v3+json"},
+                headers=_github_headers(),
                 timeout=10.0,
             )
             if _is_github_rate_limit_response(response):

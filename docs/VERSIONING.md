@@ -4,7 +4,7 @@
 
 | Version | Quelle | Bedeutung |
 |---|---|---|
-| `1.3.0` | `backend/app/core/config.py` → `PRINTLAB_VERSION` (= `APP_VERSION`) | Einzige Versionsquelle von PrintLab. Wird in der Oberfläche angezeigt und für die Update-Prüfung gegen `Luk1236/printlab` benutzt; bei jedem Release zusammen mit dem Git-Tag erhöhen. Der Basisstand der Herkunft (Bambuddy 1.2.5.7) steht in `NOTICE`. |
+| `1.3.1` | `backend/app/core/config.py` → `PRINTLAB_VERSION` (= `APP_VERSION`) | Einzige Versionsquelle von PrintLab. Wird in der Oberfläche angezeigt und für die Update-Prüfung gegen `Luk1236/printlab` benutzt; bei jedem Release zusammen mit dem Git-Tag erhöhen. Der Basisstand der Herkunft (Bambuddy 1.2.5.7) steht in `NOTICE`. |
 | Fork-Version `1.0.0` | Git-Tags (`v1.0.0`) + Git-Hub-Releases | Eigene Version des Forks; wächst unabhängig vom Upstream. |
 
 ## Schema
@@ -40,6 +40,7 @@ Vorlage für Release-Notes: Release v1.0.0 auf GitHub.
 ## Status
 
 - Repository: <https://github.com/Luk1236/printlab> (privat, Branch `bambu-monitor-port` = Standard)
-- Aktuell: **v1.3.0** (2026-10-28) — Fehler-/Verbesserungsbau: Backup-Skript (`printlab.db`), Tür-Status-Endpunkt, Slicer-Token im Client, Audit-Log (Anfügen + `data/`), Startwarnung ohne Anmeldung, CI-Sicherheits-Schwellen
+- Aktuell: **v1.3.1** (2026-10-28) — GitHub-Token für die Update-Prüfung (`PRINTLAB_GITHUB_TOKEN`, `starte_printlab.bat`), Windows-Testbehebung
+- Davor: v1.3.0 (2026-10-28) — Fehler-/Härtungs-Bau: Backup-Skript (`printlab.db`), Tür-Status-Endpunkt, Slicer-Token im Client, Audit-Log (Anfügen + `data/`), Startwarnung ohne Anmeldung, CI-Sicherheits-Schwellen
 - Davor: v1.2.2, v1.2.1, v1.2.0, v1.1.0, v1.0.0 (2026-10-27) — Bambu-Monitor-Port, PrintLab-Rebrand, Prusa-Design
 - Nächste geplante Version: v1.4.0 mit `main.py`-Refactor (Event-Callbacks in Services), eigenem Tab „Hardware & Optik“, kalibrierbaren Kamera-Schwellen je Drucker

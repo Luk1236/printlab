@@ -79,3 +79,20 @@ festlegen; in den Einstellungen kann die Anzeige jederzeit abgeschaltet werden.
   installiert sein.
 - **Etwas anderes:** auf der Seite „System“ die Gesundheitsprüfung öffnen; sie wertet das Protokoll aus und nennt
   bekannte Ursachen.
+
+## Update-Pruefung zeigt keine neue Version
+
+Bei einem **privaten Repo** antwortet GitHub der Update-Pruefung ohne Token mit
+„keine Releases“ (404), obwohl Releases existieren. Loesung: der Umgebungsvariable
+`PRINTLAB_GITHUB_TOKEN` ein GitHub-Zugangstoken mitgeben, bevor PrintLab startet.
+Mit `starte_printlab.bat` geschieht das automatisch aus der `gh`-Anmeldung; manuell:
+
+```powershell
+$env:PRINTLAB_GITHUB_TOKEN = (gh auth token)
+.venv\Scripts\python.exe -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --loop asyncio
+```
+
+Der Token wird nur an `api.github.com` geschickt und nicht protokolliert. Ein
+authentifizierter Aufruf hat zudem ein hoeheres Limit (5000 statt 60 Anfragen je Stunde).
+Nach einem PrintLab-Update muss die Instanz ohnehin neu gestartet werden, damit die neue
+Versionsnummer angezeigt wird.

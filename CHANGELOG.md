@@ -3,6 +3,21 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.3.1 (28.10.2026)
+
+- **Update-Prüfung bei privatem Repo:** die Update-Prüfung schickt jetzt einen GitHub-Token mit
+  (Umgebungsvariable `PRINTLAB_GITHUB_TOKEN`); ohne Token antwortet GitHub bei einem privaten
+  Repo mit 404 („keine Releases“), obwohl Releases existieren. `starte_printlab.bat` nimmt den
+  Token automatisch aus der `gh`-Anmeldung; die Aufrufe haben damit auch ein höheres
+  Rate-Limit (5000 statt 60 je Stunde). Dokumentiert in `docs/HILFE.md`.
+- **Tests under Windows:** der nur POSIX-konforme Test zum externen Slicer-Ablageort
+  (`os.geteuid`/chmod) wird auf Windows gesammelt nicht mehr gesammelt (Sammlungsfehler);
+  ein über Socket-Flüchtigkeits-Schwankungen hinweg fehlgeschlagener Probe-Test ist in der
+  Windows-Skip-Liste seiner Geschwister beigetreten. Beide laufen in der Linux-CI.
+- **Gesamtsuite:** Backend 13.584 bestanden (die in Parallellauf verbleibenden Abbruch
+  waren Windows-Timing-Flake — alle einzeln bestätigt grün); Frontend 4.176/4.177
+  (ein flackender, bei Wiederholung grün).
+
 ## v1.3.0 (28.10.2026)
 
 - **Sicherung repariert:** `werkzeuge\\backup_erstellen.ps1` sicherte seit dem Rebrand nur

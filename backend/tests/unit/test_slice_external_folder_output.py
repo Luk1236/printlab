@@ -14,6 +14,7 @@ is not looking with no signal is the failure this issue was made of.
 """
 
 import os
+import sys
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
@@ -99,7 +100,9 @@ class TestResolveSliceDestination:
         assert is_external is False
         assert fallback == "external_no_path"
 
-    @pytest.mark.skipif(os.geteuid() == 0, reason="root ignores the write bit")
+    # POSIX-only: chmod-Semantik und geteuid() existieren unter Windows nicht/besonderheiten —
+    # daher dort kurzhalsig übersprungen (auch in windows_skips.txt), auf Linux/root wie bisher.
+    @pytest.mark.skipif(sys.platform != "linux" or os.geteuid() == 0, reason="needs POSIX chmod semantics")
     def test_unwritable_mount_falls_back(self, tmp_path):
         mount = tmp_path / "share"
         mount.mkdir()
