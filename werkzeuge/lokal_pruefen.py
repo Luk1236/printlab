@@ -111,7 +111,7 @@ def frontend(quick: bool, audit: bool) -> None:
     if not (FRONTEND / "node_modules").is_dir():
         record("Frontend", SKIP, "node_modules fehlt (npm ci im Ordner frontend)")
         return
-    code, out = run(npx("tsc", "--noEmit"), FRONTEND)
+    code, out = run([shutil.which("npm") or "npm", "run", "typecheck"], FRONTEND)  # wie in der CI (tsc -b)
     record("Frontend: TypeScript", OK if code == 0 else FAIL, "" if code == 0 else tail(out))
     code, out = run(["node", "scripts/check-i18n-parity.mjs"], FRONTEND)
     record("Frontend: Übersetzungen (15 Sprachen)", OK if code == 0 else FAIL, "" if code == 0 else tail(out))

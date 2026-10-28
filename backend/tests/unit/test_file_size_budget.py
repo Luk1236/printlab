@@ -74,6 +74,8 @@ def test_limits_point_at_existing_files_and_are_not_too_generous():
         pytest.skip("Quellordner fehlt in dieser Umgebung")
     stale = []
     for key, limit in LIMITS.items():
+        if not (ROOT / key.split("/")[0]).is_dir():
+            continue  # dieser Teil des Projekts fehlt in dieser Umgebung (zum Beispiel frontend/ im Docker-Image)
         path = ROOT / key
         if not path.is_file():
             stale.append(f"{key}: Datei gibt es nicht mehr")

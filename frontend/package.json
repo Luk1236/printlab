@@ -54,7 +54,7 @@
     "react-markdown": "^9.1.0",
     "react-router-dom": "7.18.2",
     "react-simple-keyboard": "^3.8.164",
-    "recharts": "^3.5.1",
+    "recharts": "~3.7.0",
     "three": "^0.181.2",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },

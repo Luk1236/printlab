@@ -142,7 +142,9 @@ def backup_data(data_dir: Path, backup_dir: Path) -> list[str]:
     _restrict(backup_dir.parent, 0o700)
     _restrict(backup_dir, 0o700)
     for name in saved:
-        _restrict(backup_dir / name, 0o600)
+        _restrict(
+            backup_dir.joinpath(name), 0o600
+        )  # SEC-PATH-OK: name stammt aus der eigenen Liste der gesicherten Dateien
     return saved
 
 
