@@ -16,6 +16,8 @@ class TestUpdatesAPI:
         with (
             patch("backend.app.services.update_guard.prepare", return_value={"backup_dir": "x"}),
             patch("backend.app.services.update_guard.ensure_systemd_guard", return_value=False),
+            # Der Ausweg über git-Tags soll in diesen Tests nie das echte Netz erreichen (eigene Tests unten).
+            patch("backend.app.api.routes.updates._git_tag_releases", return_value=[]),
         ):
             yield
 

@@ -9,6 +9,7 @@ import shutil
 import signal
 import sys
 import time
+from functools import cmp_to_key
 
 import httpx
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
@@ -496,6 +497,134 @@ async def get_version():
     }
 
 
+async def _git_tag_releases() -> list[dict]:
+    """Veröffentlichte Versionen über ``git ls-remote --tags`` lesen, neueste zuerst.
+
+    Ausweg, wenn die GitHub-Schnittstelle gesperrt ist (ohne Anmeldung 60 Abfragen pro Stunde und IP): Git-Abrufe zählen
+    nicht gegen dieses Limit. Es fehlen Versionshinweise und Datum; Auswahl und Antwort bleiben dieselben. Leere Liste,
+    wenn git fehlt oder das Repository nicht erreichbar ist.
+    """
+    git_path = _find_executable("git")
+    if not git_path:
+        return []
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            git_path,
+            "ls-remote",
+            "--tags",
+            "--refs",
+            f"https://github.com/{GITHUB_REPO}.git",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL,
+            env=_git_auth_env() or {**os.environ, "GIT_TERMINAL_PROMPT": "0"},
+        )
+        out, _ = await asyncio.wait_for(proc.communicate(), timeout=30)
+    except (OSError, TimeoutError):
+        return []
+    if proc.returncode != 0:
+        return []
+    tags: list[str] = []
+    for line in out.decode("utf-8", "replace").splitlines():
+        ref = line.split("\t", 1)[-1].strip()
+        if ref.startswith("refs/tags/v") and ref[len("refs/tags/v") :][:1].isdigit():
+            tags.append(ref[len("refs/tags/") :])
+    tags.sort(
+        key=cmp_to_key(lambda x, y: 0 if x == y else (-1 if is_newer_version(x.lstrip("v"), y.lstrip("v")) else 1))
+    )
+    return [
+        {
+            "tag_name": tag,
+            "name": tag,
+            "body": "",
+            "html_url": f"https://github.com/{GITHUB_REPO}/releases/tag/{tag}",
+            "published_at": "",
+        }
+        for tag in tags
+    ]
+
+
+def _build_update_info(releases: list[dict], include_beta: bool) -> dict:
+    """Passendes Release aus der Liste wählen (neuestes zuerst) und die Antwort der Update-Prüfung bauen."""
+    global _update_status
+
+    # Find the appropriate release based on beta setting
+    release_data = None
+    for release in releases:
+        tag = release.get("tag_name", "")
+        if include_beta:
+            # Accept any release (first = newest)
+            release_data = release
+            break
+        else:
+            # Skip prereleases (based on version parsing, not GitHub flag)
+            parsed = parse_version(tag)
+            if parsed[4] == 0:  # is_prerelease == 0
+                release_data = release
+                break
+
+    if not release_data:
+        _update_status = {
+            "status": "idle",
+            "progress": 100,
+            "message": "No releases found",
+            "error": None,
+        }
+        return {
+            "update_available": False,
+            "current_version": PRINTLAB_VERSION,
+            "latest_version": None,
+            "message": "No releases found",
+        }
+
+    latest_version = release_data.get("tag_name", "").lstrip("v")
+    release_name = release_data.get("name", latest_version)
+    release_notes = release_data.get("body", "")
+    release_url = release_data.get("html_url", "")
+    published_at = release_data.get("published_at", "")
+
+    update_available = is_newer_version(latest_version, PRINTLAB_VERSION)
+
+    _update_status = {
+        "status": "idle",
+        "progress": 100,
+        "message": "Update available" if update_available else "Up to date",
+        "error": None,
+    }
+
+    is_docker = _is_docker_environment()
+    is_ha_addon = _is_ha_addon()
+    is_windows_installer = _is_windows_installer_install()
+    installer_download_url: str | None = None
+    if is_ha_addon:
+        update_method = "ha_addon"
+    elif is_docker:
+        update_method = "docker"
+    elif is_windows_installer:
+        update_method = "windows_installer"
+        installer_download_url = _find_windows_installer_asset(release_data)
+    else:
+        update_method = "git"
+    return {
+        "update_available": update_available,
+        "current_version": PRINTLAB_VERSION,
+        "latest_version": latest_version,
+        "release_name": release_name,
+        "release_notes": release_notes,
+        "release_url": release_url,
+        "published_at": published_at,
+        "is_docker": is_docker,
+        "is_ha_addon": is_ha_addon,
+        "is_windows_installer": is_windows_installer,
+        "update_method": update_method,
+        "installer_download_url": installer_download_url,
+        # Prefill only — never the value the user saved. The settings
+        # response owns ``docker_compose_dir``; keeping the two apart
+        # means clearing the field falls back to the guess instead of
+        # resurrecting the cleared value from a stale update check.
+        "compose_dir_detected": _detect_compose_dir() if update_method == "docker" else None,
+    }
+
+
 @router.get("/check")
 async def check_for_updates(
     db: AsyncSession = Depends(get_db),
@@ -523,6 +652,9 @@ async def check_for_updates(
     # Short-circuit if we're still inside a GitHub rate-limit backoff window (#1420).
     backoff_remaining = _seconds_until_github_unblocked()
     if backoff_remaining > 0:
+        via_git = await _git_tag_releases()
+        if via_git:
+            return _build_update_info(via_git, include_beta)
         _update_status = {
             "status": "error",
             "progress": 0,
@@ -554,6 +686,9 @@ async def check_for_updates(
 
             if _is_github_rate_limit_response(response):
                 _record_github_rate_limit(response)
+                via_git = await _git_tag_releases()
+                if via_git:
+                    return _build_update_info(via_git, include_beta)
                 _update_status = {
                     "status": "error",
                     "progress": 0,
@@ -593,82 +728,7 @@ async def check_for_updates(
             response.raise_for_status()
             releases = response.json()
 
-            # Find the appropriate release based on beta setting
-            release_data = None
-            for release in releases:
-                tag = release.get("tag_name", "")
-                if include_beta:
-                    # Accept any release (first = newest)
-                    release_data = release
-                    break
-                else:
-                    # Skip prereleases (based on version parsing, not GitHub flag)
-                    parsed = parse_version(tag)
-                    if parsed[4] == 0:  # is_prerelease == 0
-                        release_data = release
-                        break
-
-            if not release_data:
-                _update_status = {
-                    "status": "idle",
-                    "progress": 100,
-                    "message": "No releases found",
-                    "error": None,
-                }
-                return {
-                    "update_available": False,
-                    "current_version": PRINTLAB_VERSION,
-                    "latest_version": None,
-                    "message": "No releases found",
-                }
-
-            latest_version = release_data.get("tag_name", "").lstrip("v")
-            release_name = release_data.get("name", latest_version)
-            release_notes = release_data.get("body", "")
-            release_url = release_data.get("html_url", "")
-            published_at = release_data.get("published_at", "")
-
-            update_available = is_newer_version(latest_version, PRINTLAB_VERSION)
-
-            _update_status = {
-                "status": "idle",
-                "progress": 100,
-                "message": "Update available" if update_available else "Up to date",
-                "error": None,
-            }
-
-            is_docker = _is_docker_environment()
-            is_ha_addon = _is_ha_addon()
-            is_windows_installer = _is_windows_installer_install()
-            installer_download_url: str | None = None
-            if is_ha_addon:
-                update_method = "ha_addon"
-            elif is_docker:
-                update_method = "docker"
-            elif is_windows_installer:
-                update_method = "windows_installer"
-                installer_download_url = _find_windows_installer_asset(release_data)
-            else:
-                update_method = "git"
-            return {
-                "update_available": update_available,
-                "current_version": PRINTLAB_VERSION,
-                "latest_version": latest_version,
-                "release_name": release_name,
-                "release_notes": release_notes,
-                "release_url": release_url,
-                "published_at": published_at,
-                "is_docker": is_docker,
-                "is_ha_addon": is_ha_addon,
-                "is_windows_installer": is_windows_installer,
-                "update_method": update_method,
-                "installer_download_url": installer_download_url,
-                # Prefill only — never the value the user saved. The settings
-                # response owns ``docker_compose_dir``; keeping the two apart
-                # means clearing the field falls back to the guess instead of
-                # resurrecting the cleared value from a stale update check.
-                "compose_dir_detected": _detect_compose_dir() if update_method == "docker" else None,
-            }
+            return _build_update_info(releases, include_beta)
 
     except httpx.HTTPError as e:
         logger.error("Failed to check for updates: %s", e)
@@ -704,25 +764,31 @@ async def _discover_target_release(db: AsyncSession) -> str | None:
     beta_setting = result.scalar_one_or_none()
     include_beta = beta_setting and beta_setting.value.lower() == "true"
 
+    releases: list[dict] = []
     if _seconds_until_github_unblocked() > 0:
-        logger.warning("Skipping update target discovery: GitHub rate-limit backoff still active")
-        return None
-
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                f"https://api.github.com/repos/{GITHUB_REPO}/releases?per_page=20",
-                headers=_github_headers(),
-                timeout=10.0,
-            )
-            if _is_github_rate_limit_response(response):
-                _record_github_rate_limit(response)
-                return None
-            response.raise_for_status()
-            releases = response.json()
-    except (httpx.HTTPError, ValueError) as exc:
-        logger.error("Could not fetch GitHub releases for update target: %s", exc)
-        return None
+        logger.warning("GitHub rate-limit backoff still active; reading release tags via git instead")
+        releases = await _git_tag_releases()
+        if not releases:
+            return None
+    else:
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    f"https://api.github.com/repos/{GITHUB_REPO}/releases?per_page=20",
+                    headers=_github_headers(),
+                    timeout=10.0,
+                )
+                if _is_github_rate_limit_response(response):
+                    _record_github_rate_limit(response)
+                    releases = await _git_tag_releases()
+                    if not releases:
+                        return None
+                else:
+                    response.raise_for_status()
+                    releases = response.json()
+        except (httpx.HTTPError, ValueError) as exc:
+            logger.error("Could not fetch GitHub releases for update target: %s", exc)
+            return None
 
     for release in releases:
         tag = release.get("tag_name", "")

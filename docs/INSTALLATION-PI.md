@@ -186,6 +186,15 @@ getestet, aber noch nicht an einem echten Tailnet; beim ersten Durchlauf bitte M
 - Pi 3 (1 GB): kein offizieller Betrieb; mit viel Swap möglich, aber Speichermangel ist ein bekanntes Risiko.
 - ARM-Image und Kamera-Prüfungen (OpenCV) wurden noch nicht auf dem Pi getestet.
 
+### Update-Prüfung meldet „rate limit reached"
+
+GitHub erlaubt ohne Anmeldung 60 Abfragen pro Stunde und IP-Adresse (im Heimnetz teilen sich alle Geräte eine). Ab v1.9.1
+weicht PrintLab dann automatisch auf `git ls-remote` aus. Bei älteren Ständen: etwa eine Stunde warten und nicht mehrfach
+„Jetzt prüfen" klicken, oder von Hand aktualisieren (auf dem Pi; die Sicherung vor dem Update legt nur die App-Funktion an):
+`cd ~/printlab && git fetch --tags origin && git reset --hard v1.9.1 && systemctl --user restart printlab`
+(`v1.9.1` durch die gewünschte Version ersetzen). Alternativ ein Token mit Leserecht in `PRINTLAB_GITHUB_TOKEN` setzen
+(5000 statt 60 Abfragen pro Stunde).
+
 ## Angebote und Rechnungen
 
 Unter „Kalkulation/Angebote" lassen sich Angebote speichern und als PDF ausgeben. Im Verlauf erzeugt „Rechnung" aus einem

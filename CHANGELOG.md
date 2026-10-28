@@ -3,6 +3,13 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.9.1 (in Arbeit) — Update-Prüfung
+
+- **Update trotz GitHub-Limit:** Meldet GitHub „rate limit reached" (ohne Anmeldung 60 Abfragen pro Stunde und IP), liest
+  PrintLab die Versionen jetzt über `git ls-remote --tags`, das nicht gegen dieses Limit zählt. Prüfen und Einspielen
+  funktionieren dann weiter; es fehlen nur die Versionshinweise in der Anzeige. Ohne git oder bei Netzfehler bleibt die
+  bisherige Meldung mit der Wartezeit.
+
 ## v1.9.0 (28.10.2026) — Angebote und Einrichtung
 
 - **Wartungsseite in vier Reiter** (auch mit Handy bedienbar, waagerecht scrollbar): *Status* (Drucker und Wartung),
