@@ -134,9 +134,13 @@ def test_confirm_removes_the_marker(install):
     assert ug.guard(app, data) == "none"
 
 
-def test_rollback_fails_softly_without_a_known_commit(install):
-    app, data, _ = install
-    assert ug.rollback(app, data, {"previous_commit": ""}, "x") is False
+@pytest.mark.parametrize(
+    "bad", ["", "--hard", "-x", "HEAD~1", "abc", "zzzzzzzz", "a" * 65, "abc123; rm -rf /", None, 5]
+)
+def test_rollback_only_accepts_a_real_commit_hash(install, bad):
+    app, data, old_commit = install
+    assert ug.rollback(app, data, {"previous_commit": bad}, "x") is False
+    assert ug.current_commit(app) == old_commit  # nichts wurde angefasst
 
 
 @pytest.mark.asyncio

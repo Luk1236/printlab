@@ -72,7 +72,13 @@ def run_check(state: dict, *, probe, restart, notify, now: float, free_bytes: in
     return state
 
 
+def _is_web_url(url: str) -> bool:
+    return url.lower().startswith(("http://", "https://"))  # nie file:// oder andere Schemata öffnen
+
+
 def http_probe(url: str, timeout: float = 8.0) -> bool:
+    if not _is_web_url(url):
+        return False
     try:
         with urllib.request.urlopen(url, timeout=timeout) as response:  # noqa: S310 - feste, lokale Adresse
             return 200 <= response.status < 300
@@ -113,6 +119,8 @@ def make_notifier(environ=os.environ):
 
 
 def _post(url: str, data: bytes) -> None:
+    if not _is_web_url(url):
+        return
     try:
         request = urllib.request.Request(url, data=data, method="POST")  # noqa: S310 - Adresse aus der eigenen Konfiguration
         urllib.request.urlopen(request, timeout=10).close()  # noqa: S310

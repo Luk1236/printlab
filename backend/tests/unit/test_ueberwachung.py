@@ -150,3 +150,12 @@ def test_state_roundtrip_and_broken_file(tmp_path):
 
 def test_probe_false_when_nothing_listens():
     assert ue.http_probe("http://127.0.0.1:9/", timeout=1) is False
+
+
+def test_only_web_urls_are_ever_opened(monkeypatch):
+    opened = []
+    monkeypatch.setattr(ue.urllib.request, "urlopen", lambda *a, **k: opened.append(a))
+    assert ue.http_probe("file:///etc/passwd") is False
+    ue._post("file:///etc/passwd", b"x")
+    ue._post("ftp://example.com/x", b"x")
+    assert opened == []

@@ -96,7 +96,7 @@ def build(template: Path, target: Path, program: str = "rods") -> Path:
     if not template.is_file() or template.suffix.lower() != ".3mf":
         raise MaintenancePrintError("Vorlage ist keine .3mf-Datei.")
     gcode = build_gcode(program)
-    md5 = hashlib.md5(gcode.encode("utf-8")).hexdigest().upper()  # noqa: S324 - Drucker-Prüfsumme
+    md5 = hashlib.md5(gcode.encode("utf-8"), usedforsecurity=False).hexdigest().upper()  # noqa: S324 - Drucker-Prüfsumme
     target.parent.mkdir(parents=True, exist_ok=True)
 
     try:

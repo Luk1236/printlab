@@ -17,6 +17,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
 import shutil
 import sqlite3
 import subprocess
@@ -196,8 +197,8 @@ def rollback(app_dir: Path, data_dir: Path, marker: dict, reason: str) -> bool:
     """Auf den vor dem Update gemerkten Git-Stand zurück und die gesicherten Daten wieder einspielen."""
     app_dir, data_dir = Path(app_dir), Path(data_dir)
     commit = marker.get("previous_commit")
-    if not isinstance(commit, str) or not commit:
-        return False
+    if not isinstance(commit, str) or not re.fullmatch(r"[0-9a-f]{7,64}", commit):
+        return False  # nur ein echter Git-Hash; nie ein Wert, den git als Option lesen könnte
     try:
         result = _git(app_dir, "reset", "--hard", commit)
     except (OSError, subprocess.SubprocessError):
