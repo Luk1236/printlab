@@ -49,9 +49,9 @@ Registry. In `docker-compose.yml` dann statt `build: .` die Zeile `image: ghcr.i
 ## Updates
 
 PrintLab prüft unter **Einstellungen → System** auf neue Versionen (Releases von `Luk1236/printlab`) und kann sie
-selbst einspielen. Weil das Repo privat ist, braucht der Pi dafür einen Token mit Leserecht:
-`PRINTLAB_GITHUB_TOKEN` (beim Neuaufspielen mit `PRINTLAB_STORE_TOKEN=1` wird er in `~/.config/printlab.env` mit
-Rechten 600 abgelegt). Nach dem Update startet sich der Dienst von selbst neu. Voraussetzung: PrintLab wurde mit
+selbst einspielen. Das Repo ist öffentlich, ein Token ist nicht nötig (nur bei einem privaten Fork:
+`PRINTLAB_GITHUB_TOKEN`, beim Neuaufspielen mit `PRINTLAB_STORE_TOKEN=1` in `~/.config/printlab.env` mit Rechten 600).
+Nach dem Update startet sich der Dienst von selbst neu. Voraussetzung: PrintLab wurde mit
 `werkzeuge/pi_neu_installieren.sh` installiert (Git-Ordner, Dienst mit `Restart=always`).
 
 ## Betrieb

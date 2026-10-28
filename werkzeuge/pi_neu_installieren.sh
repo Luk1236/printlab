@@ -5,23 +5,22 @@
 # und spielt den aktuellen Stand aus GitHub neu auf. Läuft als normaler Benutzer; der Dienst startet
 # beim Hochfahren von selbst (systemd --user, "Linger" muss eingeschaltet sein).
 #
-# Aufruf (eine Zeile; GH_TOKEN = GitHub-Token mit Leserecht auf das private Repo):
-#   export GH_TOKEN=ghp_...   # Token selbst eintragen, nicht weitergeben
-#   curl -fsSL -H "Authorization: token $GH_TOKEN" \
-#     https://raw.githubusercontent.com/Luk1236/printlab/bambu-monitor-port/werkzeuge/pi_neu_installieren.sh | bash
+# Aufruf (das Repo ist öffentlich, ein Token ist nicht nötig):
+#   curl -fsSL https://raw.githubusercontent.com/Luk1236/printlab/bambu-monitor-port/werkzeuge/pi_neu_installieren.sh | bash
+# Nur bei einem privaten Fork: GH_TOKEN (GitHub-Token mit Leserecht) vorher mit export setzen.
 #
 # Optionen (Umgebungsvariablen):
 #   PRINTLAB_REF=v1.2.2        Tag oder Branch (Standard: bambu-monitor-port)
 #   PRINTLAB_FRESH_DATA=1      gesicherte Daten NICHT zurückspielen (leere Datenbank)
-#   PRINTLAB_STORE_TOKEN=1     Token in ~/.config/printlab.env (nur für dich lesbar) speichern, damit die
-#                              Update-Funktion in PrintLab (Einstellungen) das private Repo erreicht
+#   PRINTLAB_STORE_TOKEN=1     (nur mit GH_TOKEN) Token in ~/.config/printlab.env (nur für dich lesbar) speichern,
+#                              damit die Update-Funktion in PrintLab ein privates Repo erreicht
 set -euo pipefail
 
 REPO="Luk1236/printlab"
 REF="${PRINTLAB_REF:-bambu-monitor-port}"
 DIR="$HOME/printlab"
 BACKUP="$HOME/printlab-backups/$(date +%Y%m%d-%H%M%S)"
-: "${GH_TOKEN:?GH_TOKEN fehlt: GitHub-Token mit Leserecht auf ${REPO} setzen (export GH_TOKEN=...)}"
+GH_TOKEN="${GH_TOKEN:-}"   # leer = öffentliches Repo, anonym
 
 step() { printf '\n== %s\n' "$1"; }
 
@@ -50,7 +49,11 @@ rm -rf "$DIR" "$HOME/bambuddy" "$HOME/Bambuddy" "$HOME/Bambuddy-Fork"
 rm -f "$HOME/.config/systemd/user/bambuddy.service"
 
 step "4/7 Quellcode holen ($REF)"
-git clone --quiet --depth 1 --branch "$REF" "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" "$DIR"
+if [ -n "$GH_TOKEN" ]; then
+  git clone --quiet --depth 1 --branch "$REF" "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" "$DIR"
+else
+  git clone --quiet --depth 1 --branch "$REF" "https://github.com/${REPO}.git" "$DIR"
+fi
 git -C "$DIR" remote set-url origin "https://github.com/${REPO}.git"   # Token nicht auf der Platte lassen
 echo "Stand: $(git -C "$DIR" log --oneline -1)"
 mkdir -p "$DIR/data" "$DIR/logs"
@@ -67,7 +70,7 @@ python3 -m venv "$DIR/.venv"
 
 step "6/7 Dienst einrichten und starten"
 mkdir -p "$HOME/.config/systemd/user"
-if [ -n "${PRINTLAB_STORE_TOKEN:-}" ]; then
+if [ -n "${PRINTLAB_STORE_TOKEN:-}" ] && [ -n "$GH_TOKEN" ]; then
   umask 077
   printf 'PRINTLAB_GITHUB_TOKEN=%s\n' "$GH_TOKEN" > "$HOME/.config/printlab.env"
   umask 022
