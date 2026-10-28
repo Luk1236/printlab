@@ -10252,9 +10252,15 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logging.warning("Failed to sync virtual printers: %s", e)
 
+    # Fernzugriff (Tailscale) wieder herstellen, falls er eingeschaltet war
+    from backend.app.services import remote_access as remote_access_service
+
+    asyncio.create_task(remote_access_service.autostart())
+
     yield
 
     # Shutdown
+    remote_access_service.stop_daemon()
     print_scheduler.stop()
     smart_plug_manager.stop_scheduler()
     ha_sensor_manager.stop()
@@ -10848,6 +10854,9 @@ app.include_router(spoolman.router, prefix=app_settings.api_prefix)
 app.include_router(spoolman_inventory.router, prefix=app_settings.api_prefix)
 app.include_router(updates.router, prefix=app_settings.api_prefix)
 app.include_router(announcements.router, prefix=app_settings.api_prefix)
+from backend.app.api.routes import remote_access as remote_access_routes  # noqa: E402
+
+app.include_router(remote_access_routes.router, prefix=app_settings.api_prefix)
 app.include_router(maintenance.router, prefix=app_settings.api_prefix)
 app.include_router(maintenance_programs.router, prefix=app_settings.api_prefix)
 app.include_router(maintenance_print.router, prefix=app_settings.api_prefix)

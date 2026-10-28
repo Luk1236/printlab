@@ -45,6 +45,7 @@ import { Toggle } from '../components/Toggle';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { MaintenanceProgramsCard } from '../components/MaintenanceProgramsCard';
 import { HardwareAdminCard } from '../components/HardwareAdminCard';
+import { RemoteAccessCard } from '../components/RemoteAccessCard';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -1280,6 +1281,7 @@ export function MaintenancePage() {
         <div className="space-y-6">
           <MaintenanceProgramsCard canControl={hasPermission('printers:control')} />
           <HardwareAdminCard canControl={hasPermission('printers:control')} />
+          <RemoteAccessCard canControl={hasPermission('settings:update')} />
           {overview && overview.length > 0 ? (
             [...overview].sort((a, b) => {
               // Sort printers with issues first

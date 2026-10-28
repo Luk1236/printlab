@@ -55,10 +55,21 @@ Registry. In `docker-compose.yml` dann statt `build: .` die Zeile `image: ghcr.i
 | Aktualisieren | `git pull && docker compose up -d --build` |
 | Sicherung | Einstellungen → Sicherung (lokale Sicherung) oder Volume `printlab_data` kopieren |
 
-## Zugriff von unterwegs
+## Zugriff von unterwegs (Fernzugriff in PrintLab)
 
-Am einfachsten über **Tailscale** (`curl -fsSL https://tailscale.com/install.sh | sh`, `sudo tailscale up`). So
-bleibt PrintLab außerhalb des Heimnetzes unsichtbar; HTTPS ist dann nur nötig, wenn weitere Personen zugreifen.
+PrintLab hat den Fernzugriff eingebaut: Seite **Wartung → Fernzugriff (Tailscale)**. Er läuft ohne Root-Rechte und
+ohne Docker-Änderungen und öffnet nichts im öffentlichen Internet.
+
+1. **Anmeldung einschalten** (Voraussetzung, sonst lehnt PrintLab das Einrichten ab).
+2. „Fernzugriff einrichten“ drücken. PrintLab lädt die offiziellen Tailscale-Programme (Prüfsumme wird kontrolliert)
+   in den Datenordner, startet sie im Userspace-Modus und zeigt einen Anmelde-Link.
+3. Link öffnen und mit dem **kostenlosen Tailscale-Konto** anmelden. Danach gibt PrintLab den Port frei und zeigt die
+   Adresse (`http://100.x.y.z:8000`).
+4. Auf PC oder Handy Tailscale mit **demselben Konto** installieren und die Adresse öffnen.
+
+Beim Neustart des Pi stellt PrintLab die Verbindung selbst wieder her. „Ausschalten“ beendet Freigabe und Dienst.
+Falls schon ein systemweites Tailscale läuft, benutzt PrintLab dieses unverändert. Stand: gegen die Tailscale-Befehle
+getestet, aber noch nicht an einem echten Tailnet; beim ersten Durchlauf bitte Meldungen notieren.
 
 ## Bekannte Grenzen
 

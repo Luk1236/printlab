@@ -3,6 +3,12 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.5.0 (28.10.2026) — Fernzugriff
+
+- **Fernzugriff über Tailscale** (Seite „Wartung“): Einrichten ohne Root, Anmelde-Link, Freigabe nur im privaten
+  Tailnet, Abschalten; nur mit eingeschalteter Anmeldung. Meldungen auf Deutsch und Englisch, Oberfläche in 15 Sprachen.
+- **`werkzeuge/pi_neu_installieren.sh`:** alte Versionen auf dem Pi entfernen, Daten sichern und neu aufspielen.
+
 ## v1.4.0 (28.10.2026) — Welle 1 der Erweiterungen
 
 - **Erste-Schicht-Gate:** optionale Automatik „Bei Warnung drucken anhalten“ — pausiert den

@@ -115,3 +115,15 @@ class TestMiddleware:
     @pytest.mark.asyncio
     async def test_non_json_responses_pass_through(self):
         assert (await get("/api/v1/quote/file", "en")).text == "Tür geöffnet."
+
+
+class TestRemoteAccessMessages:
+    def test_guard_and_download_messages(self):
+        assert translate("Fernzugriff nur mit eingeschalteter Anmeldung.") == "Remote access requires authentication to be enabled."
+        assert translate("Prüfsumme des Tailscale-Downloads stimmt nicht — abgebrochen.").startswith("Checksum of the Tailscale download")
+        assert translate("Freigabe fehlgeschlagen: x") == "Sharing failed: x"
+
+    def test_the_remote_access_endpoints_are_translated(self):
+        from backend.app.i18n.fork_messages import PATH_RX
+
+        assert PATH_RX.match("/api/v1/remote-access/setup")

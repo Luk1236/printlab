@@ -110,6 +110,24 @@ _RAW: list[tuple[str, str]] = [
     (r"Kundenname fehlt\.", "Customer name is missing."),
     (r"Betrag „(?P<k>\w+)“ fehlt oder ist ungültig\.", r"Amount “\g<k>” is missing or invalid."),
     (r"Angebot nicht gefunden\.", "Quote not found."),
+    # --- Fernzugriff (Tailscale) -------------------------------------------------------------------------------
+    (r"Fernzugriff nur mit eingeschalteter Anmeldung\.", "Remote access requires authentication to be enabled."),
+    (r"Fernzugriff gibt es nur unter Linux\.", "Remote access is only available on Linux."),
+    (r"Tailscale ist nicht installiert\.", "Tailscale is not installed."),
+    (r"Noch nicht bei Tailscale angemeldet\.", "Not signed in to Tailscale yet."),
+    (r"Prüfsumme des Tailscale-Downloads stimmt nicht — abgebrochen\.", "Checksum of the Tailscale download does not match — aborted."),
+    (r"Prüfsumme von Tailscale nicht lesbar\.", "Tailscale checksum not readable."),
+    (r"Kein passendes Tailscale-Paket gefunden\.", "No matching Tailscale package found."),
+    (r"Tailscale-Download ist unerwartet groß\.", "Tailscale download is unexpectedly large."),
+    (r"Das Tailscale-Archiv enthält nicht die erwarteten Programme\.", "The Tailscale archive does not contain the expected programs."),
+    (r"Unbekannte Prozessorarchitektur: ", "Unknown processor architecture: "),
+    (r"tailscaled hat sich sofort beendet\.", "tailscaled exited immediately."),
+    (r"tailscaled ist nicht rechtzeitig bereit geworden\.", "tailscaled did not become ready in time."),
+    (r"Tailscale-Anmeldung nicht möglich: ", "Tailscale sign-in not possible: "),
+    (r"Freigabe fehlgeschlagen: ", "Sharing failed: "),
+    (r"Ungültiger Port\.", "Invalid port."),
+    (r"Zeitüberschreitung beim Aufruf von tailscale\.", "Timeout while calling tailscale."),
+    (r"Programm nicht startbar: ", "Program could not be started: "),
     # --- Kamera-Prüfungen ---------------------------------------------------------------------------------
     (r"Keine Einmessung gespeichert\.", "No calibration saved."),
     (r"Kein Kamerabild verfügbar\.", "No camera image available."),
@@ -120,7 +138,7 @@ PATTERNS = [(re.compile(pattern), replacement) for pattern, replacement in _RAW]
 # Antworten dieser Endpunkte werden übersetzt (alle anderen bleiben unberührt).
 PATH_RX = re.compile(
     r"^/api/v1/(printers/\d+/(hardware|maintenance-program|maintenance-print|bed-empty|spaghetti|part-watcher|"
-    r"first-layer|plate-calibration|layer-alert)|quote)"
+    r"first-layer|plate-calibration|layer-alert)|quote|remote-access)"
 )
 
 

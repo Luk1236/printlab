@@ -4257,6 +4257,21 @@ export interface QuoteCustomerTotal {
   total: number;
 }
 
+export interface RemoteAccessStatus {
+  supported: boolean;
+  installed: boolean;
+  managed: boolean;
+  daemon_running: boolean;
+  state: 'off' | 'stopped' | 'login' | 'connected';
+  login_url: string | null;
+  ips: string[];
+  dns_name: string;
+  serving: boolean;
+  enabled: boolean;
+  error: string | null;
+  auth_enabled: boolean;
+}
+
 export interface PriceListEntry {
   material: string;
   rate_per_kg: number;
@@ -7570,6 +7585,10 @@ export const api = {
   saveQuote: (payload: Record<string, unknown>) =>
     request<QuoteHistoryEntry>('/quote/history', { method: 'POST', body: JSON.stringify(payload) }),
   deleteQuote: (id: string) => request<{ success: boolean }>(`/quote/history/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  getRemoteAccess: () => request<RemoteAccessStatus>('/remote-access'),
+  setupRemoteAccess: () => request<RemoteAccessStatus>('/remote-access/setup', { method: 'POST' }),
+  shareRemoteAccess: () => request<RemoteAccessStatus>('/remote-access/share', { method: 'POST' }),
+  disableRemoteAccess: () => request<RemoteAccessStatus>('/remote-access/disable', { method: 'POST' }),
   getPriceList: () => request<{ entries: PriceListEntry[] }>('/quote/price-list'),
   setPriceList: (entries: PriceListEntry[]) =>
     request<{ entries: PriceListEntry[] }>('/quote/price-list', {
