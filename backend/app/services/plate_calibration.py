@@ -10,6 +10,7 @@ Punkte werden normalisiert (0..1) gespeichert, Reihenfolge
 oben-links, oben-rechts, unten-rechts, unten-links. Ablage:
 ``data/plate_calibration/<printer_id>.json``.
 """
+
 from __future__ import annotations
 
 import logging
@@ -44,8 +45,10 @@ def _load_points(printer_id: int) -> list[list[float]] | None:
 
         data = json.loads(path.read_text(encoding="utf-8"))
         points = data.get("points")
-        if isinstance(points, list) and len(points) == 4 and all(
-            isinstance(p, (list, tuple)) and len(p) == 2 for p in points
+        if (
+            isinstance(points, list)
+            and len(points) == 4
+            and all(isinstance(p, (list, tuple)) and len(p) == 2 for p in points)
         ):
             return [[float(p[0]), float(p[1])] for p in points]
     except (OSError, ValueError):

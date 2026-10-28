@@ -15,8 +15,14 @@ async def _kein_schlafen(_seconds: float) -> None:
 
 
 class FakeClient:
-    def __init__(self, state: str = "IDLE", nozzle: float = 25.0, bed: float = 25.0,
-                 connected: bool = True, fail_at: int | None = None):
+    def __init__(
+        self,
+        state: str = "IDLE",
+        nozzle: float = 25.0,
+        bed: float = 25.0,
+        connected: bool = True,
+        fail_at: int | None = None,
+    ):
         self.state = SimpleNamespace(
             connected=connected,
             state=state,

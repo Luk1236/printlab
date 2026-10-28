@@ -60,9 +60,13 @@ class AppSettings(BaseModel):
     default_filament_cost: float = Field(default=25.0, description="Default filament cost per kg")
     currency: str = Field(default="USD", description="Currency for cost tracking")
     energy_cost_per_kwh: float = Field(default=0.15, description="Electricity cost per kWh for energy tracking")
-    printer_power_watts: float = Field(default=120.0, description="Average printer power draw in watts, used by the quote calculator's energy estimate")
+    printer_power_watts: float = Field(
+        default=120.0, description="Average printer power draw in watts, used by the quote calculator's energy estimate"
+    )
     labor_rate_per_hour: float = Field(default=0.0, description="Hourly labor rate for the quote calculator")
-    quote_markup_percent: float = Field(default=0.0, description="Markup percent added to material/energy/labor subtotal in the quote calculator")
+    quote_markup_percent: float = Field(
+        default=0.0, description="Markup percent added to material/energy/labor subtotal in the quote calculator"
+    )
     energy_tracking_mode: str = Field(
         default="total",
         description="Energy display mode on stats: 'print' shows sum of per-print energy, 'total' shows lifetime plug consumption",

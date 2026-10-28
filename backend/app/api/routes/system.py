@@ -88,7 +88,11 @@ def _get_database_paths() -> list[Path]:
 
     if not is_sqlite():
         return []  # PostgreSQL — no local DB files
-    candidates = [settings.base_dir / "printlab.db", settings.base_dir / "bambuddy.db", settings.base_dir / "bambutrack.db"]
+    candidates = [
+        settings.base_dir / "printlab.db",
+        settings.base_dir / "bambuddy.db",
+        settings.base_dir / "bambutrack.db",
+    ]
     return [path for path in candidates if path.exists()]
 
 

@@ -23,10 +23,9 @@ name: Windows Installer
 # that produces the release-facing artifact, so the daily-prerelease path and
 # the signed-tag path share one set of alias/upload/attach steps.
 
+# PrintLab: kein automatischer Lauf bei Tags. Das Signieren braucht den SignPath-Zugang des Upstream-Projekts
+# (Secret SIGNPATH_API_TOKEN); ohne ihn bricht der Lauf ab. Von Hand starten (workflow_dispatch) bleibt möglich.
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
     inputs:
       sign:

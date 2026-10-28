@@ -218,8 +218,13 @@ class TestAutoConfirmPlateClear:
 
         monkeypatch.setattr("backend.app.services.plate_detection.check_plate_empty", fake_check)
         fake_printer = SimpleNamespace(
-            ip_address="1.2.3.4", access_code="x", model="P2S", external_camera_url=None,
-            external_camera_type=None, external_camera_enabled=False, external_camera_snapshot_url=None,
+            ip_address="1.2.3.4",
+            access_code="x",
+            model="P2S",
+            external_camera_url=None,
+            external_camera_type=None,
+            external_camera_enabled=False,
+            external_camera_snapshot_url=None,
         )
 
         async def fake_load(pid):

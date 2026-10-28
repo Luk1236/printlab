@@ -1,4 +1,5 @@
 """API für die Spaghetti-/Abbruch-Erkennung (nur Warnung)."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends

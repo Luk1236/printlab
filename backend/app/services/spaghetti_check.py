@@ -11,6 +11,7 @@ Metrik (nur Warnung, nie Eingriff):
 Konfiguration: ``data/spaghetti_check.json``:
 ``{"enabled": false, "max_components": 25, "min_changed_percent": 0.5}``
 """
+
 from __future__ import annotations
 
 import json
@@ -91,7 +92,9 @@ def check(printer_id: int, image_bytes: bytes, blank: bytes) -> dict[str, Any] |
     if components <= int(cfg["max_components"]) or percent < float(cfg["min_changed_percent"]):
         logger.info(
             "[Spaghetti] Drucker %s: unauffällig (%d Flecken, %.2f%% verändert)",
-            printer_id, components, percent,
+            printer_id,
+            components,
+            percent,
         )
         return {"warning": None, "components": components, "changed_percent": round(percent, 2)}
     message = (

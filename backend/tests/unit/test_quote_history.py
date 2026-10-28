@@ -11,7 +11,15 @@ def isolated(tmp_path, monkeypatch):
 
 
 def quote(**over):
-    base = {"customer": "Müller GmbH", "material": 2.2, "energy": 0.5, "labor": 5, "subtotal": 7.7, "markup": 1.54, "total": 9.24}
+    base = {
+        "customer": "Müller GmbH",
+        "material": 2.2,
+        "energy": 0.5,
+        "labor": 5,
+        "subtotal": 7.7,
+        "markup": 1.54,
+        "total": 9.24,
+    }
     base.update(over)
     return base
 
@@ -24,7 +32,9 @@ class TestAdd:
         assert [e["id"] for e in listed] == [second["id"], first["id"]]
         assert first["description"] == "Halter" and first["currency"] == "EUR"
 
-    @pytest.mark.parametrize("bad", [{"customer": "  "}, {"total": "abc"}, {"total": -1}, {"total": float("nan")}, {"total": True}])
+    @pytest.mark.parametrize(
+        "bad", [{"customer": "  "}, {"total": "abc"}, {"total": -1}, {"total": float("nan")}, {"total": True}]
+    )
     def test_invalid_input_is_rejected(self, bad):
         with pytest.raises(ValueError):
             quote_history.add(quote(**bad))
@@ -36,7 +46,9 @@ class TestAdd:
             quote_history.add(payload)
 
     def test_text_fields_are_capped_and_inputs_filtered(self):
-        entry = quote_history.add(quote(customer="x" * 500, description="d" * 500, inputs={"grams": 10, "evil": "<b>", "n": float("nan")}))
+        entry = quote_history.add(
+            quote(customer="x" * 500, description="d" * 500, inputs={"grams": 10, "evil": "<b>", "n": float("nan")})
+        )
         assert len(entry["customer"]) == 80 and len(entry["description"]) == 200
         assert entry["inputs"] == {"grams": 10}
 

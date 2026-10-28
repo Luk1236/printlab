@@ -3,6 +3,7 @@
 Portiert aus dem Bambu-Monitor (`slicer.py`) für den PC-Slicer, der PrintLabs
 vorhandene Sidecar-Schnittstelle bedient.
 """
+
 from __future__ import annotations
 
 import logging
@@ -36,18 +37,25 @@ def program_path() -> str:
     return os.environ.get("BAMBU_STUDIO", DEFAULT_PROGRAM).strip()
 
 
-def build_command(program: str, source: Path, out_dir: Path, name: str,
-                  printer_json: str | None, process_json: str | None,
-                  filament_jsons: list[str], arrange: bool, orient: bool,
-                  plate: int | None = None) -> list[str]:
+def build_command(
+    program: str,
+    source: Path,
+    out_dir: Path,
+    name: str,
+    printer_json: str | None,
+    process_json: str | None,
+    filament_jsons: list[str],
+    arrange: bool,
+    orient: bool,
+    plate: int | None = None,
+) -> list[str]:
     """Baut den Bambu-Studio-Aufruf; Profile werden vorher als Dateien geschrieben.
 
     ``plate`` (1-indexiert) hängt ``--export-plate N`` an, damit nur diese
     Platte geslict wird; bei CLIs ohne die Option schlägt der Lauf fehl und
     ``slice_file`` wiederholt ohne den Schalter.
     """
-    cmd = [program, "--orient", "1" if orient else "0", "--arrange", "1" if arrange else "0",
-           "--slice", "0"]
+    cmd = [program, "--orient", "1" if orient else "0", "--arrange", "1" if arrange else "0", "--slice", "0"]
     if printer_json is not None and process_json is not None:
         machine = out_dir / "machine.json"
         process = out_dir / "process.json"
@@ -83,10 +91,17 @@ def _read_slice_info(path: Path) -> tuple[int, float]:
     return seconds, grams
 
 
-def slice_file(source: Path, name: str, printer_json: str | None = None,
-               process_json: str | None = None, filament_jsons: list[str] | None = None,
-               arrange: bool = False, orient: bool = False,
-               timeout: float = 900.0, plate: int | None = None) -> SliceOutput:
+def slice_file(
+    source: Path,
+    name: str,
+    printer_json: str | None = None,
+    process_json: str | None = None,
+    filament_jsons: list[str] | None = None,
+    arrange: bool = False,
+    orient: bool = False,
+    timeout: float = 900.0,
+    plate: int | None = None,
+) -> SliceOutput:
     """Slict eine 3MF/STL mit Bambu Studio und liefert die fertige 3MF.
 
     ``plate``: nur diese Platte (1-indexiert). Eine CLI ohne ``--export-plate``
@@ -105,24 +120,25 @@ def slice_file(source: Path, name: str, printer_json: str | None = None,
         tmp_path = Path(tmp)
         copy = tmp_path / source.name
         shutil.copy2(source, copy)
-        cmd = build_command(program, copy, tmp_path, name, printer_json, process_json,
-                             filament_jsons or [], arrange, orient, plate)
+        cmd = build_command(
+            program, copy, tmp_path, name, printer_json, process_json, filament_jsons or [], arrange, orient, plate
+        )
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout,
-                                    cwd=tmp_path, check=False)
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=tmp_path, check=False)
         except (OSError, subprocess.SubprocessError) as exc:
             raise SlicerCliError(f"Bambu Studio konnte nicht gestartet werden: {exc}") from exc
         if result.returncode != 0 and plate is not None:
             stderr = (result.stderr or result.stdout or "").strip()
             logger.warning(
                 "[PC-Slicer] --export-plate %s fehlgeschlagen (%s); wiederhole mit allen Platten.",
-                plate, stderr[-200:],
+                plate,
+                stderr[-200:],
             )
-            cmd = build_command(program, copy, tmp_path, name, printer_json, process_json,
-                                 filament_jsons or [], arrange, orient, None)
+            cmd = build_command(
+                program, copy, tmp_path, name, printer_json, process_json, filament_jsons or [], arrange, orient, None
+            )
             try:
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout,
-                                        cwd=tmp_path, check=False)
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=tmp_path, check=False)
             except (OSError, subprocess.SubprocessError) as exc:
                 raise SlicerCliError(f"Bambu Studio konnte nicht gestartet werden: {exc}") from exc
         output = tmp_path / name

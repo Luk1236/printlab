@@ -6,6 +6,7 @@ auf fehlenden Materialauftrag hin. Nur melden, nie eingreifen.
 
 Konfiguration in ``data/first_layer_inspector.json``.
 """
+
 from __future__ import annotations
 
 import json
@@ -34,7 +35,7 @@ def inspect_image(image: bytes) -> dict[str, Any]:
     if gray is None:
         raise ValueError("Bild nicht lesbar")
     h, w = gray.shape[:2]
-    roi = gray[int(h * ROI[1]):int(h * ROI[3]), int(w * ROI[0]):int(w * ROI[2])]
+    roi = gray[int(h * ROI[1]) : int(h * ROI[3]), int(w * ROI[0]) : int(w * ROI[2])]
     brightness = float(roi.mean())
     contrast = float(roi.std())
     edges = cv2.Canny(roi, 50, 150)
@@ -51,8 +52,7 @@ def inspect_image(image: bytes) -> dict[str, Any]:
         "brightness": round(brightness, 1),
         "contrast": round(contrast, 1),
         "edge_density": round(edge_density, 2),
-        "message": "Erste Schicht unauffällig." if not reasons
-        else "Erste Schicht prüfen: " + ", ".join(reasons) + ".",
+        "message": "Erste Schicht unauffällig." if not reasons else "Erste Schicht prüfen: " + ", ".join(reasons) + ".",
     }
 
 

@@ -6,6 +6,7 @@ außer Deutsch ersetzt diese Schicht bekannte deutsche Meldungen in den JSON-Ant
 englische (wie die Grundanwendung, deren serverseitige Texte ebenfalls nur Deutsch und Englisch kennen).
 Unbekannte Texte bleiben unverändert (deutsch), es geht also nie eine Meldung verloren.
 """
+
 from __future__ import annotations
 
 import json
@@ -15,12 +16,19 @@ from typing import Any
 # (deutsches Muster, englische Ersetzung); längere/spezifischere Muster zuerst.
 _RAW: list[tuple[str, str]] = [
     # --- Hardware: Tür und Plattenwechsler ---------------------------------------------------------
-    (r"Not-Halt aktiv — Hardware-Konfiguration neu laden oder Magazin auffüllen, um fortzufahren\.",
-     "Emergency stop active — reload the hardware configuration or refill the magazine to continue."),
-    (r"Letzter Wechsel unvollständig \((?P<s>[^)]*)\) — Mechanik prüfen, dann den Wechsel als geprüft bestätigen\.",
-     r"Last change incomplete (\g<s>) — check the mechanics, then confirm the change as checked."),
+    (
+        r"Not-Halt aktiv — Hardware-Konfiguration neu laden oder Magazin auffüllen, um fortzufahren\.",
+        "Emergency stop active — reload the hardware configuration or refill the magazine to continue.",
+    ),
+    (
+        r"Letzter Wechsel unvollständig \((?P<s>[^)]*)\) — Mechanik prüfen, dann den Wechsel als geprüft bestätigen\.",
+        r"Last change incomplete (\g<s>) — check the mechanics, then confirm the change as checked.",
+    ),
     (r"Es läuft bereits ein Hardware-Vorgang\.", "A hardware operation is already running."),
-    (r"Hardware-Vorgang läuft bereits — kein automatischer Wechsel\.", "Hardware operation already running — no automatic change."),
+    (
+        r"Hardware-Vorgang läuft bereits — kein automatischer Wechsel\.",
+        "Hardware operation already running — no automatic change.",
+    ),
     (r"Tür geöffnet \(Simulation\)\.", "Door opened (simulation)."),
     (r"Tür geschlossen \(Simulation\)\.", "Door closed (simulation)."),
     (r"Tür geöffnet\.", "Door opened."),
@@ -28,7 +36,10 @@ _RAW: list[tuple[str, str]] = [
     (r"Tür-Endschalter meldet UNKNOWN\.", "Door limit switch reports UNKNOWN."),
     (r"Tür ist nach dem Öffnen noch geschlossen\.", "Door is still closed after opening."),
     (r"Tür ist nach dem Schließen noch offen\.", "Door is still open after closing."),
-    (r"Tür ist offen bzw\. unbestätigt — Plattenwechsel nicht angetreten\.", "Door is open or unconfirmed — plate change not started."),
+    (
+        r"Tür ist offen bzw\. unbestätigt — Plattenwechsel nicht angetreten\.",
+        "Door is open or unconfirmed — plate change not started.",
+    ),
     (r"Keine frische Platte im Magazin\.", "No fresh plate in the magazine."),
     (r"Kein freies Ablagefach\.", "No free storage slot."),
     (r"Platte aus Fach (?P<n>\d+) eingesetzt \(Simulation\)\.", r"Plate from slot \g<n> inserted (simulation)."),
@@ -42,7 +53,10 @@ _RAW: list[tuple[str, str]] = [
     (r"Fach-Id fehlt oder ist keine Zahl\.", "Slot id is missing or not a number."),
     (r"Unbekanntes Fach (?P<n>\d+)\.", r"Unknown slot \g<n>."),
     (r"Fach (?P<n>\d+): Etikett '", r"Slot \g<n>: label '"),
-    (r"Unbekannter Status '(?P<s>[^']*)' für Fach (?P<n>\d+) \(erlaubt: ", r"Unknown status '\g<s>' for slot \g<n> (allowed: "),
+    (
+        r"Unbekannter Status '(?P<s>[^']*)' für Fach (?P<n>\d+) \(erlaubt: ",
+        r"Unknown status '\g<s>' for slot \g<n> (allowed: ",
+    ),
     (r"Fach (?P<n>\d+): (?P<s>ready|used|empty|occupied)", r"Slot \g<n>: \g<s>"),
     (r"Keine gültigen Änderungen übermittelt\.", "No valid changes submitted."),
     (r"Hardware-Konfiguration gespeichert\.", "Hardware configuration saved."),
@@ -50,35 +64,51 @@ _RAW: list[tuple[str, str]] = [
     (r"Unbekannte Schlüssel: ", "Unknown keys: "),
     (r"Modus nur 'simulated' oder 'command'\.", "Mode must be 'simulated' or 'command'."),
     (r"timeout_seconds muss eine Zahl sein\.", "timeout_seconds must be a number."),
-    (r"(?P<k>\w+_command) muss ein Text oder eine Liste von Texten sein\.", r"\g<k> must be a text or a list of texts."),
+    (
+        r"(?P<k>\w+_command) muss ein Text oder eine Liste von Texten sein\.",
+        r"\g<k> must be a text or a list of texts.",
+    ),
     (r"Not-Halt-Sperre aufgehoben\.", "Emergency stop lock lifted."),
     (r"Not-Halt ausgelöst \(Simulation\)\.", "Emergency stop triggered (simulation)."),
     (r"Not-Halt ausgelöst\.", "Emergency stop triggered."),
     (r"Kein Befehl konfiguriert\.", "No command configured."),
-    (r"Befehl fehlgeschlagen: Zeitlimit von (?P<n>[\d.]+) s überschritten\.", r"Command failed: timeout of \g<n> s exceeded."),
+    (
+        r"Befehl fehlgeschlagen: Zeitlimit von (?P<n>[\d.]+) s überschritten\.",
+        r"Command failed: timeout of \g<n> s exceeded.",
+    ),
     (r"Befehl fehlgeschlagen: ", "Command failed: "),
     (r"Befehl wurde abgebrochen\.", "Command was aborted."),
     (r"Befehl endete mit Code (?P<n>-?\d+)\.", r"Command exited with code \g<n>."),
     (r"Konfigurationstext erwartet\.", "Configuration body expected."),
-    (r"Befehle können nur mit eingeschalteter Anmeldung geändert werden \(Einstellungen → Benutzer, oder werkzeuge\\admin_passwort_setzen\.py\)\.",
-     r"Commands can only be changed with authentication enabled (Settings → Users, or werkzeuge\\admin_passwort_setzen.py)."),
+    (
+        r"Befehle können nur mit eingeschalteter Anmeldung geändert werden \(Einstellungen → Benutzer, oder werkzeuge\\admin_passwort_setzen\.py\)\.",
+        r"Commands can only be changed with authentication enabled (Settings → Users, or werkzeuge\\admin_passwort_setzen.py).",
+    ),
     (r"\bTür öffnen\b", "Open door"),
     (r"\bTür schließen\b", "Close door"),
     (r"\bPlattenwechsel\b(?! nicht| abgebrochen)", "Plate change"),
     # --- Automatik ----------------------------------------------------------------------------------
     (r"Drucker getrennt — Automatik übersprungen\.", "Printer disconnected — automation skipped."),
     (r"Neuer Druck hat begonnen — Plattenwechsel abgebrochen\.", "A new print has started — plate change cancelled."),
-    (r"Druckplatte bleibt über (?P<m>\d+)s über (?P<t>[\d.]+)°C \(aktuell (?P<b>[\d.]+)°C\) — kein Wechsel\.",
-     r"Bed stays above \g<t>°C for \g<m>s (currently \g<b>°C) — no change."),
+    (
+        r"Druckplatte bleibt über (?P<m>\d+)s über (?P<t>[\d.]+)°C \(aktuell (?P<b>[\d.]+)°C\) — kein Wechsel\.",
+        r"Bed stays above \g<t>°C for \g<m>s (currently \g<b>°C) — no change.",
+    ),
     (r"Automatischer Plattenwechsel abgebrochen\.", "Automatic plate change cancelled."),
-    (r"Kein weiterer Auftrag wartet — Wechsel übersprungen \(only_with_queue\)\.", "No further job is waiting — change skipped (only_with_queue)."),
+    (
+        r"Kein weiterer Auftrag wartet — Wechsel übersprungen \(only_with_queue\)\.",
+        "No further job is waiting — change skipped (only_with_queue).",
+    ),
     (r"Magazin: ", "Magazine: "),
     (r"keine frische Platte mehr", "no fresh plate left"),
     (r"nur noch (?P<n>\d+) frische Platte\(n\)", r"only \g<n> fresh plate(s) left"),
     (r"kein freies Ablagefach mehr", "no free storage slot left"),
     (r"nur noch (?P<n>\d+) freies Ablagefach/-fächer", r"only \g<n> free storage slot(s) left"),
     (r" — bitte auffüllen bzw\. leeren\.", " — please refill or empty."),
-    (r"Platte frei automatisch bestätigt \(Kamera, (?P<n>\d+)%\)\.", r"Plate clear confirmed automatically (camera, \g<n>%)."),
+    (
+        r"Platte frei automatisch bestätigt \(Kamera, (?P<n>\d+)%\)\.",
+        r"Plate clear confirmed automatically (camera, \g<n>%).",
+    ),
     (r"Platte-frei war nicht angefordert\.", "Plate clear was not requested."),
     (r"Drucker nicht gefunden\.", "Printer not found."),
     (r"Keine Referenz für die Leerbett-Prüfung\.", "No reference for the blank-bed check."),
@@ -87,21 +117,36 @@ _RAW: list[tuple[str, str]] = [
     (r"Leerbett-Prüfung nicht möglich\.", "Blank-bed check not possible."),
     (r"Platte-frei bitte von Hand bestätigen\.", "Please confirm plate clear manually."),
     # --- Wartungsprogramme ----------------------------------------------------------------------------
-    (r"Dieses Wartungsprogramm ist nur für den P2S eingerichtet\.", "This maintenance program is only set up for the P2S."),
+    (
+        r"Dieses Wartungsprogramm ist nur für den P2S eingerichtet\.",
+        "This maintenance program is only set up for the P2S.",
+    ),
     (r"Der Drucker ist nicht verbunden\.", "The printer is not connected."),
-    (r"Der Druckerzustand ist noch unbekannt\. Bitte den ersten Status abwarten\.", "The printer state is still unknown. Please wait for the first status."),
+    (
+        r"Der Druckerzustand ist noch unbekannt\. Bitte den ersten Status abwarten\.",
+        "The printer state is still unknown. Please wait for the first status.",
+    ),
     (r"Das Wartungsprogramm ist während eines Drucks gesperrt\.", "The maintenance program is locked while printing."),
     (r"Düse/Bett sind noch heiß \((?P<a>[\d.]+)/(?P<b>[\d.]+) °C\)\. ", r"Nozzle/bed are still hot (\g<a>/\g<b> °C). "),
     (r"Unbekanntes Programm: ", "Unknown program: "),
-    (r"Auf diesem Drucker läuft bereits ein Wartungsprogramm\.", "A maintenance program is already running on this printer."),
+    (
+        r"Auf diesem Drucker läuft bereits ein Wartungsprogramm\.",
+        "A maintenance program is already running on this printer.",
+    ),
     (r"Grundposition wird angefahren …", "Moving to home position …"),
     (r"Es läuft kein Wartungsprogramm\.", "No maintenance program is running."),
-    (r"Stopp angefordert – der aktuelle Schritt wird noch beendet\.", "Stop requested – the current step is being finished."),
+    (
+        r"Stopp angefordert – der aktuelle Schritt wird noch beendet\.",
+        "Stop requested – the current step is being finished.",
+    ),
     (r"Wartungsprogramm wird gestoppt\.", "Maintenance program is being stopped."),
     (r"Der Drucker hat den Befehl nicht angenommen\.", "The printer did not accept the command."),
     (r"Bett fährt \((?P<i>\d+)/(?P<t>\d+)\) …", r"Bed moving (\g<i>/\g<t>) …"),
     (r"Kopf fährt (?P<a>\w+) auf (?P<v>[\d.]+) mm …", r"Head moving \g<a> to \g<v> mm …"),
-    (r"(?P<n>\d+) s Pause – jetzt Öl auf die Gewindestangen geben\.", r"\g<n> s pause – apply oil to the threaded rods now."),
+    (
+        r"(?P<n>\d+) s Pause – jetzt Öl auf die Gewindestangen geben\.",
+        r"\g<n> s pause – apply oil to the threaded rods now.",
+    ),
     (r"(?P<n>\d+) s Pause – gleich folgt der nächste Durchgang\.", r"\g<n> s pause – the next pass follows shortly."),
     (r"Vorlage ist keine \.3mf-Datei\.", "Template is not a .3mf file."),
     (r"Vorlage nicht lesbar: ", "Template not readable: "),
@@ -115,11 +160,17 @@ _RAW: list[tuple[str, str]] = [
     (r"Fernzugriff gibt es nur unter Linux\.", "Remote access is only available on Linux."),
     (r"Tailscale ist nicht installiert\.", "Tailscale is not installed."),
     (r"Noch nicht bei Tailscale angemeldet\.", "Not signed in to Tailscale yet."),
-    (r"Prüfsumme des Tailscale-Downloads stimmt nicht — abgebrochen\.", "Checksum of the Tailscale download does not match — aborted."),
+    (
+        r"Prüfsumme des Tailscale-Downloads stimmt nicht — abgebrochen\.",
+        "Checksum of the Tailscale download does not match — aborted.",
+    ),
     (r"Prüfsumme von Tailscale nicht lesbar\.", "Tailscale checksum not readable."),
     (r"Kein passendes Tailscale-Paket gefunden\.", "No matching Tailscale package found."),
     (r"Tailscale-Download ist unerwartet groß\.", "Tailscale download is unexpectedly large."),
-    (r"Das Tailscale-Archiv enthält nicht die erwarteten Programme\.", "The Tailscale archive does not contain the expected programs."),
+    (
+        r"Das Tailscale-Archiv enthält nicht die erwarteten Programme\.",
+        "The Tailscale archive does not contain the expected programs.",
+    ),
     (r"Unbekannte Prozessorarchitektur: ", "Unknown processor architecture: "),
     (r"tailscaled hat sich sofort beendet\.", "tailscaled exited immediately."),
     (r"tailscaled ist nicht rechtzeitig bereit geworden\.", "tailscaled did not become ready in time."),

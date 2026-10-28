@@ -1,4 +1,5 @@
 """API für die Kamera-Einmessung über die vier Plattenecken."""
+
 from __future__ import annotations
 
 import logging
@@ -42,7 +43,10 @@ async def set_bed_empty_check(
     db: AsyncSession = Depends(get_db),
 ):
     await _printer_exists(printer_id, db)
-    return {**bed_empty_check.write_config(data.model_dump()), "has_reference": bed_empty_check.has_reference(printer_id)}
+    return {
+        **bed_empty_check.write_config(data.model_dump()),
+        "has_reference": bed_empty_check.has_reference(printer_id),
+    }
 
 
 @router.post("/{printer_id}/bed-empty-check/reference")

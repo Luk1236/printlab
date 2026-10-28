@@ -9,14 +9,14 @@ from backend.app.services.slicer_cli import build_command
 
 class TestBuildCommand:
     def test_without_plate(self, tmp_path):
-        cmd = build_command("studio.exe", tmp_path / "in.3mf", tmp_path, "out.gcode.3mf",
-                            None, None, [], False, False)
+        cmd = build_command("studio.exe", tmp_path / "in.3mf", tmp_path, "out.gcode.3mf", None, None, [], False, False)
         assert "--export-plate" not in cmd
         assert cmd[-1] == str(tmp_path / "in.3mf")
 
     def test_with_plate(self, tmp_path):
-        cmd = build_command("studio.exe", tmp_path / "in.3mf", tmp_path, "out.gcode.3mf",
-                            None, None, [], False, False, 2)
+        cmd = build_command(
+            "studio.exe", tmp_path / "in.3mf", tmp_path, "out.gcode.3mf", None, None, [], False, False, 2
+        )
         idx = cmd.index("--export-plate")
         assert cmd[idx + 1] == "2"
 
@@ -45,9 +45,17 @@ class TestSliceRoutePlate:
 
         from backend.app.services import slicer_cli
 
-        def fake_slice_file(source, name, printer_json=None, process_json=None,
-                            filament_jsons=None, arrange=False, orient=False,
-                            timeout=900.0, plate=None):
+        def fake_slice_file(
+            source,
+            name,
+            printer_json=None,
+            process_json=None,
+            filament_jsons=None,
+            arrange=False,
+            orient=False,
+            timeout=900.0,
+            plate=None,
+        ):
             assert plate == 2
             out = tmp_path / name
             labels = {"Metadata/plate_1.gcode": "FIRST", "Metadata/plate_2.gcode": "SECOND"}

@@ -44,7 +44,9 @@ class TestTranslate:
         assert "unvollständig" not in out
 
     def test_magazine_warning(self):
-        out = translate("Magazin: nur noch 1 frische Platte(n), kein freies Ablagefach mehr — bitte auffüllen bzw. leeren.")
+        out = translate(
+            "Magazin: nur noch 1 frische Platte(n), kein freies Ablagefach mehr — bitte auffüllen bzw. leeren."
+        )
         assert out.startswith("Magazine: only 1 fresh plate(s) left")
         assert "no free storage slot left" in out and "please refill or empty" in out
 
@@ -119,8 +121,13 @@ class TestMiddleware:
 
 class TestRemoteAccessMessages:
     def test_guard_and_download_messages(self):
-        assert translate("Fernzugriff nur mit eingeschalteter Anmeldung.") == "Remote access requires authentication to be enabled."
-        assert translate("Prüfsumme des Tailscale-Downloads stimmt nicht — abgebrochen.").startswith("Checksum of the Tailscale download")
+        assert (
+            translate("Fernzugriff nur mit eingeschalteter Anmeldung.")
+            == "Remote access requires authentication to be enabled."
+        )
+        assert translate("Prüfsumme des Tailscale-Downloads stimmt nicht — abgebrochen.").startswith(
+            "Checksum of the Tailscale download"
+        )
         assert translate("Freigabe fehlgeschlagen: x") == "Sharing failed: x"
 
     def test_the_remote_access_endpoints_are_translated(self):

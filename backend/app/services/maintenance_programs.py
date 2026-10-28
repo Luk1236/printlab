@@ -10,6 +10,7 @@ Sicherheitsregeln (vor dem Start und vor jedem Schritt):
 - Düse und Bett höchstens 60 °C (Verbrennungsgefahr beim Ölen),
 - nur Modelle mit 256-mm-Bett (aktuell P2S), weil die XY-Grenzen fest sind.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -96,7 +97,7 @@ def build_plan(program: ProgramKey, runs: int | None = None) -> list[tuple[str, 
     """
     custom_steps = plan_steps_for(program) if program not in PROGRAMS else None
     if program not in PROGRAMS:
-        if custom_steps is None:
+        if not custom_steps:
             raise ValueError(f"Unbekanntes Programm: {program}")
         return list(custom_steps)
     spec = PROGRAMS[program]
@@ -106,12 +107,16 @@ def build_plan(program: ProgramKey, runs: int | None = None) -> list[tuple[str, 
 
     if program == "oil":
         base: list[tuple[str, Any]] = [("home", None)]
-        base += _z_steps(steps_low, "+")           # 0 -> 30
-        base += _z_steps(steps_up, "+")            # 30 -> 150
-        base += _z_steps(steps_up, "-")            # 150 -> 30
+        base += _z_steps(steps_low, "+")  # 0 -> 30
+        base += _z_steps(steps_up, "+")  # 30 -> 150
+        base += _z_steps(steps_up, "-")  # 150 -> 30
         base += [
-            ("xy", ("X", XY_MIN)), ("xy", ("X", XY_MAX)), ("xy", ("X", XY_MIN)),
-            ("xy", ("Y", XY_MIN)), ("xy", ("Y", XY_MAX)), ("xy", ("Y", XY_MIN)),
+            ("xy", ("X", XY_MIN)),
+            ("xy", ("X", XY_MAX)),
+            ("xy", ("X", XY_MIN)),
+            ("xy", ("Y", XY_MIN)),
+            ("xy", ("Y", XY_MAX)),
+            ("xy", ("Y", XY_MIN)),
         ]
         plan = list(base)
         for _ in range(count - 1):
@@ -120,15 +125,17 @@ def build_plan(program: ProgramKey, runs: int | None = None) -> list[tuple[str, 
 
     # Gewindestangen: ein Durchgang abwechselnd hoch/runter, Pause, zurück.
     plan = [("home", None)]
-    plan += _z_steps(steps_low, "+")                # 0 -> 30
+    plan += _z_steps(steps_low, "+")  # 0 -> 30
     plan += (_z_steps(steps_up, "+") + _z_steps(steps_up, "-")) * CYCLES
-    plan += _z_steps(steps_up, "+")                # 30 -> 150 für die Ölpause
+    plan += _z_steps(steps_up, "+")  # 30 -> 150 für die Ölpause
     plan += [("pause", PASS_PAUSE)]
     plan += (_z_steps(steps_up, "-") + _z_steps(steps_up, "+")) * CYCLES
     plan += [("pause", PASS_PAUSE)]
     plan += [
-        ("xy", ("X", XY_MIN)), ("xy", ("X", XY_MAX)),
-        ("xy", ("Y", XY_MIN)), ("xy", ("Y", XY_MAX)),
+        ("xy", ("X", XY_MIN)),
+        ("xy", ("X", XY_MAX)),
+        ("xy", ("Y", XY_MIN)),
+        ("xy", ("Y", XY_MAX)),
     ]
     return plan
 
@@ -230,10 +237,17 @@ def _validate_custom_plan(raw: Any) -> tuple[bool, str, dict[str, Any] | None]:
             steps.append({"kind": "pause", "seconds": seconds})
         else:
             return False, f"Schritt {index}: unbekannte Art '{kind}'.", None
-    return True, "ok", {
-        "key": key, "label": label, "description": description,
-        "default_runs": default_runs, "steps": steps,
-    }
+    return (
+        True,
+        "ok",
+        {
+            "key": key,
+            "label": label,
+            "description": description,
+            "default_runs": default_runs,
+            "steps": steps,
+        },
+    )
 
 
 def custom_specs(path: Any = None) -> dict[ProgramKey, ProgramSpec]:
@@ -243,7 +257,9 @@ def custom_specs(path: Any = None) -> dict[ProgramKey, ProgramSpec]:
         ok, _message, plan = _validate_custom_plan(raw)
         if ok:
             specs[plan["key"]] = ProgramSpec(
-                key=plan["key"], label=plan["label"], description=plan.get("description", ""),
+                key=plan["key"],
+                label=plan["label"],
+                description=plan.get("description", ""),
                 default_runs=int(plan.get("default_runs", 1)),
             )
     return specs
@@ -380,7 +396,7 @@ class MaintenanceProgramService:
             "step": runner.step,
             "steps": total,
             "percent": int(round(100 * runner.step / total)) if total else 0,
-            "eta_seconds": estimate_seconds(runner.plan[runner.step:]),
+            "eta_seconds": estimate_seconds(runner.plan[runner.step :]),
             "error": runner.error,
             "started_at": runner.started_at,
             "finished_at": runner.finished_at,
@@ -389,8 +405,9 @@ class MaintenanceProgramService:
 
     # --- Steuerung ---------------------------------------------------------
 
-    def start(self, printer_id: int, program: ProgramKey, client: Any, model: str | None,
-              runs: int | None = None) -> tuple[bool, str]:
+    def start(
+        self, printer_id: int, program: ProgramKey, client: Any, model: str | None, runs: int | None = None
+    ) -> tuple[bool, str]:
         specs = custom_specs()
         spec = specs.get(program)
         if spec is None:
@@ -413,11 +430,8 @@ class MaintenanceProgramService:
             message="Grundposition wird angefahren …",
         )
         self._runners[printer_id] = runner
-        runner.task = spawn_background_task(
-            self._execute(runner), name=f"maintenance-program-{printer_id}-{program}"
-        )
-        logger.info("[Wartung] %s auf Drucker %s gestartet (%s Schritte)",
-                    program, printer_id, len(plan))
+        runner.task = spawn_background_task(self._execute(runner), name=f"maintenance-program-{printer_id}-{program}")
+        logger.info("[Wartung] %s auf Drucker %s gestartet (%s Schritte)", program, printer_id, len(plan))
         return True, f"{spec.label} gestartet."
 
     def stop(self, printer_id: int) -> tuple[bool, str]:
@@ -498,8 +512,7 @@ class MaintenanceProgramService:
             runner.error = str(exc)
             runner.message = str(exc)
             runner.finished_at = datetime.now(timezone.utc).isoformat()
-            logger.warning("[Wartung] Programm auf Drucker %s fehlgeschlagen: %s",
-                           runner.printer_id, exc)
+            logger.warning("[Wartung] Programm auf Drucker %s fehlgeschlagen: %s", runner.printer_id, exc)
 
 
 service = MaintenanceProgramService()

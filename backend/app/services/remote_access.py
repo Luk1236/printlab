@@ -14,6 +14,7 @@ Anmeldung zu.
 Nicht gegen ein echtes Tailnet getestet (Stand der Entwicklung): die Tests prüfen Parsen, Prüfsumme, Entpacken
 und die Befehlszeilen mit einem Ersatz für das Programm.
 """
+
 from __future__ import annotations
 
 import asyncio

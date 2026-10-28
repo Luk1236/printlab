@@ -4052,9 +4052,13 @@ async def on_print_start(printer_id: int, data: dict):
                         outcome = await asyncio.to_thread(bed_empty_check.check, printer_id, frame)
                         if outcome and outcome.get("warning"):
                             await notification_service.on_ai_failure_detection(
-                                printer_id, be_printer.name,
-                                data.get("subtask_name", ""), 0.5, "bed_empty_check",
-                                be_db, image_data=frame,
+                                printer_id,
+                                be_printer.name,
+                                data.get("subtask_name", ""),
+                                0.5,
+                                "bed_empty_check",
+                                be_db,
+                                image_data=frame,
                             )
     except Exception as exc:  # noqa: BLE001 - Start-Pfad darf nicht brechen
         logger.warning("Leerbett-Prüfung fehlgeschlagen: %s", exc)
@@ -9794,12 +9798,16 @@ async def lifespan(app: FastAPI):
                             image = await calibrate_snapshot(image)
                             warning = (
                                 first_layer_service.observe(printer_id, layer_num, image, fl_key)
-                                if image is not None else None
+                                if image is not None
+                                else None
                             )
                             if warning:
                                 # Erste-Schicht-Gate: optional pausieren statt nur warnen —
                                 # einmalig je Druck (observe markiert ihn als geprüft).
-                                if first_layer_service.pause_on_warning(printer_id) and fl_client.state.state == "RUNNING":
+                                if (
+                                    first_layer_service.pause_on_warning(printer_id)
+                                    and fl_client.state.state == "RUNNING"
+                                ):
                                     try:
                                         await fl_client.pause_print()
                                         warning["paused"] = True
@@ -9812,9 +9820,13 @@ async def lifespan(app: FastAPI):
                                             "Pause nach Erste-Schicht-Warnung fehlgeschlagen: %s", pause_exc
                                         )
                                 await notification_service.on_ai_failure_detection(
-                                    printer_id, fl_printer.name,
-                                    fl_state.subtask_name or "", 0.5, "first_layer_inspector",
-                                    fl_db, image_data=image,
+                                    printer_id,
+                                    fl_printer.name,
+                                    fl_state.subtask_name or "",
+                                    0.5,
+                                    "first_layer_inspector",
+                                    fl_db,
+                                    image_data=image,
                                 )
                 except Exception as exc:  # noqa: BLE001 - Callback darf nicht abbrechen
                     logging.getLogger(__name__).warning("Erste-Schicht-Inspektor fehlgeschlagen: %s", exc)
@@ -9839,15 +9851,24 @@ async def lifespan(app: FastAPI):
                             image = await calibrate_snapshot(image)
                             warning = (
                                 spaghetti_service.observe(
-                                    printer_id, sp_printer.name, layer_num, image, pw_key,
+                                    printer_id,
+                                    sp_printer.name,
+                                    layer_num,
+                                    image,
+                                    pw_key,
                                 )
-                                if image is not None else None
+                                if image is not None
+                                else None
                             )
                             if warning:
                                 await notification_service.on_ai_failure_detection(
-                                    printer_id, sp_printer.name,
-                                    pw_state.subtask_name or "", 0.5, "spaghetti_check",
-                                    sp_db, image_data=image,
+                                    printer_id,
+                                    sp_printer.name,
+                                    pw_state.subtask_name or "",
+                                    0.5,
+                                    "spaghetti_check",
+                                    sp_db,
+                                    image_data=image,
                                 )
             except Exception as exc:  # noqa: BLE001 - Callback darf nicht abbrechen
                 logging.getLogger(__name__).warning("Spaghetti-Check fehlgeschlagen: %s", exc)
@@ -9866,16 +9887,25 @@ async def lifespan(app: FastAPI):
                             image = await calibrate_snapshot(image)
                             warning = (
                                 part_watcher_service.observe(
-                                    printer_id, pw_printer.name, layer_num,
-                                    pw_state.total_layers, image, pw_key,
+                                    printer_id,
+                                    pw_printer.name,
+                                    layer_num,
+                                    pw_state.total_layers,
+                                    image,
+                                    pw_key,
                                 )
-                                if image is not None else None
+                                if image is not None
+                                else None
                             )
                             if warning:
                                 await notification_service.on_ai_failure_detection(
-                                    printer_id, pw_printer.name,
-                                    pw_state.subtask_name or "", 0.5, "part_watcher",
-                                    pw_db, image_data=image,
+                                    printer_id,
+                                    pw_printer.name,
+                                    pw_state.subtask_name or "",
+                                    0.5,
+                                    "part_watcher",
+                                    pw_db,
+                                    image_data=image,
                                 )
                 except Exception as exc:  # noqa: BLE001 - Callback darf nicht abbrechen
                     logging.getLogger(__name__).warning("Bauteil-Wächter fehlgeschlagen: %s", exc)

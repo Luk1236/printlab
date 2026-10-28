@@ -19,14 +19,16 @@ class TestRoundtrip:
         assert price_list.read_list() == []
 
     def test_write_cleans_entries(self, isolated_path):
-        result = price_list.write_list([
-            {"material": "PLA", "rate_per_kg": 22},
-            {"material": "TPU", "rate_per_kg": 45.5},
-            {"material": "", "rate_per_kg": 5},      # dropped
-            {"material": "Bad", "rate_per_kg": -1},  # dropped
-            "not a dict",                             # dropped
-            {"material": "PETG", "rate_per_kg": "30"},
-        ])
+        result = price_list.write_list(
+            [
+                {"material": "PLA", "rate_per_kg": 22},
+                {"material": "TPU", "rate_per_kg": 45.5},
+                {"material": "", "rate_per_kg": 5},  # dropped
+                {"material": "Bad", "rate_per_kg": -1},  # dropped
+                "not a dict",  # dropped
+                {"material": "PETG", "rate_per_kg": "30"},
+            ]
+        )
         assert result["entries"] == [
             {"material": "PLA", "rate_per_kg": 22.0},
             {"material": "TPU", "rate_per_kg": 45.5},

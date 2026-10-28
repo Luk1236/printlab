@@ -67,7 +67,7 @@ class TestSpreadScore:
         rng = np.random.default_rng(7)
         for _ in range(60):
             x, y = int(rng.integers(10, 190)), int(rng.integers(10, 190))
-            frame[y:y + 3, x:x + 3] = 0
+            frame[y : y + 3, x : x + 3] = 0
         blank = _jpg(_blank())
         components, _ = spaghetti_check.spread_score(_jpg(frame), blank)
         assert components > 25  # scattered -> many components
@@ -87,7 +87,7 @@ class TestCheck:
         rng = np.random.default_rng(3)
         for _ in range(80):
             x, y = int(rng.integers(5, 195)), int(rng.integers(5, 195))
-            frame[y:y + 3, x:x + 3] = 0
+            frame[y : y + 3, x : x + 3] = 0
         result = spaghetti_check.check(1, _jpg(frame), blank)
         assert result is not None
         assert result["warning"]
@@ -111,9 +111,9 @@ class TestCheck:
 class TestCycle:
     def test_needs_frame_once_per_print_and_at_end(self, singleton):
         spaghetti_check.write_config({"enabled": True})
-        assert singleton.needs_frame(1, 5, 100, "job-a") is False   # 5 < 75
-        assert singleton.needs_frame(1, 80, 100, "job-a") is True   # at 75+
-        singleton.observe(1, "P2S", 80, b"img", "job-a")            # checked flag set
+        assert singleton.needs_frame(1, 5, 100, "job-a") is False  # 5 < 75
+        assert singleton.needs_frame(1, 80, 100, "job-a") is True  # at 75+
+        singleton.observe(1, "P2S", 80, b"img", "job-a")  # checked flag set
         assert singleton.needs_frame(1, 85, 100, "job-a") is False
 
     def test_new_print_resets_check_flag(self, singleton):

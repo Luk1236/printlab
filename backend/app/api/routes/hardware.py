@@ -35,8 +35,7 @@ async def _printer_or_404(printer_id: int, db: AsyncSession) -> Printer:
     return printer
 
 
-def _audit(action: str, ok: bool, message: str, printer_id: int, user=None,
-           details: dict | None = None) -> None:
+def _audit(action: str, ok: bool, message: str, printer_id: int, user=None, details: dict | None = None) -> None:
     audit_log.record(action, ok, message, printer_id, getattr(user, "username", None), details)
 
 
@@ -153,7 +152,11 @@ async def set_hardware_config(
     if not ok:
         raise HTTPException(400, message)
     audit_log.record(
-        "hardware_config", True, message, printer_id, getattr(user, "username", None),
+        "hardware_config",
+        True,
+        message,
+        printer_id,
+        getattr(user, "username", None),
         {"keys": sorted(merged.keys())},
     )
     return {

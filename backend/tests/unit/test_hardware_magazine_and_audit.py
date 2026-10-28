@@ -40,9 +40,7 @@ class TestEditSlots:
 
     def test_magazine_survives_reload(self, extension, tmp_path):
         extension.edit_slots([{"id": 3, "label": "PEI C", "status": "used"}])
-        reloaded = HardwareExtension(
-            config_path=tmp_path / "hardware.json", magazine_path=tmp_path / "magazine.json"
-        )
+        reloaded = HardwareExtension(config_path=tmp_path / "hardware.json", magazine_path=tmp_path / "magazine.json")
         slots = {s["id"]: s for s in reloaded.status()["slots"]}
         assert slots[3]["status"] == "used"
 
@@ -118,13 +116,13 @@ class TestDoorStatus:
     def test_command_output_sets_state(self, tmp_path):
         import sys
 
-        extension = HardwareExtension(
-            config_path=tmp_path / "hardware.json", magazine_path=tmp_path / "magazine.json"
+        extension = HardwareExtension(config_path=tmp_path / "hardware.json", magazine_path=tmp_path / "magazine.json")
+        ok, msg = extension.update_config(
+            {
+                "mode": "command",
+                "door_status_command": [sys.executable, "-c", "print('DOOR:OPEN')"],
+            }
         )
-        ok, msg = extension.update_config({
-            "mode": "command",
-            "door_status_command": [sys.executable, "-c", "print('DOOR:OPEN')"],
-        })
         assert ok, msg
         ok, msg = extension.check_door_status()
         assert ok, msg
@@ -133,13 +131,13 @@ class TestDoorStatus:
     def test_unknown_output_is_reported(self, tmp_path):
         import sys
 
-        extension = HardwareExtension(
-            config_path=tmp_path / "hardware.json", magazine_path=tmp_path / "magazine.json"
+        extension = HardwareExtension(config_path=tmp_path / "hardware.json", magazine_path=tmp_path / "magazine.json")
+        extension.update_config(
+            {
+                "mode": "command",
+                "door_status_command": [sys.executable, "-c", "print('DOOR:UNKNOWN')"],
+            }
         )
-        extension.update_config({
-            "mode": "command",
-            "door_status_command": [sys.executable, "-c", "print('DOOR:UNKNOWN')"],
-        })
         ok, msg = extension.check_door_status()
         assert ok, msg
         assert extension.status()["door"] == "unknown"

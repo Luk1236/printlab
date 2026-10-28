@@ -24,6 +24,7 @@ Konfiguration in ``data/hardware.json`` (unter dem Schlüssel
       }
     }
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -186,7 +187,7 @@ def _broadcast(payload: dict[str, Any]) -> None:
         from backend.app.main import ws_manager
 
         asyncio.get_running_loop().create_task(ws_manager.broadcast(payload))
-    except Exception as exc:  #pragma: no cover - Broadcast ist optional
+    except Exception as exc:  # pragma: no cover - Broadcast ist optional
         logger.debug("[AutoPlateChange] Broadcast fehlgeschlagen: %s", exc)
 
 
@@ -424,7 +425,7 @@ def _note_queue_check_failed(printer_id: int) -> None:
         "job": "",
         "ok": True,
         "message": "Warteschlangen-Prüfung nicht möglich (Datenbank nicht erreichbar)"
-                   " — Automatik läuft weiter, ohne die Auftragsprüfung zu kennen.",
+        " — Automatik läuft weiter, ohne die Auftragsprüfung zu kennen.",
         "warning": "only_with_queue war nicht prüfbar.",
     }
     _LAST[printer_id] = entry

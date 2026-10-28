@@ -8,6 +8,7 @@ Der Dienst läuft im vorhandenen Layer-Callback mit und pausiert höchstens
 einmal je Druck. Ein neuer Druck wird an einer fallenden Schichtnummer oder
 einer anderen Auftragskennung erkannt; dann ist die Pause wieder scharf.
 """
+
 from __future__ import annotations
 
 import json

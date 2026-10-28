@@ -49,9 +49,7 @@ class TestConfig:
             json.dumps({"mode": "command", "door_open_command": "C:\\tool.exe"}),
             encoding="utf-8",
         )
-        cfg = auto_plate_change.write_config(
-            {"enabled": True, "cooldown_bed_temp": 40.5, "bogus": "x"}
-        )
+        cfg = auto_plate_change.write_config({"enabled": True, "cooldown_bed_temp": 40.5, "bogus": "x"})
         assert cfg["enabled"] is True
         assert cfg["cooldown_bed_temp"] == 40.5
         assert "bogus" not in cfg
@@ -68,9 +66,7 @@ class TestConfig:
 
 class TestScheduleGate:
     def test_schedule_is_a_noop_when_disabled(self, monkeypatch):
-        monkeypatch.setattr(
-            auto_plate_change, "read_config", lambda: dict(auto_plate_change.DEFAULTS)
-        )
+        monkeypatch.setattr(auto_plate_change, "read_config", lambda: dict(auto_plate_change.DEFAULTS))
         assert auto_plate_change.schedule(1, "job") is False
         assert 1 not in auto_plate_change._TASKS
 
@@ -81,9 +77,7 @@ class TestScheduleGate:
             pending.append(job_name)
 
         monkeypatch.setattr(auto_plate_change, "_run_change", fake_run)
-        monkeypatch.setattr(
-            auto_plate_change, "read_config", lambda: dict(auto_plate_change.DEFAULTS, enabled=True)
-        )
+        monkeypatch.setattr(auto_plate_change, "read_config", lambda: dict(auto_plate_change.DEFAULTS, enabled=True))
 
         async def main():
             assert auto_plate_change.schedule(1, "Wartung") is True
@@ -96,7 +90,9 @@ class TestScheduleGate:
 
     def test_only_with_queue_skips_without_pending_items(self, monkeypatch):
         monkeypatch.setattr(
-            auto_plate_change, "read_config", lambda: dict(auto_plate_change.DEFAULTS, enabled=True, only_with_queue=True)
+            auto_plate_change,
+            "read_config",
+            lambda: dict(auto_plate_change.DEFAULTS, enabled=True, only_with_queue=True),
         )
         monkeypatch.setattr(auto_plate_change, "_has_pending_queue_item", lambda pid: False)
 
@@ -115,7 +111,9 @@ class TestScheduleGate:
 
         monkeypatch.setattr(auto_plate_change, "_run_change", fake_run)
         monkeypatch.setattr(
-            auto_plate_change, "read_config", lambda: dict(auto_plate_change.DEFAULTS, enabled=True, only_with_queue=True)
+            auto_plate_change,
+            "read_config",
+            lambda: dict(auto_plate_change.DEFAULTS, enabled=True, only_with_queue=True),
         )
         monkeypatch.setattr(auto_plate_change, "_has_pending_queue_item", lambda pid: True)
 

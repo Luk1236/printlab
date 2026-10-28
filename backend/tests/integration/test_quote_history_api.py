@@ -9,7 +9,16 @@ def isolated(tmp_path, monkeypatch):
     monkeypatch.setattr(quote_history, "HISTORY_PATH", tmp_path / "quote_history.json")
 
 
-BODY = {"customer": "Kunde", "description": "Teil", "material": 1, "energy": 1, "labor": 1, "subtotal": 3, "markup": 0.6, "total": 3.6}
+BODY = {
+    "customer": "Kunde",
+    "description": "Teil",
+    "material": 1,
+    "energy": 1,
+    "labor": 1,
+    "subtotal": 3,
+    "markup": 0.6,
+    "total": 3.6,
+}
 
 
 class TestQuoteHistoryApi:

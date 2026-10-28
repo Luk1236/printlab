@@ -19,6 +19,7 @@ Zugriffsschutz (Standard: nur Anfragen von diesem PC, also Loopback):
 Ohne eine der beiden Variablen werden Anfragen von anderen Rechnern mit 403 abgelehnt, auch
 wenn der Dienst auf ``0.0.0.0`` lauscht (Firewall-Regel für Port 3001 bleibt trotzdem sinnvoll).
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -180,8 +181,11 @@ async def slice_route(
 
     # Ohne 3MF-Wunsch den G-code aus der erzeugten Datei liefern (PrintLab erwartet dann Text).
     # Mit Plattenwahl: zuerst Metadata/plate_N.gcode, sonst plate_1.gcode.
-    candidates = ([f"Metadata/plate_{plate_num}.gcode", "Metadata/plate_1.gcode"]
-                  if plate_num is not None else ["Metadata/plate_1.gcode"])
+    candidates = (
+        [f"Metadata/plate_{plate_num}.gcode", "Metadata/plate_1.gcode"]
+        if plate_num is not None
+        else ["Metadata/plate_1.gcode"]
+    )
     try:
         with tempfile.NamedTemporaryFile(delete=False, suffix=".gcode.3mf") as tmp:
             tmp.write(result.content)
@@ -204,5 +208,9 @@ async def slice_route(
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host=os.environ.get("PC_SLICER_HOST", "127.0.0.1"),
-                port=int(os.environ.get("PC_SLICER_PORT", "3001")), loop="asyncio")
+    uvicorn.run(
+        app,
+        host=os.environ.get("PC_SLICER_HOST", "127.0.0.1"),
+        port=int(os.environ.get("PC_SLICER_PORT", "3001")),
+        loop="asyncio",
+    )

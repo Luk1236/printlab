@@ -41,10 +41,12 @@ class TestBuild:
             zf.writestr("Metadata/plate_1.gcode", "ALTER-GCODE")
             zf.writestr("Metadata/plate_1.gcode.md5", "ALT")
             zf.writestr("Metadata/plate_1.json", "{}")
-            zf.writestr("Metadata/slice_info.config",
-                        '<config><plate><metadata key="prediction" value="999"/>'
-                        '<metadata key="weight" value="42"/>'
-                        '<metadata key="first_layer_time" value="12"/></plate></config>')
+            zf.writestr(
+                "Metadata/slice_info.config",
+                '<config><plate><metadata key="prediction" value="999"/>'
+                '<metadata key="weight" value="42"/>'
+                '<metadata key="first_layer_time" value="12"/></plate></config>',
+            )
             zf.writestr("3D/3dmodel.model", "<model/>")
         return template
 

@@ -8,6 +8,7 @@ Das Kalkulator-Frontend schlägt die Rate für ein Material vor; die
 Berechnung selbst bleibt im Quote-Endpunkt (Rate wird übergeben). Ohne
 Treffer gilt ``default_filament_cost``.
 """
+
 from __future__ import annotations
 
 import json

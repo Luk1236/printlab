@@ -10,6 +10,7 @@ den Einstellungen hinterlegten Werte.
 Preisliste: stehende Materialtarife aus ``data/price_list.json`` (siehe
 ``services/price_list.py``); der Kalkulator nutzt sie mit ``material=``.
 """
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -127,7 +128,9 @@ async def quote(
     grams: float = Query(..., ge=0, description="Filament in Gramm"),
     duration_minutes: float = Query(..., ge=0, description="Druckdauer in Minuten"),
     labor_minutes: float = Query(0, ge=0, description="Handarbeitszeit in Minuten"),
-    filament_cost_per_kg: float | None = Query(None, ge=0, description="Materialrate; Standard: Preisliste/Einstellung"),
+    filament_cost_per_kg: float | None = Query(
+        None, ge=0, description="Materialrate; Standard: Preisliste/Einstellung"
+    ),
     material: str | None = Query(None, max_length=40, description="Materialname für die Preisliste (z. B. TPU)"),
     currency: str | None = Query(None, max_length=8, description="Währungskürzel für die Antwort"),
     _=RequirePermissionIfAuthEnabled(Permission.ARCHIVES_READ),

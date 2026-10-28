@@ -10,6 +10,7 @@ eingemessen und mit dem Leerbett verglichen; Differenz über Schwelle = Warnung
 Konfiguration: ``data/bed_empty_check.json``:
 ``{"enabled": false, "threshold": 8.0}``
 """
+
 from __future__ import annotations
 
 import json

@@ -17,16 +17,27 @@ def make_3mf() -> bytes:
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w") as zf:
         zf.writestr("Metadata/plate_1.gcode", "G28\nG1 X20\n")
-        zf.writestr("Metadata/slice_info.config",
-                    '<plate><metadata key="prediction" value="420"/><metadata key="weight" value="12.5"/></plate>')
+        zf.writestr(
+            "Metadata/slice_info.config",
+            '<plate><metadata key="prediction" value="420"/><metadata key="weight" value="12.5"/></plate>',
+        )
     return buf.getvalue()
 
 
 class TestCli:
     def test_befehl_mit_profilen(self, tmp_path):
         (tmp_path / "m.3mf").write_bytes(b"3mf")
-        cmd = build_command("bambu-studio.exe", tmp_path / "m.3mf", tmp_path, "out.gcode.3mf",
-                            '{"a":1}', '{"b":2}', ['{"c":3}', '{"d":4}'], arrange=True, orient=True)
+        cmd = build_command(
+            "bambu-studio.exe",
+            tmp_path / "m.3mf",
+            tmp_path,
+            "out.gcode.3mf",
+            '{"a":1}',
+            '{"b":2}',
+            ['{"c":3}', '{"d":4}'],
+            arrange=True,
+            orient=True,
+        )
         assert "--load-settings" in cmd
         assert "--load-filaments" in cmd
         assert "--arrange" in cmd and cmd[cmd.index("--arrange") + 1] == "1"
@@ -36,8 +47,17 @@ class TestCli:
 
     def test_befehl_ohne_profile(self, tmp_path):
         (tmp_path / "m.3mf").write_bytes(b"3mf")
-        cmd = build_command("bambu-studio.exe", tmp_path / "m.3mf", tmp_path, "out.gcode.3mf",
-                            None, None, [], arrange=False, orient=False)
+        cmd = build_command(
+            "bambu-studio.exe",
+            tmp_path / "m.3mf",
+            tmp_path,
+            "out.gcode.3mf",
+            None,
+            None,
+            [],
+            arrange=False,
+            orient=False,
+        )
         assert "--load-settings" not in cmd
         assert cmd[cmd.index("--arrange") + 1] == "0"
 
@@ -70,6 +90,7 @@ class TestApi:
     def test_slice_liefert_3mf(self, monkeypatch):
         def fake(*args, **kwargs):
             return SliceOutput(make_3mf(), 420, 12.5)
+
         monkeypatch.setattr(pc_slicer, "slice_file", fake)
         response = self.client().post(
             "/slice",

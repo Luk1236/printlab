@@ -5,6 +5,7 @@ das Schmierprogramm ausführt. Am Bambu-Monitor am P2S getestet; hier als
 Dienst im PrintLab-Fork, damit die erzeugte Datei über den Dateimanager oder
 die Warteschlange gestartet werden kann.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -57,10 +58,8 @@ def build_gcode(program: str = "rods") -> str:
         header = HEADER.format(title="Öl verteilen", minutes=3)
         lines = [header.rstrip("\n"), f"G1 Z{Z_LOW} F{FEED_Z}", "M400"]
         lines += [f"G1 Z{Z_HIGH} F{FEED_Z}", "M400", f"G1 Z{Z_LOW} F{FEED_Z}", "M400"]
-        lines += [f"G1 X{MIN_XY} F{FEED_XY}", f"G1 X{MAX_XY} F{FEED_XY}",
-                  f"G1 X{MIN_XY} F{FEED_XY}", "M400"]
-        lines += [f"G1 Y{MIN_XY} F{FEED_XY}", f"G1 Y{MAX_XY} F{FEED_XY}",
-                  f"G1 Y{MIN_XY} F{FEED_XY}", "M400"]
+        lines += [f"G1 X{MIN_XY} F{FEED_XY}", f"G1 X{MAX_XY} F{FEED_XY}", f"G1 X{MIN_XY} F{FEED_XY}", "M400"]
+        lines += [f"G1 Y{MIN_XY} F{FEED_XY}", f"G1 Y{MAX_XY} F{FEED_XY}", f"G1 Y{MIN_XY} F{FEED_XY}", "M400"]
         lines.append(FOOTER.rstrip("\n"))
         return "\n".join(lines) + "\n"
 
@@ -72,8 +71,13 @@ def build_gcode(program: str = "rods") -> str:
     for _ in range(CYCLES):
         lines += [f"G1 Z{Z_LOW} F{FEED_Z}", "M400", f"G1 Z{Z_HIGH} F{FEED_Z}", "M400"]
     lines += [f"G4 S{PAUSE}"]
-    lines += [f"G1 X{MIN_XY} F{FEED_XY}", f"G1 X{MAX_XY} F{FEED_XY}",
-              f"G1 Y{MIN_XY} F{FEED_XY}", f"G1 Y{MAX_XY} F{FEED_XY}", "M400"]
+    lines += [
+        f"G1 X{MIN_XY} F{FEED_XY}",
+        f"G1 X{MAX_XY} F{FEED_XY}",
+        f"G1 Y{MIN_XY} F{FEED_XY}",
+        f"G1 Y{MAX_XY} F{FEED_XY}",
+        "M400",
+    ]
     lines.append(FOOTER.rstrip("\n"))
     return "\n".join(lines) + "\n"
 

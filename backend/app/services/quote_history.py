@@ -4,6 +4,7 @@ Die Liste liegt in ``quote_history.json`` (neueste zuerst, höchstens ``MAX_ENTR
 Bezeichnung, die Eingaben und die berechneten Beträge fest, damit ein Angebot später nachvollziehbar bleibt,
 auch wenn sich Tarife ändern.
 """
+
 from __future__ import annotations
 
 import json

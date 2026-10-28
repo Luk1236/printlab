@@ -17,7 +17,9 @@ def isolated_hardware(tmp_path, monkeypatch):
 
 class TestCommandConfigGuard:
     @pytest.mark.asyncio
-    async def test_commands_are_refused_without_auth(self, async_client: AsyncClient, printer_factory, isolated_hardware):
+    async def test_commands_are_refused_without_auth(
+        self, async_client: AsyncClient, printer_factory, isolated_hardware
+    ):
         printer = await printer_factory(name="P2S")
         resp = await async_client.put(
             f"/api/v1/printers/{printer.id}/hardware/config",
@@ -42,7 +44,9 @@ class TestCommandConfigGuard:
 
 class TestMessageLanguage:
     @pytest.mark.asyncio
-    async def test_the_guard_message_follows_the_ui_language(self, async_client: AsyncClient, printer_factory, isolated_hardware):
+    async def test_the_guard_message_follows_the_ui_language(
+        self, async_client: AsyncClient, printer_factory, isolated_hardware
+    ):
         printer = await printer_factory(name="P2S")
         url = f"/api/v1/printers/{printer.id}/hardware/config"
         body = {"mode": "command", "door_open_command": "calc.exe"}

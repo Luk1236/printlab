@@ -6,11 +6,16 @@ from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
+
 # Ältere Installationen setzen noch die früheren BAMBUDDY_*-Variablen. Sie gelten weiter und werden auf die
 # neuen PRINTLAB_*-Namen abgebildet (eine bereits gesetzte PRINTLAB_*-Variable hat Vorrang).
-for _legacy_key, _legacy_value in list(os.environ.items()):
-    if _legacy_key.startswith("BAMBUDDY_"):
-        os.environ.setdefault("PRINTLAB_" + _legacy_key[len("BAMBUDDY_"):], _legacy_value)
+def mirror_legacy_env(environ) -> None:
+    for key, value in list(environ.items()):
+        if key.startswith("BAMBUDDY_"):
+            environ.setdefault("PRINTLAB_" + key[len("BAMBUDDY_") :], value)
+
+
+mirror_legacy_env(os.environ)
 
 # Eigene Version von PrintLab (Git-Tags vX.Y.Z). Einzige Versionsquelle: Oberfläche, Backups, Support-Infos
 # und die Update-Prüfung gegen das eigene Repo benutzen sie. Bei jedem Release erhöhen (docs/VERSIONING.md).

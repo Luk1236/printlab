@@ -1,4 +1,5 @@
 """Fernzugriff über Tailscale (siehe services/remote_access.py). Änderungen nur mit eingeschalteter Anmeldung."""
+
 from __future__ import annotations
 
 import logging

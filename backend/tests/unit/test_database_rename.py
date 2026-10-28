@@ -37,13 +37,14 @@ def test_very_old_name_is_migrated_too(tmp_path, monkeypatch):
     assert (tmp_path / "printlab.db").exists()
 
 
-def test_legacy_environment_variables_are_mirrored(monkeypatch):
-    import importlib
+def test_legacy_environment_variables_are_mirrored():
+    environ = {"BAMBUDDY_LOCAL_LOGIN": "true", "OTHER": "x"}
+    config.mirror_legacy_env(environ)
+    assert environ["PRINTLAB_LOCAL_LOGIN"] == "true"
+    assert environ["OTHER"] == "x"
 
-    monkeypatch.setenv("BAMBUDDY_LOCAL_LOGIN", "true")
-    monkeypatch.delenv("PRINTLAB_LOCAL_LOGIN", raising=False)
-    importlib.reload(config)
-    import os
 
-    assert os.environ["PRINTLAB_LOCAL_LOGIN"] == "true"
-    monkeypatch.delenv("PRINTLAB_LOCAL_LOGIN", raising=False)
+def test_a_printlab_variable_wins_over_the_legacy_one():
+    environ = {"BAMBUDDY_LOCAL_LOGIN": "old", "PRINTLAB_LOCAL_LOGIN": "new"}
+    config.mirror_legacy_env(environ)
+    assert environ["PRINTLAB_LOCAL_LOGIN"] == "new"

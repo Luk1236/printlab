@@ -136,9 +136,9 @@ class TestEntries:
         assert e is not None and e.link_url is None
 
     def test_allowed_link_is_kept(self):
-        assert svc.parse_entry(entry(link_url="https://github.com/Luk1236/printlab/blob/bambu-monitor-port/docs/HILFE.md")).link_url == (
-            "https://github.com/Luk1236/printlab/blob/bambu-monitor-port/docs/HILFE.md"
-        )
+        assert svc.parse_entry(
+            entry(link_url="https://github.com/Luk1236/printlab/blob/bambu-monitor-port/docs/HILFE.md")
+        ).link_url == ("https://github.com/Luk1236/printlab/blob/bambu-monitor-port/docs/HILFE.md")
 
     def test_times_are_naive_utc(self):
         e = svc.parse_entry(entry(expires_at="2026-11-01T02:00:00+02:00"))

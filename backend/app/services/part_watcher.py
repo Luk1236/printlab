@@ -7,6 +7,7 @@ des Drucks mit einem neuen Bild verglichen. Kaum Unterschied = Warnung
 
 Nur melden, nie eingreifen. Die Konfiguration liegt in ``data/part_watcher.json``.
 """
+
 from __future__ import annotations
 
 import json
@@ -35,8 +36,8 @@ def compare_images(reference: bytes, current: bytes) -> float:
     h, w = first.shape[:2]
     box = (int(w * ROI[0]), int(h * ROI[1]), int(w * ROI[2]), int(h * ROI[3]))
     second = cv2.resize(second, (w, h))
-    first_roi = first[box[1]:box[3], box[0]:box[2]]
-    second_roi = second[box[1]:box[3], box[0]:box[2]]
+    first_roi = first[box[1] : box[3], box[0] : box[2]]
+    second_roi = second[box[1] : box[3], box[0] : box[2]]
     return float(cv2.absdiff(first_roi, second_roi).mean())
 
 
@@ -115,8 +116,13 @@ class PartWatcher:
                 "last_layer": int(self._last_layer.get(printer_id, 0)),
             }
 
-    def configure(self, printer_id: int, enabled: bool, threshold: float | None = None,
-                  overrides: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    def configure(
+        self,
+        printer_id: int,
+        enabled: bool,
+        threshold: float | None = None,
+        overrides: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
         with self._lock:
             entry = self._entry(printer_id)
             entry["enabled"] = bool(enabled)
@@ -130,11 +136,13 @@ class PartWatcher:
                     fragment = str(rule.get("key_contains", "")).strip()
                     if not fragment:
                         continue
-                    rules.append({
-                        "key_contains": fragment[:120],
-                        "threshold": max(0.05, min(20.0, float(rule.get("threshold", 1.0)))),
-                        "enabled": bool(rule.get("enabled", True)),
-                    })
+                    rules.append(
+                        {
+                            "key_contains": fragment[:120],
+                            "threshold": max(0.05, min(20.0, float(rule.get("threshold", 1.0)))),
+                            "enabled": bool(rule.get("enabled", True)),
+                        }
+                    )
                 self._config["overrides"] = rules
             self._save()
             self._checked[printer_id] = False
@@ -160,14 +168,11 @@ class PartWatcher:
             self._reset_if_new_print(printer_id, key, layer_num)
             if printer_id not in self._ref:
                 return layer_num <= 5
-            return (
-                total_layers > 0
-                and layer_num >= max(3, total_layers // 2)
-                and not self._checked.get(printer_id)
-            )
+            return total_layers > 0 and layer_num >= max(3, total_layers // 2) and not self._checked.get(printer_id)
 
-    def observe(self, printer_id: int, printer_name: str, layer_num: int, total_layers: int,
-                image: bytes | None, key: str = "") -> dict[str, Any] | None:
+    def observe(
+        self, printer_id: int, printer_name: str, layer_num: int, total_layers: int, image: bytes | None, key: str = ""
+    ) -> dict[str, Any] | None:
         with self._lock:
             entry = self._resolve(printer_id, key)
             if not entry.get("enabled") or not image:

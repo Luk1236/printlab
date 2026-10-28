@@ -112,7 +112,10 @@ class TestStatus:
 
         async def fake_ts(*args, timeout=30.0):
             if args[0] == "status":
-                data = {"BackendState": "Running", "Self": {"TailscaleIPs": ["100.64.0.7"], "DNSName": "printlab.tail1234.ts.net."}}
+                data = {
+                    "BackendState": "Running",
+                    "Self": {"TailscaleIPs": ["100.64.0.7"], "DNSName": "printlab.tail1234.ts.net."},
+                }
                 return 0, json.dumps(data)
             return 0, "|-- tcp://100.64.0.7:8000 (TCP forwarder)\n|--> tcp://localhost:8000\n"
 

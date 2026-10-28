@@ -30,16 +30,12 @@ class TestGitAuth:
         monkeypatch.setenv("PRINTLAB_GITHUB_TOKEN", "   ")
         assert updates._git_auth_env() is None
 
-    def test_the_legacy_variable_name_still_works(self, monkeypatch):
-        monkeypatch.delenv("PRINTLAB_GITHUB_TOKEN", raising=False)
-        monkeypatch.setenv("BAMBUDDY_GITHUB_TOKEN", "legacy")
-        import importlib
-
+    def test_the_legacy_variable_name_still_works(self):
         from backend.app.core import config
 
-        importlib.reload(config)
-        assert os.environ.get("PRINTLAB_GITHUB_TOKEN") == "legacy"
-        monkeypatch.delenv("PRINTLAB_GITHUB_TOKEN", raising=False)
+        environ = {"BAMBUDDY_GITHUB_TOKEN": "legacy"}
+        config.mirror_legacy_env(environ)
+        assert environ.get("PRINTLAB_GITHUB_TOKEN") == "legacy"
 
 
 class TestAutoRestart:

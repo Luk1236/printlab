@@ -60,6 +60,7 @@ jobs:
       - name: Upload Bandit results to GitHub Security
         uses: github/codeql-action/upload-sarif@v4
         if: always()
+        continue-on-error: true  # Code-Scanning-Upload ist optional; die Scans selbst entscheiden
         with:
           sarif_file: bandit-results.sarif
           category: bandit
@@ -99,6 +100,7 @@ jobs:
       - name: Upload Trivy results to GitHub Security
         uses: github/codeql-action/upload-sarif@v4
         if: always() && hashFiles('trivy-results.sarif') != ''
+        continue-on-error: true  # Code-Scanning-Upload ist optional; die Scans selbst entscheiden
         with:
           sarif_file: trivy-results.sarif
           category: trivy
@@ -117,6 +119,7 @@ jobs:
       - name: Upload Trivy config results
         uses: github/codeql-action/upload-sarif@v4
         if: always() && hashFiles('trivy-config-results.sarif') != ''
+        continue-on-error: true  # Code-Scanning-Upload ist optional; die Scans selbst entscheiden
         with:
           sarif_file: trivy-config-results.sarif
           category: trivy-config

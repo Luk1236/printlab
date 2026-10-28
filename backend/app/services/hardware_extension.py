@@ -11,6 +11,7 @@ Die Befehle stehen in ``data/hardware.json`` (wird beim ersten Start angelegt).
 Sicherheit: Tür und Wechsler sind nur bei verbundenem, nicht druckendem Drucker
 erlaubt; jeder Schritt hat ein Zeitlimit, ein Fehler bricht den Ablauf ab.
 """
+
 from __future__ import annotations
 
 import json
@@ -85,8 +86,9 @@ def _write_json(path: Path, data: Any) -> None:
     tmp.replace(path)
 
 
-def _run(command: str | list[str], timeout: float, on_start: Callable[[subprocess.Popen], None] | None = None
-         ) -> tuple[bool, str]:
+def _run(
+    command: str | list[str], timeout: float, on_start: Callable[[subprocess.Popen], None] | None = None
+) -> tuple[bool, str]:
     """Führt einen lokalen Hardware-Befehl aus (Konfiguration ist vertrauenswürdig).
 
     Eine **Liste** (``["programm", "arg1", ...]``) läuft ohne Shell und ist damit frei von
@@ -198,12 +200,15 @@ class HardwareExtension:
         }
 
     def _save_magazine(self) -> None:
-        _write_json(self.magazine_path, {
-            "slots": self._magazine["slots"],
-            "plate_on_bed": self._plate_on_bed,
-            "changes": self._magazine["changes"],
-            "last_change": self._magazine["last_change"],
-        })
+        _write_json(
+            self.magazine_path,
+            {
+                "slots": self._magazine["slots"],
+                "plate_on_bed": self._plate_on_bed,
+                "changes": self._magazine["changes"],
+                "last_change": self._magazine["last_change"],
+            },
+        )
 
     # --- Status ------------------------------------------------------------
 
@@ -246,8 +251,10 @@ class HardwareExtension:
             if self._estop:
                 return "Not-Halt aktiv — Hardware-Konfiguration neu laden oder Magazin auffüllen, um fortzufahren."
             if self._incomplete and not allow_incomplete:
-                return (f"Letzter Wechsel unvollständig ({self._incomplete.get('step')}) — "
-                        "Mechanik prüfen, dann den Wechsel als geprüft bestätigen.")
+                return (
+                    f"Letzter Wechsel unvollständig ({self._incomplete.get('step')}) — "
+                    "Mechanik prüfen, dann den Wechsel als geprüft bestätigen."
+                )
             self._busy = True
             self._last_error = None
             return None
@@ -354,9 +361,11 @@ class HardwareExtension:
                 self._set_door("closed")
                 return True, f"Platte aus Fach {supply['id']} eingesetzt (Simulation)."
             # Echter Ablauf: Tür auf -> Wechsel -> Tür zu; jeder Schritt muss gelingen.
-            for key, label in (("door_open_command", "Tür öffnen"),
-                               ("plate_change_command", "Plattenwechsel"),
-                               ("door_close_command", "Tür schließen")):
+            for key, label in (
+                ("door_open_command", "Tür öffnen"),
+                ("plate_change_command", "Plattenwechsel"),
+                ("door_close_command", "Tür schließen"),
+            ):
                 ok, output = self._command(key)
                 if ok:
                     continue
@@ -522,8 +531,10 @@ _per_printer_lock = threading.Lock()
 
 
 def _printer_paths(printer_id: int) -> tuple[Path, Path]:
-    return (CONFIG_PATH.with_name(f"hardware_{printer_id}.json"),
-            MAGAZINE_PATH.with_name(f"magazine_{printer_id}.json"))
+    return (
+        CONFIG_PATH.with_name(f"hardware_{printer_id}.json"),
+        MAGAZINE_PATH.with_name(f"magazine_{printer_id}.json"),
+    )
 
 
 def get_hardware(printer_id: int | None = None) -> HardwareExtension:

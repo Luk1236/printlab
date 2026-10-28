@@ -6,6 +6,7 @@ Konfigurationsänderung, Wartungsprogramme) landet als Zeile in
 Benutzer. Die Datei liegt chronologisch vor (älteste Zeile zuerst) und wird
 auf ``MAX_LINES`` gekappt; das Lesen liefert die neuesten Einträge zuerst.
 """
+
 from __future__ import annotations
 
 import json
@@ -68,8 +69,14 @@ def _trim() -> None:
         logger.warning("[AuditLog] Kappen fehlgeschlagen: %s", exc)
 
 
-def record(action: str, ok: bool, message: str = "", printer_id: int | None = None,
-           user: str | None = None, details: dict[str, Any] | None = None) -> dict[str, Any]:
+def record(
+    action: str,
+    ok: bool,
+    message: str = "",
+    printer_id: int | None = None,
+    user: str | None = None,
+    details: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Aktion protokollieren (Fehler beim Schreiben dürfen nie aufsteigen)."""
     global _lines_since_trim
     entry: dict[str, Any] = {
