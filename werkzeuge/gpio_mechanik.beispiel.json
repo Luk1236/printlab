@@ -1,0 +1,14 @@
+{
+  "zu_grad": 10.0,
+  "offen_grad": 154.0,
+  "grad_pro_schritt": 2.0,
+  "pause_s": 0.03,
+  "endschalter": true,
+  "timeout_s": 8.0,
+  "pins": {
+    "door_servo": 18,
+    "endstop_open": 23,
+    "endstop_closed": 24,
+    "plate_sensor": 25
+  }
+}

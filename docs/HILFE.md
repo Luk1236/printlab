@@ -96,3 +96,17 @@ Der Token wird nur an `api.github.com` geschickt und nicht protokolliert. Ein
 authentifizierter Aufruf hat zudem ein hoeheres Limit (5000 statt 60 Anfragen je Stunde).
 Nach einem PrintLab-Update muss die Instanz ohnehin neu gestartet werden, damit die neue
 Versionsnummer angezeigt wird.
+
+## Angebote mit Briefkopf und PDF
+
+Im Angebotskalkulator: **Firmendaten** eintragen (Name, Anschrift, Bankverbindung, Umsatzsteuer, Gültigkeit, Präfix der
+Angebotsnummer). Beim Speichern eines Angebots vergibt PrintLab eine fortlaufende Nummer (`A-2026-0001`); in
+**Verlauf** erzeugt „PDF“ das Angebot mit dem Briefkopf (Sprache der Oberfläche: Deutsch oder Englisch). Bei 0 %
+Umsatzsteuer steht der Hinweistext aus den Firmendaten im Angebot (zum Beispiel zur Kleinunternehmerregelung).
+
+## Update ist schiefgegangen
+
+PrintLab sichert vor jedem Update Datenbank und Einstellungen (Ordner `update-backups` im Datenordner) und baut
+selbstständig zurück, wenn die neue Version nicht stabil startet; „Einstellungen → System“ zeigt dann einen Hinweis.
+Von Hand zurück: die Dateien aus dem neuesten Ordner in `update-backups` in den Datenordner kopieren (PrintLab vorher
+beenden) und im Programmordner `git reset --hard <alter Stand>` ausführen.

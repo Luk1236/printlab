@@ -54,6 +54,26 @@ selbst einspielen. Das Repo ist öffentlich, ein Token ist nicht nötig (nur bei
 Nach dem Update startet sich der Dienst von selbst neu. Voraussetzung: PrintLab wurde mit
 `werkzeuge/pi_neu_installieren.sh` installiert (Git-Ordner, Dienst mit `Restart=always`).
 
+**Sicherung und Rückbau:** Vor jedem Update sichert PrintLab Datenbank und Einstellungsdateien nach
+`<Datenordner>/update-backups/<Zeitstempel>` (die letzten 3 bleiben). Startet die neue Version nicht stabil an, stellt
+`werkzeuge/update_guard.py` beim vierten Startversuch den alten Stand samt Datenbank wieder her und PrintLab zeigt unter
+„Einstellungen → System“ einen Hinweis. Eine Sicherung prüfen:
+`~/printlab/.venv/bin/python ~/printlab/werkzeuge/backup_pruefen.py` (ohne Argument: die neueste).
+
+## Überwachung und Meldung aufs Handy
+
+Der Installer richtet einen Timer ein (`printlab-watch.timer`), der jede Minute prüft, ob PrintLab antwortet. Nach 3
+Fehlschlägen startet er den Dienst neu und meldet es. Meldeweg in `~/.config/printlab.env` eintragen (Rechte 600):
+
+```
+PRINTLAB_ALERT_TELEGRAM_TOKEN=<Bot-Token von @BotFather>
+PRINTLAB_ALERT_TELEGRAM_CHAT=<deine Chat-Nummer>
+# oder ntfy:  PRINTLAB_ALERT_NTFY_URL=https://ntfy.sh/ein-langes-geheimes-thema
+```
+
+Der Timer liest die Datei bei jedem Lauf neu, ein Neustart ist nicht nötig. Status:
+`systemctl --user list-timers printlab-watch.timer`, Meldungen: `journalctl --user -u printlab-watch -n 20`.
+
 ## Betrieb
 
 | Aufgabe | Befehl |
@@ -62,6 +82,28 @@ Nach dem Update startet sich der Dienst von selbst neu. Voraussetzung: PrintLab 
 | Stoppen / Starten | `docker compose stop` / `docker compose start` |
 | Aktualisieren | `git pull && docker compose up -d --build` |
 | Sicherung | Einstellungen → Sicherung (lokale Sicherung) oder Volume `printlab_data` kopieren |
+
+## Tür und Plattenwechsler am GPIO
+
+`werkzeuge/gpio_mechanik.py` steuert die Servo-Tür und liest die Endschalter (Standard-Pins: Servo GPIO 18, Endschalter
+offen 23, zu 24, Plattensensor 25; `gpio_mechanik.py pins` zeigt alle). Auf dem Pi 5 zuerst `sudo apt install
+python3-rpi-lgpio`. Ablauf zum Einrichten (im Ordner `~/printlab`, **ohne** angeschlossenes Gestänge):
+
+1. `.venv/bin/python werkzeuge/gpio_mechanik.py selftest` — Schalter von Hand betätigen, Anzeige prüfen.
+2. `... servo 90` — Servo fährt langsam auf 90 Grad; Drehrichtung und Hebel prüfen, Winkel für „zu“ und „offen“ in
+   `data/gpio_mechanik.json` eintragen (Vorlage: `werkzeuge/gpio_mechanik.beispiel.json`).
+3. In PrintLab (Wartung → Hardware) Modus „command“ und die Befehle eintragen, als Liste ohne Shell, zum Beispiel
+   `["/home/<benutzer>/printlab/.venv/bin/python", "/home/<benutzer>/printlab/werkzeuge/gpio_mechanik.py", "door_open"]`
+   (ebenso `door_close`, `door_check`, `stop` für den Not-Halt).
+
+Der Plattenwechsel selbst (`swap`) bleibt gesperrt, bis die Bewegungsfolge der Mechanik vermessen und umgesetzt ist.
+
+## Kamera einmessen
+
+Für „Platte frei automatisch bestätigen“: Fotos mit leerem Bett in einen Ordner `leer`, Fotos mit Teilen darauf in `belegt`
+legen (je 5 bis 10, verschiedenes Licht), dann `DATA_DIR=~/printlab/data .venv/bin/python werkzeuge/kamera_kalibrieren.py
+--printer-id 1 --leer leer --belegt belegt`. Das Werkzeug zeigt die Messwerte, einen Schwellwert und die Mindest-Sicherheit;
+mit `--anwenden` wird der Schwellwert gespeichert (`--zuruecksetzen` nimmt ihn zurück).
 
 ## Zugriff von unterwegs (Fernzugriff in PrintLab)
 

@@ -1,0 +1,45 @@
+name: Build static frontend
+
+# Baut die Oberfläche (frontend/) neu und legt das Ergebnis in static/ ab, das der Pi und jede Installation ohne Node
+# ausliefert. Nur von Hand starten (Actions -> Build static frontend -> Run workflow), nachdem sich etwas in frontend/
+# geändert hat. Das Ergebnis wird auf dem gewählten Branch als eigener Commit eingecheckt.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build and commit static/
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+
+      - name: Commit the new build
+        run: |
+          if [ -z "$(git status --porcelain static)" ]; then
+            echo "static/ ist bereits aktuell."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add static
+          git commit -m "Rebuild static frontend"
+          git push

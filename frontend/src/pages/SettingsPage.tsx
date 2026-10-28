@@ -2969,6 +2969,21 @@ export function SettingsPage() {
                       </div>
                     </div>
 
+                    {updateStatus?.rolled_back && (
+                      <div className="mt-3 p-2 bg-yellow-500/20 rounded text-sm text-yellow-700 dark:text-yellow-400 flex items-start justify-between gap-3">
+                        <span>
+                          {t('settings.updateRolledBack')}
+                          {updateStatus.rolled_back.reason ? ` (${updateStatus.rolled_back.reason})` : ''}
+                        </span>
+                        <button
+                          type="button"
+                          className="shrink-0 underline"
+                          onClick={() => api.dismissRollbackNotice().then(() => refetchUpdateStatus())}
+                        >
+                          {t('settings.updateRolledBackDismiss')}
+                        </button>
+                      </div>
+                    )}
                     {updateStatus?.status === 'downloading' || updateStatus?.status === 'installing' ? (
                       <div className="mt-3">
                         <div className="flex items-center gap-2 text-sm text-bambu-gray">

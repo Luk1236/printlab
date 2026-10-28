@@ -25,7 +25,7 @@ GH_TOKEN="${GH_TOKEN:-}"   # leer = öffentliches Repo, anonym
 step() { printf '\n== %s\n' "$1"; }
 
 step "1/7 Dienste stoppen"
-for unit in printlab.service bambuddy.service; do
+for unit in printlab-watch.timer printlab.service bambuddy.service; do
   systemctl --user disable --now "$unit" 2>/dev/null || true
 done
 
@@ -88,6 +88,8 @@ Environment=LOG_DIR=%h/printlab/logs
 # Nach einem Update in PrintLab beendet sich der Dienst sauber; Restart=always startet ihn mit dem neuen Stand
 Environment=PRINTLAB_AUTO_RESTART=1
 EnvironmentFile=-%h/.config/printlab.env
+# Update-Schutz: baut nach einem Update, das nicht anläuft, auf die vorherige Version zurück
+ExecStartPre=-%h/printlab/.venv/bin/python %h/printlab/werkzeuge/update_guard.py
 ExecStart=%h/printlab/.venv/bin/python -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --loop asyncio
 Restart=always
 RestartSec=5
@@ -95,8 +97,31 @@ RestartSec=5
 [Install]
 WantedBy=default.target
 EOF
+# Überwachung von außen: prüft jede Minute, startet PrintLab bei Ausfall neu und meldet es (siehe werkzeuge/ueberwachung.py)
+cat > "$HOME/.config/systemd/user/printlab-watch.service" <<'EOF'
+[Unit]
+Description=PrintLab Überwachung
+
+[Service]
+Type=oneshot
+Environment=DATA_DIR=%h/printlab/data
+EnvironmentFile=-%h/.config/printlab.env
+ExecStart=/usr/bin/python3 %h/printlab/werkzeuge/ueberwachung.py
+EOF
+cat > "$HOME/.config/systemd/user/printlab-watch.timer" <<'EOF'
+[Unit]
+Description=PrintLab Überwachung jede Minute
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=1min
+
+[Install]
+WantedBy=timers.target
+EOF
 systemctl --user daemon-reload
 systemctl --user enable --now printlab.service
+systemctl --user enable --now printlab-watch.timer
 
 step "7/7 Prüfen"
 for _ in $(seq 1 90); do   # der erste Start dauert auf dem Pi gut eine Minute (Datenbank, Schlüssel, Kataloge)

@@ -143,3 +143,75 @@ describe('QuoteCalculator history', () => {
     await waitFor(() => expect(calls.deleted).toEqual(['a1']));
   });
 });
+
+describe('QuoteCalculator company data and PDF', () => {
+  const company = {
+    name: 'PrintLab Muster',
+    address: '',
+    tax_id: '',
+    email: '',
+    phone: '',
+    iban: '',
+    bic: '',
+    footer: '',
+    vat_percent: 0,
+    vat_note: '',
+    valid_days: 14,
+    number_prefix: 'A',
+  };
+
+  function setupCompany(calls: { saved: unknown[]; pdf: string[]; description: unknown[] }) {
+    server.use(
+      http.get('/api/v1/settings/', () => HttpResponse.json({ currency: 'EUR' })),
+      http.get('/api/v1/quote/price-list', () => HttpResponse.json({ entries: [] })),
+      http.get('/api/v1/quote/company', () => HttpResponse.json(company)),
+      http.put('/api/v1/quote/company', async ({ request }) => {
+        const body = await request.json();
+        calls.saved.push(body);
+        return HttpResponse.json(body);
+      }),
+      http.get('/api/v1/quote/history', () =>
+        HttpResponse.json({
+          entries: [
+            { id: 'a1', ts: '2026-10-28T10:00:00Z', customer: 'Müller GmbH', number: 'A-2026-0001', description: '', currency: 'EUR', material: 1, energy: 1, labor: 1, subtotal: 3, markup: 0.6, total: 3.6 },
+          ],
+          customers: [],
+        }),
+      ),
+      http.get('/api/v1/quote/history/:id/pdf', ({ params, request }) => {
+        calls.pdf.push(`${String(params.id)}${new URL(request.url).search}`);
+        return new HttpResponse('%PDF-1.4', {
+          headers: { 'Content-Type': 'application/pdf', 'Content-Disposition': 'attachment; filename="Angebot-A-2026-0001.pdf"' },
+        });
+      }),
+    );
+  }
+
+  it('shows the quote number and downloads the PDF', async () => {
+    const calls = { saved: [] as unknown[], pdf: [] as string[], description: [] as unknown[] };
+    setupCompany(calls);
+    URL.createObjectURL = () => 'blob:test';
+    URL.revokeObjectURL = () => undefined;
+    render(<QuoteCalculator />);
+    await userEvent.click(await screen.findByRole('button', { name: 'History' }));
+    expect(await screen.findByText('A-2026-0001')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /PDF Müller GmbH/ }));
+    await waitFor(() => expect(calls.pdf).toEqual(['a1?lang=en']));
+  });
+
+  it('loads, edits and saves the company data', async () => {
+    const calls = { saved: [] as unknown[], pdf: [] as string[], description: [] as unknown[] };
+    setupCompany(calls);
+    render(<QuoteCalculator />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Company details' }));
+    const name = await screen.findByLabelText('Company name');
+    expect(name).toHaveValue('PrintLab Muster');
+    await userEvent.clear(name);
+    await userEvent.type(name, 'PrintLab Neu');
+    await userEvent.clear(screen.getByLabelText('VAT (%)'));
+    await userEvent.type(screen.getByLabelText('VAT (%)'), '19');
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(calls.saved.length).toBe(1));
+    expect(calls.saved[0]).toMatchObject({ name: 'PrintLab Neu', vat_percent: 19, number_prefix: 'A' });
+  });
+});

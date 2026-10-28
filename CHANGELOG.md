@@ -3,6 +3,30 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.6.0 (28.10.2026) — Sicherheit beim Update, Überwachung, Hardware, Angebote
+
+- **Update mit Sicherung und Rückbau:** Vor jedem Update in PrintLab werden Datenbank und Einstellungsdateien gesichert
+  (Ordner `update-backups` im Datenordner, die letzten 3 bleiben; die Kopie der Datenbank wird auf Integrität geprüft,
+  sonst bricht das Update ab, bevor etwas verändert wurde). Startet die neue Version nicht stabil an (viermal ohne
+  Bestätigung), baut `werkzeuge/update_guard.py` (systemd `ExecStartPre`) automatisch auf den alten Stand zurück und
+  spielt die gesicherte Datenbank wieder ein. Unter „Einstellungen → System“ steht dann ein Hinweis. Ältere Installationen
+  bekommen den Schutz beim nächsten Update in die systemd-Unit eingetragen (oder durch erneutes Ausführen des Installers).
+- **Überwachung von außen** (`werkzeuge/ueberwachung.py`, systemd-Timer jede Minute, vom Installer eingerichtet): prüft,
+  ob PrintLab antwortet, startet es bei Ausfall neu und meldet das per Telegram oder ntfy aufs Handy (auch „läuft wieder“
+  und wenig Speicherplatz). Meldeweg über `PRINTLAB_ALERT_TELEGRAM_TOKEN`/`_CHAT` oder `PRINTLAB_ALERT_NTFY_URL` in
+  `~/.config/printlab.env`.
+- **GPIO-Treiber für Tür und Plattenwechsler** (`werkzeuge/gpio_mechanik.py`): Servo-Tür mit Endschaltern, Not-Halt,
+  Selbsttest; meldet `DOOR:OPEN/CLOSED/UNKNOWN` für den Befehlsmodus. Kein stiller Simulationsmodus; der eigentliche
+  Plattenwechsel bleibt gesperrt, bis die Mechanik vermessen ist.
+- **Kamera einmessen** (`werkzeuge/kamera_kalibrieren.py`): aus Beispielbildern mit leerem und belegtem Bett einen
+  Schwellwert und die Mindest-Sicherheit für „Platte frei automatisch bestätigen“ ableiten und speichern.
+- **Angebote:** Firmendaten (Briefkopf, Bankverbindung, Umsatzsteuer, Gültigkeit), fortlaufende Angebotsnummer
+  (`A-2026-0001`, Zähler fällt nie zurück) und **PDF** je gespeichertem Angebot (Deutsch/Englisch); Leistungstext beim
+  Speichern.
+- **Sicherungen prüfen:** `werkzeuge/backup_pruefen.py` (Windows, Linux, Pi) prüft Datenbanken und Einstellungsdateien.
+- **CI repariert:** Format-Prüfung, unbekanntes Wartungsprogramm, Test-Verschmutzung durch neu geladene Konfiguration,
+  Abhängigkeits-Warnung (dompurify); Windows-Installer läuft nur noch von Hand, Code-Scanning-Upload ist optional.
+
 ## v1.5.1 (28.10.2026) — Update-Funktion für das private Repo
 
 - **Updates aus der Oberfläche** funktionieren jetzt mit dem privaten Repo: Der Token (`PRINTLAB_GITHUB_TOKEN`) wird

@@ -78,20 +78,26 @@ class PlateDetector:
     def __init__(
         self,
         roi: tuple[float, float, float, float] | None = None,
-        difference_threshold: float = DEFAULT_DIFFERENCE_THRESHOLD,
+        difference_threshold: float | None = None,
         blur_size: int = DEFAULT_BLUR_SIZE,
     ):
         """Initialize the plate detector.
 
         Args:
             roi: Region of interest as (x%, y%, w%, h%) - percentages of image size
-            difference_threshold: Percentage of pixels that must differ to trigger "not empty"
+            difference_threshold: Percentage of pixels that must differ to trigger "not empty".
+                Without a value the one measured with werkzeuge/kamera_kalibrieren.py is used (if saved),
+                otherwise DEFAULT_DIFFERENCE_THRESHOLD.
             blur_size: Gaussian blur kernel size for noise reduction
         """
         if not OPENCV_AVAILABLE:
             raise RuntimeError("OpenCV is not installed. Install with: pip install opencv-python-headless")
 
         self.roi = roi or self.DEFAULT_ROI
+        if difference_threshold is None:
+            from backend.app.services.camera_calibration import load_difference_threshold
+
+            difference_threshold = load_difference_threshold() or self.DEFAULT_DIFFERENCE_THRESHOLD
         self.difference_threshold = difference_threshold
         self.blur_size = blur_size if blur_size % 2 == 1 else blur_size + 1  # Must be odd
 

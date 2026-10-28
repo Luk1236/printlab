@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Calculator, Printer, Settings } from 'lucide-react';
 
 import { api } from '../api/client';
-import type { PriceListEntry, QuoteResponse } from '../api/client';
+import type { CompanyProfile, PriceListEntry, QuoteResponse } from '../api/client';
 import { Button } from './Button';
 import { Card, CardContent } from './Card';
 import { useToast } from '../contexts/ToastContext';
@@ -20,8 +20,9 @@ const fmt = (value: number, currency: string) =>
  * Auftrags-Override möglich (z. B. teures TPU).
  */
 export function QuoteCalculator() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { showToast } = useToast();
+  const pdfLanguage = i18n.language.startsWith('de') ? 'de' : 'en';
   const queryClient = useQueryClient();
 
   const [grams, setGrams] = useState('');
@@ -33,6 +34,9 @@ export function QuoteCalculator() {
   const [priceListOpen, setPriceListOpen] = useState(false);
   const [priceListDraft, setPriceListDraft] = useState<PriceListEntry[] | null>(null);
   const [customer, setCustomer] = useState('');
+  const [description, setDescription] = useState('');
+  const [companyOpen, setCompanyOpen] = useState(false);
+  const [companyDraft, setCompanyDraft] = useState<CompanyProfile | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyFilter, setHistoryFilter] = useState('');
 
@@ -45,6 +49,7 @@ export function QuoteCalculator() {
     mutationFn: (data: QuoteResponse) =>
       api.saveQuote({
         customer,
+        description: description.trim(),
         currency: data.currency,
         material: data.material,
         energy: data.energy,
@@ -60,6 +65,30 @@ export function QuoteCalculator() {
     },
     onError: (error: Error) => showToast(error.message),
   });
+  const { data: company } = useQuery({ queryKey: ['quoteCompany'], queryFn: api.getCompanyProfile, enabled: companyOpen });
+  const draft = companyDraft ?? company ?? null;
+  const companyMutation = useMutation({
+    mutationFn: (data: CompanyProfile) => api.saveCompanyProfile(data),
+    onSuccess: (saved) => {
+      showToast(t('common.success'));
+      setCompanyDraft(saved);
+      queryClient.invalidateQueries({ queryKey: ['quoteCompany'] });
+    },
+    onError: (error: Error) => showToast(error.message),
+  });
+  const downloadPdf = async (id: string) => {
+    try {
+      const { blob, filename } = await api.downloadQuotePdf(id, pdfLanguage);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : t('common.error'));
+    }
+  };
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.deleteQuote(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quoteHistory'] }),
@@ -246,6 +275,13 @@ export function QuoteCalculator() {
           <Button size="sm" variant="ghost" onClick={() => setHistoryOpen((open) => !open)}>
             {t('quote.history')}
           </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setCompanyOpen((open) => !open)}
+          >
+            {t('quote.company')}
+          </Button>
         </div>
         {historyOpen && (
           <div className="border border-bambu-dark-tertiary rounded-lg p-3 space-y-2">
@@ -272,8 +308,17 @@ export function QuoteCalculator() {
                 {(history?.entries ?? []).map((entry) => (
                   <div key={entry.id} className="flex items-center gap-2 text-xs">
                     <span className="text-bambu-gray whitespace-nowrap">{new Date(entry.ts).toLocaleDateString()}</span>
+                    {entry.number && <span className="text-bambu-gray whitespace-nowrap">{entry.number}</span>}
                     <span className="font-medium text-white truncate">{entry.customer}</span>
                     <span className="ml-auto text-bambu-gray-light">{fmt(entry.total, entry.currency)}</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      aria-label={`${t('quote.pdf')} ${entry.customer}`}
+                      onClick={() => downloadPdf(entry.id)}
+                    >
+                      {t('quote.pdf')}
+                    </Button>
                     <Button
                       size="sm"
                       variant="ghost"
@@ -286,6 +331,132 @@ export function QuoteCalculator() {
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+        )}
+        {companyOpen && (
+          <div className="border border-bambu-dark-tertiary rounded-lg p-3 space-y-2">
+            {draft !== null && (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <label className="text-xs text-bambu-gray">
+                    {t('quote.companyName')}
+                    <input
+                      type="text"
+                      value={draft.name}
+                      onChange={(event) => setCompanyDraft({ ...draft, name: event.target.value })}
+                      className="mt-1 w-full bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm"
+                    />
+                  </label>
+                  <label className="text-xs text-bambu-gray">
+                    {t('quote.companyAddress')}
+                    <input
+                      type="text"
+                      value={draft.address}
+                      onChange={(event) => setCompanyDraft({ ...draft, address: event.target.value })}
+                      className="mt-1 w-full bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm"
+                    />
+                  </label>
+                  <label className="text-xs text-bambu-gray">
+                    {t('quote.companyEmail')}
+                    <input
+                      type="text"
+                      value={draft.email}
+                      onChange={(event) => setCompanyDraft({ ...draft, email: event.target.value })}
+                      className="mt-1 w-full bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm"
+                    />
+                  </label>
+                  <label className="text-xs text-bambu-gray">
+                    {t('quote.companyPhone')}
+                    <input
+                      type="text"
+                      value={draft.phone}
+                      onChange={(event) => setCompanyDraft({ ...draft, phone: event.target.value })}
+                      className="mt-1 w-full bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm"
+                    />
+                  </label>
+                  <label className="text-xs text-bambu-gray">
+                    {t('quote.companyTaxId')}
+                    <input
+                      type="text"
+                      value={draft.tax_id}
+                      onChange={(event) => setCompanyDraft({ ...draft, tax_id: event.target.value })}
+                      className="mt-1 w-full bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm"
+                    />
+                  </label>
+                  <label className="text-xs text-bambu-gray">
+                    {t('quote.companyIban')}
+                    <input
+                      type="text"
+                      value={draft.iban}
+                      onChange={(event) => setCompanyDraft({ ...draft, iban: event.target.value })}
+                      className="mt-1 w-full bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm"
+                    />
+                  </label>
+                  <label className="text-xs text-bambu-gray">
+                    {t('quote.companyBic')}
+                    <input
+                      type="text"
+                      value={draft.bic}
+                      onChange={(event) => setCompanyDraft({ ...draft, bic: event.target.value })}
+                      className="mt-1 w-full bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm"
+                    />
+                  </label>
+                  <label className="text-xs text-bambu-gray">
+                    {t('quote.companyVat')}
+                    <input
+                      type="number"
+                      step="0.5"
+                      min={0}
+                      max={30}
+                      value={draft.vat_percent}
+                      onChange={(event) => setCompanyDraft({ ...draft, vat_percent: Number(event.target.value) })}
+                      className="mt-1 w-full bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm"
+                    />
+                  </label>
+                  <label className="text-xs text-bambu-gray">
+                    {t('quote.companyValidDays')}
+                    <input
+                      type="number"
+                      min={0}
+                      max={365}
+                      value={draft.valid_days}
+                      onChange={(event) => setCompanyDraft({ ...draft, valid_days: Number(event.target.value) })}
+                      className="mt-1 w-full bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm"
+                    />
+                  </label>
+                  <label className="text-xs text-bambu-gray">
+                    {t('quote.companyPrefix')}
+                    <input
+                      type="text"
+                      value={draft.number_prefix}
+                      onChange={(event) => setCompanyDraft({ ...draft, number_prefix: event.target.value })}
+                      className="mt-1 w-full bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm"
+                    />
+                  </label>
+                  <label className="text-xs text-bambu-gray">
+                    {t('quote.companyVatNote')}
+                    <input
+                      type="text"
+                      value={draft.vat_note}
+                      onChange={(event) => setCompanyDraft({ ...draft, vat_note: event.target.value })}
+                      className="mt-1 w-full bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm"
+                    />
+                  </label>
+                  <label className="text-xs text-bambu-gray">
+                    {t('quote.companyFooter')}
+                    <input
+                      type="text"
+                      value={draft.footer}
+                      onChange={(event) => setCompanyDraft({ ...draft, footer: event.target.value })}
+                      className="mt-1 w-full bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm"
+                    />
+                  </label>
+                </div>
+                <Button size="sm" disabled={companyMutation.isPending} onClick={() => companyMutation.mutate(draft)}>
+                  {t('common.save')}
+                </Button>
+              </>
             )}
           </div>
         )}
@@ -415,6 +586,16 @@ export function QuoteCalculator() {
                   onChange={(event) => setCustomer(event.target.value)}
                   className="mt-1 w-full bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm"
                   aria-label={t('quote.customer')}
+                />
+              </label>
+              <label className="text-xs text-bambu-gray flex-1 min-w-40">
+                {t('quote.description')}
+                <input
+                  value={description}
+                  maxLength={200}
+                  onChange={(event) => setDescription(event.target.value)}
+                  className="mt-1 w-full bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm"
+                  aria-label={t('quote.description')}
                 />
               </label>
               <Button

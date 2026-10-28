@@ -9643,6 +9643,15 @@ async def lifespan(app: FastAPI):
 
     await init_db()
 
+    # Fork: Ein offenes Update gilt als gelungen, sobald die App eine Weile stabil läuft (sonst baut
+    # werkzeuge/update_guard.py beim nächsten Dienststart auf die vorherige Version zurück).
+    try:
+        from backend.app.services.update_guard import schedule_confirmation
+
+        schedule_confirmation(app_settings.base_dir)
+    except Exception as exc:  # pragma: no cover - darf den Start nie verhindern
+        logging.getLogger(__name__).warning("Update-Bestätigung nicht geplant: %s", exc)
+
     # Fork: Warnen, wenn die Anmeldung aus ist, das Backend aber nicht nur am
     # Loopback lauscht (Docker/systemd binden standardmäßig an 0.0.0.0). Dann
     # wäre die Instanz ungeschützt im Netz steuerbar.

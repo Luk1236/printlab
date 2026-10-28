@@ -13,14 +13,17 @@ Preisliste: stehende Materialtarife aus ``data/price_list.json`` (siehe
 
 from __future__ import annotations
 
+import re
+
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.api.routes.settings import DEFAULT_SETTINGS, get_setting
 from backend.app.core.auth import RequirePermissionIfAuthEnabled
 from backend.app.core.database import get_db
 from backend.app.core.permissions import Permission
-from backend.app.services import price_list, quote_history
+from backend.app.services import company_profile, price_list, quote_history, quote_pdf
 
 router = APIRouter(prefix="/quote", tags=["quote"])
 
@@ -64,9 +67,47 @@ async def save_quote(
     _=RequirePermissionIfAuthEnabled(Permission.ARCHIVES_UPDATE_ALL),
 ):
     try:
-        return quote_history.add(payload)
+        return quote_history.add(payload, prefix=company_profile.read()["number_prefix"])
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
+
+
+@router.get("/company")
+async def get_company(
+    _=RequirePermissionIfAuthEnabled(Permission.ARCHIVES_READ),
+):
+    """Firmendaten für den Briefkopf der Angebote."""
+    return company_profile.read()
+
+
+@router.put("/company")
+async def set_company(
+    payload: dict,
+    _=RequirePermissionIfAuthEnabled(Permission.SETTINGS_UPDATE),
+):
+    try:
+        return company_profile.write(payload)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@router.get("/history/{entry_id}/pdf")
+async def quote_pdf_for_entry(
+    entry_id: str,
+    lang: str = Query("de", pattern="^(de|en)$"),
+    _=RequirePermissionIfAuthEnabled(Permission.ARCHIVES_READ),
+):
+    """Gespeichertes Angebot als PDF mit dem Briefkopf aus den Firmendaten."""
+    entry = quote_history.get(entry_id)
+    if entry is None:
+        raise HTTPException(404, "Angebot nicht gefunden.")
+    pdf = quote_pdf.render(entry, company_profile.read(), lang)
+    name = re.sub(r"[^A-Za-z0-9._-]", "_", str(entry.get("number") or entry_id))
+    return Response(
+        pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="Angebot-{name}.pdf"'},
+    )
 
 
 @router.delete("/history/{entry_id}")

@@ -155,6 +155,15 @@ _RAW: list[tuple[str, str]] = [
     (r"Kundenname fehlt\.", "Customer name is missing."),
     (r"Betrag „(?P<k>\w+)“ fehlt oder ist ungültig\.", r"Amount “\g<k>” is missing or invalid."),
     (r"Angebot nicht gefunden\.", "Quote not found."),
+    (
+        r"„(?P<k>\w+)“ ist zu lang \(höchstens (?P<n>\d+) Zeichen\)\.",
+        r"“\g<k>” is too long (at most \g<n> characters).",
+    ),
+    (r"Umsatzsteuer muss eine Zahl sein\.", "VAT must be a number."),
+    (r"Umsatzsteuer muss zwischen 0 und 30 Prozent liegen\.", "VAT must be between 0 and 30 percent."),
+    (r"Gültigkeit muss eine ganze Zahl sein\.", "Validity must be a whole number."),
+    (r"Gültigkeit muss zwischen 0 und 365 Tagen liegen\.", "Validity must be between 0 and 365 days."),
+    (r"Firmendaten müssen ein Objekt sein\.", "Company data must be an object."),
     # --- Fernzugriff (Tailscale) -------------------------------------------------------------------------------
     (r"Fernzugriff nur mit eingeschalteter Anmeldung\.", "Remote access requires authentication to be enabled."),
     (r"Fernzugriff gibt es nur unter Linux\.", "Remote access is only available on Linux."),

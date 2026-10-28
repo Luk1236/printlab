@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import threading
 import uuid
 from datetime import datetime, timezone
@@ -49,7 +50,33 @@ def _number(value: Any) -> float | None:
     return number if number == number and abs(number) < 1e9 else None  # NaN und absurde Werte raus
 
 
-def add(payload: dict[str, Any]) -> dict[str, Any]:
+def _counter_path():
+    return HISTORY_PATH.with_name("quote_counter.json")
+
+
+def _next_number(prefix: str) -> str:
+    """Laufende Angebotsnummer ``PRÄFIX-JAHR-0001``; der Zähler beginnt jedes Jahr neu und fällt nie zurück,
+    auch wenn Angebote gelöscht werden (aufrufen unter ``_lock``)."""
+    year = datetime.now(timezone.utc).year
+    try:
+        counter = json.loads(_counter_path().read_text(encoding="utf-8"))
+        sequence = int(counter["seq"]) + 1 if int(counter["year"]) == year else 1
+    except (OSError, ValueError, KeyError, TypeError):
+        sequence = 1
+    # Altbestand ohne Zähler: nicht unter die höchste schon vergebene Nummer fallen
+    for entry in _read():
+        match = re.fullmatch(r"[A-Za-z0-9]+-(\d{4})-(\d+)", str(entry.get("number", "")))
+        if match and int(match.group(1)) == year:
+            sequence = max(sequence, int(match.group(2)) + 1)
+    _counter_path().write_text(json.dumps({"year": year, "seq": sequence}), encoding="utf-8")
+    return f"{prefix}-{year}-{sequence:04d}"
+
+
+def get(entry_id: str) -> dict[str, Any] | None:
+    return next((e for e in _read() if e.get("id") == entry_id), None)
+
+
+def add(payload: dict[str, Any], prefix: str = "A") -> dict[str, Any]:
     """Angebot speichern; ungültige Beträge werden abgelehnt (ValueError)."""
     customer = str(payload.get("customer", "")).strip()[:80]
     if not customer:
@@ -72,6 +99,7 @@ def add(payload: dict[str, Any]) -> dict[str, Any]:
     if isinstance(inputs, dict):
         entry["inputs"] = {str(k)[:40]: v for k, v in list(inputs.items())[:20] if _number(v) is not None}
     with _lock:
+        entry["number"] = _next_number(prefix or "A")
         _write([entry, *_read()])
     return entry
 

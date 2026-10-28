@@ -11,6 +11,15 @@ from backend.app.core.config import GITHUB_REPO
 
 class TestUpdatesAPI:
     @pytest.fixture(autouse=True)
+    def _no_update_backup(self):
+        """The update backup/rollback guard has its own tests; here git and the data dir are mocked."""
+        with (
+            patch("backend.app.services.update_guard.prepare", return_value={"backup_dir": "x"}),
+            patch("backend.app.services.update_guard.ensure_systemd_guard", return_value=False),
+        ):
+            yield
+
+    @pytest.fixture(autouse=True)
     def _reset_update_status(self):
         """Isolate the module-global ``_update_status`` between tests.
 

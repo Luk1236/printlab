@@ -4049,6 +4049,7 @@ export interface UpdateStatus {
   progress: number;
   message: string;
   error: string | null;
+  rolled_back?: { from_ref: string | null; to_version: string | null; reason: string; at: string } | null;
 }
 
 // Maintenance types
@@ -4238,6 +4239,7 @@ export interface SpaghettiCheckStatus {
 
 export interface QuoteHistoryEntry {
   id: string;
+  number?: string;
   ts: string;
   customer: string;
   description: string;
@@ -4248,6 +4250,21 @@ export interface QuoteHistoryEntry {
   subtotal: number;
   markup: number;
   total: number;
+}
+
+export interface CompanyProfile {
+  name: string;
+  address: string;
+  tax_id: string;
+  email: string;
+  phone: string;
+  iban: string;
+  bic: string;
+  footer: string;
+  vat_percent: number;
+  vat_note: string;
+  valid_days: number;
+  number_prefix: string;
 }
 
 export interface QuoteCustomerTotal {
@@ -7292,6 +7309,7 @@ export const api = {
       method: 'POST',
     }),
   getUpdateStatus: () => request<UpdateStatus>('/updates/status'),
+  dismissRollbackNotice: () => request<{ ok: boolean }>('/updates/rollback-notice/dismiss', { method: 'POST' }),
 
   // Maintenance
   getMaintenanceTypes: () => request<MaintenanceType[]>('/maintenance/types'),
@@ -7584,6 +7602,20 @@ export const api = {
     ),
   saveQuote: (payload: Record<string, unknown>) =>
     request<QuoteHistoryEntry>('/quote/history', { method: 'POST', body: JSON.stringify(payload) }),
+  getCompanyProfile: () => request<CompanyProfile>('/quote/company'),
+  saveCompanyProfile: (data: Partial<CompanyProfile>) =>
+    request<CompanyProfile>('/quote/company', { method: 'PUT', body: JSON.stringify(data) }),
+  downloadQuotePdf: async (id: string, lang: string): Promise<{ blob: Blob; filename: string }> => {
+    const headers: Record<string, string> = {};
+    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+    const response = await fetch(`${API_BASE}/quote/history/${encodeURIComponent(id)}/pdf?lang=${lang}`, { headers });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(typeof error.detail === 'string' ? error.detail : `HTTP ${response.status}`);
+    }
+    const match = (response.headers.get('Content-Disposition') ?? '').match(/filename="?([^";]+)"?/);
+    return { blob: await response.blob(), filename: match?.[1] ?? 'Angebot.pdf' };
+  },
   deleteQuote: (id: string) => request<{ success: boolean }>(`/quote/history/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   getRemoteAccess: () => request<RemoteAccessStatus>('/remote-access'),
   setupRemoteAccess: () => request<RemoteAccessStatus>('/remote-access/setup', { method: 'POST' }),
