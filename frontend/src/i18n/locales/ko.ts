@@ -257,6 +257,8 @@ export default {
     },
   },
   assistant: {
+    keepAliveHint: '더 빠른 응답: 모델을 메모리에 유지 — sudo systemctl edit ollama에서 [Service]에 Environment="OLLAMA_KEEP_ALIVE=-1"를 추가하고 sudo systemctl restart ollama.',
+    streamAborted: '응답이 중단되었습니다.',
     title: '어시스턴트',
     intro: '로컬 AI 어시스턴트가 운영 관련 질문에 답하고, 오류를 설명하고, 글 초안을 작성합니다. 모델은 이 기기 또는 내 네트워크에서 실행되며 인터넷으로 나가는 것은 없습니다. 변경은 제안만 합니다.',
     enable: '어시스턴트 켜기',

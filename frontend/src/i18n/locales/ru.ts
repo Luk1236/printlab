@@ -257,6 +257,8 @@ export default {
     },
   },
   assistant: {
+    keepAliveHint: 'Быстрее ответы: держать модель в памяти — sudo systemctl edit ollama, добавить [Service] с Environment="OLLAMA_KEEP_ALIVE=-1", затем sudo systemctl restart ollama.',
+    streamAborted: 'Ответ оборвался.',
     title: 'Ассистент',
     intro: 'Локальный ИИ-ассистент отвечает на вопросы об эксплуатации, объясняет ошибки и пишет черновики текстов. Модель работает на этом устройстве или в вашей сети, в интернет ничего не уходит. Изменения он только предлагает.',
     enable: 'Включить ассистента',

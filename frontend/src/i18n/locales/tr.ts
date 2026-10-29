@@ -260,6 +260,8 @@ export default {
     },
   },
   assistant: {
+    keepAliveHint: 'Daha hızlı yanıtlar: modeli bellekte tut — sudo systemctl edit ollama içinde [Service] altına Environment="OLLAMA_KEEP_ALIVE=-1" ekle, sonra sudo systemctl restart ollama.',
+    streamAborted: 'Yanıt kesildi.',
     title: 'Asistan',
     intro: 'Yerel bir yapay zekâ asistanı işletmeyle ilgili soruları yanıtlar, hataları açıklar ve metin taslakları yazar. Model bu cihazda veya ağınızda çalışır; internete hiçbir şey gönderilmez. Değişiklikleri yalnızca önerir.',
     enable: 'Asistanı aç',

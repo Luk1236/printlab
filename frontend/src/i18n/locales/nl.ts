@@ -260,6 +260,8 @@ export default {
     },
   },
   assistant: {
+    keepAliveHint: 'Snellere antwoorden: houd het model in het geheugen — sudo systemctl edit ollama, voeg [Service] met Environment="OLLAMA_KEEP_ALIVE=-1" toe, daarna sudo systemctl restart ollama.',
+    streamAborted: 'Het antwoord werd afgebroken.',
     title: 'Assistent',
     intro: 'Een lokale AI-assistent beantwoordt vragen over de werking, legt fouten uit en schrijft conceptteksten. Het model draait op dit apparaat of in je netwerk; er gaat niets het internet op. Wijzigingen stelt hij alleen voor.',
     enable: 'Assistent inschakelen',

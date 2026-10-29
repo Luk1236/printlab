@@ -279,6 +279,58 @@ export function createForkApi({ request, apiBase, getAuthToken }: ForkApiDeps) {
       request<AssistantStatus>('/assistant/config', { method: 'PUT', body: JSON.stringify(update) }),
     assistantChat: (messages: { role: 'user' | 'assistant'; content: string }[], lang: string) =>
       request<AssistantAnswer>('/assistant/chat', { method: 'POST', body: JSON.stringify({ messages, lang }) }),
+    // Wort-für-Wort-Antwort über SSE (routes/assistant.py chat-stream). Aktionen kommen nur im „done“-Ereignis.
+    streamAssistantChat: async (
+      messages: { role: 'user' | 'assistant'; content: string }[],
+      lang: string,
+      onDelta: (text: string) => void,
+      signal?: AbortSignal,
+    ): Promise<AssistantAnswer> => {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (getAuthToken()) headers['Authorization'] = `Bearer ${getAuthToken()}`;
+      const response = await fetch(`${apiBase}/assistant/chat-stream`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ messages, lang }),
+        signal,
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(typeof error.detail === 'string' ? error.detail : `HTTP ${response.status}`);
+      }
+      if (!response.body) {
+        throw new Error('assistant stream aborted');
+      }
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffered = '';
+      let answer: AssistantAnswer | null = null;
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffered += decoder.decode(value, { stream: true });
+        let sep = buffered.indexOf('\n\n');
+        while (sep !== -1) {
+          const frame = buffered.slice(0, sep);
+          buffered = buffered.slice(sep + 2);
+          const line = frame.split('\n').find((row) => row.startsWith('data: '));
+          if (line) {
+            const event = JSON.parse(line.slice(6)) as
+              | { type: 'delta'; text: string }
+              | (AssistantAnswer & { type: 'done' })
+              | { type: 'error'; detail: string };
+            if (event.type === 'delta') onDelta(event.text);
+            else if (event.type === 'done') answer = event;
+            else if (event.type === 'error') throw new Error(event.detail);
+          }
+          sep = buffered.indexOf('\n\n');
+        }
+      }
+      if (!answer) {
+        throw new Error('assistant stream aborted');
+      }
+      return answer;
+    },
     getQuoteActuals: (id: string) => request<QuoteActuals>(`/quote/history/${encodeURIComponent(id)}/actuals`),
     queueQuotePrints: (id: string, payload: QuoteQueueRequest) =>
       request<QuoteQueueResult>(`/quote/history/${encodeURIComponent(id)}/queue`, {

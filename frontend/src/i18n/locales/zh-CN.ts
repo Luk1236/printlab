@@ -260,6 +260,8 @@ export default {
     },
   },
   assistant: {
+    keepAliveHint: '更快回答：把模型常驻内存 — sudo systemctl edit ollama，在 [Service] 下加 Environment="OLLAMA_KEEP_ALIVE=-1"，然后 sudo systemctl restart ollama。',
+    streamAborted: '回答被中断。',
     title: '助手',
     intro: '本地 AI 助手可回答运行相关问题、解释错误并起草文本。模型运行在本设备或您的网络中，不会向互联网发送任何内容。它只提出更改建议。',
     enable: '启用助手',

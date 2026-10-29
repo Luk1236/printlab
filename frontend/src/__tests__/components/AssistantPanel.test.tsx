@@ -13,6 +13,13 @@ let chats: Array<{ messages: Array<{ role: string; content: string }>; lang: str
 let patches: Array<{ id: string; body: Record<string, unknown> }> = [];
 let saved: Array<Record<string, unknown>> = [];
 
+/** Baut einen SSE-Antwortkörper wie /assistant/chat-stream ihn liefert. */
+function sse(events: object[]): string {
+  return events.map((event) => `data: ${JSON.stringify(event)}\n\n`).join('');
+}
+
+const SSE_HEADERS = { 'content-type': 'text/event-stream' };
+
 function use(over: { config?: Partial<typeof config>; server?: Partial<typeof ready>; answer?: object; chatError?: string; slow?: boolean } = {}) {
   chats = [];
   patches = [];
@@ -24,11 +31,26 @@ function use(over: { config?: Partial<typeof config>; server?: Partial<typeof re
       saved.push(body);
       return HttpResponse.json({ config: { ...config, ...over.config, ...body }, server: { ...ready, ...over.server } });
     }),
-    http.post('/api/v1/assistant/chat', async ({ request }) => {
+    http.post('/api/v1/assistant/chat-stream', async ({ request }) => {
       chats.push((await request.json()) as (typeof chats)[number]);
-      if (over.slow) await delay(1200);
-      if (over.chatError) return HttpResponse.json({ detail: over.chatError }, { status: 502 });
-      return HttpResponse.json(over.answer ?? { reply: 'Alles ruhig.', actions: [], rejected: 0, seconds: 4.2 });
+      if (over.slow) {
+        // Erst schweigen („denkt nach“ sichtbar), dann live weitergeben.
+        const done = { type: 'done', reply: 'Alles ruhig.', actions: [], rejected: 0, seconds: 4.2, ...(over.answer ?? {}) };
+        const stream = new ReadableStream({
+          async start(controller) {
+            await delay(1200);
+            controller.enqueue(new TextEncoder().encode(sse([{ type: 'delta', text: done.reply }])));
+            controller.enqueue(new TextEncoder().encode(sse([done])));
+            controller.close();
+          },
+        });
+        return new HttpResponse(stream, { headers: SSE_HEADERS });
+      }
+      if (over.chatError) {
+        return new HttpResponse(sse([{ type: 'error', detail: over.chatError }]), { headers: SSE_HEADERS });
+      }
+      const done = { type: 'done', reply: 'Alles ruhig.', actions: [], rejected: 0, seconds: 4.2, ...(over.answer ?? {}) };
+      return new HttpResponse(sse([{ type: 'delta', text: done.reply }, done]), { headers: SSE_HEADERS });
     }),
     http.patch('/api/v1/queue/:id', async ({ params, request }) => {
       patches.push({ id: String(params.id), body: (await request.json()) as Record<string, unknown> });

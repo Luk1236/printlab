@@ -260,6 +260,8 @@ export default {
     },
   },
   assistant: {
+    keepAliveHint: 'Швидші відповіді: тримайте модель у пам\'яті — sudo systemctl edit ollama, додати [Service] з Environment="OLLAMA_KEEP_ALIVE=-1", потім sudo systemctl restart ollama.',
+    streamAborted: 'Відповідь перервано.',
     title: 'Асистент',
     intro: 'Локальний ШІ-асистент відповідає на запитання щодо роботи, пояснює помилки та пише чернетки текстів. Модель працює на цьому пристрої або у вашій мережі, в інтернет нічого не йде. Зміни він лише пропонує.',
     enable: 'Увімкнути асистента',

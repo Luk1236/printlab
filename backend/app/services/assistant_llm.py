@@ -1,14 +1,17 @@
 """Verbindung zum lokalen Modell-Server (OpenAI-kompatible Schnittstelle, z. B. Ollama).
 
-Nur ``POST /v1/chat/completions`` und ``GET /v1/models``. Fehler werden in verständliche Meldungen übersetzt, damit
-die Oberfläche sagen kann, was zu tun ist (Server starten, Modell laden, mehr Zeit geben).
+Nur ``POST /v1/chat/completions`` (blockierend und als SSE-Stream) und ``GET /v1/models``. Fehler werden in
+verständliche Meldungen übersetzt, damit die Oberfläche sagen kann, was zu tun ist (Server starten, Modell laden,
+mehr Zeit geben).
 """
 
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import time
+from collections.abc import AsyncIterator
 from typing import Any
 
 import httpx
@@ -76,6 +79,54 @@ async def chat(
     if not isinstance(content, str) or not content.strip():
         raise AssistantError("Die Antwort des Modells war leer oder unlesbar.")
     return content.strip()
+
+
+async def chat_stream(
+    config: dict[str, Any], messages: list[dict[str, str]], transport: httpx.AsyncBaseTransport | None = None
+) -> AsyncIterator[str]:
+    """Antwort des Modells als Text-Deltas (OpenAI-SSE, ``stream: true``).
+
+    Wirft AssistantError bei Verbindungsproblemen oder Fehlerantworten; ein
+    abgebrochener Stream endet einfach, der bereits empfangene Text bleibt.
+    """
+    body = {
+        "model": config["model"],
+        "messages": messages,
+        "max_tokens": config["max_tokens"],
+        "temperature": 0.2,
+        "stream": True,
+    }
+    try:
+        async with (
+            _client(float(config["timeout_seconds"]), transport) as client,
+            client.stream("POST", f"{config['base_url']}/v1/chat/completions", json=body) as response,
+        ):
+            if response.status_code == 404:
+                raise AssistantError(
+                    f"Modell „{config['model']}“ nicht gefunden. Auf dem Pi: ollama pull {config['model']}"
+                )
+            if response.status_code != 200:
+                raise AssistantError(f"Der Modell-Server hat mit Fehler {response.status_code} geantwortet.")
+            async for line in response.aiter_lines():
+                if not line.startswith("data:"):
+                    continue
+                payload = line[5:].strip()
+                if payload == "[DONE]":
+                    return
+                try:
+                    chunk = json.loads(payload)
+                except ValueError:
+                    continue  # Kommentarzeile des Servers
+                choices = chunk.get("choices") or [{}]
+                piece = (choices[0].get("delta") or {}).get("content")
+                if isinstance(piece, str) and piece:
+                    yield piece
+    except httpx.TimeoutException as exc:
+        raise AssistantError(
+            f"Das Modell hat nicht rechtzeitig geantwortet (nach {config['timeout_seconds']} Sekunden)."
+        ) from exc
+    except httpx.HTTPError as exc:
+        raise AssistantError(f"Kein Modell-Server unter {config['base_url']} erreichbar. Läuft Ollama?") from exc
 
 
 async def probe(config: dict[str, Any], transport: httpx.AsyncBaseTransport | None = None) -> float | None:

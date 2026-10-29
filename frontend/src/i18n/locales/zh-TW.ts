@@ -260,6 +260,8 @@ export default {
     },
   },
   assistant: {
+    keepAliveHint: '更快回答：把模型常駐記憶體 — sudo systemctl edit ollama，在 [Service] 下加 Environment="OLLAMA_KEEP_ALIVE=-1"，然後 sudo systemctl restart ollama。',
+    streamAborted: '回答被中斷。',
     title: '助理',
     intro: '本機 AI 助理可回答營運相關問題、解釋錯誤並草擬文字。模型執行於本裝置或您的網路中，不會向網際網路傳送任何內容。它只提出變更建議。',
     enable: '啟用助理',

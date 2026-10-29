@@ -260,6 +260,8 @@ export default {
     },
   },
   assistant: {
+    keepAliveHint: 'より速い回答：モデルをメモリーに常駐させる — sudo systemctl edit ollama で [Service] に Environment="OLLAMA_KEEP_ALIVE=-1" を追記し、sudo systemctl restart ollama。',
+    streamAborted: '回答が途切れました。',
     title: 'アシスタント',
     intro: 'ローカルのAIアシスタントが、運用に関する質問への回答、エラーの説明、文章の下書きを行います。モデルはこの機器またはネットワーク内で動作し、インターネットには何も送られません。変更は提案のみです。',
     enable: 'アシスタントを有効にする',

@@ -7,11 +7,13 @@ nach Bestätigung in der Oberfläche über die normalen Warteschlangen-Funktione
 
 from __future__ import annotations
 
+import json
 import logging
 import time
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -81,3 +83,87 @@ async def chat(
     text, raw_actions = assistant_actions.split_reply(reply)
     actions, rejected = assistant_actions.validate(raw_actions, pending, body.lang)
     return {"reply": text, "actions": actions, "rejected": rejected, "seconds": round(time.monotonic() - started, 1)}
+
+
+# Das Modell hängt seine Aktionsliste an ``ACTIONS:`` an — dieser Teil wird im
+# Live-Text zurückgehalten und nur im Abschluss-Ereignis geprüft ausgegeben.
+_ACTION_MARKER = "ACTIONS:"
+_ACTION_MARKER_PREFIXES = [_ACTION_MARKER[: i + 1] for i in range(len(_ACTION_MARKER))]
+
+
+def _sse(payload: dict) -> str:
+    return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
+
+
+@router.post("/chat-stream")
+async def chat_stream(
+    body: ChatRequest,
+    db: AsyncSession = Depends(get_db),
+    _=RequirePermissionIfAuthEnabled(Permission.QUEUE_READ_ALL),
+):
+    """Wie /chat, aber die Antwort kommt Wort für Wort (SSE); Aktionen nur im Abschluss-Ereignis.
+
+    Ereignisse: ``{type: "delta", text}``, ``{type: "done", reply, actions, rejected, seconds}``,
+    ``{type: "error", detail}``. Die Bestätigungslogik bleibt unangetastet — ein Delta kann
+    keinerlei Änderung auslösen; Aktionen kommen geprüft und nur am Ende.
+    """
+    config = assistant_config.read(settings.base_dir)
+    if not config["enabled"]:
+        raise HTTPException(409, "Der Assistent ist ausgeschaltet. Schalte ihn unter Wartung → Assistent ein.")
+    if body.messages[-1].role != "user":
+        raise HTTPException(400, "Die letzte Nachricht muss vom Benutzer sein.")
+    if _lock.locked():
+        raise HTTPException(429, "Der Assistent beantwortet gerade eine andere Frage. Bitte kurz warten.")
+
+    started = time.monotonic()
+
+    async def _events():
+        await _lock.acquire()
+        try:
+            try:
+                data, pending = await assistant_context.snapshot(db, printer_manager.get_status)
+                header = "DATEN" if body.lang != "en" else "DATA"
+                messages = [
+                    {"role": "system", "content": f"{assistant_context.system_prompt(body.lang)}\n\n{header}:\n{data}"}
+                ]
+                messages += [{"role": m.role, "content": m.content} for m in body.messages]
+                buffer = ""
+                sent_upto = 0
+                async for piece in assistant_llm.chat_stream(config, messages):
+                    buffer += piece
+                    marker_at = buffer.find(_ACTION_MARKER)
+                    if marker_at == -1:
+                        # einen möglichen unvollständigen Marker am Ende zurückhalten
+                        emit_to = len(buffer)
+                        for prefix in _ACTION_MARKER_PREFIXES[:-1]:
+                            if buffer.endswith(prefix):
+                                emit_to = len(buffer) - len(prefix)
+                                break
+                        if emit_to > sent_upto:
+                            yield _sse({"type": "delta", "text": buffer[sent_upto:emit_to]})
+                            sent_upto = emit_to
+                    else:
+                        if marker_at > sent_upto:
+                            yield _sse({"type": "delta", "text": buffer[sent_upto:marker_at]})
+                            sent_upto = marker_at
+                text, raw_actions = assistant_actions.split_reply(buffer)
+                actions, rejected = assistant_actions.validate(raw_actions, pending, body.lang)
+                yield _sse(
+                    {
+                        "type": "done",
+                        "reply": text,
+                        "actions": actions,
+                        "rejected": rejected,
+                        "seconds": round(time.monotonic() - started, 1),
+                    }
+                )
+            except assistant_llm.AssistantError as exc:
+                yield _sse({"type": "error", "detail": str(exc)})
+        finally:
+            _lock.release()
+
+    return StreamingResponse(
+        _events(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )

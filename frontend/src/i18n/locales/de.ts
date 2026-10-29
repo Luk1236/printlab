@@ -260,6 +260,8 @@ export default {
     },
   },
   assistant: {
+    keepAliveHint: 'Schnellere Antworten: das Modell im Speicher lassen — sudo systemctl edit ollama, dort [Service] mit Environment="OLLAMA_KEEP_ALIVE=-1" ergänzen, dann sudo systemctl restart ollama.',
+    streamAborted: 'Die Antwort brach ab.',
     title: 'Assistent',
     intro: 'Ein lokaler KI-Assistent beantwortet Fragen zum Betrieb, erklärt Fehler und entwirft Texte. Das Modell läuft auf diesem Gerät oder in deinem Netz, nichts geht ins Internet. Änderungen schlägt er nur vor.',
     enable: 'Assistent einschalten',

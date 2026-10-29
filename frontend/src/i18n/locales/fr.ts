@@ -260,6 +260,8 @@ export default {
     },
   },
   assistant: {
+    keepAliveHint: 'Réponses plus rapides : charger le modèle en mémoire — sudo systemctl edit ollama, ajouter [Service] avec Environment="OLLAMA_KEEP_ALIVE=-1", puis sudo systemctl restart ollama.',
+    streamAborted: 'La réponse a été coupée.',
     title: 'Assistant IA',
     intro: 'Un assistant IA local répond aux questions sur l\'exploitation, explique les erreurs et rédige des textes. Le modèle tourne sur cet appareil ou dans votre réseau ; rien ne part sur Internet. Il ne fait que proposer des modifications.',
     enable: 'Activer l\'assistant',

@@ -33,10 +33,12 @@ export function AssistantPanel({ canConfigure }: { canConfigure: boolean }) {
   const lang = i18n.language.startsWith('de') ? 'de' : 'en';
   const [turns, setTurns] = useState<Turn[]>([]);
   const [input, setInput] = useState('');
+  const [pending, setPending] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [actionStates, setActionStates] = useState<Record<string, ActionState>>({});
   const [form, setForm] = useState<{ base_url: string; model: string; timeout_seconds: string } | null>(null);
   const bottom = useRef<HTMLDivElement>(null);
+  const streamControl = useRef<AbortController | null>(null);
 
   const { data: status } = useQuery<AssistantStatus>({ queryKey: ['assistantStatus'], queryFn: api.getAssistantStatus });
   const config = status?.config;
@@ -52,31 +54,66 @@ export function AssistantPanel({ canConfigure }: { canConfigure: boolean }) {
     onError: (error: Error) => showToast(error.message, 'error'),
   });
 
-  const chat = useMutation({
-    mutationFn: (messages: Turn[]) => api.assistantChat(messages.map(({ role, content }) => ({ role, content })), lang),
-    onSuccess: (answer) =>
-      setTurns((prev) => [...prev, { role: 'assistant', content: answer.reply, actions: answer.actions, rejected: answer.rejected, seconds: answer.seconds }]),
-    onError: (error: Error) => showToast(error.message, 'error'),
-  });
-
   useEffect(() => {
-    if (!chat.isPending) return;
+    if (!pending) return;
     setElapsed(0);
     const timer = window.setInterval(() => setElapsed((value) => value + 1), 1000);
     return () => window.clearInterval(timer);
-  }, [chat.isPending]);
+  }, [pending]);
 
   useEffect(() => {
     bottom.current?.scrollIntoView?.({ block: 'end' });
-  }, [turns, chat.isPending]);
+  }, [turns, pending]);
 
+  // Wort-für-Wort: das letzte Drehbuch ist der Live-Turn am Ende der Liste; geprüfte Aktionen kommen erst im
+  // Abschluss-Ereignis (nichts ändert sich ohne Bestätigung).
   const send = (text: string) => {
     const trimmed = text.trim();
-    if (!trimmed || chat.isPending) return;
-    const next: Turn[] = [...turns, { role: 'user', content: trimmed }];
-    setTurns(next);
+    if (!trimmed || pending) return;
+    const userTurns: { role: 'user' | 'assistant'; content: string }[] = [
+      ...turns.map(({ role, content }) => ({ role, content } as { role: 'user' | 'assistant'; content: string })),
+      { role: 'user', content: trimmed },
+    ];
+    setTurns([...turns, { role: 'user', content: trimmed }, { role: 'assistant', content: '' }]);
     setInput('');
-    chat.mutate(next);
+    streamControl.current?.abort();
+    const controller = new AbortController();
+    streamControl.current = controller;
+    let live = '';
+    setPending(true);
+    api
+      .streamAssistantChat(userTurns, lang, (delta) => {
+        live += delta;
+        setTurns((prev) => {
+          const copy = [...prev];
+          copy[copy.length - 1] = { ...copy[copy.length - 1], content: live };
+          return copy;
+        });
+      }, controller.signal)
+      .then((answer) =>
+        setTurns((prev) => {
+          const copy = [...prev];
+          copy[copy.length - 1] = {
+            role: 'assistant',
+            content: answer.reply,
+            actions: answer.actions,
+            rejected: answer.rejected,
+            seconds: answer.seconds,
+          };
+          return copy;
+        }),
+      )
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return;
+        setTurns((prev) => (prev.length && prev[prev.length - 1].role === 'assistant' && !prev[prev.length - 1].content
+          ? prev.slice(0, -1)
+          : prev));
+        showToast(error instanceof Error ? error.message : t('assistant.streamAborted'), 'error');
+      })
+      .finally(() => {
+        if (streamControl.current === controller) streamControl.current = null;
+        setPending(false);
+      });
   };
 
   const runAction = async (key: string, action: AssistantAction) => {
@@ -177,6 +214,7 @@ export function AssistantPanel({ canConfigure }: { canConfigure: boolean }) {
               <p className="text-[11px] text-bambu-gray">{t('assistant.serverModels', { list: server.models.join(', ') })}</p>
             )}
             {(!server?.reachable || !server?.model_present) && <p className="text-[11px] text-bambu-gray">{t('assistant.setupHint')}</p>}
+            {server?.reachable && <p className="text-[11px] text-bambu-gray">{t('assistant.keepAliveHint')}</p>}
           </div>
         )}
 
@@ -189,7 +227,7 @@ export function AssistantPanel({ canConfigure }: { canConfigure: boolean }) {
             {turns.length === 0 && (
               <div className="flex flex-wrap gap-2" data-testid="assistant-suggestions">
                 {SUGGESTIONS.map((key) => (
-                  <Button key={key} size="sm" variant="secondary" disabled={chat.isPending} onClick={() => send(t(`assistant.${key}`))}>
+                  <Button key={key} size="sm" variant="secondary" disabled={pending} onClick={() => send(t(`assistant.${key}`))}>
                     {t(`assistant.${key}`)}
                   </Button>
                 ))}
@@ -242,7 +280,7 @@ export function AssistantPanel({ canConfigure }: { canConfigure: boolean }) {
                   )}
                 </div>
               ))}
-              {chat.isPending && (
+              {pending && turns[turns.length - 1]?.role === 'assistant' && !turns[turns.length - 1]?.content && (
                 <p className="text-xs text-bambu-gray" role="status">
                   {t('assistant.thinking', { seconds: elapsed })}
                 </p>
@@ -271,7 +309,7 @@ export function AssistantPanel({ canConfigure }: { canConfigure: boolean }) {
                 }}
                 className="flex-1 bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm"
               />
-              <Button type="submit" size="sm" disabled={!input.trim() || chat.isPending} aria-label={t('assistant.send')}>
+              <Button type="submit" size="sm" disabled={!input.trim() || pending} aria-label={t('assistant.send')}>
                 <Send className="w-4 h-4" />
               </Button>
             </form>

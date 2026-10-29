@@ -260,6 +260,8 @@ export default {
     },
   },
   assistant: {
+    keepAliveHint: 'Snabbare svar: håll modellen i minnet — sudo systemctl edit ollama, lägg till [Service] med Environment="OLLAMA_KEEP_ALIVE=-1", sedan sudo systemctl restart ollama.',
+    streamAborted: 'Svaret avbröts.',
     title: 'Assistent',
     intro: 'En lokal AI-assistent besvarar frågor om driften, förklarar fel och skriver utkast till texter. Modellen körs på den här enheten eller i ditt nätverk; ingenting går ut på internet. Den föreslår bara ändringar.',
     enable: 'Slå på assistenten',
