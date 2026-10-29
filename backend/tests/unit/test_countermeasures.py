@@ -85,6 +85,12 @@ class TestEvaluate:
         mixed.raw_data = {"ams": [{"tray": [{"tray_type": "PLA"}, {"tray_type": "ABS"}]}]}
         assert countermeasures.evaluate(7, mixed, "X1C", config()) == []
 
+    def test_an_external_spool_sent_as_an_object_counts_too(self):
+        external = state(chamber=41)
+        external.raw_data = {"vt_tray": {"tray_type": "PLA"}}
+        assert countermeasures.material_group(external) == "pla"
+        assert len(countermeasures.evaluate(7, external, "X1C", config())) == 1
+
     def test_the_rule_must_be_enabled_for_that_printer(self):
         disabled = config()
         disabled["printers"]["7"]["rules"]["chamber_hot"] = False

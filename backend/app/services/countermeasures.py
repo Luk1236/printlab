@@ -113,14 +113,26 @@ def material_group(state) -> str | None:
     raw = getattr(state, "raw_data", None) or {}
     types: set[str] = set()
     for unit in raw.get("ams") or []:
+        if not isinstance(unit, dict):
+            continue
         for tray in unit.get("tray") or []:
-            tray_type = str(tray.get("tray_type") or "").strip().upper()
+            if isinstance(tray, dict):
+                tray_type = str(tray.get("tray_type") or "").strip().upper()
+                if tray_type:
+                    types.add(tray_type)
+    # MQTT schickt vt_tray je nach Firmware als Objekt oder Liste.
+    vt_raw = raw.get("vt_tray")
+    if isinstance(vt_raw, dict):
+        vt_trays = [vt_raw]
+    elif isinstance(vt_raw, list):
+        vt_trays = vt_raw
+    else:
+        vt_trays = []
+    for vt in vt_trays:
+        if isinstance(vt, dict):
+            tray_type = str(vt.get("tray_type") or "").strip().upper()
             if tray_type:
                 types.add(tray_type)
-    for vt in raw.get("vt_tray") or []:
-        tray_type = str(vt.get("tray_type") or "").strip().upper()
-        if tray_type:
-            types.add(tray_type)
     if len(types) != 1:
         return None
     name = next(iter(types))
