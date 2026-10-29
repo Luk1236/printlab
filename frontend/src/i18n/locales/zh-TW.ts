@@ -8515,5 +8515,8 @@ export default {
     command: '指令',
     effect: '效果',
     safety: '限制：每條規則每次列印最多 {{max}} 次，間隔至少 {{cooldown}} 秒，絕不啟動、暫停或取消。沒有腔溫感測器或耗材混雜時不會自動變更任何設定。',
+    thresholds: '閾值',
+    hotThreshold: '過熱閾值',
+    coldThreshold: '過冷閾值',
   },
 };

@@ -8151,5 +8151,8 @@ export default {
     command: '명령',
     effect: '효과',
     safety: '제한: 규칙 및 인쇄당 최대 {{max}}회, 최소 {{cooldown}}초 간격, 시작·일시정지·취소는 하지 않습니다. 챔버 센서가 없거나 필라멘트가 섞여 있으면 자동으로 아무것도 변경하지 않습니다.',
+    thresholds: '임계값',
+    hotThreshold: '너무 더움 기준',
+    coldThreshold: '너무 추움 기준',
   },
 };

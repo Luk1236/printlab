@@ -8533,5 +8533,8 @@ export default {
     effect: 'Wirkung',
     safety:
       'Grenzen: höchstens {{max}} Eingriffe je Regel und Druck, mindestens {{cooldown}} Sekunden Abstand, nie Start, Pause oder Abbruch. Ohne Bauraumfühler oder bei gemischtem Filament wird nichts automatisch verändert.',
+    thresholds: 'Schwellen',
+    hotThreshold: 'Zu warm ab',
+    coldThreshold: 'Zu kalt unter',
   },
 };

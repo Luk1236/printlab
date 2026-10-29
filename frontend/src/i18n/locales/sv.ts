@@ -8581,5 +8581,8 @@ errors: {
     command: 'Kommando',
     effect: 'Effekt',
     safety: 'Gränser: högst {{max}} åtgärder per regel och utskrift, minst {{cooldown}} sekunder emellan, aldrig start, paus eller avbryt. Utan kammargivare eller med blandat filament ändras inget automatiskt.',
+    thresholds: 'Tröskelvärden',
+    hotThreshold: 'För varmt över',
+    coldThreshold: 'För kallt under',
   },
 };

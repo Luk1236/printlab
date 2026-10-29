@@ -8518,5 +8518,8 @@ export default {
     command: 'Commande',
     effect: 'Effet',
     safety: 'Limites : au plus {{max}} actions par règle et par impression, au moins {{cooldown}} secondes d\'écart, jamais démarrer, mettre en pause ou annuler. Sans capteur de chambre ou avec un filament mixte, rien ne change automatiquement.',
+    thresholds: 'Seuils',
+    hotThreshold: 'Trop chaud à partir de',
+    coldThreshold: 'Trop froid en dessous de',
   },
 };

@@ -8457,5 +8457,8 @@ export default {
     command: 'Komut',
     effect: 'Etki',
     safety: 'Sınırlar: kural ve baskı başına en fazla {{max}} işlem, en az {{cooldown}} saniye arayla, asla başlatma, duraklatma veya iptal. Hazne sensörü yoksa veya filament karışıksa otomatik olarak hiçbir şey değişmez.',
+    thresholds: 'Eşikler',
+    hotThreshold: 'Şundan sıcak:',
+    coldThreshold: 'Şundan soğuk:',
   },
 };

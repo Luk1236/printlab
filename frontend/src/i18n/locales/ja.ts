@@ -8531,5 +8531,8 @@ export default {
     command: 'コマンド',
     effect: '効果',
     safety: '制限: ルールと印刷ごとに最大 {{max}} 回、間隔は最低 {{cooldown}} 秒、開始・一時停止・中止は行いません。チャンバーセンサーがない場合やフィラメントが混在している場合は自動では何も変更しません。',
+    thresholds: 'しきい値',
+    hotThreshold: '高温しきい値',
+    coldThreshold: '低温しきい値',
   },
 };

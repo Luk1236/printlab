@@ -8584,5 +8584,8 @@ export default {
     effect: 'Effect',
     safety:
       'Limits: at most {{max}} actions per rule and print, at least {{cooldown}} seconds apart, never start, pause or cancel. Without a chamber sensor or with mixed filament nothing changes automatically.',
+    thresholds: 'Thresholds',
+    hotThreshold: 'Too warm above',
+    coldThreshold: 'Too cold below',
   },
 };

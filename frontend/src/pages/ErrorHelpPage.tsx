@@ -472,6 +472,56 @@ export function ErrorHelpPage() {
                   cooldown: config.cooldown_seconds,
                 })}
               </p>
+
+              <div className="flex flex-wrap items-end gap-4 pt-1">
+                <span className="text-xs font-semibold uppercase tracking-wide text-bambu-gray self-center">
+                  {t('errorHelp.thresholds')}
+                </span>
+                <label className="text-xs text-bambu-gray-light flex flex-col gap-1">
+                  {t('errorHelp.hotThreshold')}
+                  <span className="flex items-center gap-1">
+                    <input
+                      key={`hot-${config.thresholds.hot_c}`}
+                      type="number"
+                      min={20}
+                      max={70}
+                      step={1}
+                      defaultValue={config.thresholds.hot_c}
+                      disabled={!canConfigure}
+                      onBlur={(event) => {
+                        const value = Number(event.target.value);
+                        if (Number.isFinite(value) && value >= 20 && value <= 70 && value !== config.thresholds.hot_c) {
+                          save.mutate({ thresholds: { ...config.thresholds, hot_c: value } });
+                        }
+                      }}
+                      className="w-20 rounded-lg bg-bambu-dark border border-bambu-dark-tertiary px-2 py-1 text-sm text-white"
+                    />
+                    °C
+                  </span>
+                </label>
+                <label className="text-xs text-bambu-gray-light flex flex-col gap-1">
+                  {t('errorHelp.coldThreshold')}
+                  <span className="flex items-center gap-1">
+                    <input
+                      key={`cold-${config.thresholds.cold_c}`}
+                      type="number"
+                      min={20}
+                      max={80}
+                      step={1}
+                      defaultValue={config.thresholds.cold_c}
+                      disabled={!canConfigure}
+                      onBlur={(event) => {
+                        const value = Number(event.target.value);
+                        if (Number.isFinite(value) && value >= 20 && value <= 80 && value !== config.thresholds.cold_c) {
+                          save.mutate({ thresholds: { ...config.thresholds, cold_c: value } });
+                        }
+                      }}
+                      className="w-20 rounded-lg bg-bambu-dark border border-bambu-dark-tertiary px-2 py-1 text-sm text-white"
+                    />
+                    °C
+                  </span>
+                </label>
+              </div>
             </div>
           )}
         </CardContent>

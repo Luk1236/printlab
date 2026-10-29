@@ -8583,5 +8583,8 @@ export default {
     command: 'Commando',
     effect: 'Effect',
     safety: 'Grenzen: hooguit {{max}} acties per regel en print, minstens {{cooldown}} seconden ertussen, nooit starten, pauzeren of annuleren. Zonder kamersensor of bij gemengd filament verandert niets automatisch.',
+    thresholds: 'Drempels',
+    hotThreshold: 'Te warm vanaf',
+    coldThreshold: 'Te koud onder',
   },
 };

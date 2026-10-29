@@ -8540,5 +8540,8 @@ export default {
     command: 'Comando',
     effect: 'Efecto',
     safety: 'Límites: como máximo {{max}} acciones por regla e impresión, al menos {{cooldown}} segundos de diferencia, nunca iniciar, pausar ni cancelar. Sin sensor de cámara o con filamento mezclado no se cambia nada automáticamente.',
+    thresholds: 'Umbrales',
+    hotThreshold: 'Demasiado calor a partir de',
+    coldThreshold: 'Demasiado frío por debajo de',
   },
 };
