@@ -7482,6 +7482,14 @@ export default {
     noHistory: '아직 감지 없음.'
   },
   makerworld: {
+    browseHint: 'MakerWorld에서 가져온 모든 모델 — 검색과 컬렉션 포함. 새 모델은 아래 링크로 가져옵니다.',
+    filterPlaceholder: '가져온 항목 검색 …',
+    collections: '컬렉션',
+    allCollections: '모든 컬렉션',
+    noImports: '아직 MakerWorld 가져오기가 없습니다. 아래에 모델 링크를 붙여넣거나 makerworld.com을 둘러보세요.',
+    noMatches: '검색 및 컬렉션과 일치하는 가져오기가 없습니다.',
+    importedOn: '{{date}}에 가져옴',
+    resultsCount: '모델 {{count}}개',
     title: 'MakerWorld',
     description: 'MakerWorld 모델 URL을 붙여넣어 Bambu Handy 앱을 떠나지 않고 PrintLab에서 직접 가져오고 인쇄하세요.',
     pasteUrlHeader: 'MakerWorld에서 가져오기',

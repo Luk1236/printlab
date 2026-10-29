@@ -8041,6 +8041,14 @@ export default {
   },
 
   makerworld: {
+    browseHint: 'Alles, was du von MakerWorld geholt hast — mit Suche und Sammlungen. Neue Modelle holst du über den Link unten.',
+    filterPlaceholder: 'Importe durchsuchen …',
+    collections: 'Sammlungen',
+    allCollections: 'Alle Sammlungen',
+    noImports: 'Noch keine MakerWorld-Importe. Füge unten einen Modell-Link ein oder stöbere auf makerworld.com.',
+    noMatches: 'Keine Importe passen zu Suche und Sammlung.',
+    importedOn: 'Importiert {{date}}',
+    resultsCount: '{{count}} Modelle',
     title: 'MakerWorld',
     description: 'Füge eine MakerWorld-Modell-URL ein, um es direkt aus PrintLab zu importieren und zu drucken — ohne die Bambu Handy App zu öffnen.',
     pasteUrlHeader: 'Von MakerWorld importieren',

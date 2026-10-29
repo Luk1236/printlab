@@ -8090,6 +8090,14 @@ errors: {
   },
 
   makerworld: {
+    browseHint: 'Allt du har importerat från MakerWorld — med sökning och samlingar. Nya modeller kommer in via länken nedan.',
+    filterPlaceholder: 'Sök i dina importer …',
+    collections: 'Samlingar',
+    allCollections: 'Alla samlingar',
+    noImports: 'Inga MakerWorld-importer ännu. Klistra in en modellänk nedan eller bläddra på makerworld.com.',
+    noMatches: 'Inga importer matchar sökningen och samlingen.',
+    importedOn: 'Importerad {{date}}',
+    resultsCount: '{{count}} modeller',
     title: 'MakerWorld',
     description: 'Klistra in en MakerWorld-modell-URL för att importera och skriva ut den direkt från PrintLab — utan att lämna för Bambu Handy-app.',
     pasteUrlHeader: 'Importera från MakerWorld',

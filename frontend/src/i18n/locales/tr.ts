@@ -7978,6 +7978,14 @@ export default {
   },
 
   makerworld: {
+    browseHint: 'MakerWorld\'den içe aktardığın her şey — arama ve koleksiyonlarla. Yeni modeller aşağıdaki bağlantıdan gelir.',
+    filterPlaceholder: 'İçe aktarılanlarda ara …',
+    collections: 'Koleksiyonlar',
+    allCollections: 'Tüm koleksiyonlar',
+    noImports: 'Henüz MakerWorld içe aktarımı yok. Aşağıya bir model bağlantısı yapıştır veya makerworld.com\'u keşfet.',
+    noMatches: 'Arama ve koleksiyonla eşleşen içe aktarım yok.',
+    importedOn: '{{date}} tarihinde içe aktarıldı',
+    resultsCount: '{{count}} model',
     title: 'MakerWorld',
     description: 'Bambu Handy uygulamasına gitmeden — doğrudan PrintLab\'den içe aktarmak ve yazdırmak için bir MakerWorld model URL\'si yapıştırın.',
     pasteUrlHeader: "MakerWorld'den İçe Aktar",

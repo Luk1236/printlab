@@ -3,7 +3,7 @@ import DOMPurify from 'dompurify';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { AlertCircle, ArrowRight, Check, ChevronLeft, ChevronRight, Download, ExternalLink, FolderOpen, Globe, Images, Loader2, Trash2, X } from 'lucide-react';
+import { AlertCircle, ArrowRight, Check, ChevronLeft, ChevronRight, Download, ExternalLink, FolderOpen, Globe, Images, Loader2, Search, Trash2, X } from 'lucide-react';
 
 import {
   api,
@@ -168,8 +168,14 @@ export function MakerworldPage() {
 
   const recentQuery = useQuery({
     queryKey: ['makerworld-recent-imports'],
-    queryFn: () => api.getMakerworldRecentImports(10),
+    queryFn: () => api.getMakerworldRecentImports(50),
   });
+
+  // Galerie-Ansicht: Suche und Sammlungsfilter wirken nur auf die eigenen
+  // Importe — MakerWorld selbst beantwortet serverseitige Suchanfragen leer
+  // (siehe routes/makerworld.py), deshalb ist der Bestand die ehrliche Quelle.
+  const [galleryFilter, setGalleryFilter] = useState('');
+  const [collectionFilter, setCollectionFilter] = useState<number | null>(null);
 
   const settingsQuery = useQuery({
     queryKey: ['settings'],
@@ -189,6 +195,16 @@ export function MakerworldPage() {
   const preferredSlicer: SlicerType = useSlicerApi ? apiSlicer : desktopSlicer;
   const preferredSlicerName =
     preferredSlicer === 'orcaslicer' ? 'OrcaSlicer' : 'Bambu Studio';
+
+  const importItems = useMemo(() => recentQuery.data ?? [], [recentQuery.data]);
+  const filteredImports = useMemo(() => {
+    const needle = galleryFilter.trim().toLowerCase();
+    return importItems.filter((item) => {
+      if (collectionFilter !== null && item.folder_id !== collectionFilter) return false;
+      if (!needle) return true;
+      return item.filename.toLowerCase().includes(needle) || (item.source_url ?? '').toLowerCase().includes(needle);
+    });
+  }, [importItems, galleryFilter, collectionFilter]);
 
   // Slice-via-API modal source. When set, the SliceModal is shown for the
   // referenced library file; it covers MakerWorld's "Slice in <Slicer>" /
@@ -419,21 +435,58 @@ export function MakerworldPage() {
   const downloadCount = pickNumber(design, 'downloadCount');
 
   return (
-    <div className="p-4 md:p-8 max-w-screen-2xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-          <Globe className="w-7 h-7 text-bambu-green" />
-          {t('makerworld.title')}
-        </h1>
-        <p className="text-bambu-gray mt-1">
-          {t('makerworld.description')}
-        </p>
-      </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-bambu-dark">
+      {/* MakerWorld-artige Kopfleiste: Suche, Sammlungen, Konto. */}
+      <header className="sticky top-0 z-20 bg-white/90 dark:bg-bambu-dark-secondary/90 backdrop-blur border-b border-gray-200 dark:border-bambu-dark-tertiary">
+        <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-3 flex items-center gap-3 md:gap-6">
+          <Link to="/makerworld" className="flex items-center gap-2 shrink-0">
+            <span className="w-9 h-9 rounded-xl bg-bambu-green text-white flex items-center justify-center">
+              <Globe className="w-5 h-5" aria-hidden="true" />
+            </span>
+            <h1 className="text-lg font-bold text-gray-900 dark:text-white hidden sm:block">{t('makerworld.title')}</h1>
+          </Link>
+          <label className="relative flex-1 max-w-2xl">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden="true" />
+            <input
+              type="search"
+              value={galleryFilter}
+              onChange={(event) => setGalleryFilter(event.target.value)}
+              placeholder={t('makerworld.filterPlaceholder')}
+              aria-label={t('makerworld.filterPlaceholder')}
+              className="w-full pl-9 pr-3 py-2 rounded-full bg-gray-100 dark:bg-bambu-dark border border-transparent dark:border-bambu-dark-tertiary text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-bambu-green"
+            />
+          </label>
+          <label className="hidden md:flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+            <FolderOpen className="w-4 h-4" aria-hidden="true" />
+            <span className="sr-only">{t('makerworld.collections')}</span>
+            <select
+              value={collectionFilter ?? ''}
+              onChange={(event) => setCollectionFilter(event.target.value ? Number(event.target.value) : null)}
+              className="max-w-[12rem] rounded-full bg-gray-100 dark:bg-bambu-dark border border-transparent dark:border-bambu-dark-tertiary px-3 py-1.5 text-sm text-gray-900 dark:text-white"
+            >
+              <option value="">{t('makerworld.allCollections')}</option>
+              {(foldersQuery.data ?? [])
+                .flatMap((folder) => flattenFolderTree(folder))
+                .map(({ folder, depth }) => (
+                  <option key={folder.id} value={folder.id}>
+                    {`${'— '.repeat(depth)}${folder.name}`}
+                  </option>
+                ))}
+            </select>
+          </label>
+          <Link
+            to="/profiles"
+            title={t('makerworld.openCloudSettings')}
+            className="w-9 h-9 shrink-0 rounded-full bg-gray-100 dark:bg-bambu-dark-tertiary text-gray-500 dark:text-gray-300 flex items-center justify-center hover:text-bambu-green"
+          >
+            <Globe className="w-4 h-4" aria-hidden="true" />
+          </Link>
+        </div>
+      </header>
 
-      {/* Two-column layout: main flow on the left, sticky "Recent imports"
-          sidebar on the right at lg+. Collapses to single column on narrow
-          screens (tablet/phone), with the sidebar tucked below the main flow. */}
-      <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
+      <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-6 space-y-6">
+        <p className="text-sm text-gray-500 dark:text-gray-400">{t('makerworld.description')}</p>
+
         <div className="space-y-6 min-w-0">
       {!canDownload && (
         <Card className="border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20">
@@ -836,69 +889,78 @@ export function MakerworldPage() {
 
         </div>
 
-        {/* Right column — Recent imports sidebar. Sticky at lg+ so it stays
-            reachable while browsing long plate lists. Vertical list here,
-            not the horizontal scroll we used in the bottom-of-page layout. */}
-        <aside className="lg:sticky lg:top-6 lg:self-start min-w-0">
-          {recentQuery.data && recentQuery.data.length > 0 && (
-            <Card>
-              <CardHeader>
-                <h2 className="text-base font-semibold">{t('makerworld.recentImportsHeader')}</h2>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col gap-2 max-h-[28rem] overflow-y-auto -mx-2 px-2">
-                  {recentQuery.data.map((item: MakerworldRecentImport) => (
-                    <div
-                      key={item.library_file_id}
-                      className="flex gap-2 p-2 border rounded border-gray-200 dark:border-gray-700"
-                    >
-                      {item.thumbnail_path ? (
-                        <img
-                          src={api.getLibraryFileThumbnailUrl(item.library_file_id)}
-                          alt=""
-                          className="w-12 h-12 shrink-0 object-cover rounded bg-gray-100 dark:bg-gray-800"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 shrink-0 rounded bg-gray-100 dark:bg-gray-800" />
-                      )}
-                      <div className="flex-1 min-w-0 flex flex-col gap-1">
-                        <p className="text-xs font-medium truncate" title={item.filename}>
-                          {item.filename}
-                        </p>
-                        <div className="flex gap-0.5">
+        {importItems.length > 0 && (
+          <section className="space-y-4" aria-labelledby="makerworld-gallery-title">
+            <div className="flex flex-wrap items-end justify-between gap-2">
+              <div>
+                <h2 id="makerworld-gallery-title" className="text-xl font-bold text-gray-900 dark:text-white">
+                  {t('makerworld.recentImportsHeader')}
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('makerworld.browseHint')}</p>
+              </div>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                {t('makerworld.resultsCount', { count: filteredImports.length })}
+              </span>
+            </div>
+            {filteredImports.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400 py-8">{t('makerworld.noMatches')}</p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-8">
+                {filteredImports.map((item: MakerworldRecentImport) => {
+                  let sourceLabel = 'MakerWorld';
+                  if (item.source_url) {
+                    try {
+                      sourceLabel = new URL(item.source_url).hostname.replace(/^www\./, '');
+                    } catch {
+                      sourceLabel = 'makerworld.com';
+                    }
+                  }
+                  return (
+                    <article key={item.library_file_id} className="group min-w-0" data-testid="makerworld-card">
+                      <div className="relative aspect-square rounded-2xl overflow-hidden bg-gray-100 dark:bg-bambu-dark-tertiary">
+                        {item.thumbnail_path ? (
+                          <img
+                            src={api.getLibraryFileThumbnailUrl(item.library_file_id)}
+                            alt={item.filename}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-300 dark:text-gray-600">
+                            <Globe className="w-10 h-10" aria-hidden="true" />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute inset-x-2 bottom-2 flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                           <Button
-                            variant="ghost"
+                            variant="secondary"
                             size="sm"
+                            title={t('makerworld.viewInLibrary')}
+                            aria-label={t('makerworld.viewInLibrary')}
                             onClick={() => {
-                              const target = item.folder_id
-                                ? `/files?folder=${item.folder_id}`
-                                : '/files';
+                              const target = item.folder_id ? `/files?folder=${item.folder_id}` : '/files';
                               window.location.assign(target);
                             }}
-                            title={t('makerworld.viewInLibrary')}
                           >
                             <FolderOpen className="w-3.5 h-3.5" />
                           </Button>
                           {useSlicerApi ? (
                             <Button
-                              variant="ghost"
+                              variant="secondary"
                               size="sm"
-                              onClick={() =>
-                                openSliceForLibraryFile(item.library_file_id, item.filename)
-                              }
                               title={t('slice.action', 'Slice')}
+                              aria-label={t('slice.action', 'Slice')}
+                              onClick={() => openSliceForLibraryFile(item.library_file_id, item.filename)}
                             >
                               <Cog className="w-3.5 h-3.5" />
                             </Button>
                           ) : (
                             <Button
-                              variant="ghost"
+                              variant="secondary"
                               size="sm"
-                              onClick={() =>
-                                handleOpenInSlicer(item.library_file_id, item.filename, 'bambu_studio')
-                              }
                               title={t('makerworld.openInBambuStudio')}
+                              aria-label={t('makerworld.openInBambuStudio')}
+                              onClick={() => handleOpenInSlicer(item.library_file_id, item.filename, 'bambu_studio')}
                             >
                               <ExternalLink className="w-3.5 h-3.5" />
                             </Button>
@@ -908,21 +970,47 @@ export function MakerworldPage() {
                               href={item.source_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center justify-center h-7 w-7 rounded text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                              className="inline-flex items-center justify-center h-9 w-9 rounded-lg bg-bambu-dark-tertiary/90 text-white hover:bg-bambu-green"
                               title={t('makerworld.openOnMakerworld')}
+                              aria-label={t('makerworld.openOnMakerworld')}
                             >
                               <Globe className="w-3.5 h-3.5" />
                             </a>
                           )}
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </aside>
+                      <div className="mt-2 px-0.5">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate" title={item.filename}>
+                          {item.filename}
+                        </h3>
+                        <div className="mt-1 flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                          <Globe className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                          <span className="truncate">{sourceLabel}</span>
+                          {item.created_at && (
+                            <>
+                              <span aria-hidden="true">·</span>
+                              <span className="shrink-0">
+                                {t('makerworld.importedOn', { date: item.created_at.slice(0, 10) })}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        )}
+
+        {importItems.length === 0 && (
+          <Card>
+            <CardContent>
+              <p className="text-sm text-gray-600 dark:text-gray-300 py-6 text-center">{t('makerworld.noImports')}</p>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       <p className="text-xs text-gray-500 dark:text-gray-400 pt-4 border-t border-gray-200 dark:border-gray-700">
