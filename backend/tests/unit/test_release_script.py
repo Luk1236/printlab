@@ -10,6 +10,11 @@ import pytest
 ROOT = Path(__file__).resolve().parents[3]
 SCRIPT = ROOT / "werkzeuge" / "release.py"
 
+pytestmark = pytest.mark.skipif(
+    not SCRIPT.is_file() or not (ROOT / ".git").exists(),
+    reason="Release-Skript und Git-Repository sind im Test-Container nicht vorhanden",
+)
+
 
 def _load():
     sys.path.insert(0, str(ROOT / "werkzeuge"))
