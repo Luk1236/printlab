@@ -1,6 +1,6 @@
 # TODO — PrintLab
 
-**Stand:** 29.10.2026, Version 1.13.0 · **Basis:** Bambuddy 1.2.5.7 (AGPL-3.0, Herkunft: `NOTICE`) · **Branch:** `bambu-monitor-port`
+**Stand:** 29.10.2026, Version 1.13.1 · **Basis:** Bambuddy 1.2.5.7 (AGPL-3.0, Herkunft: `NOTICE`) · **Branch:** `bambu-monitor-port`
 
 Was fertig ist, steht mit Datum im `CHANGELOG.md`. Die ausführliche Bewertung (Risiken R1–R16, Verbesserungen, Erweiterungen)
 steht in `docs/ANALYSE-2026-10-28.md`, die Abnahme in `docs/ABNAHME.md`.
@@ -25,9 +25,10 @@ Update mit Rückbau, Überwachung mit Meldung, Angebote mit PDF, Kamera-Einmessu
 
 ## Technisch offen
 
-- [ ] Große Dateien schrittweise zerlegen (`main.py`, `PrintersPage.tsx`, `client.ts`, …); der Test
-      `test_file_size_budget.py` verhindert nur das Wachsen. `main.py` ist bei der Grenze (11 067/11 075), neue
-      Funktionen müssen in eigene Module.
+- [ ] Große Dateien weiter zerlegen; der Test `test_file_size_budget.py` verhindert nur das Wachsen. Nächster Schnitt: die
+      Druckerkarte selbst (`PrinterCard` in `PrintersPage.tsx`, ~5 600 Zeilen in einer Funktion), danach `client.ts` (~9 700)
+      und `print_scheduler.py` (~8 740). `main.py` ist praktisch nur noch Verdrahtung und bleibt an der Grenze (11 054/11 075);
+      neue Funktionen gehören in eigene Module bzw. `fork_routers.py`.
 - [ ] Volle E2E-Prüfung MakerWorld → PC-Slicer → Warteschlange.
 - [ ] Docker-/ARM-Image auf einem Pi 4/5 starten und prüfen.
 - [ ] Fehlerhilfe: die zwölf Fließtexte der Fehlerbilder von Muttersprachlern übersetzen lassen (Titel und Kurzfassungen

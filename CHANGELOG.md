@@ -3,6 +3,19 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.13.1 (29.10.2026) — Schneller, aufgeräumt, sicher veröffentlicht
+
+- **Deutlich schnellerer Start:** Jede Seite wird erst beim Aufruf geladen, und eingebündelt sind nur noch Deutsch und Englisch — die
+  übrigen zwölf Sprachen kommen beim Umschalten nach. Das Startbündel schrumpft von rund 11 MB auf 1,4 MB; auf dem Pi, über
+  Tailscale und am Handy ist die Oberfläche damit spürbar eher da.
+- **Fehlerhilfe:** Die beiden Schwellen der Bauraum-Regeln („zu warm ab“, „zu kalt unter“) sind jetzt direkt in der Oberfläche
+  einstellbar; gespeichert wird beim Verlassen des Feldes.
+- **Release-Skript** (`werkzeuge/release.py`): prüft Version, Changelog und `static/`, verweigert einen unsauberen Arbeitsbaum
+  und pusht den signierten Tag erst nach bestandener Prüfung. Der Fall vom Vormittag (Tag auf einer alten Version, kein Release)
+  kann so nicht wieder passieren; `docs/VERSIONING.md` beschreibt den Weg.
+- Intern: Anzeige-Bausteine der Druckerkarte ins eigene Modul `components/printer/StatusIndicators.tsx` ausgelagert
+  (`PrintersPage.tsx` 10 130 → 9 754 Zeilen, Budget mitgesenkt).
+
 ## v1.13.0 (29.10.2026) — Fehlerhilfe
 
 - **Fehlerhilfe** (neue Seite im Seitenmenü): zwölf Fehlerbilder aus der Werkstattpraxis in vier Gruppen — Extrusion,
