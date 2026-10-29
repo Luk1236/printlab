@@ -6,12 +6,17 @@ Einstellung in ~/.config/printlab.env (Rechte 600):
                                                           damit bei nicht eingehängtem Stick nichts auf der SD-Karte landet)
   PRINTLAB_BACKUP_KEEP=7                                  so viele Sicherungen bleiben (Standard 7)
   PRINTLAB_BACKUP_ALLOW_SAME_DISK=1                       Ziel auf demselben Datenträger erlauben (nicht empfohlen)
+  PRINTLAB_BACKUP_INCLUDE_SECRETS=1                       Zugangsdatei als Kopie mit in die Sicherung legen (0600).
+                                                          Nur einschalten, wenn das Ziel geschützt ist (verschlüsselter
+                                                          Datenträger oder NAS mit Zugriffsbeschränkung), denn die
+                                                          Datei enthält Telegram-/ntfy-/GitHub-Zugänge.
 Meldung bei Fehlern wie bei der Überwachung (PRINTLAB_ALERT_TELEGRAM_* oder PRINTLAB_ALERT_NTFY_URL).
 
 Was gesichert wird: alle Datenbanken (konsistente Kopie, auch bei laufendem PrintLab) und die Einstellungsdateien im
-Datenordner. Nicht gesichert wird die Zugangsdatei ~/.config/printlab.env. Jede Sicherung wird nach dem Schreiben geprüft
-(Datenbank-Integrität, gültiges JSON); eine kaputte Sicherung wird gelöscht und gemeldet. Läuft als systemd-Timer
-(printlab-backup.timer, vom Installer eingerichtet) oder von Hand.
+Datenordner. Die Zugangsdatei ~/.config/printlab.env nur mit PRINTLAB_BACKUP_INCLUDE_SECRETS=1 (0600-Kopie im
+Sicherungsordner). Jede Sicherung wird nach dem Schreiben geprüft (Datenbank-Integrität, gültiges JSON); eine kaputte
+Sicherung wird gelöscht und gemeldet. Läuft als systemd-Timer (printlab-backup.timer, vom Installer eingerichtet) oder
+von Hand.
 Rückgabecode: 0 = Sicherung ok oder nichts eingestellt, 1 = Fehler.
 """
 
@@ -51,7 +56,27 @@ def prune(target: Path, keep: int) -> list[str]:
     return removed
 
 
-def run_backup(data_dir: Path, target: Path, keep: int = 7, allow_same_disk: bool = False) -> dict:
+def copy_secrets(folder: Path, source: Path | None = None) -> bool:
+    """Zugangsdatei als 0600-Kopie in die Sicherung legen (nur bei ausdrücklichem Opt-in).
+
+    Ohne Kopie ist eine frische Wiederherstellung mühsam, weil Token und Ports fehlen —
+    mit Kopie liegen Geheimnisse auf dem Sicherungsziel, deshalb keine Voreinstellung.
+    """
+    source = source or Path.home() / ".config" / "printlab.env"
+    if not source.is_file():
+        return False
+    copy = folder / source.name
+    shutil.copyfile(source, copy)
+    try:
+        os.chmod(copy, 0o600)
+    except OSError:
+        pass  # z. B. FAT/NAS-Dateisystem ohne Rechte; die Kopie bleibt der einzige Zweck
+    return True
+
+
+def run_backup(
+    data_dir: Path, target: Path, keep: int = 7, allow_same_disk: bool = False, include_secrets: bool = False
+) -> dict:
     """Eine Sicherung anlegen und prüfen. Wirft RuntimeError mit lesbarer Meldung bei jedem Problem."""
     if not target.is_dir():
         raise RuntimeError(f"Sicherungsziel nicht erreichbar: {target} (Stick nicht eingehängt?)")
@@ -72,8 +97,12 @@ def run_backup(data_dir: Path, target: Path, keep: int = 7, allow_same_disk: boo
     if problems:
         shutil.rmtree(folder, ignore_errors=True)
         raise RuntimeError("Die Sicherung war beschädigt und wurde gelöscht: " + "; ".join(problems[:3]))
+    included_secrets = copy_secrets(folder) if include_secrets else None
     removed = prune(target, keep)
-    return {"folder": str(folder), "saved": saved, "removed": removed}
+    result = {"folder": str(folder), "saved": saved, "removed": removed}
+    if include_secrets:
+        result["secrets"] = "printlab.env (0600)" if included_secrets else None
+    return result
 
 
 def write_status(data_dir: Path, ok: bool, detail: str) -> None:
@@ -96,13 +125,27 @@ def main() -> int:
         keep = 7
     notify = ueberwachung.make_notifier(data_dir=DATA_DIR)
     try:
-        result = run_backup(DATA_DIR, Path(target_text), keep, os.environ.get("PRINTLAB_BACKUP_ALLOW_SAME_DISK") == "1")
+        result = run_backup(
+            DATA_DIR,
+            Path(target_text),
+            keep,
+            os.environ.get("PRINTLAB_BACKUP_ALLOW_SAME_DISK") == "1",
+            os.environ.get("PRINTLAB_BACKUP_INCLUDE_SECRETS") == "1",
+        )
     except RuntimeError as exc:
         write_status(DATA_DIR, False, str(exc))
         notify(f"Sicherung nach außen fehlgeschlagen: {exc}")
         return 1
     write_status(DATA_DIR, True, result["folder"])
     print(f"Sicherung ok: {result['folder']} ({len(result['saved'])} Dateien, {len(result['removed'])} alte gelöscht)")
+    print(
+        "Zugangsdatei: "
+        + (
+            result["secrets"]
+            if result.get("secrets")
+            else "nicht gesichert (Standard) — PRINTLAB_BACKUP_INCLUDE_SECRETS=1 legt eine 0600-Kopie bei, nur bei geschütztem Ziel"
+        )
+    )
     return 0
 
 

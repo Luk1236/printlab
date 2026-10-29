@@ -27,6 +27,9 @@ query-filters:
   # Path injection: All paths validated — extension whitelists,
   # traversal checks (rejects .. / \), UUID-based naming, or
   # constructed from integer IDs in controlled base directories.
+  # Compensating gate: backend test_no_unsafe_path_joins rejects any
+  # non-marked os.path.join / Path / / with user data — a NEW unsafe
+  # path flow fails the unit test suite, not just CodeQL.
   - exclude:
       id: py/path-injection
 
@@ -44,10 +47,13 @@ query-filters:
   # SSRF: URLs come from admin-configured settings (external
   # cameras, Home Assistant, Tasmota). Validation added for scheme,
   # hostname, and metadata-service blocking.
+  # partial-ssrf stays excluded (validated inputs, admin-only config).
+  # full-ssrf is NO longer excluded: there is no compensating repository
+  # gate for SSRF, and a broad rule exclusion would let a NEW
+  # admin-configured URL consumer reach the network silently. Alerts
+  # are visible in the Security tab; triage them before excluding here.
   - exclude:
       id: py/partial-ssrf
-  - exclude:
-      id: py/full-ssrf
 
   # Unused global variables: False positives — module-level
   # cache variables written via `global` in one function, read in another.

@@ -332,6 +332,10 @@ _RAW: list[tuple[str, str]] = [
     ),
     (r"„enabled“ muss wahr oder falsch sein\.", "“enabled” must be true or false."),
     (
+        r"Shell-Zeichen \((?P<c>.+)\) sind nicht erlaubt — bitte den Befehl als Liste eintragen\.",
+        r"Shell characters (\g<c>) are not allowed — please enter the command as a list.",
+    ),
+    (
         r"Kein Modell-Server unter (?P<u>.+) erreichbar\. Läuft Ollama\?",
         r"No model server reachable at \g<u>. Is Ollama running?",
     ),

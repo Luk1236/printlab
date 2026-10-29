@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -71,6 +72,41 @@ def _valid_command(value: Any) -> bool:
 
 VALID_SLOT_STATUSES = frozenset({"ready", "used", "empty", "occupied"})
 
+# Zeichen, deren Bedeutung einst die Shell hatte. Kein Ausführungsweg wertet sie
+# mehr aus; die Konfiguration muss den Befehl als Liste tragen, wenn so etwas
+# gebraucht wird (z. B. PowerShell oder Weiterleitungen).
+_SHELL_OPERATORS = "|;&<>()"
+_QUOTE_PAIR = re.compile(r"^(\"|')(.*?)\1$", re.DOTALL)
+
+
+def _assert_no_shell_operators(text: str) -> None:
+    """Verwirft Befehlsstrings mit Shell-Zeichen außerhalb von Anführungszeichen."""
+    in_double = in_single = False
+    for char in text:
+        if char == '"' and not in_single:
+            in_double = not in_double
+            continue
+        if char == "'" and not in_double:
+            in_single = not in_single
+            continue
+        if not in_double and not in_single and char in _SHELL_OPERATORS:
+            raise ValueError(f"Shell-Zeichen ({char!r}) sind nicht erlaubt — bitte den Befehl als Liste eintragen.")
+
+
+def _split_command(text: str) -> list[str]:
+    """Löst einen String-Befehl ohne Shell in Programm + Argumente auf.
+
+    POSIX: klassisches ``shlex`` (wie bisher). Windows: ``shlex`` im nicht-POSIX-Modus,
+    damit Pfad-Backslashes erhalten bleiben, danach fällt ein umgebendes
+    Anführungszeichenpaar je Token weg. Ohne Shell bleiben Umgebungsvariablen
+    (``%VAR%``, ``$VAR``) und Weiterleitungen unbelegt/nicht erzeugt — dafür mit.
+    """
+    _assert_no_shell_operators(text)
+    if os.name == "nt":
+        tokens = shlex.split(text, posix=False)
+        return [_QUOTE_PAIR.sub(r"\2", token) for token in tokens]
+    return shlex.split(text, posix=True)
+
 
 def _read_json(path: Path, default: Any) -> Any:
     try:
@@ -91,9 +127,12 @@ def _run(
 ) -> tuple[bool, str]:
     """Führt einen lokalen Hardware-Befehl aus (Konfiguration ist vertrauenswürdig).
 
-    Eine **Liste** (``["programm", "arg1", ...]``) läuft ohne Shell und ist damit frei von
-    Shell-Auswertung; ein **String** läuft wie bisher (unter Windows über die Shell, sonst per
-    ``shlex``). ``on_start`` bekommt den Prozess, damit der Not-Halt ihn beenden kann.
+    Eine **Liste** (``["programm", "arg1", ...]``) läuft ohne Shell. Ein **String** wird
+    aufgelöst (POSIX per ``shlex``, Windows mit Anführungszeichen-Erkennung) und läuft
+    **ebenfalls** ohne Shell — seit diesem Hardeningschritt interpretiert kein Weg mehr
+    Shell-Zeichen wie ``&``, ``|`` oder ``>``; solche Zeichen führen zu einer Fehlermeldung
+    mit dem Rat, den Befehl als Liste einzutragen. ``on_start`` bekommt den Prozess, damit
+    der Not-Halt ihn beenden kann.
     """
     if isinstance(command, (list, tuple)):
         args: list[str] | str = [str(part) for part in command]
@@ -104,9 +143,9 @@ def _run(
         text = str(command or "")
         if not text.strip():
             return False, "Kein Befehl konfiguriert."
-        use_shell = os.name == "nt"
+        use_shell = False
         try:
-            args = text if use_shell else shlex.split(text, posix=True)
+            args = _split_command(text)
         except ValueError as exc:
             return False, f"Befehl fehlgeschlagen: {exc}"
     try:
@@ -487,6 +526,13 @@ class HardwareExtension:
                 for key in COMMAND_KEYS:
                     if not _valid_command(merged.get(key)):
                         return False, f"{key} muss ein Text oder eine Liste von Texten sein."
+                for key in COMMAND_KEYS:
+                    value = merged.get(key)
+                    if isinstance(value, str):
+                        try:
+                            _assert_no_shell_operators(value)
+                        except ValueError as exc:
+                            return False, f"{key}: {exc}"
                 try:
                     merged["timeout_seconds"] = max(1.0, float(merged.get("timeout_seconds") or TIMEOUT))
                 except (TypeError, ValueError):

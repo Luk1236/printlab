@@ -1,7 +1,9 @@
 """API routes for external sidebar links."""
 
 import logging
+import re
 import uuid
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
@@ -25,6 +27,25 @@ from backend.app.schemas.external_link import (
 # Directory for storing custom icons
 ICONS_DIR = app_settings.base_dir / "icons"
 ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".ico"}
+# Content-based limits (like the company logo): size cap plus magic-byte sniffing
+# for raster formats, so the extension alone does not decide what gets served.
+MAX_ICON_BYTES = 2 * 1024 * 1024
+
+_MAGIC: dict[str, tuple[bytes, ...]] = {
+    ".png": (b"\x89PNG\r\n\x1a\n",),
+    ".jpg": (b"\xff\xd8\xff",),
+    ".jpeg": (b"\xff\xd8\xff",),
+    ".gif": (b"GIF87a", b"GIF89a"),
+    ".webp": (b"RIFF",),
+    ".ico": (b"\x00\x00\x01\x00",),
+}
+# SVG must stay inert: scripts, event handlers and URL-based script loads are
+# rejected at upload time, and the icon is served with a no-everything CSP
+# (see get_icon) so a directly opened file cannot run anything.
+_SVG_FORBIDDEN = re.compile(
+    r"<script|javascript:|data:\s*text/html|\son\w+\s*=|xlink:href\s*=\s*[\"']\s*(javascript|data|&)",
+    re.IGNORECASE,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -182,6 +203,20 @@ async def upload_icon(
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail=f"File type not allowed. Allowed: {', '.join(ALLOWED_EXTENSIONS)}")
 
+    # Read only up to the size cap, so an oversized file cannot fill memory.
+    content = await file.read(MAX_ICON_BYTES + 1)
+    if len(content) > MAX_ICON_BYTES:
+        raise HTTPException(status_code=400, detail=f"Icon too large (maximum {MAX_ICON_BYTES // (1024 * 1024)} MB)")
+    if not content:
+        raise HTTPException(status_code=400, detail="Icon file is empty")
+    # Content check: raster formats are sniffed by magic bytes, SVG must be a
+    # clean XML document without scripts or inline handlers.
+    if ext == ".svg":
+        _validate_svg(content)
+    else:
+        if not any(content.startswith(magic) for magic in _MAGIC[ext]):
+            raise HTTPException(status_code=400, detail="File content does not match the file extension")
+
     # Create icons directory if it doesn't exist
     ICONS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -195,10 +230,11 @@ async def upload_icon(
     filename = f"{uuid.uuid4().hex}{ext}"
     filepath = ICONS_DIR / filename
 
-    # Save file
-    content = await file.read()
-    with open(filepath, "wb") as f:
+    # Save file (atomic, like the other config JSON writers)
+    tmp_path = filepath.with_name(filename + ".tmp")
+    with open(tmp_path, "wb") as f:
         f.write(content)
+    tmp_path.replace(filepath)
 
     # Update link
     link.custom_icon = filename
@@ -247,6 +283,11 @@ async def get_icon(
     the same ``external_links:read`` every other read on this router takes.
     Previously it took the camera-stream token, so a sidebar icon was visible
     only to users who could also watch the printer camera (#3025).
+
+    The file is served with ``nosniff`` and a strict CSP (belt and suspenders: the
+    global security-header middleware writes its CSP over the response, either way
+    a directly opened custom SVG — validated at upload, but still user content —
+    gets no script room).
     """
     result = await db.execute(select(ExternalLink).where(ExternalLink.id == link_id))
     link = result.scalar_one_or_none()
@@ -257,8 +298,37 @@ async def get_icon(
     if not link.custom_icon:
         raise HTTPException(status_code=404, detail="No custom icon set")
 
+    # custom_icon is always a UUID filename generated in upload_icon; reject
+    # anything else before it reaches the filesystem.
+    if (
+        Path(link.custom_icon).suffix.lower() not in ALLOWED_EXTENSIONS
+        or "/" in link.custom_icon
+        or "\\" in link.custom_icon
+    ):
+        raise HTTPException(status_code=404, detail="Invalid icon reference")
+
     filepath = ICONS_DIR / link.custom_icon
     if not filepath.exists():
         raise HTTPException(status_code=404, detail="Icon file not found")
 
-    return FileResponse(filepath)
+    headers = {
+        "X-Content-Type-Options": "nosniff",
+        "Content-Security-Policy": "default-src 'none'",
+    }
+    return FileResponse(filepath, headers=headers)
+
+
+def _validate_svg(content: bytes) -> None:
+    """Verwirft SVG-Inhalte, die Code ausführen könnten, und hält sonst nur gültiges XML durch."""
+    try:
+        text = content.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise HTTPException(status_code=400, detail="The SVG file is not a valid SVG document") from exc
+    if not text.lstrip().startswith(("<?xml", "<svg")):
+        raise HTTPException(status_code=400, detail="The SVG file is not a valid SVG document")
+    if _SVG_FORBIDDEN.search(text):
+        raise HTTPException(status_code=400, detail="The SVG file must not contain scripts or event handlers")
+    try:
+        ET.fromstring(text)
+    except ET.ParseError as exc:
+        raise HTTPException(status_code=400, detail="The SVG file is not a valid SVG document") from exc

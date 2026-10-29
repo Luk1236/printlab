@@ -100,6 +100,68 @@ class TestRunBackup:
         assert (target / "meine-fotos").exists()
 
 
+class TestSecretsCopy:
+    """Zugangsdatei nur bei ausdrücklichem Opt-in in der Sicherung (#sprint-2910)."""
+
+    @pytest.fixture(autouse=True)
+    def fake_home(self, tmp_path, monkeypatch):
+        """copy_secrets liest Path.home()/.config/printlab.env — im Test ein erfundetes Home-Verzeichnis."""
+        home = tmp_path / "home"
+        monkeypatch.setattr(Path, "home", staticmethod(lambda: home))
+        self.home = home
+
+    def _secrets(self, content: str = "PRINTLAB_GITHUB_TOKEN=geheim") -> Path:
+        source = self.home / ".config" / "printlab.env"
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_text(content, encoding="utf-8")
+        return source
+
+    def test_off_by_default(self, data, tmp_path):
+        target = tmp_path / "usb"
+        target.mkdir()
+        self._secrets()
+        folder = Path(se.run_backup(data, target)["folder"])
+        assert [p.name for p in folder.iterdir() if p.suffix == ".env"] == []
+
+    def test_opt_in_copies_the_access_file_privately(self, data, tmp_path):
+        self._secrets()
+        target = tmp_path / "usb"
+        target.mkdir()
+        result = se.run_backup(data, target, include_secrets=True)
+        folder = Path(result["folder"])
+        copy = folder / "printlab.env"
+        assert copy.read_text(encoding="utf-8") == "PRINTLAB_GITHUB_TOKEN=geheim"
+        assert result["secrets"] == "printlab.env (0600)"
+        if os.name != "nt":
+            assert copy.stat().st_mode & 0o077 == 0
+
+    def test_missing_access_file_reports_none(self, data, tmp_path):
+        target = tmp_path / "usb"
+        target.mkdir()
+        result = se.run_backup(data, target, include_secrets=True)
+        assert result["secrets"] is None
+        assert [p.name for p in Path(result["folder"]).iterdir() if p.suffix == ".env"] == []
+
+    def test_main_wires_the_opt_in(self, data, tmp_path, monkeypatch):
+        target = tmp_path / "usb"
+        target.mkdir()
+        monkeypatch.setattr(se, "DATA_DIR", data)
+        monkeypatch.setenv("PRINTLAB_BACKUP_TARGET", str(target))
+        captured = {}
+
+        def fake_run_backup(data_dir, target_, keep, allow_same_disk, include_secrets=False):
+            captured["include"] = include_secrets
+            return {"folder": str(target_ / "x"), "saved": [], "removed": []}
+
+        monkeypatch.setattr(se, "run_backup", fake_run_backup)
+        monkeypatch.delenv("PRINTLAB_BACKUP_INCLUDE_SECRETS", raising=False)
+        se.main()
+        assert captured["include"] is False
+        monkeypatch.setenv("PRINTLAB_BACKUP_INCLUDE_SECRETS", "1")
+        se.main()
+        assert captured["include"] is True
+
+
 class TestMain:
     def test_nothing_configured_is_not_an_error(self, monkeypatch, capsys):
         monkeypatch.delenv("PRINTLAB_BACKUP_TARGET", raising=False)

@@ -269,6 +269,49 @@ class TestCommandLists:
         assert not hw.update_config({"door_open_command": ["ok", 3]})[0]
 
 
+class TestStringCommandsRunWithoutShell:
+    """Auch String-Befehle laufen ohne Shell (#sprint-2910): Zitatbewusste Auflösung, Shell-Zeichen abgelehnt."""
+
+    def test_string_is_split_without_shell(self):
+        ok, output = _run(f'"{sys.executable}" -c "import sys; print(sys.argv[1])" "x && echo hacked"', 10)
+        assert ok, output
+        assert output == "x && echo hacked"
+
+    def test_shell_operators_are_rejected_with_list_hint(self, tmp_path):
+        hw = make(tmp_path, mode="command", door_open_command="prog --open > log.txt")
+        ok, message = hw.open_door()
+        assert not ok
+        assert "Liste" in message
+        assert hw.status()["door"] == "closed"
+
+    def test_pipeline_operator_is_rejected(self):
+        ok, message = _run(f'"{sys.executable}" -c "print(1)" | more', 10)
+        assert not ok
+        assert "Liste" in message
+
+    def test_split_on_windows_keeps_backslashes_and_unquotes(self, monkeypatch):
+        from backend.app.services import hardware_extension as he
+
+        monkeypatch.setattr(he.os, "name", "nt")
+        assert he._split_command('"C:\\Programme\\Mein Tool\\tool.exe" door_open --wait') == [
+            "C:\\Programme\\Mein Tool\\tool.exe",
+            "door_open",
+            "--wait",
+        ]
+
+    def test_split_on_windows_unchanged_for_plain_paths(self, monkeypatch):
+        from backend.app.services import hardware_extension as he
+
+        monkeypatch.setattr(he.os, "name", "nt")
+        assert he._split_command("C:\\tool.exe --open") == ["C:\\tool.exe", "--open"]
+
+    def test_posix_split_unchanged(self, monkeypatch):
+        from backend.app.services import hardware_extension as he
+
+        monkeypatch.setattr(he.os, "name", "posix")
+        assert he._split_command("tool --flag 'text mit Leerzeichen'") == ["tool", "--flag", "text mit Leerzeichen"]
+
+
 class TestPerPrinterHardware:
     @staticmethod
     def _isolate(tmp_path, monkeypatch):

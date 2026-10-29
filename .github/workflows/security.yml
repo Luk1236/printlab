@@ -326,9 +326,9 @@ jobs:
             // Documented advisory exceptions (keyed by GHSA id) - see ci.yml for the
             // full rationale and the matching hard gate. GHSA-qwww-vcr4-c8h2: React
             // Router RSC-mode CSRF, not reachable from PrintLab's BrowserRouter SPA
-            // (@react-router/server not installed); react-router/-dom pinned to 7.18.1
-            // (the most-patched 7.x), no non-major fix exists. Auto-surfaces again if a
-            // non-major fix ships.
+            // (@react-router/server not installed); the entry is retired — react-router
+            // and react-router-dom are pinned to 7.18.2, which ships the fix. Kept here
+            // only until the weekly run confirms 7.18.2 covers it; then remove.
             const ALLOWLIST = new Set(['GHSA-qwww-vcr4-c8h2']);
             function advisoryIds(name, seen) {
               seen = seen || new Set();

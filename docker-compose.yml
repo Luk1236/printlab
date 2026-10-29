@@ -102,6 +102,12 @@ services:
       #- /srv/library:/external/projects:ro
     environment:
       - TZ=${TZ:-Europe/Berlin}
+      # Anmeldung vorgeschrieben (wie beim nativen Pi-Installer): bis der Administrator
+      # mit Passwort eingerichtet ist, antwortet PrintLab nur mit /setup (fail-closed).
+      # Vorhandene Einrichtungen mit eingerichtetem Administrator merken davon nichts.
+      # Explizit ausschalten: PRINTLAB_REQUIRE_AUTH=0 setzen — für ein Gerät im
+      # Heimnetz bewusst möglich, aber nicht empfohlen.
+      - PRINTLAB_REQUIRE_AUTH=${PRINTLAB_REQUIRE_AUTH:-1}
       # User/group the container drops to after the entrypoint normalises
       # ownership on /app/data and /app/logs. Match your host user (run
       # `id -u` / `id -g`) if you want files written by the container to
