@@ -7961,6 +7961,14 @@ export default {
     resumeReport: 'Bericht fortsetzen',
     unexpectedError: 'Ein unerwarteter Fehler ist aufgetreten',
   },
+  failureImages: {
+    title: 'Fehlerbild-Sammlung',
+    hint: 'Bei jeder Warnung der Prüfungen (Platte nicht frei, erste Schicht, Spaghetti, Bauteil-Wächter) wird das Kamerabild hier gesammelt — Rohmaterial für eine spätere KI-Fehlererkennung. Höchstens 500 Bilder, 90 Tage.',
+    empty: 'Noch keine Fehlerbilder gesammelt.',
+    confirmTitle: 'Fehlerbild löschen?',
+    confirmText: 'Das Bild wird endgültig gelöscht.',
+  },
+
   failureDetection: {
     title: 'KI-Fehlererkennung',
     description: 'Überwacht Drucke über eine selbst gehostete Obico-ML-API und reagiert automatisch auf erkannte Fehldrucke.',

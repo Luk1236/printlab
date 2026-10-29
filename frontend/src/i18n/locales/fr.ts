@@ -7949,6 +7949,14 @@ export default {
     resumeReport: 'Reprendre le rapport',
     unexpectedError: 'Une erreur inattendue est survenue',
   },
+  failureImages: {
+    title: 'Collection d\'images d\'échec',
+    hint: 'Chaque alerte des contrôles (plateau occupé, première couche, spaghettis, surveillance de pièce) enregistre l\'image caméra ici: matière première pour une future détection d\'échecs par IA. 500 images au maximum, 90 jours.',
+    empty: 'Aucune image d\'échec collectée pour l\'instant.',
+    confirmTitle: 'Supprimer l\'image d\'échec ?',
+    confirmText: 'L\'image sera définitivement supprimée.',
+  },
+
   failureDetection: {
     title: 'Détection d\'échec par IA',
     description: 'Surveille les impressions via une API ML Obico auto-hébergée et agit automatiquement sur les échecs détectés.',

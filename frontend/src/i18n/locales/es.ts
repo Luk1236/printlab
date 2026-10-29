@@ -7969,6 +7969,14 @@ export default {
     resumeReport: 'Reanudar informe',
     unexpectedError: 'Se produjo un error inesperado',
   },
+  failureImages: {
+    title: 'Colección de imágenes de fallos',
+    hint: 'Cada aviso de las comprobaciones (cama ocupada, primera capa, espagueti, vigilante de piezas) guarda su imagen de cámara aquí: material base para un futuro detector de fallos con IA. Máximo 500 imágenes, 90 días.',
+    empty: 'Todavía no hay imágenes de fallos.',
+    confirmTitle: '¿Eliminar imagen de fallo?',
+    confirmText: 'La imagen se borrará definitivamente.',
+  },
+
   failureDetection: {
     title: 'Detección de fallos por IA',
     description: 'Supervise las impresiones con una API de ML de Obico autoalojada y actúe automáticamente ante los fallos detectados.',

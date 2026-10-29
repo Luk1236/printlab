@@ -7403,6 +7403,14 @@ export default {
     logHealthSummary: '로그에서 알려진 문제가 발견되었습니다',
     logHealthIntro: '최근 로그가 알려진 문제와 일치합니다. 아래 수정 방법을 확인하세요 — 해결하면 버그 보고서 없이 문제가 해결될 수 있습니다. 아래에서 보고서를 제출할 수도 있습니다.'
   },
+  failureImages: {
+    title: '실패 이미지 수집',
+    hint: '검사의 각 경고(베드에 부품 있음, 첫 레이어, 스파게티, 부품 감시)마다 카메라 이미지를 여기에 저장합니다. 향후 AI 오류 감지의 소재가 됩니다. 최대 500장, 90일 보관.',
+    empty: '아직 수집된 실패 이미지가 없습니다.',
+    confirmTitle: '실패 이미지를 삭제할까요?',
+    confirmText: '이미지는 영구적으로 삭제됩니다.',
+  },
+
   failureDetection: {
     title: 'AI 실패 감지',
     description: '자체 호스팅 Obico ML API로 인쇄를 모니터링하고 감지된 실패에 자동으로 조치합니다.',

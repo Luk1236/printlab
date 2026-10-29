@@ -19,6 +19,7 @@ export type {
   AssistantStatus,
   AssistantAction,
   AssistantAnswer,
+  FailureImage,
   SelfTestResult,
   SelfTestReport,
 } from './forkApi';

@@ -7946,6 +7946,14 @@ export default {
     resumeReport: '繼續報告',
     unexpectedError: '發生了意外錯誤',
   },
+  failureImages: {
+    title: '收集失敗影像',
+    hint: '每次檢查警告（列印板不空、首層、斷絲、部件監視）都會把攝影機影像保存在這裡 — 作為將來AI錯誤偵測的素材。最多500張，保留90天。',
+    empty: '還沒有收集到失敗影像。',
+    confirmTitle: '刪除失敗影像？',
+    confirmText: '該影像將被永久刪除。',
+  },
+
   failureDetection: {
     title: 'AI 故障檢測',
     description: '透過自託管的 Obico ML API 監控列印,並對偵測到的故障自動採取行動。',

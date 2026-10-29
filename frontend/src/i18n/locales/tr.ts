@@ -7898,6 +7898,14 @@ export default {
     resumeReport: 'Rapora devam et',
     unexpectedError: 'Beklenmedik bir hata oluştu',
   },
+  failureImages: {
+    title: 'Hata görüntüleri koleksiyonu',
+    hint: 'Kontrollerin her uyarısında (tablo boş değil, ilk katman, spagetti, parça gözcüsü) kamera görüntüsü buraya kaydedilir — gelecekteki yapay zekâ hata algılaması için kaynak. En fazla 500 görüntü, 90 gün.',
+    empty: 'Henüz hata görüntüsü toplanmadı.',
+    confirmTitle: 'Hata görüntüsü silinsin mi?',
+    confirmText: 'Görüntü kalıcı olarak silinecek.',
+  },
+
   failureDetection: {
     title: 'AI Başarısızlık Algılama',
     description: 'Baskıları kendi barındırılan bir Obico ML API ile izle ve algılanan başarısızlıklara otomatik olarak yanıt ver.',

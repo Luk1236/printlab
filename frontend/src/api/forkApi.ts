@@ -178,6 +178,14 @@ export interface SelfTestResult {
   fix: string | null;
 }
 
+export interface FailureImage {
+  name: string;
+  event: string;
+  timestamp: string;
+  size: number;
+  mtime: number;
+}
+
 export interface SelfTestReport {
   checked_at: string;
   results: SelfTestResult[];
@@ -216,6 +224,9 @@ export interface ForkApiDeps {
 export function createForkApi({ request, apiBase, getAuthToken }: ForkApiDeps) {
   return {
     runSelfTest: () => request<SelfTestReport>('/selftest', { method: 'POST' }),
+  listFailureImages: () => request<FailureImage[]>('/failure-images/'),
+  deleteFailureImage: (name: string) =>
+    request<{ message: string }>(`/failure-images/${encodeURIComponent(name)}`, { method: 'DELETE' }),
     getAssistantStatus: () => request<AssistantStatus>('/assistant/status'),
     saveAssistantConfig: (update: Record<string, unknown>) =>
       request<AssistantStatus>('/assistant/config', { method: 'PUT', body: JSON.stringify(update) }),

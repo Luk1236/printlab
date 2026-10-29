@@ -8010,6 +8010,14 @@ errors: {
     resumeReport: 'Återuppta rapportering',
     unexpectedError: 'Ett oväntat fel uppstod',
   },
+  failureImages: {
+    title: 'Samling felbilder',
+    hint: 'Vid varje varning från kontrollerna (plattan är inte tom, första lagret, spagetti, detaljbevakning) sparas kamerabilden här — råmaterial för en framtida AI-feldetektor. Högst 500 bilder, 90 dagar.',
+    empty: 'Inga felbilder samlade ännu.',
+    confirmTitle: 'Ta bort felbild?',
+    confirmText: 'Bilden tas bort permanent.',
+  },
+
   failureDetection: {
     title: 'AI-feldetektering',
     description: 'Övervaka utskrifter med ett självhostat Obico ML-API och agera automatiskt på upptäckta fel.',

@@ -26,6 +26,7 @@ from backend.app.models.notification import (
 )
 from backend.app.models.notification_template import NotificationTemplate
 from backend.app.services.print_confirmation import one_tap_url
+from backend.app.utils import failure_images
 from backend.app.utils.notification_photos import save_notification_photo
 
 logger = logging.getLogger(__name__)
@@ -2002,7 +2003,13 @@ class NotificationService:
 
         Split out of on_printer_error (#1794) so a user can subscribe to AI
         alerts without also being paged for every HMS hardware code.
+
+        Das Bild landet vor der Anbieter-Prüfung in der Fehlerbild-Sammlung —
+        sie existiert gerade dafür, dass Beweismaterial bleibt, auch wenn der
+        Meldeweg still ist.
         """
+        if image_data:
+            await asyncio.to_thread(failure_images.save_failure_image, image_data, "ai_failure_detection")
         providers = await self._get_providers_for_event(db, "on_ai_failure_detection", printer_id)
         if not providers:
             return
@@ -2036,6 +2043,8 @@ class NotificationService:
         image_data: bytes | None = None,
     ):
         """Handle plate not empty event - objects detected on build plate before print."""
+        if image_data:
+            await asyncio.to_thread(failure_images.save_failure_image, image_data, "plate_not_empty")
         providers = await self._get_providers_for_event(db, "on_plate_not_empty", printer_id)
         if not providers:
             return

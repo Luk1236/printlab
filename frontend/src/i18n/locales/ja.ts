@@ -7962,6 +7962,14 @@ export default {
     resumeReport: 'レポートを再開',
     unexpectedError: '予期しないエラーが発生しました',
   },
+  failureImages: {
+    title: '失敗画像コレクション',
+    hint: '各チェックの警告（ベッドに部品あり、初層、スパゲッティ、部品監視）のたびにカメラ画像をここへ保存します。将来のAIエラー検出の素材になります。最大500枚、90日保存。',
+    empty: 'まだ失敗画像はありません。',
+    confirmTitle: '失敗画像を削除しますか？',
+    confirmText: '画像は完全に削除されます。',
+  },
+
   failureDetection: {
     title: 'AI 失敗検出',
     description: 'セルフホストされた Obico ML API で印刷を監視し、検出された失敗に自動的に対応します。',

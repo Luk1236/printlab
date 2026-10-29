@@ -8012,6 +8012,14 @@ export default {
     resumeReport: 'Resume report',
     unexpectedError: 'An unexpected error occurred',
   },
+  failureImages: {
+    title: 'Failure image collection',
+    hint: 'Every warning from the checks (plate not empty, first layer, spaghetti, part watcher) saves its camera image here — raw material for a later ML failure detector. At most 500 images, kept 90 days.',
+    empty: 'No failure images collected yet.',
+    confirmTitle: 'Delete failure image?',
+    confirmText: 'The image will be deleted permanently.',
+  },
+
   failureDetection: {
     title: 'AI Failure Detection',
     description: 'Monitor prints with a self-hosted Obico ML API and act on detected failures automatically.',

@@ -8012,6 +8012,14 @@ export default {
     resumeReport: 'Rapport hervatten',
     unexpectedError: 'Er is een onverwachte fout opgetreden',
   },
+  failureImages: {
+    title: 'Verzameling foutbeelden',
+    hint: 'Bij elke waarschuwing van de controles (plateau niet leeg, eerste laag, spaghetti, onderdeelbewaking) wordt de camerafoto hier bewaard: grondstof voor een latere AI-foutdetectie. Maximaal 500 afbeeldingen, 90 dagen.',
+    empty: 'Nog geen foutbeelden verzameld.',
+    confirmTitle: 'Foutbeeld verwijderen?',
+    confirmText: 'De afbeelding wordt definitief verwijderd.',
+  },
+
   failureDetection: {
     title: 'AI-foutdetectie',
     description: 'Bewaak afdrukken met een zelf-gehoste Obico ML API en voer automatisch acties uit bij gedetecteerde fouten.',

@@ -7948,6 +7948,14 @@ export default {
     resumeReport: 'Riprendi segnalazione',
     unexpectedError: 'Si è verificato un errore imprevisto',
   },
+  failureImages: {
+    title: 'Raccolta immagini di errore',
+    hint: 'Ogni avviso dei controlli (piatto occupato, primo layer, spaghetti, sorveglianza del pezzo) salva l\'immagine della camera qui: materiale per un futuro rilevatore di errori via IA. Massimo 500 immagini, 90 giorni.',
+    empty: 'Nessuna immagine di errore rilevata finora.',
+    confirmTitle: 'Eliminare l\'immagine di errore?',
+    confirmText: 'L\'immagine verrà eliminata in modo definitivo.',
+  },
+
   failureDetection: {
     title: 'Rilevamento guasti con IA',
     description: 'Monitora le stampe tramite un\'API ML Obico auto-ospitata e agisce automaticamente sui guasti rilevati.',

@@ -6,6 +6,7 @@ import { api } from '../api/client';
 import { Card, CardContent, CardHeader } from './Card';
 import { Button } from './Button';
 import { Toggle } from './Toggle';
+import { FailureImagesCard } from './FailureImagesCard';
 import { useToast } from '../contexts/ToastContext';
 import { NumberInput } from './NumberInput';
 
@@ -411,6 +412,8 @@ export function FailureDetectionSettings() {
             )}
           </CardContent>
         </Card>
+
+        <FailureImagesCard />
       </div>
     </div>
   );
