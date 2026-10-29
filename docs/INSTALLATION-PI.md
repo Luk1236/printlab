@@ -195,6 +195,28 @@ weicht PrintLab dann automatisch auf `git ls-remote` aus. Bei älteren Ständen:
 (`v1.9.1` durch die gewünschte Version ersetzen). Alternativ ein Token mit Leserecht in `PRINTLAB_GITHUB_TOKEN` setzen
 (5000 statt 60 Abfragen pro Stunde).
 
+## Lokaler KI-Assistent (optional)
+
+Unter **Wartung → Assistent** gibt es einen Chat mit einem lokalen Sprachmodell. Er beantwortet Fragen zum Betrieb („Was läuft,
+wann ist alles fertig, warum wartet dieser Auftrag?"), erklärt Druckerfehler und entwirft Texte. Alles bleibt in deinem Netz:
+Das Modell läuft auf dem Pi (oder einem anderen Rechner), PrintLab schickt ihm nur eine kleine Übersicht von Druckern und
+Warteschlange.
+
+1. Auf dem Pi: `~/printlab/werkzeuge/ki_einrichten.sh --installieren` (installiert Ollama mit dem offiziellen Skript, fragt nach
+   `sudo`, lädt das Modell `qwen2.5:3b` und macht einen Test). Anderes Modell: Name als Argument, zum Beispiel `qwen2.5:1.5b`.
+2. In PrintLab: Wartung → Assistent → einschalten. Adresse (Standard `http://127.0.0.1:11434`), Modell und Zeitgrenze stehen
+   dort; der Haken „Modell-Server erreichbar, Modell vorhanden" zeigt, dass alles stimmt. Ein Modell-Server auf einem anderen
+   Rechner geht ebenso (Adresse eintragen; Link-Local-Adressen sind gesperrt).
+
+**Was er darf:** Lesen (Drucker, Warteschlange, Prognose, Druckerfehler) und Änderungen **vorschlagen**: Priorität oder Liefertermin
+eines wartenden Auftrags. Du siehst jeden Vorschlag in einfachen Worten und bestätigst ihn mit einem Klick; erst dann wird er über
+die normale Warteschlange (mit ihrer Rechteprüfung) ausgeführt. Mehr kann er nicht.
+
+**Grenzen, ehrlich:** Auf dem Pi laufen nur kleine Modelle (wenige Milliarden Parameter), die Antworten dauern oft eine halbe
+Minute oder länger und können falsch sein; prüfe wichtige Angaben. Kleine Modelle halten sich nicht immer an das Format für
+Änderungsvorschläge; unbrauchbare Vorschläge verwirft PrintLab und zeigt, wie viele. Es antwortet nur eine Frage zur Zeit.
+Ein größeres Modell auf einem stärkeren Rechner im Netz ist die bessere Wahl, wenn dir Qualität wichtiger ist als „alles auf dem Pi".
+
 ## Warteschlange mit mehreren Druckern
 
 - **Priorität:** Beim Einreihen wählst du *Eilig*, *Standard* oder *Niedrig*. Eilig kommt immer vor Standard, Standard vor

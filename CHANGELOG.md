@@ -3,6 +3,18 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.10.0 (in Arbeit) — Lokaler KI-Assistent
+
+- **Assistent (Wartung → Reiter „Assistent")** mit einem lokalen Sprachmodell, das auf dem Pi (oder einem Rechner im Netz)
+  läuft; nichts geht ins Internet. Er beantwortet Fragen zum Betrieb (Drucker, Warteschlange, Prognose), erklärt Fehler und
+  Warte-Gründe und entwirft Texte (zum Beispiel Angebotsbeschreibungen).
+- **Änderungen nur nach Bestätigung:** Der Assistent schlägt Änderungen vor (Priorität oder Liefertermin eines wartenden
+  Auftrags); PrintLab prüft sie streng, beschriftet sie selbst und führt sie erst nach deinem Klick über die normalen
+  Warteschlangen-Funktionen mit ihrer Rechteprüfung aus.
+- **Einrichtung:** `werkzeuge/ki_einrichten.sh` prüft Ollama und Arbeitsspeicher, lädt das Modell und macht einen Test
+  (optional mit `--installieren`). Die Adresse des Modell-Servers, das Modell und die Zeitgrenze sind einstellbar, jeder
+  Server mit OpenAI-kompatibler Schnittstelle (Ollama, LM Studio, llama.cpp) geht.
+
 ## v1.9.6 (29.10.2026) — Termin-Meldung
 
 - **Meldung „Termin in Gefahr":** Rechnet die Prognose damit, dass ein wartender Auftrag nach seinem Liefertermin fertig

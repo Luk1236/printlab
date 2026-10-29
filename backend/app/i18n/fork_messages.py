@@ -309,6 +309,42 @@ _RAW: list[tuple[str, str]] = [
     ),
     (r"Abweichungen können nicht negativ sein\.", "Differences cannot be negative."),
     (r"Keine Einmessung gespeichert\.", "No calibration saved."),
+    # --- KI-Assistent ---------------------------------------------------------------------------------------
+    (
+        r"Der Assistent ist ausgeschaltet\. Schalte ihn unter Wartung → Assistent ein\.",
+        "The assistant is turned off. Turn it on under Maintenance → Assistant.",
+    ),
+    (r"Die letzte Nachricht muss vom Benutzer sein\.", "The last message must be from the user."),
+    (
+        r"Der Assistent beantwortet gerade eine andere Frage\. Bitte kurz warten\.",
+        "The assistant is answering another question right now. Please wait a moment.",
+    ),
+    (r"Die Adresse muss mit http:// oder https:// beginnen\.", "The address must start with http:// or https://."),
+    (r"Diese Adresse ist nicht erlaubt \(Link-Local\)\.", "This address is not allowed (link-local)."),
+    (r"Der Modellname fehlt oder ist zu lang\.", "The model name is missing or too long."),
+    (
+        r"Die Zeitgrenze muss zwischen 10 und 900 Sekunden liegen\.",
+        "The time limit must be between 10 and 900 seconds.",
+    ),
+    (
+        r"Die Antwortlänge muss zwischen 50 und 4000 Wörtern \(Tokens\) liegen\.",
+        "The answer length must be between 50 and 4000 words (tokens).",
+    ),
+    (r"„enabled“ muss wahr oder falsch sein\.", "“enabled” must be true or false."),
+    (
+        r"Kein Modell-Server unter (?P<u>.+) erreichbar\. Läuft Ollama\?",
+        r"No model server reachable at \g<u>. Is Ollama running?",
+    ),
+    (
+        r"Modell „(?P<m>.+)“ nicht gefunden\. Auf dem Pi: ollama pull (?P<p>.+)",
+        r"Model “\g<m>” not found. On the Pi: ollama pull \g<p>",
+    ),
+    (
+        r"Das Modell hat nicht rechtzeitig geantwortet \(nach (?P<n>\d+) Sekunden\)\.",
+        r"The model did not answer in time (after \g<n> seconds).",
+    ),
+    (r"Der Modell-Server hat mit Fehler (?P<c>\d+) geantwortet\.", r"The model server answered with error \g<c>."),
+    (r"Die Antwort des Modells war leer oder unlesbar\.", "The model's answer was empty or unreadable."),
     (r"Kein Kamerabild verfügbar\.", "No camera image available."),
     (r"Warp fehlgeschlagen — Einmessung prüfen\.", "Warp failed — check the calibration."),
 ]
@@ -317,7 +353,7 @@ PATTERNS = [(re.compile(pattern), replacement) for pattern, replacement in _RAW]
 # Antworten dieser Endpunkte werden übersetzt (alle anderen bleiben unberührt).
 PATH_RX = re.compile(
     r"^/api/v1/(printers/\d+/(hardware|maintenance-program|maintenance-print|bed-empty|spaghetti|part-watcher|"
-    r"first-layer|plate-calibration|layer-alert|camera/plate-detection/tuning)|quote|remote-access|updates|system/alerts)"
+    r"first-layer|plate-calibration|layer-alert|camera/plate-detection/tuning)|quote|remote-access|updates|system/alerts|assistant)"
 )
 
 

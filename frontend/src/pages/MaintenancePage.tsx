@@ -52,6 +52,7 @@ import { SetupChecklistCard } from '../components/SetupChecklistCard';
 import { SetupBanner, SetupWizardCard } from '../components/SetupWizardCard';
 import { AlertChannelsCard } from '../components/AlertChannelsCard';
 import { PlateTuningCard } from '../components/PlateTuningCard';
+import { AssistantPanel } from '../components/AssistantPanel';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -1090,8 +1091,8 @@ function SettingsSection({
   );
 }
 
-type TabType = 'status' | 'hardware' | 'system' | 'settings';
-const TABS: TabType[] = ['status', 'hardware', 'system', 'settings'];
+type TabType = 'status' | 'hardware' | 'system' | 'assistant' | 'settings';
+const TABS: TabType[] = ['status', 'hardware', 'system', 'assistant', 'settings'];
 
 export function MaintenancePage() {
   const { t } = useTranslation();
@@ -1290,6 +1291,8 @@ export function MaintenancePage() {
           <HardwareAdminCard canControl={hasPermission('printers:control')} />
           <PlateTuningCard canControl={hasPermission('settings:update')} />
         </div>
+      ) : activeTab === 'assistant' ? (
+        <AssistantPanel canConfigure={hasPermission('settings:update')} />
       ) : activeTab === 'system' ? (
         <div className="space-y-6">
           <SetupWizardCard />

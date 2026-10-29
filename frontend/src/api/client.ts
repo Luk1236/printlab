@@ -15,6 +15,10 @@ export type {
   QuoteItem,
   QuoteActuals,
   QuoteActualsLine,
+  AssistantConfig,
+  AssistantStatus,
+  AssistantAction,
+  AssistantAnswer,
 } from './forkApi';
 import i18n from '../i18n';
 import type { ArchivePlatesResponse, LibraryFilePlatesResponse } from '../types/plates';

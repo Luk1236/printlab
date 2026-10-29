@@ -152,10 +152,10 @@ describe('MaintenancePage', () => {
   describe('tabs', () => {
     afterEach(() => window.history.replaceState({}, '', '/'));
 
-    it('offers status, hardware, system and settings tabs', async () => {
+    it('offers status, hardware, system, assistant and settings tabs', async () => {
       render(<MaintenancePage />);
       const tabs = await screen.findAllByRole('tab');
-      expect(tabs.map((tab) => tab.textContent)).toEqual(['Status', 'Hardware & optics', 'System & operation', 'Settings']);
+      expect(tabs.map((tab) => tab.textContent)).toEqual(['Status', 'Hardware & optics', 'System & operation', 'Assistant', 'Settings']);
       expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
     });
 

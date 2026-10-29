@@ -142,6 +142,34 @@ export interface QuoteActuals {
   missing_ids: number[];
 }
 
+export interface AssistantConfig {
+  enabled: boolean;
+  base_url: string;
+  model: string;
+  timeout_seconds: number;
+  max_tokens: number;
+}
+
+export interface AssistantStatus {
+  config: AssistantConfig;
+  server: { reachable: boolean; models: string[]; model_present: boolean; error: string };
+}
+
+export interface AssistantAction {
+  type: 'set_priority' | 'set_due_date';
+  item_id: number;
+  label: string;
+  priority?: number;
+  due_at?: string | null;
+}
+
+export interface AssistantAnswer {
+  reply: string;
+  actions: AssistantAction[];
+  rejected: number;
+  seconds: number;
+}
+
 export interface Invoice {
   id: string;
   number: string;
@@ -173,6 +201,11 @@ export interface ForkApiDeps {
 
 export function createForkApi({ request, apiBase, getAuthToken }: ForkApiDeps) {
   return {
+    getAssistantStatus: () => request<AssistantStatus>('/assistant/status'),
+    saveAssistantConfig: (update: Record<string, unknown>) =>
+      request<AssistantStatus>('/assistant/config', { method: 'PUT', body: JSON.stringify(update) }),
+    assistantChat: (messages: { role: 'user' | 'assistant'; content: string }[], lang: string) =>
+      request<AssistantAnswer>('/assistant/chat', { method: 'POST', body: JSON.stringify({ messages, lang }) }),
     getQuoteActuals: (id: string) => request<QuoteActuals>(`/quote/history/${encodeURIComponent(id)}/actuals`),
     linkQuoteArchives: (id: string, archiveIds: number[]) =>
       request<{ archive_ids: number[] }>(`/quote/history/${encodeURIComponent(id)}/archives`, {

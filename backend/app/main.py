@@ -24,6 +24,7 @@ from backend.app.api.routes import (
     api_keys,
     archive_purge,
     archives,
+    assistant,
     auth,
     bug_report,
     camera,
@@ -10908,6 +10909,7 @@ app.include_router(first_layer_inspector.router, prefix=app_settings.api_prefix)
 app.include_router(hardware.router, prefix=app_settings.api_prefix)
 app.include_router(camera.router, prefix=app_settings.api_prefix)
 app.include_router(plate_tuning.router, prefix=app_settings.api_prefix)
+app.include_router(assistant.router, prefix=app_settings.api_prefix)
 app.include_router(camwall.router, prefix=app_settings.api_prefix)
 app.include_router(external_links.router, prefix=app_settings.api_prefix)
 app.include_router(projects.router, prefix=app_settings.api_prefix)

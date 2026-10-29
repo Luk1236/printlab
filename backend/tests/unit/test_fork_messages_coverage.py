@@ -26,6 +26,7 @@ FORK_ROUTE_FILES = [
     "first_layer_inspector.py",
     "spaghetti_check.py",
     "plate_calibration.py",
+    "assistant.py",
 ]
 
 GERMAN_HINT = re.compile(
