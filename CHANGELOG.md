@@ -3,6 +3,31 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.12.0 (29.10.2026) — Geschäft, Warteschlange und Assistent
+
+- **Monats-Report** (Finanz-Seite → „Monats-Report"): Umsatz je Währung (Rechnungen ausgestellt/bezahlt/überfällig),
+  Angebote, Fertigung (Drucke, Stunden, Filament, Material- und Energiekosten, je Drucker) und Gewinn aus der
+  Nachkalkulation — als Zahlensammlung und als A4-PDF mit Firmenbriefkopf (de/en). Arbeitszeit zählt, wenn gebucht.
+- **Angebot → Warteschlange:** Verhalten → Nachkalkulation kennt „Erneut einreihen" — die verknüpften Druckjobs eines
+  Angebots landen wieder in der Warteschlange (Drucker oder „irgendein Modell", Priorität oder später zuweisen, Stückzahl).
+  Dieselbe Rechteprüfung und Kostenkalkulation wie jede Einreihung; abgelehnte Archivliste erscheint einzeln.
+- **Kunden-Stamm** (Finanz-Seite): Adressbuch für Angebote und Rechnungen (neue Tabelle, Liste/Anlegen/Ändern/Löschen).
+  Belege behalten ihre Kopie von Kunde und Anschrift — Löschen ändert frühere Dokumente nicht.
+- **Zahlungserinnerung:** überfällige, offene Rechnungen werden einmal je Rechnung gemeldet (neuer
+  Meldeweg-Schalter „Zahlungserinnerung", Voreinstellung an; Prüfung alle 6 Stunden). Nach „bezahlt" und Wiederöffnen
+  erinnert sie erneut; bezahlte und stornierte Rechnungen bleiben stumm.
+- **Zeitbuchung:** die gebuchte Arbeitszeit eines Angebots (Minuten) ersetzt in der Nachkalkulation den Angebotsansatz
+  (`labor_rate_per_hour`); der Gewinn wird gemessen statt geschätzt, ungebuchte Angebote bleiben wie bisher.
+- **Fehlerbild-Sammlung** (Einstellungen → Fehlererkennung): Kamerabilder fehlgeschlagener Prüfungen (Platte nicht frei,
+  erste Schicht, Spaghetti, Bauteil-Wächter) bleiben dauerhaft liegen (90 Tage, höchstens 500), mit Vorschau und Löschen —
+  das Rohmaterial, das eine spätere KI-Fehlererkennung brauchte.
+- **Assistent antwortet Wort für Wort** (SSE): der Text erscheint, während das Modell noch denkt; Aktionsvorschläge
+  kommen weiterhin nur geprüft und bestätigungspflichtig im Abschluss. Hinweis zum Modell im Speicher
+  (`OLLAMA_KEEP_ALIVE`) erscheint, sobald der Modell-Server erreichbar ist.
+- Intern: eigene Router sind in einer Registry gebündelt (main.py wieder unter dem Zeilenbudget); Bestandswarnungen
+  (`low_stock_threshold`) und automatische Trocknung nach AMS-Feuchte erwiesen sich als bereits vorhanden —
+  Erprobung am Gerät bleibt offen.
+
 ## v1.11.0 (29.10.2026) — Systemprüfung und Sicherheit
 
 - **Systemprüfung** (Wartung → System): Ein Knopf prüft in einem Durchlauf Datenbank, Druckplaner, Termin-Überwachung, Drucker,
