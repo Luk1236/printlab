@@ -19,6 +19,7 @@ from backend.app.models.print_queue import PrintQueueItem, PrintQueueVariant
 from backend.app.models.printer import Printer
 from backend.app.models.settings import Settings
 from backend.app.services.queue_forecast import PrinterLive, forecast_ends
+from backend.app.utils.local_time import local_zone
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,8 @@ def _fmt(moment: datetime | None) -> str:
         return "-"
     if moment.tzinfo is None:
         moment = moment.replace(tzinfo=timezone.utc)
-    return moment.astimezone().strftime("%Y-%m-%d %H:%M")
+    tz = local_zone()
+    return moment.astimezone(tz).strftime("%Y-%m-%d %H:%M")
 
 
 def live_states(printers, status_of) -> dict[int, PrinterLive]:
@@ -123,7 +125,8 @@ async def check_due_dates(db, status_of, notifier, now: datetime | None = None) 
 
 
 async def notify_due_risk(db, item: PrintQueueItem, expected_end: datetime | None, overdue: bool) -> bool:
-    """Meldung ``queue_due_risk`` über die Kanäle verschicken; False, wenn kein Kanal sie haben will."""
+    """Meldung ``queue_due_risk`` über die Kanäle verschicken; True nur, wenn mindestens ein Kanal bestätigt,
+    dass die Nachricht angekommen ist (Erfolg)."""
     from backend.app.services.notification_service import notification_service
 
     providers = await notification_service._get_providers_for_event(db, EVENT_FIELD, None)
@@ -136,8 +139,12 @@ async def notify_due_risk(db, item: PrintQueueItem, expected_end: datetime | Non
         "reason": "The due date has passed." if overdue else "Expected to finish after the due date.",
     }
     title, message = await notification_service._build_message_from_template(db, EVENT_TYPE, variables)
-    await notification_service._send_to_providers(providers, title, message, db, EVENT_TYPE, variables=variables)
-    return True
+    # send_to_providers mit Rückgabe der Ergebnisse
+    results = await notification_service._send_to_providers_with_results(
+        providers, title, message, db, EVENT_TYPE, variables=variables
+    )
+    # mind. ein Kanal erfolgreich
+    return any(success for success, _ in results)
 
 
 async def send_test(db) -> tuple[int, list[str]]:

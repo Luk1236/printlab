@@ -1556,6 +1556,73 @@ class NotificationService:
                     printer_name=printer_name,
                 )
 
+    async def _send_to_providers_with_results(
+        self,
+        providers: list[NotificationProvider],
+        title: str,
+        message: str,
+        db: AsyncSession,
+        event_type: str = "unknown",
+        printer_id: int | None = None,
+        printer_name: str | None = None,
+        image_data: bytes | None = None,
+        variables: dict | None = None,
+    ) -> list[tuple[bool, str]]:
+        """Send notification to multiple providers and return list of (success, error) tuples."""
+        photo_cache: dict = {}
+        results: list[tuple[bool, str]] = []
+        for provider in providers:
+            try:
+                success, error = await self._send_to_provider(
+                    provider,
+                    title,
+                    message,
+                    db,
+                    image_data=image_data,
+                    event_type=event_type,
+                    variables=variables,
+                    photo_cache=photo_cache,
+                )
+                if provider.daily_digest_enabled and provider.daily_digest_time:
+                    await self._queue_for_digest(
+                        provider=provider,
+                        event_type=event_type,
+                        title=title,
+                        message=message,
+                        db=db,
+                        printer_id=printer_id,
+                        printer_name=printer_name,
+                    )
+                await self._update_provider_status(db, provider.id, success, error if not success else None)
+                await self._log_notification(
+                    db=db,
+                    provider_id=provider.id,
+                    event_type=event_type,
+                    title=title,
+                    message=message,
+                    success=success,
+                    error_message=error if not success else None,
+                    printer_id=printer_id,
+                    printer_name=printer_name,
+                )
+                results.append((success, error or ""))
+            except Exception as e:
+                logger.exception("Error sending notification via %s", provider.name)
+                await self._update_provider_status(db, provider.id, False, str(e))
+                await self._log_notification(
+                    db=db,
+                    provider_id=provider.id,
+                    event_type=event_type,
+                    title=title,
+                    message=message,
+                    success=False,
+                    error_message=str(e),
+                    printer_id=printer_id,
+                    printer_name=printer_name,
+                )
+                results.append((False, str(e)))
+        return results
+
     async def on_app_message(
         self,
         db: AsyncSession,

@@ -163,7 +163,7 @@ class TestNotifyDueRisk:
         with (
             patch(f"{service}._get_providers_for_event", AsyncMock(return_value=[object()])) as get,
             patch(f"{service}._build_message_from_template", AsyncMock(return_value=("Titel", "Text"))) as build,
-            patch(f"{service}._send_to_providers", AsyncMock()) as send,
+            patch(f"{service}._send_to_providers_with_results", AsyncMock(return_value=[(True, "")])) as send,
         ):
             assert await watch.notify_due_risk(db, item, NOW + timedelta(hours=3), overdue=False) is True
         assert get.call_args.args[1] == "on_queue_due_risk"
