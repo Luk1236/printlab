@@ -15,7 +15,7 @@ router = APIRouter(prefix="/monthly-report", tags=["monthly-report"])
 
 async def _rates(db: AsyncSession) -> dict[str, float]:
     rates = {}
-    for key in ("default_filament_cost", "energy_cost_per_kwh", "printer_power_watts"):
+    for key in ("default_filament_cost", "energy_cost_per_kwh", "printer_power_watts", "labor_rate_per_hour"):
         raw = await get_setting(db, key)
         try:
             rates[key] = float(raw) if raw is not None else float(getattr(DEFAULT_SETTINGS, key))
