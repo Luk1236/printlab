@@ -88,6 +88,29 @@ PRINTLAB_ALERT_TELEGRAM_CHAT=<deine Chat-Nummer>
 Der Timer liest die Datei bei jedem Lauf neu, ein Neustart ist nicht nötig. Status:
 `systemctl --user list-timers printlab-watch.timer`, Meldungen: `journalctl --user -u printlab-watch -n 20`.
 
+## Zeitzone konfigurieren (damit lokale Zeiten im Frontend und in Meldungen stimmen)
+
+PrintLab speichert alle Zeiten als UTC, zeigt sie aber im Frontend lokal an. Damit die Umrechnung korrekt funktioniert,
+muss die Raspberry Pi ``TZ`` Umgebung Variable gesetzt sein.
+
+**Auf dem Pi (Raspberry Pi OS):**
+
+```bash
+echo 'export TZ=Europe/Berlin' >> ~/.config/printlab.env
+```
+(Ersetze ``Europe/Berlin`` durch deine Zeitzone, z. B. ``Europe/Paris``, ``UTC``, ``America/New_York`` etc.)
+
+Das File ``/etc/timezone`` und das Paket ``tzdata`` sollten auf dem Pi bereits installiert sein. Nach einem Neustart
+oder ``systemctl --user restart printlab`` prüft PrintLab die TZ-Variable und passt die Anzeige entsprechend an.
+
+Alternativ kann die Zeitzone auch direkt in ``~/.config/printlab.env`` gesetzt werden:
+
+```
+TZ=Europe/Berlin
+```
+
+Ohne TZ-Einstellung fallen alle Zeiten auf den Pi auf UTC (z. B. ``2026-10-29 14:30`` statt ``2026-10-29 16:30`` MEZ).
+
 ## Sicherung nach außen (USB-Stick, Festplatte, NAS)
 
 Sicherungen nur auf der SD-Karte schützen nicht vor einem Ausfall der Karte. Der Installer richtet deshalb einen
