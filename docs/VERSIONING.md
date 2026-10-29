@@ -18,16 +18,24 @@
 ## Wie eine Version angelegt wird
 
 ```powershell
-# 1. Commits fertig und getestet (Build, relevante Tests); PRINTLAB_VERSION in config.py erhöhen
-# 2. Tag setzen: signiert (-s), sonst lehnt ein Pi mit Signaturprüfung das Update ab (docs/UPDATE-SIGNATUR.md)
-git tag v1.1.0 -s -m "PrintLab v1.1.0 — Kurzbeschreibung"
-# 3. Branch und Tag hochladen
-git push origin bambu-monitor-port v1.1.0
-# 4. Release anlegen (Notes im Editor oder --notes)
-gh release create v1.1.0 --repo Luk1236/printlab --title "PrintLab v1.1.0" --notes "..."
+# 1. Commits fertig und getestet (Build, relevante Tests); PRINTLAB_VERSION in config.py erhöhen,
+#    CHANGELOG.md-Abschnitt anlegen und den Stand von static/ vom Build-Workflow holen.
+# 2. Release-Skript verwenden: es prüft Version, Changelog und static/, legt den signierten Tag an
+#    und pusht ihn erst danach. So entsteht kein Tag auf einem unfertigen Stand.
+python werkzeuge/release.py v1.13.0            # prüfen, signiert taggen, pushen
+python werkzeuge/release.py v1.13.0 --check-only   # nur prüfen
 ```
 
-Vorlage für Release-Notes: Release v1.0.0 auf GitHub.
+Der Tag-Push startet den Workflow "Release gate", der das GitHub-Release mit dem Text aus dem
+Changelog anlegt; das Docker-Image baut der Workflow "Release (Docker-Image amd64 + arm64)".
+Ein bereits vorhandener Tag wird nur mit `--force` ersetzt (löscht den lokalen Tag vorher).
+
+Von Hand (gleichwertig):
+
+```powershell
+git tag v1.13.0 -s -m "PrintLab v1.13.0 — Fehlerhilfe"
+git push origin bambu-monitor-port v1.13.0
+```
 
 ## Verhältnis zum Upstream
 
