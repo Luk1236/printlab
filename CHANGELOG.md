@@ -3,7 +3,7 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
-## v1.9.5 (in Arbeit) — Sammel-Priorität
+## v1.9.5 (29.10.2026) — Sammel-Priorität
 
 - **Priorität und Liefertermin für mehrere Aufträge auf einmal:** In der Warteschlange Aufträge markieren, „Auswahl
   bearbeiten", dort Priorität setzen und den Liefertermin setzen oder entfernen. Nur was du änderst, wird geändert
