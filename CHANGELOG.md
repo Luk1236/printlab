@@ -5,7 +5,7 @@ PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
 ## v1.13.0 (29.10.2026) — Fehlerhilfe
 
-- **Fehlerhilfe** (neue Seite im Seitenmenü): elf Fehlerbilder aus der Werkstattpraxis in vier Gruppen — Extrusion,
+- **Fehlerhilfe** (neue Seite im Seitenmenü): zwölf Fehlerbilder aus der Werkstattpraxis in vier Gruppen — Extrusion,
   Thermik/Haftung, Mechanik, Slicer/Geometrie. Jedes nennt Erklärung, typische Ursachen, was im Slicer hilft und was am
   Drucker möglich ist; dazu eine durchsuchbare Liste und Kategoriefilter. Die Oberfläche ist in allen 15 Sprachen
   übersetzt, die Fließtexte liegen auf Deutsch vor (englische Titel und Kurzfassungen).

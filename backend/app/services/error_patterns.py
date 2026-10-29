@@ -224,6 +224,29 @@ PATTERNS = [
         "rules": ["chamber_cold"],
     },
     {
+        "id": "object_detached",
+        "category": "thermal",
+        "title": "Bauteil löst sich vom Bett",
+        "title_en": "Part detaches from the bed",
+        "summary": "Ein einzelnes Objekt verliert die Haftung. Die Düse schiebt es über die Platte und gefährdet die übrigen Teile.",
+        "summary_en": "A single object loses adhesion; the nozzle drags it across the plate and endangers the other parts.",
+        "causes": [
+            "Erste Schicht zu dünn oder Platte verschmutzt",
+            "Warping an den Ecken (siehe Warping)",
+            "Düse stößt an hochgebogene Kanten und schiebt das Teil weg",
+        ],
+        "slicer": [
+            "Brim oder Mäuseohren an kleinen Standflächen",
+            "Z-Hop beim Rückzug, damit die Düse nicht über das Teil schleift",
+        ],
+        "automation": [
+            "Fehlerhaftes Objekt im Druck überspringen (Druckerkarte → Objekte); der Rest der Platte läuft weiter",
+            "Danach die Ursache an der ersten Schicht und der Betthaftung suchen",
+        ],
+        "actions": [],
+        "rules": [],
+    },
+    {
         "id": "layer_shift",
         "category": "mechanical",
         "title": "Layer Shift (Schichtversatz)",
