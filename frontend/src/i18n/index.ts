@@ -2,40 +2,54 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
-// Import translations directly for bundling
+// Import the fallback languages eagerly; the other locales are loaded on
+// demand (see LAZY_LOCALES). The fifteen translation files are by far the
+// largest part of the bundle, so shipping them all up front meant every
+// visitor downloaded ~5 MB of languages they do not read.
 import en from './locales/en';
 import de from './locales/de';
-import es from './locales/es';
-import fr from './locales/fr';
-import ja from './locales/ja';
-import it from './locales/it';
-import nl from './locales/nl';
-import ko from './locales/ko';
-import ptBR from './locales/pt-BR';
-import zhCN from './locales/zh-CN';
-import zhTW from './locales/zh-TW';
-import sv from './locales/sv';
-import tr from './locales/tr';
-import ru from './locales/ru';
-import uk from './locales/uk';
 
 const resources = {
   en: { translation: en },
   de: { translation: de },
-  es: { translation: es },
-  fr: { translation: fr },
-  ja: { translation: ja },
-  it: { translation: it },
-  nl: { translation: nl },
-  ko: { translation: ko },
-  'pt-BR': { translation: ptBR },
-  'zh-CN': { translation: zhCN },
-  'zh-TW': { translation: zhTW },
-  sv: { translation: sv },
-  tr: { translation: tr },
-  ru: { translation: ru },
-  uk: { translation: uk },
 };
+
+// Bundles loaded the first time a language is selected. `hasResourceBundle`
+// keeps repeated switches from fetching twice.
+const LAZY_LOCALES: Record<string, () => Promise<{ default: Record<string, unknown> }>> = {
+  es: () => import('./locales/es'),
+  fr: () => import('./locales/fr'),
+  ja: () => import('./locales/ja'),
+  it: () => import('./locales/it'),
+  ko: () => import('./locales/ko'),
+  nl: () => import('./locales/nl'),
+  'pt-BR': () => import('./locales/pt-BR'),
+  'zh-CN': () => import('./locales/zh-CN'),
+  'zh-TW': () => import('./locales/zh-TW'),
+  sv: () => import('./locales/sv'),
+  tr: () => import('./locales/tr'),
+  ru: () => import('./locales/ru'),
+  uk: () => import('./locales/uk'),
+};
+
+const LOCALE_ALIASES: Record<string, string> = {
+  pt: 'pt-BR',
+  zh: 'zh-CN',
+};
+
+/** Lädt die Übersetzung für eine Sprache nach; true, wenn ein Bündel dazukam. */
+export async function ensureLocale(language: string): Promise<boolean> {
+  const candidates = [language, LOCALE_ALIASES[language], language.split('-')[0], LOCALE_ALIASES[language.split('-')[0]]];
+  for (const code of candidates) {
+    if (!code) continue;
+    const loader = LAZY_LOCALES[code];
+    if (!loader || i18n.hasResourceBundle(code, 'translation')) continue;
+    const module = await loader();
+    i18n.addResourceBundle(code, 'translation', module.default, true, true);
+    return true;
+  }
+  return false;
+}
 
 const SUPPORTED_LNGS = ['en', 'de', 'es', 'fr', 'ja', 'it', 'ko', 'nl', 'pt-BR', 'ru', 'sv', 'tr', 'uk', 'zh-CN', 'zh-TW'];
 const APPLIANCE_CONSUMED_KEY = 'printlab_appliance_locale_consumed';
@@ -66,6 +80,22 @@ i18n
       useSuspense: false,
     },
   });
+
+// Sprachwechsel (Auswahl in den Einstellungen, Geräte-Assistent) lädt das
+// passende Bündel nach. Der erste Start wird in main.tsx abgewartet, damit
+// die Oberfläche nicht kurz in der Falschsprache aufblitzt. addResourceBundle
+// allein löst kein Neuzeichnen aus, deshalb wird das Ereignis danach erneut
+// gesendet — mit Schutz gegen die eigene Schleife.
+let reloadingLocale = false;
+i18n.on('languageChanged', (language) => {
+  if (reloadingLocale) return;
+  void ensureLocale(language).then((loaded) => {
+    if (!loaded || i18n.language !== language) return;
+    reloadingLocale = true;
+    i18n.emit('languageChanged', language);
+    reloadingLocale = false;
+  });
+});
 
 /**
  * PrintLab Appliance hook: on the first SPA load after the firstboot wizard

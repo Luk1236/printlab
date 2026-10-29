@@ -1,33 +1,41 @@
-import { Component, type ReactNode, type ErrorInfo } from 'react';
+import { Component, lazy, Suspense, type ReactNode, type ErrorInfo } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Layout } from './components/Layout';
-import { PrintersPage } from './pages/PrintersPage';
-import { ArchivesPage } from './pages/ArchivesPage';
-import { QueuePage } from './pages/QueuePage';
-import { StatsPage } from './pages/StatsPage';
-import { SettingsPage } from './pages/SettingsPage';
-import { FinancePage } from './pages/FinancePage';
-import { ProfilesPage } from './pages/ProfilesPage';
-import { MaintenancePage } from './pages/MaintenancePage';
-import { ErrorHelpPage } from './pages/ErrorHelpPage';
-import { ProjectsPage } from './pages/ProjectsPage';
-import { ProjectDetailPage } from './pages/ProjectDetailPage';
-import { FileManagerPage } from './pages/FileManagerPage';
-import { LibraryTrashPage } from './pages/LibraryTrashPage';
-import { CameraPage } from './pages/CameraPage';
-import { CamWallPage } from './pages/CamWallPage';
-import { StreamOverlayPage } from './pages/StreamOverlayPage';
-import { ExternalLinkPage } from './pages/ExternalLinkPage';
-import { GroupEditPage } from './pages/GroupEditPage';
-import InventoryPage from './pages/InventoryPage';
-import { MakerworldPage } from './pages/MakerworldPage';
-import { SystemInfoPage } from './pages/SystemInfoPage';
-import { LoginPage } from './pages/LoginPage';
-import { ConnectAuthorizePage } from './pages/ConnectAuthorizePage';
-import { SetupPage } from './pages/SetupPage';
-import { NotificationsPage } from './pages/NotificationsPage';
-import { GCodeViewerPage } from './pages/GCodeViewerPage';
+import { PageLoading } from './components/PageLoading';
+
+// Seiten werden beim Aufruf nachgeladen (React.lazy): der Start lädt nur die
+// Druckerübersicht und das Gerüst, nicht PDF-, Tabellen- und G-Code-Werkzeuge
+// aller anderen Seiten. Das drückt das Hauptbündel von ~11 MB auf einen
+// Bruchteil und zahlt sich auf dem Pi, über Tailscale und am Handy aus.
+const PrintersPage = lazy(() => import('./pages/PrintersPage').then((m) => ({ default: m.PrintersPage })));
+const ArchivesPage = lazy(() => import('./pages/ArchivesPage').then((m) => ({ default: m.ArchivesPage })));
+const QueuePage = lazy(() => import('./pages/QueuePage').then((m) => ({ default: m.QueuePage })));
+const StatsPage = lazy(() => import('./pages/StatsPage').then((m) => ({ default: m.StatsPage })));
+const SettingsPage = lazy(() => import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage })));
+const FinancePage = lazy(() => import('./pages/FinancePage').then((m) => ({ default: m.FinancePage })));
+const ProfilesPage = lazy(() => import('./pages/ProfilesPage').then((m) => ({ default: m.ProfilesPage })));
+const MaintenancePage = lazy(() => import('./pages/MaintenancePage').then((m) => ({ default: m.MaintenancePage })));
+const ErrorHelpPage = lazy(() => import('./pages/ErrorHelpPage').then((m) => ({ default: m.ErrorHelpPage })));
+const ProjectsPage = lazy(() => import('./pages/ProjectsPage').then((m) => ({ default: m.ProjectsPage })));
+const ProjectDetailPage = lazy(() => import('./pages/ProjectDetailPage').then((m) => ({ default: m.ProjectDetailPage })));
+const FileManagerPage = lazy(() => import('./pages/FileManagerPage').then((m) => ({ default: m.FileManagerPage })));
+const LibraryTrashPage = lazy(() => import('./pages/LibraryTrashPage').then((m) => ({ default: m.LibraryTrashPage })));
+const CameraPage = lazy(() => import('./pages/CameraPage').then((m) => ({ default: m.CameraPage })));
+const CamWallPage = lazy(() => import('./pages/CamWallPage').then((m) => ({ default: m.CamWallPage })));
+const StreamOverlayPage = lazy(() => import('./pages/StreamOverlayPage').then((m) => ({ default: m.StreamOverlayPage })));
+const ExternalLinkPage = lazy(() => import('./pages/ExternalLinkPage').then((m) => ({ default: m.ExternalLinkPage })));
+const GroupEditPage = lazy(() => import('./pages/GroupEditPage').then((m) => ({ default: m.GroupEditPage })));
+const InventoryPage = lazy(() => import('./pages/InventoryPage'));
+const MakerworldPage = lazy(() => import('./pages/MakerworldPage').then((m) => ({ default: m.MakerworldPage })));
+const SystemInfoPage = lazy(() => import('./pages/SystemInfoPage').then((m) => ({ default: m.SystemInfoPage })));
+const LoginPage = lazy(() => import('./pages/LoginPage').then((m) => ({ default: m.LoginPage })));
+const ConnectAuthorizePage = lazy(() =>
+  import('./pages/ConnectAuthorizePage').then((m) => ({ default: m.ConnectAuthorizePage })),
+);
+const SetupPage = lazy(() => import('./pages/SetupPage').then((m) => ({ default: m.SetupPage })));
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage').then((m) => ({ default: m.NotificationsPage })));
+const GCodeViewerPage = lazy(() => import('./pages/GCodeViewerPage').then((m) => ({ default: m.GCodeViewerPage })));
 import { useWebSocket } from './hooks/useWebSocket';
 import { usePrintProgressTitle } from './hooks/usePrintProgressTitle';
 import { useStreamTokenSync } from './hooks/useCameraStreamToken';
@@ -37,12 +45,24 @@ import { SliceJobTrackerProvider } from './contexts/SliceJobTrackerContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ColorCatalogProvider } from './contexts/ColorCatalogContext';
 import { SpoolBuddyLayout } from './components/spoolbuddy/SpoolBuddyLayout';
-import { SpoolBuddyDashboard } from './pages/spoolbuddy/SpoolBuddyDashboard';
-import { SpoolBuddyAmsPage } from './pages/spoolbuddy/SpoolBuddyAmsPage';
-import { SpoolBuddySettingsPage } from './pages/spoolbuddy/SpoolBuddySettingsPage';
-import { SpoolBuddyCalibrationPage } from './pages/spoolbuddy/SpoolBuddyCalibrationPage';
-import { SpoolBuddyWriteTagPage } from './pages/spoolbuddy/SpoolBuddyWriteTagPage';
-import { SpoolBuddyInventoryPage } from './pages/spoolbuddy/SpoolBuddyInventoryPage';
+const SpoolBuddyDashboard = lazy(() =>
+  import('./pages/spoolbuddy/SpoolBuddyDashboard').then((m) => ({ default: m.SpoolBuddyDashboard })),
+);
+const SpoolBuddyAmsPage = lazy(() =>
+  import('./pages/spoolbuddy/SpoolBuddyAmsPage').then((m) => ({ default: m.SpoolBuddyAmsPage })),
+);
+const SpoolBuddySettingsPage = lazy(() =>
+  import('./pages/spoolbuddy/SpoolBuddySettingsPage').then((m) => ({ default: m.SpoolBuddySettingsPage })),
+);
+const SpoolBuddyCalibrationPage = lazy(() =>
+  import('./pages/spoolbuddy/SpoolBuddyCalibrationPage').then((m) => ({ default: m.SpoolBuddyCalibrationPage })),
+);
+const SpoolBuddyWriteTagPage = lazy(() =>
+  import('./pages/spoolbuddy/SpoolBuddyWriteTagPage').then((m) => ({ default: m.SpoolBuddyWriteTagPage })),
+);
+const SpoolBuddyInventoryPage = lazy(() =>
+  import('./pages/spoolbuddy/SpoolBuddyInventoryPage').then((m) => ({ default: m.SpoolBuddyInventoryPage })),
+);
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null; errorInfo: ErrorInfo | null }> {
   state = { error: null as Error | null, errorInfo: null as ErrorInfo | null };
 
@@ -175,7 +195,8 @@ function App() {
             <SliceJobTrackerProvider>
             <StreamTokenSync />
             <BrowserRouter>
-              <Routes>
+              <Suspense fallback={<PageLoading />}>
+                <Routes>
                 {/* Setup page - only accessible if auth not enabled */}
                 <Route path="/setup" element={<SetupRoute><SetupPage /></SetupRoute>} />
 
@@ -238,7 +259,8 @@ function App() {
                   <Route path="external/:id" element={<ExternalLinkPage />} />
                   <Route path="camera-tokens" element={<Navigate to="/settings?tab=apikeys#card-camera-tokens" replace />} />
                 </Route>
-              </Routes>
+                </Routes>
+              </Suspense>
             </BrowserRouter>
             </SliceJobTrackerProvider>
             </ColorCatalogProvider>
