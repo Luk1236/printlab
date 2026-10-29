@@ -3,7 +3,7 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
-## v1.11.0 (in Arbeit) — Systemprüfung
+## v1.11.0 (in Arbeit) — Systemprüfung und Sicherheit
 
 - **Systemprüfung** (Wartung → System): Ein Knopf prüft in einem Durchlauf Datenbank, Druckplaner, Termin-Überwachung, Drucker,
   Prognose, Meldekanäle, Sicherungen, Gerätezustand, Anmeldung, Update-Schutz und den Assistenten. Jede Zeile zeigt Ampel,
@@ -13,6 +13,28 @@ PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
   Antwortzeit. So zeigt sich am echten Gerät, ob Meldungen ankommen und das Modell brauchbar antwortet.
 - **Termin-Überwachung** merkt sich Start, letzten Durchlauf und letzten Fehler, damit die Prüfung sagen kann, ob sie lebt.
 - Die Probefrage teilt sich die Sperre mit dem Chat; läuft gerade eine Antwort, wird die Probe übersprungen.
+
+**Sicherheit** (Härtung aus der Gesamtanalyse, Parallel-Sitzung):
+
+- **Externe-Link-Symbole härter:** Upload mit Größenlimit (2 MB) und Inhaltsprüfung statt nur Dateiname (Magic-Bytes für
+  PNG/JPEG/GIF/WEBP/ICO); SVG nur noch ohne Skripte, Ereignis-Handler und Skript-URLs und nur als gültiges XML. Beim
+  Ausliefern kommt `nosniff` dazu; ein ungültiger gespeicherter Symbolname wird verweigert.
+- **Hardware-Befehle laufen ganz ohne Shell:** String-Befehle werden unter Windows jetzt zitatbewusst in Programm und
+  Argumente aufgelöst statt über die Shell geschickt; Shell-Zeichen (`|`, `&`, `<`, `>`, `;`, Klammern) werden beim
+  Speichern und beim Ausführen verweigert, mit dem Rat, den Befehl als Liste einzutragen. Umgebungsvariablen und
+  Weiterleitungen funktionieren dadurch nicht mehr in String-Befehlen — dafür läuft der Befehl genau wie gespeichert.
+- **Externe Sicherung kann die Zugangsdatei mitnehmen:** `PRINTLAB_BACKUP_INCLUDE_SECRETS=1` legt die Zugangsdatei
+  `~/.config/printlab.env` als 0600-Kopie in jede externe Sicherung (Standard bleibt ohne; nur bei geschütztem Ziel
+  einschalten, `docs/INSTALLATION-PI.md`).
+- **Docker-Anmeldung vorgeschrieben:** `docker-compose.yml` setzt `PRINTLAB_REQUIRE_AUTH=1` (ausschaltbar), wie es der
+  native Pi-Installer schon tut; eine Docker-Einrichtung startet nicht mehr offen.
+- **CodeQL:** der breite Ausschluss von `py/full-ssrf` ist zurückgenommen (Meldungen wieder sichtbar); `py/path-injection`
+  bleibt ausgeschlossen, weil der Repo-Test `test_no_unsafe_path_joins` denselben Fall hart abdeckt — beides begründet in
+  `.codeql/codeql-config.yml`. Der überholte react-router-Hinweis in der security.yml-Liste ist korrigiert.
+- **Dokumente:** `VERSIONING.md` nennt keine „aktuelle“ Version mehr (sie driftete, die Release-Prüfung übernimmt das),
+  und kennzeichnet das Repository korrekt als öffentlich; `INSTALLATION-PI.md` dokumentiert die Zugangsdatei-Option und
+  die Systemprüfung; `docs/ANALYSE-2026-10-28.md` hat eine Fortschreibung mit diesen Härtungen; die Randnotizen zur
+  Fälligkeits-Meldung (Kanal-Ausfall gilt als gemeldet, UTC-Zeiten in der Meldung) stehen im `TODO.md`.
 
 ## v1.10.0 (29.10.2026) — Lokaler KI-Assistent
 

@@ -26,11 +26,14 @@ Update mit Rückbau, Überwachung mit Meldung, Angebote mit PDF, Kamera-Einmessu
 ## Technisch offen
 
 - [ ] Große Dateien schrittweise zerlegen (`main.py`, `PrintersPage.tsx`, `client.ts`, …); der Test
-      `test_file_size_budget.py` verhindert nur das Wachsen.
+      `test_file_size_budget.py` verhindert nur das Wachsen. `main.py` ist bei der Grenze (11 067/11 075), neue
+      Funktionen müssen in eigene Module.
+- [ ] Fälligkeits-Meldung: die Einmal-Markierung gilt auch, wenn der Meldungskanal damals ausgefallen ist; eine
+      Wiederholung erst bei bestätigtem Versand wäre kanalausfallfreundlicher.
+- [ ] Meldungs-Zeitstempel: auf einem Pi ohne Zeitzoneneinstellung stehen UTC-Zeiten im Text (kosmetisch).
 - [ ] Volle E2E-Prüfung MakerWorld → PC-Slicer → Warteschlange.
 - [ ] Windows-Firewallregel für den PC-Slicer-Port 3001 beim Wechsel auf `0.0.0.0`.
 - [ ] Docker-/ARM-Image auf einem Pi 4/5 starten und prüfen.
-- [x] Wartungsseite in Reiter aufgeteilt (Status, Hardware & Optik, System & Betrieb, Einstellungen); Mobilansicht am Gerät noch ansehen.
 
 ## Bewusst nicht im Fokus
 

@@ -105,7 +105,16 @@ Datenträger wie die Daten, lehnt das Skript ab (`PRINTLAB_BACKUP_ALLOW_SAME_DIS
 nach dem Schreiben geprüft (Datenbank-Integrität, gültiges JSON); eine beschädigte wird gelöscht und über den
 Überwachungs-Meldeweg gemeldet. Sofort ausführen: `systemctl --user start printlab-backup.service`, Ergebnis:
 `journalctl --user -u printlab-backup -n 20` und unter Wartung → Zustand des Geräts. Gesichert werden die Datenbanken und
-Einstellungsdateien, **nicht** `~/.config/printlab.env` (die Zugangsdaten bewahrst du selbst auf).
+Einstellungsdateien, standardmäßig **nicht** die Zugangsdatei `~/.config/printlab.env` (sie enthält Telegram-/ntfy- und
+GitHub-Zugänge). Nach einem Verlust der SD-Karte brauchst du die Werte aber für eine Wiederherstellung — entweder du bewahrst
+sie selbst an einem sicheren Ort auf (Passwortmanager, verschlüsselter Notiz), oder du lässt sie mit
+
+```
+PRINTLAB_BACKUP_INCLUDE_SECRETS=1
+```
+
+als 600-Rechte-Kopie in jede Sicherung legen. Diese Kopie ist **unverschlüsselt wie die Zieldatei**: nur einschalten, wenn
+das Ziel geschützt ist (verschlüsselter Datenträger, NAS mit Zugriffsbeschränkung).
 
 ## Zustand des Geräts
 

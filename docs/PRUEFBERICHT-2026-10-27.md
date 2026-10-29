@@ -1,5 +1,8 @@
 # Prüfbericht PrintLab — 27.10.2026
 
+> **Historische Momentaufnahme (Version 1.2.x):** Aussagen wie „noch nicht committet" beschreiben diesen Tag und nicht den
+> jetzigen Stand. Aktueller Stand: `CHANGELOG.md`; fortlaufende Bewertung: `docs/ANALYSE-2026-10-28.md`.
+
 Stand: Branch `bambu-monitor-port`. Der Tag `v1.2.0` zeigt auf `a9ea6545`. Alle Änderungen dieses Berichts sind
 **noch nicht committet** und gehören in ein Release **v1.2.1** (`PRINTLAB_VERSION = "1.2.1"` steht bereits in
 `backend/app/core/config.py`).
