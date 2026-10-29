@@ -24,7 +24,6 @@ from backend.app.api.routes import (
     api_keys,
     archive_purge,
     archives,
-    assistant,
     auth,
     bug_report,
     camera,
@@ -36,11 +35,9 @@ from backend.app.api.routes import (
     filaments,
     finance,
     firmware,
-    first_layer_inspector,
     github_backup,
     groups,
     ha_sensors,
-    hardware,
     inventory,
     kprofiles,
     labels,
@@ -65,14 +62,12 @@ from backend.app.api.routes import (
     part_watcher,
     pending_uploads,
     pipeline_runs,
-    plate_tuning,
     print_log,
     print_queue,
     printer_sensor_history,
     printers,
     projects,
     scheduled_dryings,
-    selftest,
     settings as settings_routes,
     slice_jobs,
     slicer_pipelines,
@@ -10892,26 +10887,12 @@ app.include_router(maintenance_print.router, prefix=app_settings.api_prefix)
 app.include_router(layer_alerts.router, prefix=app_settings.api_prefix)
 app.include_router(part_watcher.router, prefix=app_settings.api_prefix)
 
-# Kamera-Einmessung (Monitor-Port P1): vier Plattenecken -> Plattenaufsicht.
-from backend.app.api.routes import plate_calibration as plate_calibration_router  # noqa: E402
+# Eigene Router des Forks: Registry statt einzelner Einblendungen (Zeilenbudget),
+# siehe api/routes/fork_routers.py — gleiche Pfade, gleiche Reihenfolge.
+from backend.app.api.routes.fork_routers import register_fork_routers  # noqa: E402
 
-app.include_router(plate_calibration_router.router, prefix=app_settings.api_prefix)
-
-# Spaghetti-/Abbruch-Erkennung (nur Warnung, nach Druckmitte).
-from backend.app.api.routes import spaghetti_check as spaghetti_check_router  # noqa: E402
-
-app.include_router(spaghetti_check_router.router, prefix=app_settings.api_prefix)
-
-# Angebotskalkulator (Gewerbliches): Stundenlohn, Aufschlag, Energie.
-from backend.app.api.routes import quote as quote_router  # noqa: E402
-
-app.include_router(quote_router.router, prefix=app_settings.api_prefix)
-app.include_router(first_layer_inspector.router, prefix=app_settings.api_prefix)
-app.include_router(hardware.router, prefix=app_settings.api_prefix)
+register_fork_routers(app, app_settings.api_prefix)
 app.include_router(camera.router, prefix=app_settings.api_prefix)
-app.include_router(plate_tuning.router, prefix=app_settings.api_prefix)
-app.include_router(assistant.router, prefix=app_settings.api_prefix)
-app.include_router(selftest.router, prefix=app_settings.api_prefix)
 app.include_router(camwall.router, prefix=app_settings.api_prefix)
 app.include_router(external_links.router, prefix=app_settings.api_prefix)
 app.include_router(projects.router, prefix=app_settings.api_prefix)
