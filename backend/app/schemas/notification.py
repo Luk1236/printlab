@@ -124,6 +124,7 @@ class NotificationProviderBase(BaseModel):
     on_queue_job_started: bool = Field(default=False, description="Notify when queue job starts printing")
     on_queue_job_waiting: bool = Field(default=True, description="Notify when job is waiting for filament or printer")
     on_queue_job_skipped: bool = Field(default=True, description="Notify when job is skipped")
+    on_queue_due_risk: bool = Field(default=True, description="Notify when a queued job will miss its due date")
     on_queue_job_failed: bool = Field(default=True, description="Notify when job fails to start")
     on_queue_completed: bool = Field(default=False, description="Notify when all queue jobs finish")
 
@@ -229,6 +230,7 @@ class NotificationProviderUpdate(BaseModel):
     on_queue_job_started: bool | None = None
     on_queue_job_waiting: bool | None = None
     on_queue_job_skipped: bool | None = None
+    on_queue_due_risk: bool | None = None
     on_queue_job_failed: bool | None = None
     on_queue_completed: bool | None = None
 

@@ -108,6 +108,7 @@ def _provider_to_dict(provider: NotificationProvider) -> dict:
         "on_queue_job_started": provider.on_queue_job_started,
         "on_queue_job_waiting": provider.on_queue_job_waiting,
         "on_queue_job_skipped": provider.on_queue_job_skipped,
+        "on_queue_due_risk": provider.on_queue_due_risk,
         "on_queue_job_failed": provider.on_queue_job_failed,
         "on_queue_completed": provider.on_queue_completed,
         # Quiet hours
@@ -203,6 +204,7 @@ async def create_notification_provider(
         on_queue_job_started=provider_data.on_queue_job_started,
         on_queue_job_waiting=provider_data.on_queue_job_waiting,
         on_queue_job_skipped=provider_data.on_queue_job_skipped,
+        on_queue_due_risk=provider_data.on_queue_due_risk,
         on_queue_job_failed=provider_data.on_queue_job_failed,
         on_queue_completed=provider_data.on_queue_completed,
         # Quiet hours

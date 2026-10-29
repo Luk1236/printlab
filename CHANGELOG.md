@@ -3,6 +3,17 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.9.6 (in Arbeit) — Termin-Meldung
+
+- **Meldung „Termin in Gefahr":** Rechnet die Prognose damit, dass ein wartender Auftrag nach seinem Liefertermin fertig
+  wird (oder ist der Termin schon verstrichen), geht einmal eine Meldung über deine Kanäle (ntfy, Telegram, Pushover, E-Mail
+  …). Erst wenn der Auftrag zwischendurch wieder im Plan war, kann dieselbe Meldung erneut kommen. Der Schalter „Termin in
+  Gefahr" steht bei jedem Kanal unter den Warteschlangen-Ereignissen und ist überall voreingestellt an; der Text lässt sich
+  wie die anderen Vorlagen bearbeiten.
+- **Prognose auf dem Server:** Dieselbe Rechnung wie in der Oberfläche (Priorität zuerst, Verteilung auf den zuerst freien
+  Drucker), alle fünf Minuten für Aufträge mit Termin. Ohne Kanal, der die Meldung will, wird nichts als „gemeldet" markiert,
+  ein später eingerichteter Kanal erfährt also noch von bereits gefährdeten Aufträgen.
+
 ## v1.9.5 (29.10.2026) — Sammel-Priorität
 
 - **Priorität und Liefertermin für mehrere Aufträge auf einmal:** In der Warteschlange Aufträge markieren, „Auswahl

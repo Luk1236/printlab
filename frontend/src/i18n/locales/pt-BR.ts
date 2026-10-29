@@ -6875,6 +6875,8 @@ export default {
     jobWaitingDescription: 'Trabalho aguardando filamento ou impressora',
     jobSkipped: 'Trabalho Pulado',
     jobSkippedDescription: 'Trabalho pulado (anterior falhou)',
+    dueRisk: 'Prazo de entrega em risco',
+    dueRiskDescription: 'Um trabalho na fila não cumprirá o prazo de entrega',
     jobFailed: 'Trabalho Falhou',
     jobFailedDescription: 'Trabalho falhou ao iniciar',
     queueComplete: 'Fila Concluída',

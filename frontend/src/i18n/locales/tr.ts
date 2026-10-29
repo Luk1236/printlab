@@ -6840,6 +6840,8 @@ export default {
     jobWaitingDescription: 'İş filament veya yazıcı için bekliyor',
     jobSkipped: 'İş Atlandı',
     jobSkippedDescription: 'İş atlandı (önceki başarısız oldu)',
+    dueRisk: 'Teslim tarihi risk altında',
+    dueRiskDescription: 'Kuyruktaki bir iş teslim tarihine yetişmeyecek',
     jobFailed: 'İş Başarısız',
     jobFailedDescription: 'İş başlatılamadı',
     queueComplete: 'Kuyruk Tamamlandı',

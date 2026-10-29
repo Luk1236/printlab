@@ -47,6 +47,7 @@ EVENT_NAMES = {
     "queue_job_started": "Queue Job Started",
     "queue_job_waiting": "Queue Job Waiting",
     "queue_job_skipped": "Queue Job Skipped",
+    "queue_due_risk": "Queue Due Date at Risk",
     "queue_job_failed": "Queue Job Failed",
     "queue_completed": "Queue Completed",
     # Inventory stock alerts

@@ -103,6 +103,7 @@ EVENT_VARIABLES: dict[str, list[str]] = {
     "queue_job_started": ["printer", "job_name", "estimated_time", "eta", "timestamp", "app_name"],
     "queue_job_waiting": ["job_name", "target_model", "waiting_reason", "timestamp", "app_name"],
     "queue_job_skipped": ["printer", "job_name", "reason", "timestamp", "app_name"],
+    "queue_due_risk": ["job_name", "due", "expected", "reason", "timestamp", "app_name"],
     "queue_job_failed": ["printer", "job_name", "reason", "timestamp", "app_name"],
     "queue_completed": ["completed_count", "timestamp", "app_name"],
     "stock_reorder_alert": [
@@ -352,6 +353,14 @@ SAMPLE_DATA: dict[str, dict[str, str]] = {
         "job_name": "Benchy.3mf",
         "target_model": "X1C",
         "waiting_reason": "Printer1 (needs PLA)",
+        "timestamp": "2024-01-15 14:30",
+        "app_name": "PrintLab",
+    },
+    "queue_due_risk": {
+        "job_name": "Benchy.3mf",
+        "due": "2024-01-16 12:00",
+        "expected": "2024-01-16 15:30",
+        "reason": "Expected to finish after the due date.",
         "timestamp": "2024-01-15 14:30",
         "app_name": "PrintLab",
     },

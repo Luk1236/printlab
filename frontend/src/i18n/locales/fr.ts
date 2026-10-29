@@ -6876,6 +6876,8 @@ export default {
     jobWaitingDescription: 'Tâche en attente de filament ou imprimante',
     jobSkipped: 'Tâche ignorée',
     jobSkippedDescription: 'Tâche ignorée (échec précédent)',
+    dueRisk: 'Date de livraison en danger',
+    dueRiskDescription: 'Un travail en file ne tiendra pas sa date de livraison',
     jobFailed: 'Tâche échouée',
     jobFailedDescription: 'La tâche n\'a pas pu démarrer',
     queueComplete: 'File d\'attente terminée',

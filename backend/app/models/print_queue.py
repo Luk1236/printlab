@@ -73,6 +73,9 @@ class PrintQueueItem(Base):
     # Liefertermin (nur Warnung, siehe services/queue_priority.py)
     priority: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     due_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    due_risk_notified: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="0"
+    )  # services/queue_due_watch.py
 
     # Auto-print G-code injection (#422)
     gcode_injection: Mapped[bool] = mapped_column(Boolean, default=False)

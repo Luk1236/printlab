@@ -6939,6 +6939,8 @@ export default {
     jobWaitingDescription: 'Taak wacht op filament of printer',
     jobSkipped: 'Taak overgeslagen',
     jobSkippedDescription: 'Taak overgeslagen (vorige mislukt)',
+    dueRisk: 'Leverdatum in gevaar',
+    dueRiskDescription: 'Een wachtende opdracht haalt de leverdatum niet',
     jobFailed: 'Taak mislukt',
     jobFailedDescription: 'Taak kon niet starten',
     queueComplete: 'Wachtrij voltooid',

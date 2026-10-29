@@ -6874,6 +6874,8 @@ export default {
     jobWaitingDescription: '任务正在等待耗材或打印机',
     jobSkipped: '任务已跳过',
     jobSkippedDescription: '任务已跳过（上一个失败）',
+    dueRisk: '交付日期有风险',
+    dueRiskDescription: '队列中的任务将无法按期完成',
     jobFailed: '任务失败',
     jobFailedDescription: '任务启动失败',
     queueComplete: '队列已完成',

@@ -6929,6 +6929,8 @@ export default {
     jobWaitingDescription: "Завдання очікує на філамент або принтер",
     jobSkipped: "Завдання пропущено",
     jobSkippedDescription: "Завдання пропущено (попереднє не вдалося)",
+    dueRisk: 'Термін здачі під загрозою',
+    dueRiskDescription: 'Завдання в черзі не вкладеться у термін здачі',
     jobFailed: "Помилка завдання",
     jobFailedDescription: "Не вдалося розпочати завдання",
     queueComplete: "Черга завершена",

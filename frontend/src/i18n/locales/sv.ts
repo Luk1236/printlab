@@ -6937,6 +6937,8 @@ errors: {
     jobWaitingDescription: 'Jobb väntar på filament eller skrivare',
     jobSkipped: 'Jobb hoppades över',
     jobSkippedDescription: 'Jobb hoppades över (föregående misslyckades)',
+    dueRisk: 'Leveransdatum i fara',
+    dueRiskDescription: 'Ett jobb i kön hinner inte till leveransdatumet',
     jobFailed: 'Jobb misslyckades',
     jobFailedDescription: 'Jobb kunde inte starta',
     queueComplete: 'Kö slutförd',

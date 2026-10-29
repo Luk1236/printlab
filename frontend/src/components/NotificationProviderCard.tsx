@@ -641,6 +641,17 @@ export function NotificationProviderCard({ provider, onEdit }: NotificationProvi
 
                 <div className="flex items-center justify-between">
                   <div>
+                    <p className="text-sm text-white">{t('notifications.dueRisk')}</p>
+                    <p className="text-xs text-bambu-gray">{t('notifications.dueRiskDescription')}</p>
+                  </div>
+                  <Toggle
+                    checked={provider.on_queue_due_risk ?? true}
+                    onChange={(checked) => updateMutation.mutate({ on_queue_due_risk: checked })}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
                     <p className="text-sm text-white">{t('notifications.jobFailed')}</p>
                     <p className="text-xs text-bambu-gray">{t('notifications.jobFailedDescription')}</p>
                   </div>

@@ -6939,6 +6939,8 @@ export default {
     jobWaitingDescription: 'Job waiting for filament or printer',
     jobSkipped: 'Job Skipped',
     jobSkippedDescription: 'Job skipped (previous failed)',
+    dueRisk: 'Due date at risk',
+    dueRiskDescription: 'A queued job will miss its due date',
     jobFailed: 'Job Failed',
     jobFailedDescription: 'Job failed to start',
     queueComplete: 'Queue Complete',

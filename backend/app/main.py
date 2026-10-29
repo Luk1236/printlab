@@ -10169,6 +10169,9 @@ async def lifespan(app: FastAPI):
 
     # Start the print scheduler
     spawn_background_task(print_scheduler.run(), name="print-scheduler")
+    from backend.app.services import queue_due_watch
+
+    spawn_background_task(queue_due_watch.run(async_session), name="queue-due-watch")  # PrintLab: Termin-Meldung
 
     # Start the smart plug scheduler for time-based on/off
     smart_plug_manager.start_scheduler()

@@ -6888,6 +6888,8 @@ export default {
     jobWaitingDescription: 'Auftrag wartet auf Filament oder Drucker',
     jobSkipped: 'Auftrag übersprungen',
     jobSkippedDescription: 'Auftrag übersprungen (vorheriger fehlgeschlagen)',
+    dueRisk: 'Termin in Gefahr',
+    dueRiskDescription: 'Liefertermin eines wartenden Auftrags wird nicht gehalten',
     jobFailed: 'Auftrag fehlgeschlagen',
     jobFailedDescription: 'Auftrag konnte nicht gestartet werden',
     queueComplete: 'Warteschlange abgeschlossen',

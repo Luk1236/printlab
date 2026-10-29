@@ -201,6 +201,12 @@ DEFAULT_TEMPLATES = [
         "body_template": "{job_name} waiting for {target_model}\n{waiting_reason}",
     },
     {
+        "event_type": "queue_due_risk",
+        "name": "Queue Due Date at Risk",
+        "title_template": "Due Date at Risk",
+        "body_template": "{job_name}\nDue: {due}\nExpected: {expected}\n{reason}",
+    },
+    {
         "event_type": "queue_job_skipped",
         "name": "Queue Job Skipped",
         "title_template": "Job Skipped",

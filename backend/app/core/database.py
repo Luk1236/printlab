@@ -2880,6 +2880,8 @@ async def run_migrations(conn):
     await _safe_execute(conn, "ALTER TABLE notification_providers ADD COLUMN on_queue_job_started BOOLEAN DEFAULT 0")
     await _safe_execute(conn, "ALTER TABLE notification_providers ADD COLUMN on_queue_job_waiting BOOLEAN DEFAULT 1")
     await _safe_execute(conn, "ALTER TABLE notification_providers ADD COLUMN on_queue_job_skipped BOOLEAN DEFAULT 1")
+    await _safe_execute(conn, "ALTER TABLE notification_providers ADD COLUMN on_queue_due_risk BOOLEAN DEFAULT 1")
+    await _safe_execute(conn, "ALTER TABLE print_queue ADD COLUMN due_risk_notified BOOLEAN DEFAULT FALSE NOT NULL")
     await _safe_execute(conn, "ALTER TABLE notification_providers ADD COLUMN on_queue_job_failed BOOLEAN DEFAULT 1")
     await _safe_execute(conn, "ALTER TABLE notification_providers ADD COLUMN on_queue_completed BOOLEAN DEFAULT 0")
 

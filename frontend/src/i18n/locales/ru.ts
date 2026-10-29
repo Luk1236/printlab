@@ -6589,6 +6589,8 @@ export default {
     jobWaitingDescription: "Задание ожидает филамент или свободный принтер",
     jobSkipped: "Задание пропущено",
     jobSkippedDescription: "Задание пропущено из-за ошибки предыдущего",
+    dueRisk: 'Срок сдачи под угрозой',
+    dueRiskDescription: 'Задание в очереди не уложится в срок сдачи',
     jobFailed: "Не удалось запустить задание",
     jobFailedDescription: "Задание не удалось отправить на печать",
     queueComplete: "Очередь завершена",

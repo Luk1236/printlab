@@ -134,6 +134,7 @@ class NotificationProvider(Base):
     on_queue_job_started = Column(Boolean, default=False)  # Queue job started printing
     on_queue_job_waiting = Column(Boolean, default=True)  # Job waiting for filament or printer
     on_queue_job_skipped = Column(Boolean, default=True)  # Job skipped (previous print failed)
+    on_queue_due_risk = Column(Boolean, default=True)  # Due date of a queued job will be missed (PrintLab)
     on_queue_job_failed = Column(Boolean, default=True)  # Job failed to start
     on_queue_completed = Column(Boolean, default=False)  # All pending jobs finished
 

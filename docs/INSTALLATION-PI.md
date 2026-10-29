@@ -202,6 +202,9 @@ weicht PrintLab dann automatisch auf `git ls-remote` aus. Bei älteren Ständen:
   einer Stufe. Filter und Plakette in der Warteschlange zeigen die Stufe.
 - **Liefertermin:** Optional. Er warnt nur („Termin überschritten", „Termin wird nicht gehalten") und ändert nichts an der
   Reihenfolge. Die Warnung „wird nicht gehalten" rechnet mit der Druckzeit ab jetzt, ohne Wartezeit vor dem Start.
+- **Meldung bei gefährdetem Termin:** Wird ein Auftrag nach seinem Liefertermin fertig oder ist der Termin vorbei, kommt
+  einmal eine Meldung über deine Kanäle (Einstellungen → Benachrichtigungen, beim Kanal „Termin in Gefahr"; Text unter den
+  Vorlagen anpassbar). Geprüft wird alle fünf Minuten, die Rechnung ist dieselbe wie die Fertigzeit in der Warteschlange.
 - **Mehrere Aufträge auf einmal:** Aufträge markieren, „Auswahl bearbeiten": Priorität setzen, Liefertermin setzen oder
   entfernen. Unverändert gelassene Felder bleiben, wie sie sind.
 - **Auslastung und Fertigzeit:** Über der Warteschlange zeigt eine Übersicht pro Drucker, wann er frei wird und wie voll

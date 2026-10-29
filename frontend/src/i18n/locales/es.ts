@@ -6896,6 +6896,8 @@ export default {
     jobWaitingDescription: 'Trabajo a la espera de filamento o impresora',
     jobSkipped: 'Trabajo omitido',
     jobSkippedDescription: 'Trabajo omitido (el anterior falló)',
+    dueRisk: 'Fecha de entrega en riesgo',
+    dueRiskDescription: 'Un trabajo en cola no llegará a su fecha de entrega',
     jobFailed: 'Trabajo fallido',
     jobFailedDescription: 'El trabajo no pudo iniciarse',
     queueComplete: 'Cola completada',

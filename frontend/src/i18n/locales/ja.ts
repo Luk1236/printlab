@@ -6889,6 +6889,8 @@ export default {
     jobWaitingDescription: 'フィラメントまたはプリンター待ちのジョブ',
     jobSkipped: 'ジョブスキップ',
     jobSkippedDescription: 'ジョブがスキップされました（前のジョブが失敗）',
+    dueRisk: '納期の危険',
+    dueRiskDescription: '待機中のジョブが納期に間に合いません',
     jobFailed: 'ジョブ失敗',
     jobFailedDescription: 'ジョブの開始に失敗しました',
     queueComplete: 'キュー完了',

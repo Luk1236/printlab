@@ -6602,6 +6602,8 @@ export default {
     jobWaitingDescription: '필라멘트 또는 프린터를 기다리는 작업',
     jobSkipped: '작업 건너뜀',
     jobSkippedDescription: '작업 건너뜀 (이전 실패)',
+    dueRisk: '납기 위험',
+    dueRiskDescription: '대기 중인 작업이 납기를 맞추지 못합니다',
     jobFailed: '작업 실패',
     jobFailedDescription: '작업 시작 실패',
     queueComplete: '대기열 완료',
