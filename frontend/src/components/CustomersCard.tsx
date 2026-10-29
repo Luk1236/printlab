@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Trash2, UserPlus, Users } from 'lucide-react';
 
 import { api } from '../api/client';
-import type { Customer } from '../api/client';
+import type { Customer } from '../api/forkApi';
 import { Button } from './Button';
 import { ConfirmModal } from './ConfirmModal';
 import { useToast } from '../contexts/ToastContext';

@@ -12,7 +12,6 @@ export type {
   PlateTuningAnalysis,
   Invoice,
   InvoicesResponse,
-  Customer,
   QuoteItem,
   QuoteActuals,
   QuoteActualsLine,
@@ -20,7 +19,6 @@ export type {
   AssistantStatus,
   AssistantAction,
   AssistantAnswer,
-  FailureImage,
   SelfTestResult,
   SelfTestReport,
 } from './forkApi';
