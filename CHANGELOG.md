@@ -3,6 +3,22 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.13.0 (29.10.2026) — Fehlerhilfe
+
+- **Fehlerhilfe** (neue Seite im Seitenmenü): elf Fehlerbilder aus der Werkstattpraxis in vier Gruppen — Extrusion,
+  Thermik/Haftung, Mechanik, Slicer/Geometrie. Jedes nennt Erklärung, typische Ursachen, was im Slicer hilft und was am
+  Drucker möglich ist; dazu eine durchsuchbare Liste und Kategoriefilter. Die Oberfläche ist in allen 15 Sprachen
+  übersetzt, die Fließtexte liegen auf Deutsch vor (englische Titel und Kurzfassungen).
+- **Sofort-Eingriffe am laufenden Druck:** Kammer-/Zusatz-/Bauteillüfter, Bett ±, Düse ±, Fluss ±, Silent-Tempo. Jeder
+  Eingriff wird bestätigt, nur während eines Drucks angeboten und landet im Audit-Log. Rechte: `printers:control`.
+- **Automatische Gegenmaßnahmen (optional):** zwei Regeln, die sich aus den Daten sicher ableiten lassen — Bauraum zu
+  warm bei PLA/PETG/TPU (Lüfter auf, Bett etwas kühler) und Bauraum zu kalt bei ABS/ASA/PC/PA (Lüfter aus). Nur je
+  Drucker freigeschaltet, nur mit echtem Bauraumfühler und eindeutigem Filament, höchstens drei Eingriffe je Regel und
+  Druck im Abstand von mindestens zehn Minuten, mit Rückkopplung an das Audit-Log. **Standardmäßig Trockenlauf**: PrintLab
+  protokolliert nur, was es getan hätte. Start, Pause und Abbruch bleiben immer Sache des Bedieners.
+- Intern: Katalog in `services/error_patterns.py`, Regeln in `services/countermeasures.py` (reine Entscheidungsfunktion,
+  testbar ohne Drucker), Router `api/routes/error_help.py`; Konfiguration in `data/countermeasures.json`.
+
 ## v1.12.1 (29.10.2026) — Meldungen, die ankommen
 
 - **Fälligkeits-Meldung gilt erst als zugestellt, wenn ein Kanal bestätigt.** Bisher markierte sich ein Auftrag als
