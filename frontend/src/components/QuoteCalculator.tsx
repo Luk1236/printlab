@@ -10,6 +10,7 @@ import { Card, CardContent } from './Card';
 import { useToast } from '../contexts/ToastContext';
 import { buildQuoteDocument } from '../utils/quoteDocument';
 import { InvoicesPanel } from './InvoicesPanel';
+import { MonthlyReportPanel } from './MonthlyReportPanel';
 import { QuoteActualsPanel } from './QuoteActualsPanel';
 import { QuoteExtraItems } from './QuoteExtraItems';
 import { extrasTotal, itemAmount, validItems } from '../utils/quoteItems';
@@ -45,6 +46,7 @@ export function QuoteCalculator() {
   const [companyDraft, setCompanyDraft] = useState<CompanyProfile | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [invoicesOpen, setInvoicesOpen] = useState(false);
+  const [monthlyReportOpen, setMonthlyReportOpen] = useState(false);
   const [historyFilter, setHistoryFilter] = useState('');
   const [actualsFor, setActualsFor] = useState<string | null>(null);
   const [extraItems, setExtraItems] = useState<ExtraItemDraft[]>([]);
@@ -322,6 +324,9 @@ export function QuoteCalculator() {
           <Button size="sm" variant="ghost" onClick={() => setInvoicesOpen((open) => !open)}>
             {t('quote.invoices')}
           </Button>
+          <Button size="sm" variant="ghost" onClick={() => setMonthlyReportOpen((open) => !open)}>
+            {t('monthlyReport.title')}
+          </Button>
           <Button
             size="sm"
             variant="ghost"
@@ -402,6 +407,7 @@ export function QuoteCalculator() {
           </div>
         )}
         {invoicesOpen && <InvoicesPanel canEdit />}
+        {monthlyReportOpen && <MonthlyReportPanel />}
         {companyOpen && (
           <div className="border border-bambu-dark-tertiary rounded-lg p-3 space-y-2">
             {draft !== null && (

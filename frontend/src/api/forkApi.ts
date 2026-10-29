@@ -186,6 +186,39 @@ export interface FailureImage {
   mtime: number;
 }
 
+export interface MonthlyReportMoney {
+  count: number;
+  open: number;
+  paid: number;
+  cancelled: number;
+  total: number;
+  overdue_count: number;
+  overdue: number;
+}
+
+export interface MonthlyReport {
+  year: number;
+  month: number;
+  period: { start: string; end: string };
+  invoices: Record<string, MonthlyReportMoney>;
+  quotes: Record<string, number>;
+  profit: {
+    quotes: number;
+    estimated_quotes: number;
+    per_currency: Record<string, { revenue: number; actual_cost: number; profit: number }>;
+  };
+  production: {
+    prints: number;
+    failed: number;
+    minutes: number;
+    grams: number;
+    material_cost: number;
+    energy_cost: number;
+    by_filament_type: { type: string; grams: number }[];
+    by_printer: { name: string; prints: number; minutes: number }[];
+  };
+}
+
 export interface SelfTestReport {
   checked_at: string;
   results: SelfTestResult[];
@@ -239,6 +272,7 @@ export function createForkApi({ request, apiBase, getAuthToken }: ForkApiDeps) {
         body: JSON.stringify({ archive_ids: archiveIds }),
       }),
     getInvoices: () => request<InvoicesResponse>('/quote/invoices'),
+    getMonthlyReport: (year: number, month: number) => request<MonthlyReport>(`/monthly-report/${year}/${month}`),
     createInvoice: (quoteId: string, serviceDate?: string) =>
       request<Invoice>(`/quote/history/${encodeURIComponent(quoteId)}/invoice`, {
         method: 'POST',
@@ -329,6 +363,17 @@ export function createForkApi({ request, apiBase, getAuthToken }: ForkApiDeps) {
     }
     const match = (response.headers.get('Content-Disposition') ?? '').match(/filename="?([^";]+)"?/);
     return { blob: await response.blob(), filename: match?.[1] ?? 'Angebot.pdf' };
+  },
+  downloadMonthlyReportPdf: async (year: number, month: number, lang: string): Promise<{ blob: Blob; filename: string }> => {
+    const headers: Record<string, string> = {};
+    if (getAuthToken()) headers['Authorization'] = `Bearer ${getAuthToken()}`;
+    const response = await fetch(`${apiBase}/monthly-report/${year}/${month}/pdf?lang=${lang}`, { headers });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(typeof error.detail === 'string' ? error.detail : `HTTP ${response.status}`);
+    }
+    const match = (response.headers.get('Content-Disposition') ?? '').match(/filename="?([^";]+)"?/);
+    return { blob: await response.blob(), filename: match?.[1] ?? 'Monatsreport.pdf' };
   },
   getPiHealth: () => request<PiHealth>('/system/pi-health'),
   getRemoteAccess: () => request<RemoteAccessStatus>('/remote-access'),

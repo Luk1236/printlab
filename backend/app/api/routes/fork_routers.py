@@ -13,6 +13,7 @@ from backend.app.api.routes import (
     failure_images,
     first_layer_inspector,
     hardware,
+    monthly_report,
     plate_calibration,
     plate_tuning,
     quote,
@@ -35,3 +36,5 @@ def register_fork_routers(app: FastAPI, prefix: str) -> None:
     app.include_router(failure_images.router, prefix=prefix)
     # Angebotskalkulator (Gewerbliches): Stundenlohn, Aufschlag, Energie.
     app.include_router(quote.router, prefix=prefix)
+    # Monats-Report: Umsatz/Fertigung/Gewinn als Zahlenwerk und PDF.
+    app.include_router(monthly_report.router, prefix=prefix)
