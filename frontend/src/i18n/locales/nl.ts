@@ -237,6 +237,22 @@ export default {
       overlap: 'Leeg en bezet overlappen: geen nette drempel mogelijk. Maak de referentie opnieuw of maak het licht gelijkmatig.',
     },
   },
+  selfTest: {
+    title: 'Systeemcontrole',
+    intro: 'Controleert in één keer of database, planner, bewaking, printers, voorspelling, meldkanalen, back-ups, apparaatstatus, aanmelding, updatebeveiliging en assistent echt werken. Er wordt een testbericht via je meldkanalen verstuurd en een testvraag aan het model gesteld.',
+    run: 'Nu controleren',
+    again: 'Opnieuw controleren',
+    running: 'Controleren …',
+    wait: 'Dit kan langer duren als het model traag antwoordt (tot twee minuten).',
+    summary: '{{ok}} in orde, {{warn}} opmerkingen, {{fail}} fouten, {{skip}} overgeslagen',
+    checkedAt: 'Gecontroleerd om {{time}}',
+    status: {
+      ok: 'In orde',
+      warn: 'Opmerking',
+      fail: 'Fout',
+      skip: 'Overgeslagen',
+    },
+  },
   assistant: {
     title: 'Assistent',
     intro: 'Een lokale AI-assistent beantwoordt vragen over de werking, legt fouten uit en schrijft conceptteksten. Het model draait op dit apparaat of in je netwerk; er gaat niets het internet op. Wijzigingen stelt hij alleen voor.',

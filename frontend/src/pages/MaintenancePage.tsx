@@ -48,6 +48,7 @@ import { MaintenanceProgramsCard } from '../components/MaintenanceProgramsCard';
 import { HardwareAdminCard } from '../components/HardwareAdminCard';
 import { RemoteAccessCard } from '../components/RemoteAccessCard';
 import { PiHealthCard } from '../components/PiHealthCard';
+import { SelfTestCard } from '../components/SelfTestCard';
 import { SetupChecklistCard } from '../components/SetupChecklistCard';
 import { SetupBanner, SetupWizardCard } from '../components/SetupWizardCard';
 import { AlertChannelsCard } from '../components/AlertChannelsCard';
@@ -1298,6 +1299,7 @@ export function MaintenancePage() {
           <SetupWizardCard />
           <SetupChecklistCard />
           <PiHealthCard />
+          <SelfTestCard canRun={hasPermission('settings:update')} />
           <div id="setup-alerts">
             <AlertChannelsCard canControl={hasPermission('settings:update')} />
           </div>

@@ -237,6 +237,22 @@ export default {
       overlap: 'Vuoto e occupato si sovrappongono: nessuna soglia netta possibile. Rifai il riferimento o uniforma la luce.',
     },
   },
+  selfTest: {
+    title: 'Controllo del sistema',
+    intro: 'Verifica in un solo passaggio se database, pianificatore, sorveglianza, stampanti, previsione, canali di avviso, backup, stato del dispositivo, accesso, protezione degli aggiornamenti e assistente funzionano davvero. Invia un messaggio di prova sui tuoi canali e pone una domanda di prova al modello.',
+    run: 'Controlla ora',
+    again: 'Controlla di nuovo',
+    running: 'Controllo in corso …',
+    wait: 'Può richiedere più tempo se il modello risponde lentamente (fino a due minuti).',
+    summary: '{{ok}} a posto, {{warn}} avvisi, {{fail}} errori, {{skip}} saltati',
+    checkedAt: 'Controllato alle {{time}}',
+    status: {
+      ok: 'A posto',
+      warn: 'Avviso',
+      fail: 'Errore',
+      skip: 'Saltato',
+    },
+  },
   assistant: {
     title: 'Assistente',
     intro: 'Un assistente IA locale risponde a domande sul funzionamento, spiega gli errori e scrive bozze di testi. Il modello gira su questo dispositivo o nella tua rete; nulla va su internet. Propone soltanto modifiche.',

@@ -170,6 +170,20 @@ export interface AssistantAnswer {
   seconds: number;
 }
 
+export interface SelfTestResult {
+  id: string;
+  title: string;
+  status: 'ok' | 'warn' | 'fail' | 'skip';
+  detail: string;
+  fix: string | null;
+}
+
+export interface SelfTestReport {
+  checked_at: string;
+  results: SelfTestResult[];
+  summary: { ok: number; warn: number; fail: number; skip: number };
+}
+
 export interface Invoice {
   id: string;
   number: string;
@@ -201,6 +215,7 @@ export interface ForkApiDeps {
 
 export function createForkApi({ request, apiBase, getAuthToken }: ForkApiDeps) {
   return {
+    runSelfTest: () => request<SelfTestReport>('/selftest', { method: 'POST' }),
     getAssistantStatus: () => request<AssistantStatus>('/assistant/status'),
     saveAssistantConfig: (update: Record<string, unknown>) =>
       request<AssistantStatus>('/assistant/config', { method: 'PUT', body: JSON.stringify(update) }),

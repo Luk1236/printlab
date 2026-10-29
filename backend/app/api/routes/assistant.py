@@ -7,7 +7,6 @@ nach Bestätigung in der Oberfläche über die normalen Warteschlangen-Funktione
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import time
 from typing import Literal
@@ -26,7 +25,7 @@ from backend.app.services.printer_manager import printer_manager
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/assistant", tags=["assistant"])
 
-_lock = asyncio.Lock()  # der Pi schafft nur eine Antwort zur Zeit
+_lock = assistant_llm.LOCK  # der Pi schafft nur eine Antwort zur Zeit
 
 
 class ChatMessage(BaseModel):

@@ -345,6 +345,7 @@ _RAW: list[tuple[str, str]] = [
     ),
     (r"Der Modell-Server hat mit Fehler (?P<c>\d+) geantwortet\.", r"The model server answered with error \g<c>."),
     (r"Die Antwort des Modells war leer oder unlesbar\.", "The model's answer was empty or unreadable."),
+    (r"Die Systemprüfung läuft bereits\.", "The system check is already running."),
     (r"Kein Kamerabild verfügbar\.", "No camera image available."),
     (r"Warp fehlgeschlagen — Einmessung prüfen\.", "Warp failed — check the calibration."),
 ]
@@ -353,7 +354,7 @@ PATTERNS = [(re.compile(pattern), replacement) for pattern, replacement in _RAW]
 # Antworten dieser Endpunkte werden übersetzt (alle anderen bleiben unberührt).
 PATH_RX = re.compile(
     r"^/api/v1/(printers/\d+/(hardware|maintenance-program|maintenance-print|bed-empty|spaghetti|part-watcher|"
-    r"first-layer|plate-calibration|layer-alert|camera/plate-detection/tuning)|quote|remote-access|updates|system/alerts|assistant)"
+    r"first-layer|plate-calibration|layer-alert|camera/plate-detection/tuning)|quote|remote-access|updates|system/alerts|assistant|selftest)"
 )
 
 

@@ -6,12 +6,16 @@ die Oberfläche sagen kann, was zu tun ist (Server starten, Modell laden, mehr Z
 
 from __future__ import annotations
 
+import asyncio
 import logging
+import time
 from typing import Any
 
 import httpx
 
 logger = logging.getLogger(__name__)
+
+LOCK = asyncio.Lock()  # der Pi schafft nur eine Antwort zur Zeit (Chat und Probefrage der Systemprüfung teilen sie)
 
 
 class AssistantError(RuntimeError):
@@ -72,3 +76,14 @@ async def chat(
     if not isinstance(content, str) or not content.strip():
         raise AssistantError("Die Antwort des Modells war leer oder unlesbar.")
     return content.strip()
+
+
+async def probe(config: dict[str, Any], transport: httpx.AsyncBaseTransport | None = None) -> float | None:
+    """Probefrage für die Systemprüfung: Dauer der Antwort in Sekunden, oder None, wenn das Modell gerade beschäftigt ist."""
+    if LOCK.locked():
+        return None
+    async with LOCK:
+        started = time.monotonic()
+        trial = {**config, "max_tokens": 20, "timeout_seconds": min(int(config["timeout_seconds"]), 120)}
+        await chat(trial, [{"role": "user", "content": "Antworte mit einem Wort: Hallo"}], transport)
+        return time.monotonic() - started

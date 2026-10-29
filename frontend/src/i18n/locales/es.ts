@@ -237,6 +237,22 @@ export default {
       overlap: 'Vacía y ocupada se solapan: no hay umbral limpio. Repite la referencia o uniformiza la luz.',
     },
   },
+  selfTest: {
+    title: 'Comprobación del sistema',
+    intro: 'Comprueba de una vez si la base de datos, el planificador, la vigilancia, las impresoras, la previsión, los canales de aviso, las copias, el estado del equipo, el inicio de sesión, la protección de actualizaciones y el asistente funcionan de verdad. Envía un mensaje de prueba por tus canales y hace una pregunta de prueba al modelo.',
+    run: 'Comprobar ahora',
+    again: 'Comprobar de nuevo',
+    running: 'Comprobando …',
+    wait: 'Puede tardar más si el modelo responde despacio (hasta dos minutos).',
+    summary: '{{ok}} correctas, {{warn}} avisos, {{fail}} errores, {{skip}} omitidas',
+    checkedAt: 'Comprobado a las {{time}}',
+    status: {
+      ok: 'Correcto',
+      warn: 'Aviso',
+      fail: 'Error',
+      skip: 'Omitido',
+    },
+  },
   assistant: {
     title: 'Asistente',
     intro: 'Un asistente de IA local responde preguntas sobre el funcionamiento, explica errores y redacta textos. El modelo se ejecuta en este dispositivo o en tu red; nada sale a internet. Solo propone cambios.',

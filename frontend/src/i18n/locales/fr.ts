@@ -237,6 +237,22 @@ export default {
       overlap: 'Vide et occupé se chevauchent : aucun seuil net possible. Refaites la référence ou uniformisez l\'éclairage.',
     },
   },
+  selfTest: {
+    title: 'Contrôle du système',
+    intro: 'Vérifie en une fois si la base de données, le planificateur, la surveillance, les imprimantes, la prévision, les canaux d\'alerte, les sauvegardes, l\'état de l\'appareil, la connexion, la protection des mises à jour et l\'assistant fonctionnent vraiment. Il envoie un message de test par vos canaux et pose une question de test au modèle.',
+    run: 'Vérifier maintenant',
+    again: 'Vérifier à nouveau',
+    running: 'Vérification …',
+    wait: 'Cela peut durer plus longtemps si le modèle répond lentement (jusqu\'à deux minutes).',
+    summary: '{{ok}} bien, {{warn}} remarques, {{fail}} erreurs, {{skip}} ignorées',
+    checkedAt: 'Vérifié à {{time}}',
+    status: {
+      ok: 'Bien',
+      warn: 'Remarque',
+      fail: 'Erreur',
+      skip: 'Ignoré',
+    },
+  },
   assistant: {
     title: 'Assistant IA',
     intro: 'Un assistant IA local répond aux questions sur l\'exploitation, explique les erreurs et rédige des textes. Le modèle tourne sur cet appareil ou dans votre réseau ; rien ne part sur Internet. Il ne fait que proposer des modifications.',

@@ -195,6 +195,22 @@ weicht PrintLab dann automatisch auf `git ls-remote` aus. Bei älteren Ständen:
 (`v1.9.1` durch die gewünschte Version ersetzen). Alternativ ein Token mit Leserecht in `PRINTLAB_GITHUB_TOKEN` setzen
 (5000 statt 60 Abfragen pro Stunde).
 
+## Systemprüfung
+
+Wartung → System → **Systemprüfung** → „Jetzt prüfen". Ein Durchlauf prüft, ob die wichtigen Teile wirklich laufen: Datenbank
+(Spalten der neuen Funktionen vorhanden), Druckplaner, Termin-Überwachung (letzter Durchlauf), Drucker (verbunden), Prognose
+(Aufträge ohne Druckzeit oder ohne passenden Drucker), Meldekanäle, Sicherungen, Gerätezustand (Temperatur, Spannung, Speicher),
+Anmeldung, Update-Schutz und Assistent. Jede Zeile hat eine Ampel (in Ordnung, Hinweis, Fehler, übersprungen) und sagt bei
+Problemen, was zu tun ist.
+
+**Achtung, zwei Proben mit Nebenwirkung:** Die Prüfung sendet eine **Testmeldung** („Test: Termin in Gefahr") an alle Kanäle, die
+diese Meldung eingeschaltet haben, und stellt dem Modell des Assistenten eine **Probefrage**. Wer die Meldung nicht will, schaltet
+sie beim Kanal ab; ist der Assistent aus, entfällt die Probefrage. Die Prüfung läuft nur auf Knopfdruck. Auf einem Rechner ohne
+systemd (zum Beispiel Windows) werden Update-Schutz und Gerätezustand übersprungen oder als nicht messbar gezeigt.
+
+Sinnvoll: nach jedem Update und nach Änderungen an Kanälen, Modell oder Netzteil. Ein langsames Modell kann die Prüfung bis zu zwei
+Minuten dauern lassen.
+
 ## Lokaler KI-Assistent (optional)
 
 Unter **Wartung → Assistent** gibt es einen Chat mit einem lokalen Sprachmodell. Er beantwortet Fragen zum Betrieb („Was läuft,

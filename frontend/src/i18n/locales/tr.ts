@@ -237,6 +237,22 @@ export default {
       overlap: 'Boş ve dolu çakışıyor: temiz bir eşik yok. Referansı yeniden alın veya ışığı eşitleyin.',
     },
   },
+  selfTest: {
+    title: 'Sistem denetimi',
+    intro: 'Veritabanı, zamanlayıcı, izleme, yazıcılar, tahmin, bildirim kanalları, yedekler, cihaz durumu, oturum açma, güncelleme koruması ve asistanın gerçekten çalışıp çalışmadığını tek seferde denetler. Bildirim kanallarınıza bir test mesajı gönderir ve modele bir deneme sorusu sorar.',
+    run: 'Şimdi denetle',
+    again: 'Yeniden denetle',
+    running: 'Denetleniyor …',
+    wait: 'Model yavaş yanıt verirse daha uzun sürebilir (iki dakikaya kadar).',
+    summary: '{{ok}} tamam, {{warn}} uyarı, {{fail}} hata, {{skip}} atlandı',
+    checkedAt: '{{time}} saatinde denetlendi',
+    status: {
+      ok: 'Tamam',
+      warn: 'Uyarı',
+      fail: 'Hata',
+      skip: 'Atlandı',
+    },
+  },
   assistant: {
     title: 'Asistan',
     intro: 'Yerel bir yapay zekâ asistanı işletmeyle ilgili soruları yanıtlar, hataları açıklar ve metin taslakları yazar. Model bu cihazda veya ağınızda çalışır; internete hiçbir şey gönderilmez. Değişiklikleri yalnızca önerir.',

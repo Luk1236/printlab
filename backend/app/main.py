@@ -72,6 +72,7 @@ from backend.app.api.routes import (
     printers,
     projects,
     scheduled_dryings,
+    selftest,
     settings as settings_routes,
     slice_jobs,
     slicer_pipelines,
@@ -10910,6 +10911,7 @@ app.include_router(hardware.router, prefix=app_settings.api_prefix)
 app.include_router(camera.router, prefix=app_settings.api_prefix)
 app.include_router(plate_tuning.router, prefix=app_settings.api_prefix)
 app.include_router(assistant.router, prefix=app_settings.api_prefix)
+app.include_router(selftest.router, prefix=app_settings.api_prefix)
 app.include_router(camwall.router, prefix=app_settings.api_prefix)
 app.include_router(external_links.router, prefix=app_settings.api_prefix)
 app.include_router(projects.router, prefix=app_settings.api_prefix)

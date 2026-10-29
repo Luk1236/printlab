@@ -19,6 +19,8 @@ export type {
   AssistantStatus,
   AssistantAction,
   AssistantAnswer,
+  SelfTestResult,
+  SelfTestReport,
 } from './forkApi';
 import i18n from '../i18n';
 import type { ArchivePlatesResponse, LibraryFilePlatesResponse } from '../types/plates';

@@ -237,6 +237,22 @@ export default {
       overlap: 'Leer und belegt überlappen: kein sauberer Schwellwert möglich. Referenz neu aufnehmen oder das Licht vereinheitlichen.',
     },
   },
+  selfTest: {
+    title: 'Systemprüfung',
+    intro: 'Prüft in einem Durchlauf, ob Datenbank, Planer, Überwachung, Drucker, Prognose, Meldekanäle, Sicherungen, Gerätezustand, Anmeldung, Update-Schutz und Assistent wirklich laufen. Dabei wird eine Testmeldung über deine Meldekanäle gesendet und eine Probefrage an das Modell gestellt.',
+    run: 'Jetzt prüfen',
+    again: 'Erneut prüfen',
+    running: 'Prüfe …',
+    wait: 'Das kann länger dauern, wenn das Modell langsam antwortet (bis zu zwei Minuten).',
+    summary: '{{ok}} in Ordnung, {{warn}} Hinweise, {{fail}} Fehler, {{skip}} übersprungen',
+    checkedAt: 'Geprüft um {{time}}',
+    status: {
+      ok: 'In Ordnung',
+      warn: 'Hinweis',
+      fail: 'Fehler',
+      skip: 'Übersprungen',
+    },
+  },
   assistant: {
     title: 'Assistent',
     intro: 'Ein lokaler KI-Assistent beantwortet Fragen zum Betrieb, erklärt Fehler und entwirft Texte. Das Modell läuft auf diesem Gerät oder in deinem Netz, nichts geht ins Internet. Änderungen schlägt er nur vor.',

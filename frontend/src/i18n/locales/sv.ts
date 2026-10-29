@@ -237,6 +237,22 @@ export default {
       overlap: 'Tom och belagd överlappar: inget rent tröskelvärde. Ta om referensen eller jämna ut ljuset.',
     },
   },
+  selfTest: {
+    title: 'Systemkontroll',
+    intro: 'Kontrollerar i ett svep om databas, schemaläggare, övervakning, skrivare, prognos, aviseringskanaler, säkerhetskopior, enhetens tillstånd, inloggning, uppdateringsskydd och assistent verkligen fungerar. Ett testmeddelande skickas via dina kanaler och modellen får en testfråga.',
+    run: 'Kontrollera nu',
+    again: 'Kontrollera igen',
+    running: 'Kontrollerar …',
+    wait: 'Det kan ta längre tid om modellen svarar långsamt (upp till två minuter).',
+    summary: '{{ok}} i ordning, {{warn}} anmärkningar, {{fail}} fel, {{skip}} hoppades över',
+    checkedAt: 'Kontrollerad kl. {{time}}',
+    status: {
+      ok: 'I ordning',
+      warn: 'Anmärkning',
+      fail: 'Fel',
+      skip: 'Hoppades över',
+    },
+  },
   assistant: {
     title: 'Assistent',
     intro: 'En lokal AI-assistent besvarar frågor om driften, förklarar fel och skriver utkast till texter. Modellen körs på den här enheten eller i ditt nätverk; ingenting går ut på internet. Den föreslår bara ändringar.',

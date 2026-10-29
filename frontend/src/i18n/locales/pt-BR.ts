@@ -237,6 +237,22 @@ export default {
       overlap: 'Vazia e ocupada se sobrepõem: não há limite limpo. Refaça a referência ou uniformize a luz.',
     },
   },
+  selfTest: {
+    title: 'Verificação do sistema',
+    intro: 'Verifica de uma vez se banco de dados, agendador, monitoramento, impressoras, previsão, canais de aviso, backups, estado do dispositivo, login, proteção de atualização e assistente realmente funcionam. Envia uma mensagem de teste pelos seus canais e faz uma pergunta de teste ao modelo.',
+    run: 'Verificar agora',
+    again: 'Verificar novamente',
+    running: 'Verificando …',
+    wait: 'Pode demorar mais se o modelo responder devagar (até dois minutos).',
+    summary: '{{ok}} ok, {{warn}} avisos, {{fail}} erros, {{skip}} ignorados',
+    checkedAt: 'Verificado às {{time}}',
+    status: {
+      ok: 'Ok',
+      warn: 'Aviso',
+      fail: 'Erro',
+      skip: 'Ignorado',
+    },
+  },
   assistant: {
     title: 'Assistente',
     intro: 'Um assistente de IA local responde perguntas sobre a operação, explica erros e redige textos. O modelo roda neste dispositivo ou na sua rede; nada vai para a internet. Ele apenas sugere alterações.',

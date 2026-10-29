@@ -237,6 +237,22 @@ export default {
       overlap: 'Empty and occupied overlap: no clean threshold is possible. Retake the reference or even out the lighting.',
     },
   },
+  selfTest: {
+    title: 'System check',
+    intro: 'Checks in one run whether the database, scheduler, watch, printers, forecast, notification channels, backups, device health, sign-in, update guard and assistant really work. It sends a test message through your notification channels and asks the model a test question.',
+    run: 'Check now',
+    again: 'Check again',
+    running: 'Checking …',
+    wait: 'This can take longer if the model answers slowly (up to two minutes).',
+    summary: '{{ok}} fine, {{warn}} notices, {{fail}} errors, {{skip}} skipped',
+    checkedAt: 'Checked at {{time}}',
+    status: {
+      ok: 'Fine',
+      warn: 'Notice',
+      fail: 'Error',
+      skip: 'Skipped',
+    },
+  },
   assistant: {
     title: 'Assistant',
     intro: 'A local AI assistant answers questions about operations, explains errors and drafts texts. The model runs on this device or in your network; nothing goes to the internet. It only suggests changes.',

@@ -26,6 +26,9 @@ CHECK_INTERVAL_SECONDS = 300
 EVENT_FIELD = "on_queue_due_risk"
 EVENT_TYPE = "queue_due_risk"
 
+# Zustand der Überwachung für die Systemprüfung (services/selftest.py)
+STATE: dict[str, object] = {"started": None, "last_run": None, "last_error": None}
+
 
 def _job_name(item: PrintQueueItem) -> str:
     archive = getattr(item, "archive", None)
@@ -137,17 +140,47 @@ async def notify_due_risk(db, item: PrintQueueItem, expected_end: datetime | Non
     return True
 
 
+async def send_test(db) -> tuple[int, list[str]]:
+    """Probemeldung „Termin in Gefahr" an jeden Kanal, der sie will; (Anzahl erfolgreich, Kanäle mit Fehler)."""
+    from backend.app.services.notification_service import notification_service as service
+
+    providers = await service._get_providers_for_event(db, EVENT_FIELD, None)
+    if not providers:
+        return 0, []
+    variables = {
+        "job_name": "Testauftrag (Systemprüfung)",
+        "due": "-",
+        "expected": "-",
+        "reason": "This is a test message from the system check.",
+    }
+    title, message = await service._build_message_from_template(db, EVENT_TYPE, variables)
+    sent, failed = 0, []
+    for provider in providers:
+        success, error = await service._send_to_provider(
+            provider, f"Test: {title}", message, db, event_type=EVENT_TYPE, variables=variables, photo_cache={}
+        )
+        await service._update_provider_status(db, provider.id, success, None if success else error)
+        if success:
+            sent += 1
+        else:
+            failed.append(f"{provider.name} ({error})")
+    return sent, failed
+
+
 async def run(session_factory, interval: float = CHECK_INTERVAL_SECONDS) -> None:
     """Dauerschleife für den Hintergrund; Fehler werden protokolliert und brechen sie nicht ab."""
     from backend.app.services.printer_manager import printer_manager
 
+    STATE["started"] = datetime.now(timezone.utc)
     await asyncio.sleep(60)  # nach dem Start erst die Drucker verbinden lassen
     while True:
         try:
             async with session_factory() as db:
                 await check_due_dates(db, printer_manager.get_status, notify_due_risk)
+            STATE["last_run"], STATE["last_error"] = datetime.now(timezone.utc), None
         except asyncio.CancelledError:
             raise
-        except Exception:
+        except Exception as exc:
             logger.exception("Queue due-date check failed")
+            STATE["last_error"] = str(exc)[:200]
         await asyncio.sleep(interval)

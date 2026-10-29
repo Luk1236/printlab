@@ -3,6 +3,17 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.11.0 (in Arbeit) — Systemprüfung
+
+- **Systemprüfung** (Wartung → System): Ein Knopf prüft in einem Durchlauf Datenbank, Druckplaner, Termin-Überwachung, Drucker,
+  Prognose, Meldekanäle, Sicherungen, Gerätezustand, Anmeldung, Update-Schutz und den Assistenten. Jede Zeile zeigt Ampel,
+  Befund und, wenn etwas nicht stimmt, was zu tun ist. Eine Prüfung, die selbst abstürzt, stoppt die anderen nicht.
+- **Zwei Proben laufen bewusst mit:** eine **Testmeldung „Termin in Gefahr"** über die Kanäle, die sie wollen (pro Kanal
+  einzeln ausgewertet, ein Fehler erscheint mit dem Kanalnamen), und eine **Probefrage an das Modell** des Assistenten mit
+  Antwortzeit. So zeigt sich am echten Gerät, ob Meldungen ankommen und das Modell brauchbar antwortet.
+- **Termin-Überwachung** merkt sich Start, letzten Durchlauf und letzten Fehler, damit die Prüfung sagen kann, ob sie lebt.
+- Die Probefrage teilt sich die Sperre mit dem Chat; läuft gerade eine Antwort, wird die Probe übersprungen.
+
 ## v1.10.0 (29.10.2026) — Lokaler KI-Assistent
 
 - **Assistent (Wartung → Reiter „Assistent")** mit einem lokalen Sprachmodell, das auf dem Pi (oder einem Rechner im Netz)
