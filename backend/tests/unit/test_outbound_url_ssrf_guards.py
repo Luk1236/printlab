@@ -39,7 +39,7 @@ from backend.app.api.routes._spoolman_helpers import assert_safe_spoolman_url
 from backend.app.api.routes._url_safety import assert_safe_lan_service_url
 from backend.app.schemas.auth import OIDCProviderCreate, OIDCProviderUpdate
 from backend.app.schemas.settings import LAN_SERVICE_URL_SETTINGS, AppSettingsUpdate
-from backend.app.services import notification_service as ns
+from backend.app.services import notification_service as ns, notification_utils as nu
 from backend.app.services.homeassistant import HomeAssistantService
 from backend.app.services.rest_smart_plug import RESTSmartPlugService
 from backend.app.services.tasmota import TasmotaService
@@ -303,7 +303,7 @@ def test_opaque_failure_does_not_return_the_response_body():
 def test_opaque_failure_logs_the_body_for_the_operator(caplog):
     """The body stays available to whoever administers the host — via logs,
     not via the API response."""
-    with caplog.at_level("DEBUG", logger=ns.__name__):
+    with caplog.at_level("DEBUG", logger=nu.__name__):
         ns._opaque_http_failure(_response(), label="ntfy server")
 
     assert SECRET_BODY in caplog.text

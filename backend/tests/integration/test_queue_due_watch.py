@@ -116,9 +116,78 @@ class TestCheck:
         notifier = Recorder(result=False)
         assert await watch.check_due_dates(db, no_status, notifier, NOW) == []
         await db.refresh(item)
-        assert item.due_risk_notified is False
+        assert item.due_risk_notified is False and item.due_risk_retry_pending is True
         notifier.result = True
-        assert await watch.check_due_dates(db, no_status, notifier, NOW) == [item.id]
+        assert await watch.check_due_dates(db, no_status, notifier, NOW + timedelta(minutes=5)) == [item.id]
+        await db.refresh(item)
+        assert item.due_risk_notified is True and item.due_risk_retry_pending is False
+
+    @pytest.mark.asyncio
+    async def test_a_failed_notification_is_retried_with_growing_gaps(self, base):
+        db, printer, archive = base
+        item = await add(db, printer, archive, due_at=NOW + timedelta(minutes=10))
+        notifier = Recorder(result=False)
+        await watch.check_due_dates(db, no_status, notifier, NOW)
+        await db.refresh(item)
+        assert item.due_risk_notify_count == 1 and item.due_risk_retry_pending is True
+        # Vor Ablauf der Wartezeit wird nicht noch einmal gesendet.
+        assert await watch.check_due_dates(db, no_status, notifier, NOW + timedelta(minutes=4)) == []
+        assert len(notifier.calls) == 1
+        # Nach fünf Minuten schon.
+        await watch.check_due_dates(db, no_status, notifier, NOW + timedelta(minutes=5))
+        assert len(notifier.calls) == 2
+        # Danach verdoppelt sich der Abstand: nach weiteren fünf Minuten noch nicht, nach zehn schon.
+        assert await watch.check_due_dates(db, no_status, notifier, NOW + timedelta(minutes=10)) == []
+        assert len(notifier.calls) == 2
+        await watch.check_due_dates(db, no_status, notifier, NOW + timedelta(minutes=15))
+        assert len(notifier.calls) == 3
+
+    @pytest.mark.asyncio
+    async def test_a_retry_that_succeeds_marks_the_job_and_stops(self, base):
+        db, printer, archive = base
+        item = await add(db, printer, archive, due_at=NOW + timedelta(minutes=10))
+        notifier = Recorder(result=False)
+        await watch.check_due_dates(db, no_status, notifier, NOW)
+        notifier.result = True
+        assert await watch.check_due_dates(db, no_status, notifier, NOW + timedelta(minutes=5)) == [item.id]
+        await db.refresh(item)
+        assert item.due_risk_notified is True and item.due_risk_notify_count == 2
+        assert await watch.check_due_dates(db, no_status, notifier, NOW + timedelta(hours=1)) == []
+        assert len(notifier.calls) == 2
+
+    @pytest.mark.asyncio
+    async def test_after_five_failed_attempts_the_message_rests_until_recovery(self, base):
+        db, printer, archive = base
+        item = await add(db, printer, archive, due_at=NOW + timedelta(minutes=10))
+        notifier = Recorder(result=False)
+        for attempt in range(watch.MAX_NOTIFY_ATTEMPTS):
+            await watch.check_due_dates(db, no_status, notifier, NOW + timedelta(hours=2 * attempt))
+        assert len(notifier.calls) == watch.MAX_NOTIFY_ATTEMPTS
+        await db.refresh(item)
+        assert item.due_risk_notify_count == watch.MAX_NOTIFY_ATTEMPTS
+        # Der nächste Durchlauf nimmt die Wiederholung zurück und bleibt ruhig.
+        assert await watch.check_due_dates(db, no_status, notifier, NOW + timedelta(days=1)) == []
+        await db.refresh(item)
+        assert item.due_risk_retry_pending is False and item.due_risk_notified is False
+        assert len(notifier.calls) == watch.MAX_NOTIFY_ATTEMPTS
+        # Sobald er wieder in den Plan passt, beginnt die Prüfung von vorn.
+        item.due_at = NOW + timedelta(days=30)
+        await db.commit()
+        await watch.check_due_dates(db, no_status, notifier, NOW + timedelta(days=1))
+        await db.refresh(item)
+        assert item.due_risk_notify_count == 0 and item.due_risk_notified is False
+
+    @pytest.mark.asyncio
+    async def test_without_any_channel_nothing_counts_as_an_attempt(self, base):
+        db, printer, archive = base
+        item = await add(db, printer, archive, due_at=NOW + timedelta(minutes=10))
+
+        async def no_channels(_db, _item, _end, _overdue):
+            return None
+
+        assert await watch.check_due_dates(db, no_status, no_channels, NOW) == []
+        await db.refresh(item)
+        assert item.due_risk_notify_count == 0 and item.due_risk_retry_pending is False
 
     @pytest.mark.asyncio
     async def test_a_failing_notifier_does_not_stop_the_other_jobs(self, base):
@@ -173,14 +242,14 @@ class TestNotifyDueRisk:
         assert send.call_args.args[1:3] == ("Titel", "Text")
 
     @pytest.mark.asyncio
-    async def test_returns_false_without_providers(self, base):
+    async def test_returns_none_without_providers(self, base):
         db, printer, archive = base
         item = await add(db, printer, archive, due_at=NOW + timedelta(hours=1))
         with patch(
             "backend.app.services.notification_service.notification_service._get_providers_for_event",
             AsyncMock(return_value=[]),
         ):
-            assert await watch.notify_due_risk(db, item, None, overdue=True) is False
+            assert await watch.notify_due_risk(db, item, None, overdue=True) is None
 
 
 class TestProviderField:

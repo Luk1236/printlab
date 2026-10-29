@@ -11,7 +11,8 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import datetime, timezone
-from sqlalchemy import select, text
+
+from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from backend.app.models.print_queue import PrintQueueItem, PrintQueueVariant
@@ -25,6 +26,10 @@ logger = logging.getLogger(__name__)
 CHECK_INTERVAL_SECONDS = 300
 EVENT_FIELD = "on_queue_due_risk"
 EVENT_TYPE = "queue_due_risk"
+# Nach so vielen vergeblichen Zustellversuchen wird nicht weiter nachprobiert.
+MAX_NOTIFY_ATTEMPTS = 5
+# Längste Wartezeit zwischen zwei Versuchen (der Abstand verdoppelt sich).
+MAX_RETRY_DELAY_SECONDS = 3600
 
 # Zustand der Überwachung für die Systemprüfung (services/selftest.py)
 STATE: dict[str, object] = {"started": None, "last_run": None, "last_error": None}
@@ -68,17 +73,35 @@ async def _sjf_enabled(db) -> bool:
     return str(row or "").lower() == "true"
 
 
+def _clear_risk(item: PrintQueueItem) -> None:
+    """Auftrag ist nicht (mehr) in Gefahr: Markierungen zurücksetzen."""
+    item.due_risk_notified = False
+    item.due_risk_retry_pending = False
+    item.due_risk_notify_count = 0
+
+
+def _retry_ready(item: PrintQueueItem, now: datetime) -> bool:
+    """Nach einem Fehlversuch warten: 5, 10, 20, 40 … Minuten, höchstens eine Stunde."""
+    last = item.due_risk_last_notified
+    if last is None:
+        return True
+    if last.tzinfo is None:
+        last = last.replace(tzinfo=timezone.utc)
+    delay = min(CHECK_INTERVAL_SECONDS * 2 ** max(item.due_risk_notify_count - 1, 0), MAX_RETRY_DELAY_SECONDS)
+    return (now - last).total_seconds() >= delay
+
+
 async def check_due_dates(db, status_of, notifier, now: datetime | None = None) -> list[int]:
     """Prüfen und melden; gibt die Nummern der Aufträge zurück, die neu in Gefahr sind.
 
     ``notifier(db, item, expected_end, overdue)`` verschickt die Meldung und liefert True, wenn sie an mindestens einen
-    Kanal ging; nur dann gilt der Auftrag als gemeldet.
+    Kanal ging; nur dann gilt der Auftrag als gemeldet. Liefert er ``None``, ist kein Kanal eingeschaltet — das zählt
+    nicht als Fehlversuch, die Meldung geht nach, sobald ein Kanal eingerichtet ist.
 
-    Zusätzlich: Wenn ``due_risk_retry_pending`` wahr ist, wird im gleichen Zyklus automatisch
-    nachprobiert ( kanalausfall-freundlich ), und zwar solange, bis ein Kanal erfolgreich ist
-    oder die maximale Anzahl an Versuchen überschritten ist ( optional via
-    ``due_risk_max_retries`` Setting, Default 5 ).
-
+    Schlägt die Zustellung fehl (oder meldet sich der Kanal mit einem Fehler), wird im nächsten Durchlauf erneut
+    versucht: zunächst nach fünf Minuten, dann mit verdoppeltem Abstand. Nach ``MAX_NOTIFY_ATTEMPTS`` Versuchen ruht
+    die Meldung (``due_risk_retry_pending`` wird zurückgenommen, der Auftrag bleibt aber ungemeldet), bis der Auftrag
+    wieder in den Plan passt — dann beginnt die Prüfung von vorn.
     """
     now = now or datetime.now(timezone.utc)
     result = await db.execute(
@@ -93,9 +116,9 @@ async def check_due_dates(db, status_of, notifier, now: datetime | None = None) 
     items = list(result.scalars().all())
     if not any(item.due_at is not None for item in items if item.status == "pending"):
         # nichts zu prüfen; aber Markierungen aufräumen, falls ein Termin entfernt wurde
-        changed = [item for item in items if item.due_risk_notified and item.due_at is None]
+        changed = [item for item in items if item.due_at is None]
         for item in changed:
-            item.due_risk_notified = False
+            _clear_risk(item)
         if changed:
             await db.commit()
         return []
@@ -108,108 +131,62 @@ async def check_due_dates(db, status_of, notifier, now: datetime | None = None) 
         if item.status != "pending":
             continue
         if item.due_at is None:
-            item.due_risk_notified = False
+            _clear_risk(item)
             continue
         due = item.due_at if item.due_at.tzinfo else item.due_at.replace(tzinfo=timezone.utc)
         end = ends.get(item.id)
         overdue = due < now
         at_risk = overdue or (end is not None and end > due)
 
-        # Retry-Logik: wenn due_risk_retry_pending gesetzt ist, nachprobieren
+        if not at_risk:
+            _clear_risk(item)
+            continue
+        if item.due_risk_notified:
+            continue
         if item.due_risk_retry_pending:
-            # Konfigurierbare Maximale Anzahl an Retries (Default 5)
-            # Settings-Key ist im Settings-Modell hinterlegt: due_risk_max_retries
-            # Fallback auf 5, wenn die Einstellung nicht existiert
-            max_retries = 5
+            if item.due_risk_notify_count >= MAX_NOTIFY_ATTEMPTS:
+                item.due_risk_retry_pending = False
+                logger.warning(
+                    "Due-risk notification for queue item %s failed %s times; waiting for the job to recover",
+                    item.id,
+                    item.due_risk_notify_count,
+                )
+                continue
+            if not _retry_ready(item, now):
+                continue
 
-            # Exponentielles Backoff in Sekunden: 1, 2, 4, 8, 16 … (begrenzt auf 300 s = 5 Min)
-            backoff_seconds = min(2 ** item.due_risk_notify_count, 300)
-
-            try:
-                sent = await notifier(db, item, end, overdue)
-                if sent:
-                    # Erfolg: Status zurücksetzen
-                    await db.execute(
-                        text(
-                            "UPDATE print_queue SET due_risk_notified = TRUE, "
-                            "due_risk_last_notified = :now, due_risk_retry_pending = FALSE, "
-                            "due_risk_notify_count = due_risk_notify_count + 1 "
-                            "WHERE id = :item_id"
-                        ),
-                        {"now": datetime.now(timezone.utc), "item_id": item.id},
-                    )
-                    await db.commit()
-                    newly.append(item.id)
-                    continue  # nächster Auftrag
-                # fehlgeschlagen: Zähler erhöhen
-                await db.execute(
-                    text(
-                        "UPDATE print_queue SET due_risk_notify_count = due_risk_notify_count + 1 "
-                        "WHERE id = :item_id"
-                    ),
-                    {"item_id": item.id},
-                )
-                await db.commit()
-            except Exception as exc:
-                logger.exception("Due-risk retry for item %s failed", item.id)
-                await db.execute(
-                    text(
-                        "UPDATE print_queue SET due_risk_notify_count = due_risk_notify_count + 1, "
-                        "due_risk_retry_pending = FALSE "
-                        "WHERE id = :item_id"
-                    ),
-                    {"item_id": item.id},
-                )
-                await db.commit()
-            # else: fall durchlaufen weiter (kein else-block, nächster Iterationsschritt)
-        elif not at_risk:
-            item.due_risk_notified = False
-        elif not item.due_risk_notified:
-            try:
-                sent = await notifier(db, item, end, overdue)
-                if sent:
-                    item.due_risk_notified = True
-                    newly.append(item.id)
-                else:
-                    # Erstmalig fehlgeschlagen → retry-pending setzen
-                    await db.execute(
-                        text(
-                            "UPDATE print_queue SET due_risk_retry_pending = TRUE, "
-                            "due_risk_notify_count = due_risk_notify_count + 1 "
-                            "WHERE id = :item_id"
-                        ),
-                        {"item_id": item.id},
-                    )
-                    await db.commit()
-            except Exception as exc:
-                logger.exception("Due-risk notification for item %s failed", item.id)
-                # Fehler ist kein Retry-Auslöser, sondern nur Log
-                await db.execute(
-                    text(
-                        "UPDATE print_queue SET due_risk_retry_pending = TRUE, "
-                        "due_risk_notify_count = due_risk_notify_count + 1 "
-                        "WHERE id = :item_id"
-                    ),
-                    {"item_id": item.id},
-                )
-                await db.commit()
+        try:
+            sent = await notifier(db, item, end, overdue)
+        except Exception:
+            logger.exception("Due-risk notification for item %s failed", item.id)
+            sent = False
+        if sent is None:
+            # Kein Kanal eingeschaltet: kein Versuch, kein Zähler.
+            continue
+        item.due_risk_notify_count += 1
+        item.due_risk_last_notified = now
+        if sent:
+            item.due_risk_notified = True
+            item.due_risk_retry_pending = False
+            newly.append(item.id)
+        else:
+            item.due_risk_retry_pending = True
     await db.commit()
     return newly
 
 
-async def notify_due_risk(db, item: PrintQueueItem, expected_end: datetime | None, overdue: bool) -> bool:
+async def notify_due_risk(db, item: PrintQueueItem, expected_end: datetime | None, overdue: bool) -> bool | None:
     """Meldung ``queue_due_risk`` über die Kanäle verschicken.
 
-    Gibt True zurück, wenn mind. ein Kanal erfolgreich war.
-    Setzt ``due_risk_retry_pending``, wenn send gescheitert ist, damit im nächsten Zyklus
-    automatisch neu probiert wird ( kanalausfall-freundlich ).
-    Speichert ``due_risk_last_notified`` und incrementiert ``due_risk_notify_count``.
+    Gibt True zurück, wenn mindestens ein Kanal erfolgreich war, False, wenn alle Versuche fehlschlugen, und None,
+    wenn kein Kanal das Ereignis eingeschaltet hat. Den Zustand am Auftrag (``due_risk_*``) führt der Aufrufer
+    (``check_due_dates``), damit Zähler und Wiederholung an einer Stelle liegen.
     """
     from backend.app.services.notification_service import notification_service
 
     providers = await notification_service._get_providers_for_event(db, EVENT_FIELD, None)
     if not providers:
-        return False
+        return None
     variables = {
         "job_name": _job_name(item),
         "due": _fmt(item.due_at),
@@ -217,34 +194,10 @@ async def notify_due_risk(db, item: PrintQueueItem, expected_end: datetime | Non
         "reason": "The due date has passed." if overdue else "Expected to finish after the due date.",
     }
     title, message = await notification_service._build_message_from_template(db, EVENT_TYPE, variables)
-    # send_to_providers mit Rückgabe der Ergebnisse
     results = await notification_service._send_to_providers_with_results(
         providers, title, message, db, EVENT_TYPE, variables=variables
     )
-    # mind. ein Kanal erfolgreich
-    if any(success for success, _ in results):
-        await db.execute(
-            text(
-                "UPDATE print_queue SET due_risk_notified = TRUE, "
-                "due_risk_last_notified = :now, due_risk_retry_pending = FALSE, "
-                "due_risk_notify_count = due_risk_notify_count + 1 "
-                "WHERE id = :item_id"
-            ),
-            {"now": datetime.now(timezone.utc), "item_id": item.id},
-        )
-        await db.commit()
-        return True
-    # keiner erfolgreich → retry-pending setzen
-    await db.execute(
-        text(
-            "UPDATE print_queue SET due_risk_retry_pending = TRUE, "
-            "due_risk_notify_count = due_risk_notify_count + 1 "
-            "WHERE id = :item_id"
-        ),
-        {"item_id": item.id},
-    )
-    await db.commit()
-    return False
+    return any(success for success, _ in results)
 
 
 async def send_test(db) -> tuple[int, list[str]]:

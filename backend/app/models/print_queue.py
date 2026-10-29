@@ -78,13 +78,13 @@ class PrintQueueItem(Base):
     )  # services/queue_due_watch.py
     due_risk_last_notified: Mapped[datetime | None] = mapped_column(
         DateTime, nullable=True
-    )  # wann letzte Meldung gesendet wurde
+    )  # Zeitpunkt des letzten Zustellversuchs (nicht nur des erfolgreichen)
     due_risk_notify_count: Mapped[int] = mapped_column(
         Integer, default=0
-    )  # Anzahl der Meldungs-Versuche
+    )  # Anzahl der Meldungs-Versuche seit der letzten Erholung
     due_risk_retry_pending: Mapped[bool] = mapped_column(
         Boolean, default=False
-    )  # ob aktuell ein Retry läuft
+    )  # Zustellung fehlgeschlagen, Wiederholung steht aus
 
     # Auto-print G-code injection (#422)
     gcode_injection: Mapped[bool] = mapped_column(Boolean, default=False)

@@ -1,42 +1,15 @@
-"""Shared utilities for notification providers.
+"""Hilfsfunktionen der Meldungs-Kanäle, aus ``notification_service`` ausgelagert.
 
-Extracted from notification_service.py to keep that file within its line budget
-(3000 lines). Contains pure functions and the NotificationService class moved
-here with its dependencies re-routed.
-
-Usage in notification_service.py:
-  from backend.app.services.notification_utils import (
-      telegram_markdown_escape,
-      _looks_like_cloudflare_challenge,
-      _assert_safe_provider_url,
-      NotificationService,
-  )
+Reine Funktionen ohne Zustand: Telegram-Escaping, die Erkennung von
+Cloudflare-Herausforderungen, die Prüfung von Kanal-Adressen aus der
+Benutzerkonfiguration und das Beispielbild für Testmeldungen. Sie bleiben
+dadurch unabhängig testbar und halten ``notification_service.py`` unter dem
+Zeilenbudget (``test_file_size_budget.py``).
 """
 
-import asyncio
-import html
-import json
 import logging
-import re
-import smtplib
-from datetime import datetime, timedelta, timezone
-from email.mime.image import MIMEImage
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from typing import Any
-from urllib.parse import quote
 
 import httpx
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from backend.app.models.notification import (
-    NotificationDigestQueue,
-    NotificationLog,
-    NotificationProvider,
-    TelegramPendingVerdict,
-)
-from backend.app.models.notification_template import NotificationTemplate
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +18,8 @@ def telegram_markdown_escape(message: str) -> str:
     """Escape underscores in the message body so Telegram Markdown parsing
     doesn't break on job names like "A1_plate_8" or error codes like
     "0300_0001". The title is already wrapped in *bold* markers, so only
-    escape after the first newline."""
+    escape after the first newline. Shared with the reaction poller, which
+    re-sends the stored body when it edits the prompt (#3046)."""
     if "\n" in message:
         title_part, body_part = message.split("\n", 1)
         body_part = body_part.replace("_", "\\_")
@@ -95,24 +69,77 @@ def _assert_safe_provider_url(url: str, *, label: str) -> str | None:
     than raising, so a message is more useful here than an exception.
 
     Uses the LAN-service policy: self-hosting ntfy, Bark, Gotify or a webhook
+    receiver on the home LAN is normal and must keep working, so loopback and
+    RFC-1918 stay permitted. Cloud-metadata endpoints, numeric-encoded IPs and
+    non-HTTP schemes are rejected.
     """
-    # Validate that the URL uses an allowed scheme
-    allowed_schemes = ["http", "https", "file"]
-    from urllib.parse import urlparse
-    parsed = urlparse(url)
-    if parsed.scheme not in allowed_schemes:
-        return f"URL scheme '{parsed.scheme}' is not allowed. Use http, https, or file."
-    # Basic host validation
-    if not parsed.hostname:
-        return "URL must contain a hostname."
+    from backend.app.api.routes._url_safety import assert_safe_lan_service_url
+
+    try:
+        assert_safe_lan_service_url(url, label=label)
+    except ValueError as exc:
+        return str(exc)
     return None
 
 
-class NotificationService:
-    """Notification service for sending push notifications via various providers.
+def _opaque_http_failure(response: httpx.Response, *, label: str) -> str:
+    """Failure message for a provider whose destination host the user supplies.
 
-    This class was moved from notification_service.py to keep that file within
-    its line budget. All imports have been updated to reference utilities from
-    notification_utils.py.
+    The response body is deliberately **not** returned to the caller. Provider
+    URLs are configurable by anyone holding ``NOTIFICATIONS_CREATE`` — which
+    the default Operators group carries and which does not imply
+    ``SETTINGS_UPDATE`` — and ``POST /notifications/test-config`` accepts a URL
+    straight from the request body without persisting anything. Echoing the
+    response body there turned an intended "does my webhook work?" check into
+    an authenticated read primitive against any host the PrintLab process can
+    reach, including services that are not exposed to the network at all.
+
+    Providers whose host PrintLab hardcodes (Pushover, Telegram, CallMeBot)
+    keep returning the upstream body — there is no trust boundary to cross
+    when the destination cannot be influenced.
+
+    The body is logged at debug level, where it stays available to whoever
+    already administers the host without being handed back over the API.
     """
-    pass
+    logger.debug(
+        "%s delivery failed with HTTP %s; body: %s",
+        label,
+        response.status_code,
+        (response.text or "")[:200],
+    )
+    return f"HTTP {response.status_code} from the configured {label} (see server logs at debug level for details)"
+
+
+_sample_notification_image: bytes | None = None
+_sample_notification_image_loaded = False
+
+
+def _load_sample_notification_image() -> bytes | None:
+    """Render the bundled app screenshot as a small JPEG.
+
+    Stands in for a real camera snapshot on Test Configuration / test-all,
+    since there's no live print to capture one from. Cached after the first
+    call so we're not re-reading and resizing the file on every click.
+    """
+    global _sample_notification_image, _sample_notification_image_loaded
+    if _sample_notification_image_loaded:
+        return _sample_notification_image
+    _sample_notification_image_loaded = True
+    try:
+        from io import BytesIO
+
+        from PIL import Image
+
+        from backend.app.core.config import settings
+
+        source_path = settings.static_dir / "img" / "screenshot-desktop.png"
+        with Image.open(source_path) as img:
+            resized = img.convert("RGB")
+            resized.thumbnail((640, 640))
+            buffer = BytesIO()
+            resized.save(buffer, format="JPEG", quality=85)
+            _sample_notification_image = buffer.getvalue()
+    except Exception as e:
+        logger.warning("Failed to build sample notification image: %s", e)
+        _sample_notification_image = None
+    return _sample_notification_image
