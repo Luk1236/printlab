@@ -23,15 +23,35 @@ export function QuoteActualsPanel({ quoteId }: { quoteId: string }) {
   const { showToast } = useToast();
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState('');
+  const [targetPrinter, setTargetPrinter] = useState('');
+  const [priority, setPriority] = useState(1);
 
   const { data } = useQuery({ queryKey: ['quoteActuals', quoteId], queryFn: () => api.getQuoteActuals(quoteId) });
   const { data: archives } = useQuery({ queryKey: ['archivesRecent'], queryFn: () => api.getArchives(undefined, undefined, 100) });
+  const { data: printers } = useQuery({ queryKey: ['printers'], queryFn: api.getPrinters });
 
   const link = useMutation({
     mutationFn: (ids: number[]) => api.linkQuoteArchives(quoteId, ids),
     onSuccess: () => {
       setSelected('');
       queryClient.invalidateQueries({ queryKey: ['quoteActuals', quoteId] });
+    },
+    onError: (error: Error) => showToast(error.message, 'error'),
+  });
+
+  const enqueue = useMutation({
+    mutationFn: () =>
+      api.queueQuotePrints(quoteId, {
+        printer_id: targetPrinter ? Number(targetPrinter) : null,
+        priority,
+      }),
+    onSuccess: (result) => {
+      if (result.errors.length > 0) {
+        showToast(t('quote.enqueuedWithErrors', { queued: result.queued.length, errors: result.errors.length }), 'error');
+      } else {
+        showToast(t('quote.enqueued', { count: result.queued.length }));
+      }
+      queryClient.invalidateQueries({ queryKey: ['queue'] });
     },
     onError: (error: Error) => showToast(error.message, 'error'),
   });
@@ -118,6 +138,36 @@ export function QuoteActualsPanel({ quoteId }: { quoteId: string }) {
         </div>
       )}
       {data.missing_ids.length > 0 && <p className="text-amber-700 dark:text-amber-400">{t('quote.missingPrints', { ids: data.missing_ids.join(', ') })}</p>}
+      {data.linked > 0 && (
+        <div className="flex flex-wrap items-center gap-2 border-t border-bambu-dark-tertiary pt-1" data-testid="quote-actuals-enqueue">
+          <select
+            value={targetPrinter}
+            onChange={(event) => setTargetPrinter(event.target.value)}
+            aria-label={t('quote.enqueueTarget')}
+            className="bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-xs max-w-xs"
+          >
+            <option value="">{t('quote.assignLater')}</option>
+            {(printers ?? []).map((printer) => (
+              <option key={printer.id} value={printer.id}>
+                {printer.name}
+              </option>
+            ))}
+          </select>
+          <select
+            value={priority}
+            onChange={(event) => setPriority(Number(event.target.value))}
+            aria-label={t('quote.enqueuePriority')}
+            className="bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-xs"
+          >
+            <option value={2}>{t('queue.priorityUrgent')}</option>
+            <option value={1}>{t('queue.priorityNormal')}</option>
+            <option value={0}>{t('queue.priorityLow')}</option>
+          </select>
+          <Button size="sm" disabled={enqueue.isPending} onClick={() => enqueue.mutate()} aria-label={t('quote.enqueueJobs')}>
+            {t('quote.enqueueJobs')}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

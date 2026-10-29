@@ -17,6 +17,7 @@ from backend.app.api.routes import (
     plate_calibration,
     plate_tuning,
     quote,
+    quote_queue,
     selftest,
     spaghetti_check,
 )
@@ -38,3 +39,5 @@ def register_fork_routers(app: FastAPI, prefix: str) -> None:
     app.include_router(quote.router, prefix=prefix)
     # Monats-Report: Umsatz/Fertigung/Gewinn als Zahlenwerk und PDF.
     app.include_router(monthly_report.router, prefix=prefix)
+    # Angebot → Warteschlange: verknüpfte Druckjobs eines Angebots neu einreihen.
+    app.include_router(quote_queue.router, prefix=prefix)

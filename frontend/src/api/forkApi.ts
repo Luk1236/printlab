@@ -170,6 +170,20 @@ export interface AssistantAnswer {
   seconds: number;
 }
 
+export interface QuoteQueueRequest {
+  printer_id?: number | null;
+  target_model?: string | null;
+  priority?: number;
+  quantity?: number;
+}
+
+export interface QuoteQueueResult {
+  quote_id: string;
+  queued: { archive_id: number; queue_item_id: number | null }[];
+  errors: { archive_id: number; detail: string }[];
+  message: string;
+}
+
 export interface SelfTestResult {
   id: string;
   title: string;
@@ -266,6 +280,11 @@ export function createForkApi({ request, apiBase, getAuthToken }: ForkApiDeps) {
     assistantChat: (messages: { role: 'user' | 'assistant'; content: string }[], lang: string) =>
       request<AssistantAnswer>('/assistant/chat', { method: 'POST', body: JSON.stringify({ messages, lang }) }),
     getQuoteActuals: (id: string) => request<QuoteActuals>(`/quote/history/${encodeURIComponent(id)}/actuals`),
+    queueQuotePrints: (id: string, payload: QuoteQueueRequest) =>
+      request<QuoteQueueResult>(`/quote/history/${encodeURIComponent(id)}/queue`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
     linkQuoteArchives: (id: string, archiveIds: number[]) =>
       request<{ archive_ids: number[] }>(`/quote/history/${encodeURIComponent(id)}/archives`, {
         method: 'PUT',
