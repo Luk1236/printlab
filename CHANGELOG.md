@@ -3,7 +3,7 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
-## v1.11.0 (in Arbeit) — Systemprüfung und Sicherheit
+## v1.11.0 (29.10.2026) — Systemprüfung und Sicherheit
 
 - **Systemprüfung** (Wartung → System): Ein Knopf prüft in einem Durchlauf Datenbank, Druckplaner, Termin-Überwachung, Drucker,
   Prognose, Meldekanäle, Sicherungen, Gerätezustand, Anmeldung, Update-Schutz und den Assistenten. Jede Zeile zeigt Ampel,
