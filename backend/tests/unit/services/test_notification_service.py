@@ -1331,7 +1331,7 @@ class TestBarkProvider:
 
         with patch.object(service, "_get_client", new_callable=AsyncMock) as mock_get_client:
             mock_get_client.return_value = mock_client
-            with caplog.at_level("DEBUG", logger="backend.app.services.notification_service"):
+            with caplog.at_level("DEBUG", logger="backend.app.services.notification_utils"):
                 success, message = await service._send_bark({"device_key": "bad"}, "Title", "Body")
 
         assert success is False
@@ -2658,7 +2658,7 @@ class TestNtfyOutbound:
 
         with (
             patch.object(service, "_get_client", AsyncMock(return_value=mock_client)),
-            caplog.at_level("DEBUG", logger="backend.app.services.notification_service"),
+            caplog.at_level("DEBUG", logger="backend.app.services.notification_utils"),
         ):
             ok, detail = await service._send_ntfy(
                 {"server": "https://ntfy.sh", "topic": "alerts", "auth_token": "bad"},
@@ -2700,7 +2700,7 @@ class TestNtfyOutbound:
 
         with (
             patch.object(service, "_get_client", AsyncMock(return_value=mock_client)),
-            caplog.at_level("DEBUG", logger="backend.app.services.notification_service"),
+            caplog.at_level("DEBUG", logger="backend.app.services.notification_utils"),
         ):
             ok, detail = await service._send_ntfy(
                 {"server": "https://ntfy.example", "topic": "alerts", "auth_token": "wrong"},
