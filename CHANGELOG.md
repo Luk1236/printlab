@@ -3,7 +3,7 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
-## v1.10.0 (in Arbeit) — Lokaler KI-Assistent
+## v1.10.0 (29.10.2026) — Lokaler KI-Assistent
 
 - **Assistent (Wartung → Reiter „Assistent")** mit einem lokalen Sprachmodell, das auf dem Pi (oder einem Rechner im Netz)
   läuft; nichts geht ins Internet. Er beantwortet Fragen zum Betrieb (Drucker, Warteschlange, Prognose), erklärt Fehler und
