@@ -3,7 +3,7 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
-## v1.9.6 (in Arbeit) — Termin-Meldung
+## v1.9.6 (29.10.2026) — Termin-Meldung
 
 - **Meldung „Termin in Gefahr":** Rechnet die Prognose damit, dass ein wartender Auftrag nach seinem Liefertermin fertig
   wird (oder ist der Termin schon verstrichen), geht einmal eine Meldung über deine Kanäle (ntfy, Telegram, Pushover, E-Mail
