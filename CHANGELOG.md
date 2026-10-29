@@ -3,6 +3,20 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.12.1 (29.10.2026) — Meldungen, die ankommen
+
+- **Fälligkeits-Meldung gilt erst als zugestellt, wenn ein Kanal bestätigt.** Bisher markierte sich ein Auftrag als
+  gemeldet, sobald die Meldung abgeschickt war — fiel der Kanal in dem Moment aus, blieb der Hinweis aus und kam nie
+  wieder. Jetzt zählt die Bestätigung mindestens eines Kanals; scheitert die Zustellung, wird sie wiederholt
+  (nach 5 Minuten, danach mit verdoppeltem Abstand bis zu einer Stunde, höchstens fünf Versuche). Danach bleibt es
+  ruhig, bis der Auftrag wieder in den Plan passt. Ist gar kein Kanal eingeschaltet, zählt das nicht als Fehlversuch:
+  die Meldung geht nach, sobald einer eingerichtet ist.
+- **Meldungen und Oberfläche zeigen lokale Zeit**, wenn auf dem Pi `TZ` gesetzt ist (`docs/INSTALLATION-PI.md`).
+- Intern: `notification_service.py` wieder unter dem Zeilenbudget, indem die reinen Hilfsfunktionen nach
+  `notification_utils.py` wanderten und die Ergebnisvariante des Versands die alte Schleife ersetzt (kein Duplikat
+  mehr). Der fehlerhafte Entwurf `setup_firewall_rule.ps1` ist entfallen — `werkzeuge/firewall_regeln.ps1` deckt den
+  PC-Slicer-Port bereits ab.
+
 ## v1.12.0 (29.10.2026) — Geschäft, Warteschlange und Assistent
 
 - **Monats-Report** (Finanz-Seite → „Monats-Report"): Umsatz je Währung (Rechnungen ausgestellt/bezahlt/überfällig),

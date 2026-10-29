@@ -1,6 +1,6 @@
 # TODO — PrintLab
 
-**Stand:** 29.10.2026, Version 1.11.0 · **Basis:** Bambuddy 1.2.5.7 (AGPL-3.0, Herkunft: `NOTICE`) · **Branch:** `bambu-monitor-port`
+**Stand:** 29.10.2026, Version 1.12.1 · **Basis:** Bambuddy 1.2.5.7 (AGPL-3.0, Herkunft: `NOTICE`) · **Branch:** `bambu-monitor-port`
 
 Was fertig ist, steht mit Datum im `CHANGELOG.md`. Die ausführliche Bewertung (Risiken R1–R16, Verbesserungen, Erweiterungen)
 steht in `docs/ANALYSE-2026-10-28.md`, die Abnahme in `docs/ABNAHME.md`.
@@ -28,11 +28,7 @@ Update mit Rückbau, Überwachung mit Meldung, Angebote mit PDF, Kamera-Einmessu
 - [ ] Große Dateien schrittweise zerlegen (`main.py`, `PrintersPage.tsx`, `client.ts`, …); der Test
       `test_file_size_budget.py` verhindert nur das Wachsen. `main.py` ist bei der Grenze (11 067/11 075), neue
       Funktionen müssen in eigene Module.
-- [ ] Fälligkeits-Meldung: die Einmal-Markierung gilt auch, wenn der Meldungskanal damals ausgefallen ist; eine
-      Wiederholung erst bei bestätigtem Versand wäre kanalausfallfreundlicher.
-- [ ] Meldungs-Zeitstempel: auf einem Pi ohne Zeitzoneneinstellung stehen UTC-Zeiten im Text (kosmetisch).
 - [ ] Volle E2E-Prüfung MakerWorld → PC-Slicer → Warteschlange.
-- [ ] Windows-Firewallregel für den PC-Slicer-Port 3001 beim Wechsel auf `0.0.0.0`.
 - [ ] Docker-/ARM-Image auf einem Pi 4/5 starten und prüfen.
 
 ## Bewusst nicht im Fokus
