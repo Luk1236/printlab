@@ -1,4 +1,4 @@
-﻿"""Monats-Report: Grenzen der Aggregation (Datum, Status) und der PDF-Schreiber.
+"""Monats-Report: Grenzen der Aggregation (Datum, Status) und der PDF-Schreiber.
 
 Die datenbanknahen Teile (SQL-Aggregation, JSON-Ablagen) laufen in den
 Integration-Tests; hier nur das, was ohne Session prüfbar ist.
