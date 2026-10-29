@@ -273,6 +273,90 @@ export interface InvoicesResponse {
   overdue_ids: string[];
 }
 
+export interface ErrorPatternAction {
+  id: string;
+  title: string;
+  title_en: string;
+  command: string;
+  effect: string;
+  effect_en: string;
+  requires: string;
+}
+
+export interface ErrorPattern {
+  id: string;
+  category: string;
+  title: string;
+  title_en: string;
+  summary: string;
+  summary_en: string;
+  causes: string[];
+  slicer: string[];
+  automation: string[];
+  actions: string[];
+  rules: string[];
+}
+
+export interface ErrorCategory {
+  id: string;
+  title: string;
+  title_en: string;
+  hint: string;
+  hint_en: string;
+}
+
+export interface CountermeasureRuleInfo {
+  title: string;
+  title_en: string;
+  patterns: string[];
+}
+
+export interface ErrorHelpCatalog {
+  categories: ErrorCategory[];
+  patterns: ErrorPattern[];
+  manual_actions: ErrorPatternAction[];
+  rules: Record<string, CountermeasureRuleInfo>;
+}
+
+export interface CountermeasuresConfig {
+  enabled: boolean;
+  dry_run: boolean;
+  printers: Record<string, { enabled: boolean; rules: Record<string, boolean> }>;
+  thresholds: { hot_c: number; cold_c: number };
+  cooldown_seconds: number;
+  max_per_print: number;
+}
+
+export interface CountermeasurePrinter {
+  id: number;
+  name: string;
+  model: string | null;
+  chamber_supported: boolean;
+  enabled: boolean;
+  rules: Record<string, boolean>;
+  running: boolean;
+  state: string | null;
+  layer: number;
+  material: string | null;
+  chamber_c: number | null;
+  available_actions: { id: string; command: string }[];
+}
+
+export interface CountermeasuresResponse {
+  config: CountermeasuresConfig;
+  rules: Record<string, CountermeasureRuleInfo>;
+  printers: CountermeasurePrinter[];
+}
+
+export interface CountermeasureLogEntry {
+  ts: string;
+  action: string;
+  ok: boolean;
+  message: string;
+  printer_id: number | null;
+  details?: Record<string, unknown>;
+}
+
 export interface ForkApiDeps {
   request: <T>(endpoint: string, options?: RequestInit) => Promise<T>;
   apiBase: string;
@@ -477,5 +561,16 @@ export function createForkApi({ request, apiBase, getAuthToken }: ForkApiDeps) {
   setRemoteAccessSlicer: (enabled: boolean) =>
     request<RemoteAccessStatus>(`/remote-access/slicer?enabled=${enabled}`, { method: 'POST' }),
   disableRemoteAccess: () => request<RemoteAccessStatus>('/remote-access/disable', { method: 'POST' }),
+  getErrorHelp: () => request<ErrorHelpCatalog>('/error-help'),
+  getCountermeasures: () => request<CountermeasuresResponse>('/error-help/countermeasures'),
+  saveCountermeasures: (update: Partial<CountermeasuresConfig>) =>
+    request<CountermeasuresConfig>('/error-help/countermeasures', { method: 'PUT', body: JSON.stringify(update) }),
+  runCountermeasure: (printerId: number, actionId: string) =>
+    request<{ success: boolean; command: string; message: string }>(
+      `/error-help/countermeasures/${printerId}/action`,
+      { method: 'POST', body: JSON.stringify({ action_id: actionId }) }
+    ),
+  getCountermeasureLog: (limit = 30) =>
+    request<CountermeasureLogEntry[]>(`/error-help/countermeasures/log?limit=${limit}`),
   };
 }

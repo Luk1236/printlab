@@ -88,28 +88,27 @@ PRINTLAB_ALERT_TELEGRAM_CHAT=<deine Chat-Nummer>
 Der Timer liest die Datei bei jedem Lauf neu, ein Neustart ist nicht nötig. Status:
 `systemctl --user list-timers printlab-watch.timer`, Meldungen: `journalctl --user -u printlab-watch -n 20`.
 
-## Zeitzone konfigurieren (damit lokale Zeiten im Frontend und in Meldungen stimmen)
+## Zeitzone (lokale Zeiten in Oberfläche und Meldungen)
 
-PrintLab speichert alle Zeiten als UTC, zeigt sie aber im Frontend lokal an. Damit die Umrechnung korrekt funktioniert,
-muss die Raspberry Pi ``TZ`` Umgebung Variable gesetzt sein.
+PrintLab speichert alle Zeiten als UTC und rechnet sie für die Anzeige in die lokale Zeitzone um. Dafür liest die
+Anwendung die Umgebungsvariable `TZ` des Dienstes.
 
-**Auf dem Pi (Raspberry Pi OS):**
+Der Installer setzt sie beim Einrichten automatisch aus der Systemzeitzone des Pi
+(`Environment="TZ=…"` in `~/.config/systemd/user/printlab.service`). Stimmt die Systemzeitzone
+(`timedatectl`, bzw. `/etc/timezone`), ist nichts weiter zu tun. Wer den Dienst von Hand eingerichtet hat oder die
+Zeitzone später ändert:
 
 ```bash
-echo 'export TZ=Europe/Berlin' >> ~/.config/printlab.env
-```
-(Ersetze ``Europe/Berlin`` durch deine Zeitzone, z. B. ``Europe/Paris``, ``UTC``, ``America/New_York`` etc.)
-
-Das File ``/etc/timezone`` und das Paket ``tzdata`` sollten auf dem Pi bereits installiert sein. Nach einem Neustart
-oder ``systemctl --user restart printlab`` prüft PrintLab die TZ-Variable und passt die Anzeige entsprechend an.
-
-Alternativ kann die Zeitzone auch direkt in ``~/.config/printlab.env`` gesetzt werden:
-
-```
-TZ=Europe/Berlin
+sudo timedatectl set-timezone Europe/Berlin   # Systemzeitzone setzen
+# oder im Dienst ~/.config/systemd/user/printlab.service ergänzen:
+#   Environment="TZ=Europe/Berlin"
+systemctl --user daemon-reload && systemctl --user restart printlab
 ```
 
-Ohne TZ-Einstellung fallen alle Zeiten auf den Pi auf UTC (z. B. ``2026-10-29 14:30`` statt ``2026-10-29 16:30`` MEZ).
+`Europe/Berlin` durch die eigene Zeitzone ersetzen, z. B. `Europe/Paris`, `UTC`, `America/New_York`.
+
+Ohne `TZ` (oder mit einem unbekannten Wert) rechnet PrintLab in UTC: Zeiten erscheinen dann z. B. als
+`2026-10-29 14:30` statt `2026-10-29 16:30` (MEZ).
 
 ## Sicherung nach außen (USB-Stick, Festplatte, NAS)
 

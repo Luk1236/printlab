@@ -11,6 +11,7 @@ from fastapi import FastAPI
 from backend.app.api.routes import (
     assistant,
     customers,
+    error_help,
     failure_images,
     first_layer_inspector,
     hardware,
@@ -44,3 +45,5 @@ def register_fork_routers(app: FastAPI, prefix: str) -> None:
     app.include_router(quote_queue.router, prefix=prefix)
     # Kunden-Stamm: Adressbuch für Angebote und Rechnungen.
     app.include_router(customers.router, prefix=prefix)
+    # Fehlerhilfe: Fehlerbild-Bibliothek und optionale Gegenmaßnahmen.
+    app.include_router(error_help.router, prefix=prefix)

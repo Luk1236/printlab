@@ -1440,6 +1440,10 @@ class NotificationService:
                     printer_name=printer_name,
                 )
                 results.append((success, error or ""))
+                if success:
+                    logger.info("Sent notification via %s", provider.name)
+                else:
+                    logger.warning("Failed to send notification via %s: %s", provider.name, error)
             except Exception as e:
                 logger.exception("Error sending notification via %s", provider.name)
                 await self._update_provider_status(db, provider.id, False, str(e))

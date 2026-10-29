@@ -10,6 +10,7 @@ import { SettingsPage } from './pages/SettingsPage';
 import { FinancePage } from './pages/FinancePage';
 import { ProfilesPage } from './pages/ProfilesPage';
 import { MaintenancePage } from './pages/MaintenancePage';
+import { ErrorHelpPage } from './pages/ErrorHelpPage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { ProjectDetailPage } from './pages/ProjectDetailPage';
 import { FileManagerPage } from './pages/FileManagerPage';
@@ -219,6 +220,7 @@ function App() {
                   <Route path="profiles" element={<ProfilesPage />} />
                   <Route path="finance" element={<PermissionRoute permission="cost_centers:read_own"><FinancePage /></PermissionRoute>} />
                   <Route path="maintenance" element={<MaintenancePage />} />
+                  <Route path="error-help" element={<ErrorHelpPage />} />
                   <Route path="projects" element={<ProjectsPage />} />
                   <Route path="projects/:id" element={<ProjectDetailPage />} />
                   <Route path="inventory" element={<InventoryPage />} />
