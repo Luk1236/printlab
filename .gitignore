@@ -69,6 +69,8 @@ node_modules/
 # is unset, so base_dir resolves to the repo root). In Docker this sits
 # inside the /app/data volume and is already covered.
 .cache/
+notification_photos/
+failure_images/
 
 # JWT secret file (should be in data dir, but protect project root too)
 .jwt_secret
