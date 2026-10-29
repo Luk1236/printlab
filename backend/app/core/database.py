@@ -2883,6 +2883,11 @@ async def run_migrations(conn):
     await _safe_execute(conn, "ALTER TABLE notification_providers ADD COLUMN on_queue_due_risk BOOLEAN DEFAULT 1")
     await _safe_execute(conn, "ALTER TABLE notification_providers ADD COLUMN on_invoice_reminder BOOLEAN DEFAULT 1")
     await _safe_execute(conn, "ALTER TABLE print_queue ADD COLUMN due_risk_notified BOOLEAN DEFAULT FALSE NOT NULL")
+    # Migration: Add retry tracking for due-risk notifications
+    await _safe_execute(conn, "ALTER TABLE print_queue ADD COLUMN due_risk_last_notified DATETIME")
+    await _safe_execute(conn, "ALTER TABLE print_queue ADD COLUMN due_risk_notify_count INTEGER DEFAULT 0")
+    # Migration: Add retry tracking for due-risk notifications
+    await _safe_execute(conn, "ALTER TABLE print_queue ADD COLUMN due_risk_retry_pending BOOLEAN DEFAULT FALSE")
     await _safe_execute(conn, "ALTER TABLE notification_providers ADD COLUMN on_queue_job_failed BOOLEAN DEFAULT 1")
     await _safe_execute(conn, "ALTER TABLE notification_providers ADD COLUMN on_queue_completed BOOLEAN DEFAULT 0")
 

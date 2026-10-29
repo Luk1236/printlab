@@ -76,6 +76,15 @@ class PrintQueueItem(Base):
     due_risk_notified: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default="0"
     )  # services/queue_due_watch.py
+    due_risk_last_notified: Mapped[datetime | None] = mapped_column(
+        DateTime, nullable=True
+    )  # wann letzte Meldung gesendet wurde
+    due_risk_notify_count: Mapped[int] = mapped_column(
+        Integer, default=0
+    )  # Anzahl der Meldungs-Versuche
+    due_risk_retry_pending: Mapped[bool] = mapped_column(
+        Boolean, default=False
+    )  # ob aktuell ein Retry läuft
 
     # Auto-print G-code injection (#422)
     gcode_injection: Mapped[bool] = mapped_column(Boolean, default=False)
