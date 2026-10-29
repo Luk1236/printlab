@@ -186,6 +186,21 @@ def set_archives(entry_id: str, ids: Any) -> dict[str, Any] | None:
     return None
 
 
+def set_work_minutes(entry_id: str, minutes: int | None) -> dict[str, Any] | None:
+    """Zeitbuchung am Angebot setzen (None entfernt sie); ``None``, wenn es das Angebot nicht gibt."""
+    with _lock:
+        stored = _read()
+        for entry in stored:
+            if entry.get("id") == entry_id:
+                if minutes is None:
+                    entry.pop("work_minutes", None)
+                else:
+                    entry["work_minutes"] = int(minutes)
+                _write(stored)
+                return entry
+    return None
+
+
 def delete(entry_id: str) -> bool:
     with _lock:
         items = _read()

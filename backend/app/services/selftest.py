@@ -96,7 +96,8 @@ async def check_database(d: Deps) -> Result:
     missing = []
     for table, columns in (
         ("print_queue", "priority, due_at, due_risk_notified"),
-        ("notification_providers", "on_queue_due_risk"),
+        ("notification_providers", "on_queue_due_risk, on_invoice_reminder"),
+        ("customers", "name, address"),
     ):
         try:
             await d.db.execute(text(f"SELECT {columns} FROM {table} LIMIT 0"))  # noqa: S608 (feste Namen)

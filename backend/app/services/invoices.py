@@ -143,6 +143,15 @@ def mark_paid(invoice_id: str, paid_at: str | None = None) -> dict[str, Any]:
     return _update(invoice_id, change)
 
 
+def mark_reminded(invoice_id: str) -> dict[str, Any]:
+    """Merken, dass die Zahlungserinnerung für diese Rechnung raus ist (Zahlungserinnerung-Schleife)."""
+
+    def change(item: dict[str, Any]) -> None:
+        item["reminder_sent_at"] = datetime.now(timezone.utc).isoformat()
+
+    return _update(invoice_id, change)
+
+
 def reopen(invoice_id: str) -> dict[str, Any]:
     """Zurück auf „offen“ (zum Beispiel nach einer Fehlbuchung)."""
 
@@ -151,6 +160,7 @@ def reopen(invoice_id: str) -> dict[str, Any]:
             raise InvoiceError("Eine stornierte Rechnung lässt sich nicht wieder öffnen.")
         item["status"] = "open"
         item["paid_at"] = None
+        item["reminder_sent_at"] = None  # Zahlungserinnerung darf nach dem Wiederöffnen erneut kommen
 
     return _update(invoice_id, change)
 

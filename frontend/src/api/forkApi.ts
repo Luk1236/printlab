@@ -134,6 +134,8 @@ export interface QuoteActuals {
   material: number;
   energy: number;
   labor: number;
+  labor_measured: boolean;
+  work_minutes: number | null;
   actual_cost: number;
   quoted_cost: number;
   deviation: number;
@@ -198,6 +200,15 @@ export interface FailureImage {
   timestamp: string;
   size: number;
   mtime: number;
+}
+
+export interface Customer {
+  id: number;
+  name: string;
+  address: string;
+  email: string;
+  phone: string;
+  note?: string | null;
 }
 
 export interface MonthlyReportMoney {
@@ -332,6 +343,11 @@ export function createForkApi({ request, apiBase, getAuthToken }: ForkApiDeps) {
       return answer;
     },
     getQuoteActuals: (id: string) => request<QuoteActuals>(`/quote/history/${encodeURIComponent(id)}/actuals`),
+    setQuoteWorkMinutes: (id: string, minutes: number | null) =>
+      request<Record<string, unknown>>(`/quote/history/${encodeURIComponent(id)}/work-minutes`, {
+        method: 'PUT',
+        body: JSON.stringify({ work_minutes: minutes }),
+      }),
     queueQuotePrints: (id: string, payload: QuoteQueueRequest) =>
       request<QuoteQueueResult>(`/quote/history/${encodeURIComponent(id)}/queue`, {
         method: 'POST',
@@ -343,6 +359,12 @@ export function createForkApi({ request, apiBase, getAuthToken }: ForkApiDeps) {
         body: JSON.stringify({ archive_ids: archiveIds }),
       }),
     getInvoices: () => request<InvoicesResponse>('/quote/invoices'),
+    listCustomers: () => request<Customer[]>('/customers/'),
+    createCustomer: (data: Omit<Customer, 'id'>) =>
+      request<Customer>('/customers/', { method: 'POST', body: JSON.stringify(data) }),
+    updateCustomer: (id: number, data: Omit<Customer, 'id'>) =>
+      request<Customer>(`/customers/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    deleteCustomer: (id: number) => request<{ message: string }>(`/customers/${id}`, { method: 'DELETE' }),
     getMonthlyReport: (year: number, month: number) => request<MonthlyReport>(`/monthly-report/${year}/${month}`),
     createInvoice: (quoteId: string, serviceDate?: string) =>
       request<Invoice>(`/quote/history/${encodeURIComponent(quoteId)}/invoice`, {

@@ -25,6 +25,7 @@ export function QuoteActualsPanel({ quoteId }: { quoteId: string }) {
   const [selected, setSelected] = useState('');
   const [targetPrinter, setTargetPrinter] = useState('');
   const [priority, setPriority] = useState(1);
+  const [workDraft, setWorkDraft] = useState<string | null>(null);
 
   const { data } = useQuery({ queryKey: ['quoteActuals', quoteId], queryFn: () => api.getQuoteActuals(quoteId) });
   const { data: archives } = useQuery({ queryKey: ['archivesRecent'], queryFn: () => api.getArchives(undefined, undefined, 100) });
@@ -52,6 +53,15 @@ export function QuoteActualsPanel({ quoteId }: { quoteId: string }) {
         showToast(t('quote.enqueued', { count: result.queued.length }));
       }
       queryClient.invalidateQueries({ queryKey: ['queue'] });
+    },
+    onError: (error: Error) => showToast(error.message, 'error'),
+  });
+
+  const saveWork = useMutation({
+    mutationFn: (minutes: number | null) => api.setQuoteWorkMinutes(quoteId, minutes),
+    onSuccess: () => {
+      setWorkDraft(null);
+      queryClient.invalidateQueries({ queryKey: ['quoteActuals', quoteId] });
     },
     onError: (error: Error) => showToast(error.message, 'error'),
   });
@@ -119,6 +129,38 @@ export function QuoteActualsPanel({ quoteId }: { quoteId: string }) {
           <div className="flex justify-between">
             <span className="text-bambu-gray">{t('quote.actualCost')}</span>
             <span className="text-white">{fmt(data.actual_cost, data.currency)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-bambu-gray">{t('quote.laborLine')}</span>
+            <span className="text-white">
+              {fmt(data.labor, data.currency)}
+              {!data.labor_measured && data.linked > 0 && <span className="text-bambu-gray"> ({t('quote.laborQuoted')})</span>}
+            </span>
+          </div>
+          <div className="flex justify-between items-center gap-2">
+            <span className="text-bambu-gray">{t('quote.workLogged')}</span>
+            <span className="flex items-center gap-1">
+              <input
+                type="number"
+                min={0}
+                max={20000}
+                step={5}
+                value={workDraft ?? (data.work_minutes != null ? String(data.work_minutes) : '')}
+                onChange={(event) => setWorkDraft(event.target.value)}
+                placeholder={t('quote.workPlaceholder')}
+                aria-label={t('quote.workLogged')}
+                className="w-24 bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1 text-white text-xs text-right"
+              />
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={saveWork.isPending || workDraft === null}
+                onClick={() => saveWork.mutate(workDraft === '' ? null : Number(workDraft))}
+                aria-label={t('quote.workSave')}
+              >
+                {t('quote.workSave')}
+              </Button>
+            </span>
           </div>
           <div className="flex justify-between">
             <span className="text-bambu-gray">{t('quote.quotedCost')}</span>

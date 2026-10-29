@@ -126,6 +126,7 @@ class NotificationProviderBase(BaseModel):
     on_queue_job_skipped: bool = Field(default=True, description="Notify when job is skipped")
     on_queue_due_risk: bool = Field(default=True, description="Notify when a queued job will miss its due date")
     on_queue_job_failed: bool = Field(default=True, description="Notify when job fails to start")
+    on_invoice_reminder: bool = Field(default=True, description="Remind when an invoice is overdue")
     on_queue_completed: bool = Field(default=False, description="Notify when all queue jobs finish")
 
     # Quiet hours
@@ -232,6 +233,7 @@ class NotificationProviderUpdate(BaseModel):
     on_queue_job_skipped: bool | None = None
     on_queue_due_risk: bool | None = None
     on_queue_job_failed: bool | None = None
+    on_invoice_reminder: bool | None = None
     on_queue_completed: bool | None = None
 
     # Quiet hours

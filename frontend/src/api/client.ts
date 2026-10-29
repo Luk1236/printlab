@@ -12,6 +12,7 @@ export type {
   PlateTuningAnalysis,
   Invoice,
   InvoicesResponse,
+  Customer,
   QuoteItem,
   QuoteActuals,
   QuoteActualsLine,
@@ -3109,6 +3110,7 @@ export interface NotificationProvider {
   on_queue_job_waiting: boolean;
   on_queue_job_skipped: boolean;
   on_queue_due_risk?: boolean;
+  on_invoice_reminder?: boolean;
   on_queue_job_failed: boolean;
   on_queue_completed: boolean;
   // Quiet hours
@@ -3179,6 +3181,7 @@ export interface NotificationProviderCreate {
   on_queue_job_waiting?: boolean;
   on_queue_job_skipped?: boolean;
   on_queue_due_risk?: boolean;
+  on_invoice_reminder?: boolean;
   on_queue_job_failed?: boolean;
   on_queue_completed?: boolean;
   // Quiet hours
@@ -3242,6 +3245,7 @@ export interface NotificationProviderUpdate {
   on_queue_job_waiting?: boolean;
   on_queue_job_skipped?: boolean;
   on_queue_due_risk?: boolean;
+  on_invoice_reminder?: boolean;
   on_queue_job_failed?: boolean;
   on_queue_completed?: boolean;
   // Quiet hours

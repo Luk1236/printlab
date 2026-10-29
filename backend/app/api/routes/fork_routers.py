@@ -10,6 +10,7 @@ from fastapi import FastAPI
 
 from backend.app.api.routes import (
     assistant,
+    customers,
     failure_images,
     first_layer_inspector,
     hardware,
@@ -41,3 +42,5 @@ def register_fork_routers(app: FastAPI, prefix: str) -> None:
     app.include_router(monthly_report.router, prefix=prefix)
     # Angebot → Warteschlange: verknüpfte Druckjobs eines Angebots neu einreihen.
     app.include_router(quote_queue.router, prefix=prefix)
+    # Kunden-Stamm: Adressbuch für Angebote und Rechnungen.
+    app.include_router(customers.router, prefix=prefix)

@@ -652,6 +652,17 @@ export function NotificationProviderCard({ provider, onEdit }: NotificationProvi
 
                 <div className="flex items-center justify-between">
                   <div>
+                    <p className="text-sm text-white">{t('notifications.invoiceReminder')}</p>
+                    <p className="text-xs text-bambu-gray">{t('notifications.invoiceReminderDescription')}</p>
+                  </div>
+                  <Toggle
+                    checked={provider.on_invoice_reminder ?? true}
+                    onChange={(checked) => updateMutation.mutate({ on_invoice_reminder: checked })}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
                     <p className="text-sm text-white">{t('notifications.jobFailed')}</p>
                     <p className="text-xs text-bambu-gray">{t('notifications.jobFailedDescription')}</p>
                   </div>

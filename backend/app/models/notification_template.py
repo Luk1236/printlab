@@ -207,6 +207,12 @@ DEFAULT_TEMPLATES = [
         "body_template": "{job_name}\nDue: {due}\nExpected: {expected}\n{reason}",
     },
     {
+        "event_type": "invoice_reminder",
+        "name": "Invoice Payment Reminder",
+        "title_template": "Invoice Overdue",
+        "body_template": "Invoice {invoice_number} for {customer} is {days} days overdue.\nDue: {due}\nOutstanding: {total}\nPlease pay or send a note.",
+    },
+    {
         "event_type": "queue_job_skipped",
         "name": "Queue Job Skipped",
         "title_template": "Job Skipped",

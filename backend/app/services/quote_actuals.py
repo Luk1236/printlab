@@ -49,7 +49,15 @@ def compute(quote: dict[str, Any], archives: list[dict[str, Any]], rates: dict[s
                 "estimated": estimated_material or estimated_energy,
             }
         )
-    labor = _num(quote.get("labor")) or 0.0
+    labor_quoted = _num(quote.get("labor")) or 0.0
+    work_minutes = _num(quote.get("work_minutes"))
+    if work_minutes is not None and work_minutes > 0:
+        # Zeitbuchung: die gemessene Arbeitszeit ersetzt den Angebotsansatz
+        labor = work_minutes / 60.0 * float(rates.get("labor_rate_per_hour", 0.0) or 0.0)
+        labor_measured = True
+    else:
+        labor = labor_quoted
+        labor_measured = False
     quoted_cost = _num(quote.get("subtotal")) or 0.0
     revenue = _num(quote.get("total")) or 0.0
     actual_cost = material_total + energy_total + labor
@@ -63,6 +71,8 @@ def compute(quote: dict[str, Any], archives: list[dict[str, Any]], rates: dict[s
         "material": round(material_total, 2),
         "energy": round(energy_total, 2),
         "labor": round(labor, 2),
+        "labor_measured": labor_measured,
+        "work_minutes": work_minutes,
         "actual_cost": round(actual_cost, 2),
         "quoted_cost": round(quoted_cost, 2),
         "deviation": round(actual_cost - quoted_cost, 2),

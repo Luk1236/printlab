@@ -10169,6 +10169,9 @@ async def lifespan(app: FastAPI):
     from backend.app.services import queue_due_watch
 
     spawn_background_task(queue_due_watch.run(async_session), name="queue-due-watch")  # PrintLab: Termin-Meldung
+    from backend.app.services import invoice_reminder
+
+    spawn_background_task(invoice_reminder.run(async_session), name="invoice-reminder")  # PrintLab: Zahlungserinnerung
 
     # Start the smart plug scheduler for time-based on/off
     smart_plug_manager.start_scheduler()

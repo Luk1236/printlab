@@ -133,10 +133,32 @@ async def quote_actual_costs(
         "material_per_kg": await _float_setting(db, "default_filament_cost"),
         "energy_per_kwh": await _float_setting(db, "energy_cost_per_kwh"),
         "power_watts": await _float_setting(db, "printer_power_watts"),
+        "labor_rate_per_hour": await _float_setting(db, "labor_rate_per_hour"),
     }
     result = quote_actuals.compute(entry, archives, rates)
     result["missing_ids"] = [i for i in ids if i not in by_id]
     return result
+
+
+@router.put("/history/{entry_id}/work-minutes")
+async def set_quote_work_minutes(
+    entry_id: str,
+    payload: dict,
+    _=RequirePermissionIfAuthEnabled(Permission.ARCHIVES_UPDATE_ALL),
+):
+    """Zeitbuchung: gebuchte Arbeitszeit in Minuten (leer/None entfernt sie wieder)."""
+    minutes = payload.get("work_minutes") if isinstance(payload, dict) else None
+    if minutes is not None:
+        try:
+            minutes = int(minutes)
+        except (TypeError, ValueError):
+            raise HTTPException(422, "Arbeitszeit muss eine ganze Zahl in Minuten sein.") from None
+        if not 0 <= minutes <= 20000:
+            raise HTTPException(422, "Arbeitszeit muss zwischen 0 und 20000 Minuten liegen.")
+    entry = quote_history.set_work_minutes(entry_id, minutes)
+    if entry is None:
+        raise HTTPException(404, "Angebot nicht gefunden.")
+    return entry
 
 
 @router.get("/company")
