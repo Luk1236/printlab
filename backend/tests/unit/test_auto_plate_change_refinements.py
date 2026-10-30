@@ -291,7 +291,6 @@ class TestAutoConfirmPlateClear:
                 raise result
             return result
 
-        monkeypatch.setattr("backend.app.services.plate_detection.check_plate_empty", fake_check)
         fake_printer = SimpleNamespace(
             ip_address="1.2.3.4",
             access_code="x",
@@ -306,7 +305,7 @@ class TestAutoConfirmPlateClear:
             return fake_printer if printer else None
 
         monkeypatch.setattr(auto_plate_change, "_load_printer", fake_load)
-        return gate
+        return gate, fake_check
 
     def _result(self, **kw):
         base = {"is_empty": True, "confidence": 0.9, "needs_calibration": False}
@@ -314,9 +313,9 @@ class TestAutoConfirmPlateClear:
         return SimpleNamespace(**base)
 
     def test_confident_empty_bed_confirms(self, monkeypatch):
-        gate = self._setup(monkeypatch, self._result())
-        ok, note = asyncio.run(auto_plate_change._confirm_plate_clear(1, 0.6))
-        assert ok and "90%" in note
+        gate, fake_check = self._setup(monkeypatch, self._result())
+        ok, note = asyncio.run(auto_plate_change._confirm_plate_clear(1, 0.6, plate_check=fake_check))
+        assert ok and "90%" in note, note
         assert gate["awaiting"] is False
 
     @pytest.mark.parametrize(
@@ -330,14 +329,14 @@ class TestAutoConfirmPlateClear:
         ],
     )
     def test_anything_doubtful_keeps_the_gate(self, monkeypatch, result):
-        gate = self._setup(monkeypatch, result)
-        ok, note = asyncio.run(auto_plate_change._confirm_plate_clear(1, 0.6))
+        gate, fake_check = self._setup(monkeypatch, result)
+        ok, note = asyncio.run(auto_plate_change._confirm_plate_clear(1, 0.6, plate_check=fake_check))
         assert not ok and "von Hand" in note
         assert gate["awaiting"] is True
 
     def test_unknown_printer_keeps_the_gate(self, monkeypatch):
-        gate = self._setup(monkeypatch, self._result(), printer=False)
-        assert not asyncio.run(auto_plate_change._confirm_plate_clear(1, 0.6))[0]
+        gate, fake_check = self._setup(monkeypatch, self._result(), printer=False)
+        assert not asyncio.run(auto_plate_change._confirm_plate_clear(1, 0.6, plate_check=fake_check))[0]
         assert gate["awaiting"] is True
 
     def test_off_by_default_and_wired_into_the_run(self, monkeypatch):

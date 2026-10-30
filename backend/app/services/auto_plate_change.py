@@ -325,16 +325,24 @@ async def _load_printer(printer_id: int):
         return result.scalar_one_or_none()
 
 
-async def _confirm_plate_clear(printer_id: int, min_confidence: float) -> tuple[bool, str]:
+async def _confirm_plate_clear(printer_id: int, min_confidence: float, *, plate_check: Any = None) -> tuple[bool, str]:
     """„Platte frei“ nur bestätigen, wenn die Kamera sicher ein leeres Bett erkennt (sonst bleibt die Sperre).
 
     Fail-closed: kein Drucker, keine Referenz, kein Kamerabild, niedrige Sicherheit oder jeder Fehler
     führen dazu, dass die Bestätigung von Hand erfolgen muss.
+
+    ``plate_check`` ist die Prüffunktion (Standard: die Kamera-Prüfung). Tests reichen hier ihre eigene
+    herein, statt den Import zu ersetzen — so kann in keinem Fall die echte Kamera anlaufen.
     """
     manual = "Platte-frei bitte von Hand bestätigen."
     try:
-        from backend.app.services.plate_detection import check_plate_empty
         from backend.app.services.printer_manager import printer_manager
+
+        check = plate_check
+        if check is None:
+            from backend.app.services.plate_detection import check_plate_empty
+
+            check = check_plate_empty
 
         if not printer_manager.is_awaiting_plate_clear(printer_id):
             return True, "Platte-frei war nicht angefordert."
@@ -344,7 +352,7 @@ async def _confirm_plate_clear(printer_id: int, min_confidence: float) -> tuple[
         roi = None
         if all(getattr(printer, f"plate_detection_roi_{k}", None) is not None for k in ("x", "y", "w", "h")):
             roi = tuple(getattr(printer, f"plate_detection_roi_{k}") for k in ("x", "y", "w", "h"))
-        result = await check_plate_empty(
+        result = await check(
             printer_id=printer_id,
             ip_address=printer.ip_address,
             access_code=printer.access_code,
