@@ -22,7 +22,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, waitFor } from '@testing-library/react';
-import { CoverImage } from '../../pages/PrintersPage';
+import { CoverImage } from '../../components/printer/CoverImage';
 
 vi.mock('../../hooks/useCameraStreamToken', async () => {
   const actual = await vi.importActual<Record<string, unknown>>('../../hooks/useCameraStreamToken');

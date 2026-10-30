@@ -24,7 +24,7 @@ LIMITS = {
     "backend/app/api/routes/printers.py": 4850,
     "backend/app/api/routes/inventory.py": 3200,
     "backend/app/services/notification_service.py": 3000,
-    "frontend/src/pages/PrintersPage.tsx": 9775,
+    "frontend/src/pages/PrintersPage.tsx": 9675,
     "frontend/src/api/client.ts": 9700,
     "frontend/src/pages/SettingsPage.tsx": 7850,
     "frontend/src/pages/ArchivesPage.tsx": 4925,
