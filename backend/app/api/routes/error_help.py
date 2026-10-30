@@ -28,6 +28,7 @@ from backend.app.services import (
     audit_log,
     countermeasures,
     error_patterns,
+    local_ai_watch,
 )
 from backend.app.utils import failure_images
 
@@ -95,6 +96,20 @@ class BatchRequest(BaseModel):
     limit: int = Field(default=10, ge=1, le=50)
 
 
+class WatchConfigRequest(BaseModel):
+    enabled: bool | None = None
+    interval_seconds: int | None = Field(default=None, ge=120, le=86400)
+    min_confidence: int | None = Field(default=None, ge=0, le=100)
+    min_consecutive: int | None = Field(default=None, ge=1, le=10)
+    action: Literal["notify", "pause"] | None = None
+    cooldown_minutes: int | None = Field(default=None, ge=0, le=1440)
+    printers: list[int] | None = None
+
+
+class WatchCheckRequest(BaseModel):
+    printer_id: int | None = None
+
+
 @router.get("/ai-scan")
 async def get_ai_scan(
     _: User | None = RequirePermissionIfAuthEnabled(Permission.PRINTERS_READ),
@@ -148,6 +163,40 @@ async def scan_failure_image(
     except ai_error_scan.AiScanError as exc:
         raise HTTPException(502, str(exc)) from exc
     return {"result": result, "findings": ai_error_scan.list_findings(30), "counts": ai_error_scan.counts()}
+
+
+@router.get("/ai-watch")
+async def get_ai_watch(
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.PRINTERS_READ),
+):
+    """Laufende lokale Fehlerüberwachung: Einstellungen und Zustand je Drucker."""
+    return local_ai_watch.status()
+
+
+@router.put("/ai-watch")
+async def put_ai_watch(
+    payload: WatchConfigRequest,
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.SETTINGS_UPDATE),
+):
+    """Abstand, Bestätigung, Aktion und Druckerauswahl ändern."""
+    try:
+        local_ai_watch.save_config(payload.model_dump(exclude_none=True))
+    except (ValueError, TypeError) as exc:
+        raise HTTPException(400, str(exc)) from exc
+    return local_ai_watch.status()
+
+
+@router.post("/ai-watch/check")
+async def check_ai_watch(
+    payload: WatchCheckRequest,
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.PRINTERS_CONTROL),
+):
+    """Sofort eine Runde prüfen (kann wegen des Bildmodells Minuten dauern)."""
+    try:
+        results = await local_ai_watch.check_once(payload.printer_id)
+    except ai_error_scan.AiScanError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    return {"results": results, "status": local_ai_watch.status()}
 
 
 @router.get("/ai-scan/findings")

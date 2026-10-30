@@ -81,6 +81,21 @@ function mockApi() {
     http.get('*/api/v1/error-help/countermeasures', () => HttpResponse.json(countermeasures)),
     http.get('*/api/v1/error-help/countermeasures/log', () => HttpResponse.json([])),
     http.get('*/api/v1/error-help/ai-scan', () => HttpResponse.json(aiScan)),
+    http.get('*/api/v1/error-help/ai-watch', () =>
+      HttpResponse.json({
+        config: {
+          enabled: false,
+          interval_seconds: 600,
+          min_confidence: 60,
+          min_consecutive: 2,
+          action: 'notify',
+          cooldown_minutes: 30,
+          printers: [],
+        },
+        state: { started: null, last_run: null, last_error: null },
+        printers: [],
+      })
+    ),
     http.get('*/api/v1/failure-images/', () => HttpResponse.json([]))
   );
 }
@@ -129,5 +144,7 @@ describe('ErrorHelpPage', () => {
     expect(screen.getByText('AI error detection (local)')).toBeInTheDocument();
     expect(screen.getByText(/vision model “qwen3\.5:4b” is present/)).toBeInTheDocument();
     expect(screen.getByText('No hits yet.')).toBeInTheDocument();
+    expect(screen.getByText('Continuous watch (local)')).toBeInTheDocument();
+    expect(screen.getByText('Not checked yet.')).toBeInTheDocument();
   });
 });

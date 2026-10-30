@@ -10186,6 +10186,9 @@ async def lifespan(app: FastAPI):
     from backend.app.services import countermeasures
 
     spawn_background_task(countermeasures.run(), name="countermeasures")  # PrintLab: Gegenmaßnahmen
+    from backend.app.services import local_ai_watch
+
+    spawn_background_task(local_ai_watch.run(), name="local-ai-watch")  # PrintLab: laufende Bildprüfung
 
     # Start the smart plug scheduler for time-based on/off
     smart_plug_manager.start_scheduler()

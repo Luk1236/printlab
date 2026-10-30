@@ -518,11 +518,11 @@ async def scan_and_record(
     if result.get("pattern_id") and float(result.get("confidence", 0)) * 100 >= threshold:
         record(result, source=source, printer_id=printer_id, image_name=image_name)
         if source in _ANNOUNCE_SOURCES and config.get("error_scan_notify", True):
-            await _announce(result, image_name)
+            await announce_finding(result, image_name)
     return result
 
 
-async def _announce(result: dict[str, Any], image_name: str | None) -> None:
+async def announce_finding(result: dict[str, Any], image_name: str | None) -> None:
     """KI-Hinweis als eigene Meldung nachreichen (die Warnung selbst nie verzögern).
 
     Die Bildanalyse dauert auf dem Pi eine bis zwei Minuten. Sie in die ursprüngliche Warnung zu

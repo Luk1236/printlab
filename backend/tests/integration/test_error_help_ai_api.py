@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from httpx import AsyncClient
 
-from backend.app.services import ai_error_scan, assistant_config, assistant_llm
+from backend.app.services import ai_error_scan, assistant_config, assistant_llm, local_ai_watch
 
 
 @pytest.fixture(autouse=True)
@@ -13,6 +13,8 @@ def _isolated(tmp_path, monkeypatch):
     monkeypatch.setattr(assistant_config, "_path", lambda data_dir: tmp_path / "assistant.json")
     monkeypatch.setattr(ai_error_scan, "FINDINGS_PATH", tmp_path / "findings.jsonl")
     monkeypatch.setattr(ai_error_scan, "FEEDBACK_PATH", tmp_path / "feedback.jsonl")
+    monkeypatch.setattr(local_ai_watch, "CONFIG_PATH", tmp_path / "watch.json")
+    monkeypatch.setattr(local_ai_watch, "_printer_state", {})
     monkeypatch.setattr(
         assistant_llm,
         "status",
@@ -142,3 +144,34 @@ class TestFindings:
         assert response.status_code == 200
         assert start.call_args.args[0] == 4
         assert response.json()["running"] is True
+
+
+class TestWatch:
+    @pytest.mark.asyncio
+    async def test_defaults_are_off_and_settings_round_trip(self, async_client: AsyncClient):
+        body = (await async_client.get("/api/v1/error-help/ai-watch")).json()
+        assert body["config"]["enabled"] is False and body["config"]["action"] == "notify"
+
+        response = await async_client.put(
+            "/api/v1/error-help/ai-watch",
+            json={"enabled": True, "interval_seconds": 600, "min_consecutive": 3, "action": "pause"},
+        )
+        assert response.status_code == 200
+        config = response.json()["config"]
+        assert config["enabled"] is True and config["min_consecutive"] == 3 and config["action"] == "pause"
+
+    @pytest.mark.asyncio
+    async def test_an_unknown_action_is_rejected(self, async_client: AsyncClient):
+        response = await async_client.put("/api/v1/error-help/ai-watch", json={"action": "shutdown"})
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_a_check_can_be_triggered_now(self, async_client: AsyncClient):
+        with patch.object(
+            local_ai_watch,
+            "check_once",
+            AsyncMock(return_value=[{"printer_id": 7, "pattern_id": "stringing", "action": "notify"}]),
+        ):
+            response = await async_client.post("/api/v1/error-help/ai-watch/check", json={})
+        assert response.status_code == 200
+        assert response.json()["results"][0]["pattern_id"] == "stringing"

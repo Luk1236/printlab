@@ -26,6 +26,7 @@ import { api } from '../api/client';
 import type {
   AiScanFinding,
   AiScanResult,
+  AiWatchConfig,
   CountermeasureLogEntry,
   CountermeasuresConfig,
   CountermeasurePrinter,
@@ -293,6 +294,11 @@ export function ErrorHelpPage() {
     queryFn: () => api.getAiFindings(50, historyPattern ?? undefined),
     enabled: historyPattern !== null,
   });
+  const aiWatch = useQuery({
+    queryKey: ['ai-watch'],
+    queryFn: () => api.getAiWatch(),
+    refetchInterval: 30_000,
+  });
   const failureImages = useQuery({
     queryKey: ['failure-images'],
     queryFn: () => api.listFailureImages(),
@@ -363,7 +369,24 @@ export function ErrorHelpPage() {
     mutationFn: () => api.scanAiCollection(10),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ai-scan'] });
+      queryClient.invalidateQueries({ queryKey: ['ai-watch'] });
       showToast(t('errorHelp.aiBatchStarted'));
+    },
+    onError: (error: Error) => showToast(error.message, 'error'),
+  });
+  const watchSave = useMutation({
+    mutationFn: (update: Partial<AiWatchConfig>) => api.saveAiWatch(update),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ai-watch'] });
+      showToast(t('errorHelp.settingsSaved'));
+    },
+    onError: (error: Error) => showToast(error.message, 'error'),
+  });
+  const watchCheck = useMutation({
+    mutationFn: () => api.checkAiWatch(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ai-watch'] });
+      queryClient.invalidateQueries({ queryKey: ['ai-scan'] });
     },
     onError: (error: Error) => showToast(error.message, 'error'),
   });
@@ -990,6 +1013,147 @@ export function ErrorHelpPage() {
                       );
                     })}
                   </ul>
+                )}
+              </div>
+
+              <div className="border-t border-bambu-dark-tertiary/60 pt-4 space-y-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                    <Cpu className="w-4 h-4 text-bambu-green" />
+                    {t('errorHelp.aiWatchTitle')}
+                  </h3>
+                  <p className="text-xs text-bambu-gray mt-1">{t('errorHelp.aiWatchHint')}</p>
+                </div>
+                {aiWatch.data && (
+                  <>
+                    <div className="flex flex-wrap items-end gap-x-5 gap-y-3">
+                      <label className="flex items-center gap-2 text-sm text-white">
+                        <Toggle
+                          checked={aiWatch.data.config.enabled}
+                          onChange={(value) => watchSave.mutate({ enabled: value })}
+                          disabled={!canConfigure}
+                        />
+                        {t('errorHelp.aiWatchEnable')}
+                      </label>
+                      <label className="text-xs text-bambu-gray-light flex flex-col gap-1">
+                        {t('errorHelp.aiWatchInterval')}
+                        <input
+                          key={`watch-interval-${aiWatch.data.config.interval_seconds}`}
+                          type="number"
+                          min={2}
+                          max={1440}
+                          defaultValue={Math.round(aiWatch.data.config.interval_seconds / 60)}
+                          disabled={!canConfigure}
+                          onBlur={(event) => {
+                            const minutes = Number(event.target.value);
+                            if (Number.isFinite(minutes) && minutes >= 2) {
+                              watchSave.mutate({ interval_seconds: minutes * 60 });
+                            }
+                          }}
+                          className="w-20 rounded-lg bg-bambu-dark border border-bambu-dark-tertiary px-2 py-1 text-sm text-white"
+                        />
+                      </label>
+                      <label className="text-xs text-bambu-gray-light flex flex-col gap-1">
+                        {t('errorHelp.aiWatchConsecutive')}
+                        <input
+                          key={`watch-count-${aiWatch.data.config.min_consecutive}`}
+                          type="number"
+                          min={1}
+                          max={10}
+                          defaultValue={aiWatch.data.config.min_consecutive}
+                          disabled={!canConfigure}
+                          onBlur={(event) => {
+                            const value = Number(event.target.value);
+                            if (Number.isFinite(value) && value >= 1 && value <= 10) {
+                              watchSave.mutate({ min_consecutive: value });
+                            }
+                          }}
+                          className="w-16 rounded-lg bg-bambu-dark border border-bambu-dark-tertiary px-2 py-1 text-sm text-white"
+                        />
+                      </label>
+                      <label className="text-xs text-bambu-gray-light flex flex-col gap-1">
+                        {t('errorHelp.aiWatchCooldown')}
+                        <input
+                          key={`watch-cooldown-${aiWatch.data.config.cooldown_minutes}`}
+                          type="number"
+                          min={0}
+                          max={1440}
+                          defaultValue={aiWatch.data.config.cooldown_minutes}
+                          disabled={!canConfigure}
+                          onBlur={(event) => {
+                            const value = Number(event.target.value);
+                            if (Number.isFinite(value) && value >= 0) {
+                              watchSave.mutate({ cooldown_minutes: value });
+                            }
+                          }}
+                          className="w-20 rounded-lg bg-bambu-dark border border-bambu-dark-tertiary px-2 py-1 text-sm text-white"
+                        />
+                      </label>
+                      <label className="text-xs text-bambu-gray-light flex flex-col gap-1">
+                        {t('errorHelp.aiWatchAction')}
+                        <select
+                          value={aiWatch.data.config.action}
+                          disabled={!canConfigure}
+                          onChange={(event) =>
+                            watchSave.mutate({ action: event.target.value as AiWatchConfig['action'] })
+                          }
+                          className="rounded-lg bg-bambu-dark border border-bambu-dark-tertiary px-2 py-1 text-sm text-white"
+                        >
+                          <option value="notify">{t('errorHelp.aiWatchNotify')}</option>
+                          <option value="pause">{t('errorHelp.aiWatchPause')}</option>
+                        </select>
+                      </label>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={!canControl || watchCheck.isPending}
+                        onClick={() => watchCheck.mutate()}
+                      >
+                        {watchCheck.isPending ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Search className="w-3.5 h-3.5" />
+                        )}
+                        {watchCheck.isPending ? t('errorHelp.aiWatchChecking') : t('errorHelp.aiWatchCheckNow')}
+                      </Button>
+                      <span className="text-[11px] text-bambu-gray">
+                        {aiWatch.data.state.last_run
+                          ? t('errorHelp.aiWatchLast', {
+                              time: new Date(aiWatch.data.state.last_run).toLocaleString(i18n.language),
+                            })
+                          : t('errorHelp.aiWatchNever')}
+                        {aiWatch.data.state.last_error ? ` · ${aiWatch.data.state.last_error}` : ''}
+                      </span>
+                    </div>
+                    {aiWatch.data.printers.length > 0 && (
+                      <ul className="space-y-1">
+                        {aiWatch.data.printers.map((printer) => (
+                          <li key={printer.id} className="text-[11px] text-bambu-gray flex flex-wrap gap-2">
+                            <span className="text-white">{printer.name}</span>
+                            {printer.last_checked && (
+                              <span>{new Date(printer.last_checked).toLocaleTimeString(i18n.language)}</span>
+                            )}
+                            {printer.pattern ? (
+                              <span className="text-bambu-gray-light">
+                                {(() => {
+                                  const hit = data?.patterns.find((entry) => entry.id === printer.pattern);
+                                  return hit ? (german ? hit.title : hit.title_en) : printer.pattern;
+                                })()}
+                                {printer.last_confidence != null
+                                  ? ` · ${Math.round(printer.last_confidence * 100)} % · ${printer.count ?? 0}×`
+                                  : ''}
+                              </span>
+                            ) : (
+                              <span>{t('errorHelp.aiWatchNothing')}</span>
+                            )}
+                            {printer.last_error && <span className="text-amber-700 dark:text-amber-400">{printer.last_error}</span>}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
                 )}
               </div>
             </>

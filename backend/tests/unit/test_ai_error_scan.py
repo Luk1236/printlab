@@ -235,7 +235,7 @@ class TestAnnounce:
         monkeypatch.setattr(database, "async_session", lambda: DummySession())
 
         asyncio.run(
-            ai_error_scan._announce(
+            ai_error_scan.announce_finding(
                 {"pattern_id": "stringing", "confidence": 0.82, "reason": "Fäden an der Düse"},
                 "fail_ai_20260101_120000_" + "a" * 32 + ".jpg",
             )
@@ -252,7 +252,7 @@ class TestAnnounce:
         async def fake_announce(result, image_name):
             announced.append(result["pattern_id"])
 
-        monkeypatch.setattr(ai_error_scan, "_announce", fake_announce)
+        monkeypatch.setattr(ai_error_scan, "announce_finding", fake_announce)
         result = {"pattern_id": "warping", "confidence": 0.9, "reason": "", "model": "m"}
         with patch.object(ai_error_scan, "classify", AsyncMock(return_value=result)):
             asyncio.run(ai_error_scan.scan_and_record(b"x", source="plate_not_empty", config={}))
@@ -276,7 +276,7 @@ class TestAnnounce:
 
         monkeypatch.setattr(notification_service.notification_service, "on_app_message", broken)
         monkeypatch.setattr(database, "async_session", lambda: DummySession())
-        asyncio.run(ai_error_scan._announce({"pattern_id": "ghosting", "confidence": 0.7, "reason": ""}, None))
+        asyncio.run(ai_error_scan.announce_finding({"pattern_id": "ghosting", "confidence": 0.7, "reason": ""}, None))
 
 
 class TestBatch:

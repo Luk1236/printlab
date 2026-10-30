@@ -89,6 +89,30 @@ Erkennung ist ein Hinweis, keine Diagnose — erst mit eigenen Bildern gegenprü
 einschalten. Die Systemprüfung (Wartung → System) meldet, ob Server und Bildmodell bereit
 sind, und nennt die Dauer der letzten Prüfung.
 
+## 6. Laufende Überwachung während des Drucks (lokal)
+
+Damit brauchst du Obico nicht: PrintLab holt im eingestellten Abstand selbst ein
+Kamerabild, prüft es mit dem lokalen Bildmodell und handelt erst, wenn **dasselbe
+Fehlerbild mehrfach hintereinander** erkannt wurde. Einstellungen in der Fehlerhilfe
+unter „Laufende Überwachung (lokal)“:
+
+| Einstellung | Bedeutung |
+|---|---|
+| Überwachung einschalten | Standard aus |
+| Abstand | Minuten zwischen zwei Bildern (mindestens 2) |
+| Treffer in Folge | Wie oft dasselbe Fehlerbild bestätigt werden muss (Standard 2) |
+| Pause zwischen Meldungen | Ruhezeit nach einer Meldung (Standard 30 Minuten) |
+| Aktion | „Nur melden“ oder „Pausieren und melden“ |
+
+Ablauf bei einem Treffer: Bild wird in der Fehlerbild-Sammlung abgelegt, ein Treffer für
+die Fehlerhilfe festgehalten (zählt in „N× erkannt“), eine Meldung über die Kanäle
+geschickt und bei „Pausieren“ der Druck angehalten. „Jetzt prüfen“ macht eine Runde
+sofort — das dauert je nach Gerät ein bis drei Minuten pro Drucker.
+
+Grenzen: Das lokale Modell ist deutlich langsamer als Obicos ML-API; deshalb ist der
+Abstand großzügig und die Bestätigung über mehrere Bilder Pflicht. Es startet nie einen
+Druck und bricht keinen ab. Obico bleibt als separate, schnellere Option erhalten.
+
 ## Fehlersuche
 
 | Meldung | Ursache / Abhilfe |

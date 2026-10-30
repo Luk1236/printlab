@@ -470,6 +470,33 @@ export interface AutoRequeueConfig {
   require_sibling: boolean;
 }
 
+export interface AiWatchConfig {
+  enabled: boolean;
+  interval_seconds: number;
+  min_confidence: number;
+  min_consecutive: number;
+  action: 'notify' | 'pause';
+  cooldown_minutes: number;
+  printers: number[];
+}
+
+export interface AiWatchPrinter {
+  id: number;
+  name: string;
+  pattern?: string | null;
+  count?: number;
+  last_checked?: string | null;
+  last_confidence?: number | null;
+  last_error?: string | null;
+  last_action?: string | null;
+}
+
+export interface AiWatchStatus {
+  config: AiWatchConfig;
+  state: { started: string | null; last_run: string | null; last_error: string | null };
+  printers: AiWatchPrinter[];
+}
+
 export interface ForkApiDeps {
   request: <T>(endpoint: string, options?: RequestInit) => Promise<T>;
   apiBase: string;
@@ -813,6 +840,14 @@ export function createForkApi({ request, apiBase, getAuthToken }: ForkApiDeps) {
     request<AiScanBatch>('/error-help/ai-scan/scan-collection', {
       method: 'POST',
       body: JSON.stringify({ limit }),
+    }),
+  getAiWatch: () => request<AiWatchStatus>('/error-help/ai-watch'),
+  saveAiWatch: (update: Partial<AiWatchConfig>) =>
+    request<AiWatchStatus>('/error-help/ai-watch', { method: 'PUT', body: JSON.stringify(update) }),
+  checkAiWatch: (printerId?: number) =>
+    request<{ results: Array<Record<string, unknown>>; status: AiWatchStatus }>('/error-help/ai-watch/check', {
+      method: 'POST',
+      body: JSON.stringify(printerId ? { printer_id: printerId } : {}),
     }),
   };
 }

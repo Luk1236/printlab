@@ -87,6 +87,73 @@ async def pop_frame(nonce: str) -> bytes | None:
     return data
 
 
+async def capture_frame_for_printer(printer_id: int) -> bytes | None:
+    """Capture one JPEG frame from the printer camera. Returns None on failure."""
+    # Late import to avoid cycles at module load time
+    from backend.app.services.camera import capture_camera_frame_bytes
+    from backend.app.services.external_camera import capture_frame as capture_external_frame
+
+    async with async_session() as db:
+        printer = await db.get(Printer, printer_id)
+    if printer is None:
+        logger.warning("Printer %s not found while capturing a frame", printer_id)
+        return None
+
+    if printer.external_camera_enabled and printer.external_camera_url:
+        # Same rule as the built-in branch below, which this used to skip:
+        # an external camera is single-reader too, so polling while a viewer
+        # is attached just fails (#2707).
+        from backend.app.api.routes.camera import live_frame_for_capture
+
+        defer, buffered = live_frame_for_capture(printer_id)
+        if defer:
+            if buffered:
+                return buffered
+            logger.info(
+                "Obico: viewer attached for printer %s but buffer empty; "
+                "skipping this poll to avoid competing camera handle (#2707)",
+                printer_id,
+            )
+            return None
+        return await capture_external_frame(
+            printer.external_camera_url,
+            printer.external_camera_type,
+            timeout=SNAPSHOT_CAPTURE_TIMEOUT,
+            snapshot_url=printer.external_camera_snapshot_url,
+        )
+
+    # Reuse the fan-out broadcaster's buffered frame when a viewer is
+    # already watching — avoids opening a second concurrent RTSP socket
+    # on printers that allow only one camera connection (e.g. X2D
+    # firmware 01.01.00.00; see #1271). Buffered frame is <1s old while
+    # a viewer is connected.
+    #
+    # When a viewer is attached but no frame is buffered yet (startup
+    # race, mid-reconnect), we DELIBERATELY skip this poll cycle instead
+    # of falling through to capture_camera_frame_bytes. Opening a fresh
+    # RTSP/chamber socket would compete with the live viewer and kick
+    # the fan-out connection on most firmwares — exactly the freeze
+    # reported in #1348. The poll loop retries in ~10s.
+    from backend.app.api.routes.camera import is_stream_active, try_get_active_buffered_frame
+
+    if is_stream_active(printer_id):
+        buffered = try_get_active_buffered_frame(printer_id)
+        if buffered:
+            return buffered
+        logger.info(
+            "Obico: viewer attached for printer %s but buffer empty; skipping this poll to avoid competing camera socket (#1348)",
+            printer_id,
+        )
+        return None
+
+    return await capture_camera_frame_bytes(
+        ip_address=printer.ip_address,
+        access_code=printer.access_code,
+        model=printer.model,
+        timeout=SNAPSHOT_CAPTURE_TIMEOUT,
+    )
+
+
 class ObicoDetectionService:
     """Singleton service that polls the ML API and acts on sustained failures."""
 
@@ -204,70 +271,8 @@ class ObicoDetectionService:
             await self._check_printer(printer_id, status, settings)
 
     async def _capture_frame(self, printer_id: int) -> bytes | None:
-        """Capture one JPEG frame from the printer camera. Returns None on failure."""
-        # Late import to avoid cycles at module load time
-        from backend.app.services.camera import capture_camera_frame_bytes
-        from backend.app.services.external_camera import capture_frame as capture_external_frame
-
-        async with async_session() as db:
-            printer = await db.get(Printer, printer_id)
-        if printer is None:
-            self._last_error = f"Printer {printer_id} not found"
-            return None
-
-        if printer.external_camera_enabled and printer.external_camera_url:
-            # Same rule as the built-in branch below, which this used to skip:
-            # an external camera is single-reader too, so polling while a viewer
-            # is attached just fails (#2707).
-            from backend.app.api.routes.camera import live_frame_for_capture
-
-            defer, buffered = live_frame_for_capture(printer_id)
-            if defer:
-                if buffered:
-                    return buffered
-                logger.info(
-                    "Obico: viewer attached for printer %s but buffer empty; "
-                    "skipping this poll to avoid competing camera handle (#2707)",
-                    printer_id,
-                )
-                return None
-            return await capture_external_frame(
-                printer.external_camera_url,
-                printer.external_camera_type,
-                timeout=SNAPSHOT_CAPTURE_TIMEOUT,
-                snapshot_url=printer.external_camera_snapshot_url,
-            )
-
-        # Reuse the fan-out broadcaster's buffered frame when a viewer is
-        # already watching — avoids opening a second concurrent RTSP socket
-        # on printers that allow only one camera connection (e.g. X2D
-        # firmware 01.01.00.00; see #1271). Buffered frame is <1s old while
-        # a viewer is connected.
-        #
-        # When a viewer is attached but no frame is buffered yet (startup
-        # race, mid-reconnect), we DELIBERATELY skip this poll cycle instead
-        # of falling through to capture_camera_frame_bytes. Opening a fresh
-        # RTSP/chamber socket would compete with the live viewer and kick
-        # the fan-out connection on most firmwares — exactly the freeze
-        # reported in #1348. The poll loop retries in ~10s.
-        from backend.app.api.routes.camera import is_stream_active, try_get_active_buffered_frame
-
-        if is_stream_active(printer_id):
-            buffered = try_get_active_buffered_frame(printer_id)
-            if buffered:
-                return buffered
-            logger.info(
-                "Obico: viewer attached for printer %s but buffer empty; skipping this poll to avoid competing camera socket (#1348)",
-                printer_id,
-            )
-            return None
-
-        return await capture_camera_frame_bytes(
-            ip_address=printer.ip_address,
-            access_code=printer.access_code,
-            model=printer.model,
-            timeout=SNAPSHOT_CAPTURE_TIMEOUT,
-        )
+        """Capture one JPEG frame (shared helper, see above)."""
+        return await capture_frame_for_printer(printer_id)
 
     def _no_verdict(self, printer_id: int, reason: str) -> None:
         """Record that this poll produced no verdict for ``printer_id``.
