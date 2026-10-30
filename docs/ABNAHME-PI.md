@@ -2,7 +2,7 @@
 
 Diese Liste arbeitet **eine Sitzung am Gerät** ab, in dieser Reihenfolge:
 
-1. **Update** auf 1.17.1 — erst danach sind die neuen Funktionen da, auf die sich die übrigen Punkte beziehen.
+1. **Update** auf 1.18.0 — erst danach sind die neuen Funktionen da, auf die sich die übrigen Punkte beziehen.
 2. **Angebots-Link** — reine Software, kein Risiko für Mechanik oder Druckbetrieb, geht auch vom Schreibtisch und Handy.
 3. **Hardware** — vom Trockenlauf bis zur ersten echten Bewegung, aufsteigend im Risiko.
 
@@ -34,14 +34,14 @@ KI-Fehlerhilfe, Sicherung, HTTPS, Slicer), steht in [`ABNAHME.md`](ABNAHME.md).
 
 ---
 
-## 1. Update auf 1.17.1 (20 Minuten)
+## 1. Update auf 1.18.0 (20 Minuten)
 
-Ziel: der Pi läuft auf 1.17.1, und du weißt, dass der Weg zurück funktioniert, bevor irgendetwas anderes passiert.
+Ziel: der Pi läuft auf 1.18.0, und du weißt, dass der Weg zurück funktioniert, bevor irgendetwas anderes passiert.
 
 - [ ] **Einstellungen → Aktualisierungen → „Jetzt prüfen“** drücken.
-      Erwartung: „Update verfügbar: v1.17.1“ (oder neuer), darunter „Versionshinweise“.
+      Erwartung: „Update verfügbar: v1.18.0“ (oder neuer), darunter „Versionshinweise“.
 - [ ] **„Update installieren“** drücken. Die Seite lädt nach dem Neustart selbst neu; falls nicht, von Hand neu laden.
-- [ ] Version gegenprüfen: unter **Einstellungen → Aktualisierungen** steht bei „Aktuelle Version“ **1.17.1**
+- [ ] Version gegenprüfen: unter **Einstellungen → Aktualisierungen** steht bei „Aktuelle Version“ **1.18.0**
       (die Oberfläche zeigt die Version nur dort an).
 - [ ] `journalctl --user -u printlab -n 40` — Erwartung: Start ohne Traceback, kein „Application startup failed“.
 - [ ] Automatischen Check wiederholen (`werkzeuge/abnahme.py`): gleiche oder bessere Einstufung als in Schritt 0.
@@ -49,7 +49,7 @@ Ziel: der Pi läuft auf 1.17.1, und du weißt, dass der Weg zurück funktioniert
       „Automatische Umverteilung“, „Nachbestellvorschlag“ und „Zeitraffer-Aufbewahrung“; Finanzen → Verlauf zeigt je
       Angebot den Knopf **„Teilen“**.
 
-**Abbruch:** Wird kein Update angeboten, obwohl 1.17.1 veröffentlicht ist → `data/update_allowed_signers` auf dem Pi prüfen
+**Abbruch:** Wird kein Update angeboten, obwohl 1.18.0 veröffentlicht ist → `data/update_allowed_signers` auf dem Pi prüfen
 (siehe [`UPDATE-SIGNATUR.md`](UPDATE-SIGNATUR.md)); fehlt die Datei, wird nicht signiert geprüft, das ist kein Fehler, aber
 dann bitte bewusst entscheiden. Schlägt der Start fehl: nach dem vierten erfolglosen Start greift der Rückbau auf den alten
 Stand samt Datenbank — Dienst neu starten und Log sichern, nicht von Hand Dateien tauschen.
@@ -194,7 +194,7 @@ Automatik aus, Not-Halt bereit halten, Befund notieren.
 | Block | Datum | Wer | Ergebnis (ok / Befund) | Bemerkung |
 |---|---|---|---|---|
 | 0 Vorbereitung | | | | |
-| 1 Update auf 1.17.1 | | | | |
+| 1 Update auf 1.18.0 | | | | |
 | 2 Angebots-Link | | | | |
 | 3.1 Trockenlauf | | | | |
 | 3.2 Einmessen | | | | |

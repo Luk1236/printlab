@@ -3,6 +3,31 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.18.0 (30.10.2026) — Laufende Überwachung, Modellwahl und aufgeräumter Planer
+
+- **Laufende Fehlerüberwachung auf dem Pi:** Während eines Drucks holt PrintLab im eingestellten Abstand
+  (Standard 10 Minuten) ein Kamerabild und prüft es mit dem lokalen Bildmodell. Gehandelt wird erst nach mehreren
+  gleichen Treffern in Folge — dann Bild in die Sammlung, Treffer für die Fehlerhilfe, Meldung und optional Pause,
+  damit eine einzelne Fehlwarnung keinen Druck abbricht. Standardmäßig aus; Abstand und nötige Bestätigungen sind
+  einstellbar. Neue Routen `GET/PUT /error-help/ai-watch` und `POST /error-help/ai-watch/check`; die KI-Karte hat
+  Schalter, „Jetzt prüfen“ und den Zustand je Drucker. Abschnitt „Laufende Überwachung (lokal)“ in
+  `docs/KI-EINRICHTUNG.md`.
+- **Kameraaufnahme nur einmal beschrieben:** Die Obico-Erkennung und die lokale Überwachung teilen sich eine
+  Aufnahmefunktion (Buffer bei aktivem Viewer, sonst externe Kamera), damit beide denselben Weg gehen.
+- **Bildmodell als Auswahl:** Statt Freitext bietet die KI-Karte die auf dem Server installierten Modelle an und
+  zeigt sie an; „Assistenten-Modell“ bleibt als leere Auswahl daneben bestehen.
+- **„Hinweis als eigene Meldung“ ist ein sichtbarer Schalter** (`error_scan_notify`, Standard an, gespeichert mit
+  den Assistenten-Einstellungen). Der Hinweis nennt den nötigen Kanal-Schalter „Nachrichten verbundener Apps“,
+  sonst käme er nirgends an.
+- **Angebots-Link ist immer absolut:** Ohne gepflegte Basis-URL bestand der kopierte Link nur aus dem Pfad und
+  war damit unbrauchbar; jetzt springt die Adresse der Anfrage ein.
+- **Planer aufgeräumt (intern):** `print_scheduler.py` von 8 740 auf 4 846 Zeilen. Filament- und AMS-Abgleich,
+  Düsenprüfung, Kammergrenzen, Übertragung, Startbefehl und die Warteschlangen-Runde liegen in eigenen Modulen
+  unter `backend/app/services/scheduler/`, Vorheizen und Trocknung als Mixins; alle Namen bleiben über
+  `print_scheduler` erreichbar, Verhalten unverändert. Die Dateigrenze im Test wurde nachgezogen.
+- `docs/ABNAHME-PI.md`: Arbeitsliste für eine Sitzung am Gerät (Update → Angebots-Link → Hardware) mit
+  Erwartungen, Abbruchpunkten und Protokoll; README, Abnahme-Doku und `werkzeuge/abnahme.py` verweisen darauf.
+
 ## v1.17.1 (30.10.2026) — Fehlerbehebungen zu 1.17.0
 
 - **Frontend-Typprüfung:** Die neuen API-Typen werden direkt aus `api/forkApi.ts` importiert; `client.ts` gibt sie
