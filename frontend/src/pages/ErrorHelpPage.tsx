@@ -29,6 +29,7 @@ import type {
 import { Button } from '../components/Button';
 import { Card, CardContent } from '../components/Card';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { ErrorPatternIllustration } from '../components/error/ErrorPatternIllustration';
 import { Toggle } from '../components/Toggle';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -108,7 +109,9 @@ function PatternCard({
         aria-expanded={expanded}
         className="w-full flex items-start gap-3 p-4 text-left hover:bg-bambu-dark-tertiary/30 rounded-lg transition-colors"
       >
-        <AlertTriangle className="w-4 h-4 mt-1 shrink-0 text-bambu-green" aria-hidden="true" />
+        <span className="w-24 h-16 shrink-0 rounded-lg bg-gradient-to-br from-bambu-dark-tertiary to-bambu-dark p-1.5" aria-hidden="true">
+          <ErrorPatternIllustration patternId={pattern.id} />
+        </span>
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-semibold text-white">{german ? pattern.title : pattern.title_en}</span>
           <span className="block text-xs text-bambu-gray mt-1 leading-snug">

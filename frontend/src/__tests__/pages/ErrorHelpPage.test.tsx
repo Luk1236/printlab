@@ -83,6 +83,9 @@ describe('ErrorHelpPage', () => {
     expect(await screen.findByText('Troubleshooting')).toBeInTheDocument();
     expect(await screen.findByText('Heat creep')).toBeInTheDocument();
     expect(screen.getByText('Warping')).toBeInTheDocument();
+    // Jedes Fehlerbild bringt seine schematische Zeichnung mit.
+    expect(screen.getByTestId('error-illustration-heat_creep')).toBeInTheDocument();
+    expect(screen.getByTestId('error-illustration-warping')).toBeInTheDocument();
 
     await user.type(screen.getByRole('searchbox'), 'warp');
 
