@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from html import escape
 
-from fastapi import APIRouter, Depends, Form, HTTPException
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -44,6 +44,7 @@ async def _base_url(db: AsyncSession) -> str:
 
 @router.post("/history/{quote_id}/share")
 async def create_share_link(
+    request: Request,
     quote_id: str,
     payload: ShareRequest,
     _=RequirePermissionIfAuthEnabled(Permission.ARCHIVES_UPDATE_ALL),
@@ -55,9 +56,12 @@ async def create_share_link(
         entry = quote_share.create(quote_id, payload.days, quote)
     except quote_share.ShareError as exc:
         raise HTTPException(404, str(exc)) from exc
+    # Ohne gepflegte externe Adresse wäre der Link relativ und beim Kopieren
+    # unbrauchbar; dann wenigstens die Adresse nehmen, unter der die Anfrage kam.
+    base = await _base_url(db) or str(request.base_url).rstrip("/")
     return {
         "token": entry["token"],
-        "url": _public_url(await _base_url(db), entry["token"]),
+        "url": _public_url(base, entry["token"]),
         "expires_at": entry["expires_at"],
     }
 

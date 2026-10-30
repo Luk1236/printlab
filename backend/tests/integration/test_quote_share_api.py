@@ -37,6 +37,10 @@ async def test_public_page_and_acceptance(async_client: AsyncClient, quote):
     created = await async_client.post(f"/api/v1/quote/history/{quote['id']}/share", json={"days": 7})
     assert created.status_code == 200, created.text
     token = created.json()["token"]
+    # Der kopierte Link muss absolut sein, egal ob die externe Adresse
+    # gepflegt ist oder die Adresse der Anfrage einspringt.
+    share_url = created.json()["url"]
+    assert share_url.startswith("http") and "/api/v1/quote/shared/" in share_url
 
     page = await async_client.get(f"/api/v1/quote/shared/{token}")
     assert page.status_code == 200
