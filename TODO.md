@@ -46,14 +46,15 @@ dieser Reihenfolge, mit Erwartungen, Abbruchkriterien und Protokoll.
 ## Technisch offen
 
 - [ ] Große Dateien weiter zerlegen; der Test `test_file_size_budget.py` verhindert nur das Wachsen. Schnitt am
-      30.10.2026: `print_scheduler.py` von 8 740 auf 6 023 Zeilen (−31 %), Grenze auf 6 025 gesenkt. Helfer liegen in
-      `backend/app/services/scheduler/` (filament, nozzles, chamber, dispatch), Vorheizen/Warmhalten und Trocknung als
-      Mixins (`preheat.py`, `drying.py`); alles bleibt über `print_scheduler` importierbar. Die ausgelagerten Methoden
-      lösen `printer_manager`, `time`, `datetime`, `notification_service`, `supports_drying` über das Fassadenmodul auf,
-      damit die 232 bestehenden Test-Patches unverändert greifen. **Nächster Schritt:** `_start_print` (1 165 Zeilen) und
-      `check_queue` (~930 Zeilen) aus der Klasse lösen; danach die Druckerkarte (`PrinterCard` in `PrintersPage.tsx`,
-      ~5 600 Zeilen in einer Funktion) und `client.ts` (~9 700). `main.py` ist praktisch nur noch Verdrahtung und bleibt
-      an der Grenze (11 069/11 075); neue Funktionen gehören in eigene Module bzw. `fork_routers.py`.
+      30.10.2026: `print_scheduler.py` von 8 740 auf 4 846 Zeilen (−45 %), Grenze auf 4 875 gesenkt. Helfer liegen in
+      `backend/app/services/scheduler/` (filament, nozzles, chamber, dispatch, upload, delivery), Vorheizen/Warmhalten
+      und Trocknung als Mixins (`preheat.py`, `drying.py`); alles bleibt über `print_scheduler` importierbar. Die
+      ausgelagerten Bausteine lösen `printer_manager`, `time`, `datetime`, `notification_service`, `supports_drying`,
+      `delete_file_async`, `upload_file_async`, `get_ftp_retry_settings` und `ws_manager` über das Fassadenmodul auf,
+      damit die bestehenden Test-Patches unverändert greifen. **Nächster Schritt:** `check_queue` (930 Zeilen) aus der
+      Klasse lösen; danach die Druckerkarte (`PrinterCard` in `PrintersPage.tsx`, ~5 600 Zeilen in einer Funktion) und
+      `client.ts` (~9 700). `main.py` ist praktisch nur noch Verdrahtung und bleibt an der Grenze (11 069/11 075); neue
+      Funktionen gehören in eigene Module bzw. `fork_routers.py`.
 - [ ] Volle E2E-Prüfung MakerWorld → PC-Slicer → Warteschlange.
 - [ ] Komplette Unit-Suite in der CI (lokal nach 10 Minuten abgebrochen); `requirements.lock` vor der
       Docker-/Pi-Umstellung im Bau prüfen.
