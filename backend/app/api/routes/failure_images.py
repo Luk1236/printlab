@@ -9,15 +9,17 @@ Einstellungs-Änderung (SETTINGS_UPDATE).
 """
 
 import asyncio
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.core.auth import RequirePermissionIfAuthEnabled, require_media_token_permission
 from backend.app.core.database import get_db
 from backend.app.core.permissions import Permission
 from backend.app.models.user import User
+from backend.app.services import error_export
 from backend.app.utils import failure_images
 
 router = APIRouter(prefix="/failure-images", tags=["failure-images"])
@@ -32,6 +34,24 @@ async def list_images(
 ):
     """Liste der gesammelten Fehlerbilder, neueste zuerst."""
     return failure_images.list_failure_images()[:MAX_LIST]
+
+
+@router.get("/export")
+async def export_images(
+    db: AsyncSession = Depends(get_db),  # noqa: ARG001 - einheitliches Session-Muster
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.CAMERA_VIEW),
+):
+    """Sammlung als Trainingsset (ZIP mit Bildern und ``labels.jsonl``).
+
+    Muss **vor** ``/{name}`` stehen, sonst schluckt die Bild-Route den Pfad.
+    """
+    payload = await asyncio.to_thread(error_export.build_zip)
+    stamp = datetime.now().strftime("%Y%m%d")
+    return Response(
+        payload,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="fehlerbilder-{stamp}.zip"'},
+    )
 
 
 @router.get("/{name}")

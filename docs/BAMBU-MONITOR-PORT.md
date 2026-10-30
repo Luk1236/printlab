@@ -260,7 +260,8 @@ wird genutzt, kein zweiter Stream.
 - `frontend/src/i18n/locales/*.ts` (15 Sprachen, Parität geprüft)
 - `frontend/src/index.css`, `frontend/tailwind.config.js` (Kontrast/A11y)
 - `frontend/index.html` (Zoom wieder erlaubt)
-- `requirements.txt` (SQLAlchemy `<2.1` wegen Windows-Richtlinie)
+- `requirements.txt` (SQLAlchemy `<2.1` wegen Windows-Richtlinie) und `requirements.lock` (feste Versionen:
+  `pip install -r requirements.txt -c requirements.lock`; neu erzeugen steht als Kommentar in der Datei)
 - `data/hardware.json`, `data/magazine.json` (zur Laufzeit angelegt)
 
 ## Lokal auf dem PC starten
@@ -270,7 +271,7 @@ Getestet am 27.10.2026 auf Windows 11 mit Python 3.13 (x64):
 ```powershell
 cd C:\Users\lukas\OneDrive\Desktop\Bambuddy-Fork
 python -m venv .venv
-.venv\Scripts\python.exe -m pip install -r requirements.txt
+.venv\Scripts\python.exe -m pip install -r requirements.txt -c requirements.lock
 cd frontend
 npm ci
 npm run build

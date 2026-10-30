@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   X,
   Save,
@@ -64,6 +64,23 @@ export function TimelapseEditorModal({
   const { data: thumbnailData } = useQuery({
     queryKey: ['timelapse-thumbnails', archiveId],
     queryFn: () => api.getTimelapseThumbnails(archiveId, 15),
+  });
+
+  // Aufbewahrte Schichtbilder: daraus lässt sich jederzeit ein neues MP4 rendern.
+  const queryClient = useQueryClient();
+  const [framesFps, setFramesFps] = useState(24);
+  const { data: frames } = useQuery({
+    queryKey: ['timelapse-frames', archiveId],
+    queryFn: () => api.getTimelapseFrames(archiveId),
+    retry: false,
+  });
+  const renderFrames = useMutation({
+    mutationFn: () => api.renderTimelapseMp4(archiveId, framesFps),
+    onSuccess: (result) => {
+      showToast(`MP4 aus ${result.frames} Schichtbildern erzeugt.`);
+      queryClient.invalidateQueries({ queryKey: ['timelapse-frames', archiveId] });
+    },
+    onError: (error: Error) => showToast(error.message, 'error'),
   });
 
   // Process mutation
@@ -514,6 +531,60 @@ export function TimelapseEditorModal({
               </label>
             )}
           </div>
+
+          {/* Schichtbilder: MP4 neu rendern (nur wenn die Aufbewahrung aktiv war) */}
+          {frames && (
+            <div className="p-3 bg-bambu-dark rounded-lg text-sm space-y-2">
+              <p className="text-white flex items-center gap-2">
+                <Film className="w-4 h-4 text-bambu-green" />
+                Aus Schichtbildern neu rendern
+              </p>
+              {frames.sources.length === 0 ? (
+                <p className="text-xs text-bambu-gray">
+                  Keine aufbewahrten Schichtbilder für diesen Druck. Die Aufbewahrung wird unter Wartung →
+                  Zeitraffer-Aufbewahrung eingeschaltet und gilt ab dem nächsten Druck.
+                </p>
+              ) : (
+                <>
+                  <p className="text-xs text-bambu-gray">
+                    {frames.sources.length} Sitzung(en) mit {frames.sources[0].frames} Bildern (neueste).
+                  </p>
+                  <div className="flex flex-wrap items-end gap-2">
+                    <label className="text-xs text-bambu-gray">
+                      Bildrate
+                      <input
+                        type="number"
+                        min={1}
+                        max={60}
+                        value={framesFps}
+                        onChange={(event) => setFramesFps(Number(event.target.value))}
+                        className="mt-1 w-20 rounded border border-bambu-dark-tertiary bg-bambu-dark px-2 py-1 text-sm text-white"
+                      />
+                    </label>
+                    <Button size="sm" disabled={renderFrames.isPending} onClick={() => renderFrames.mutate()}>
+                      {renderFrames.isPending ? 'Rendert…' : 'MP4 erzeugen'}
+                    </Button>
+                  </div>
+                </>
+              )}
+              {frames.exports.length > 0 && (
+                <ul className="space-y-1 text-xs">
+                  {frames.exports.map((entry) => (
+                    <li key={entry.name}>
+                      <a
+                        className="text-bambu-green hover:underline break-all"
+                        href={`/api/v1/archives/${archiveId}/timelapse/frames/exports/${entry.name}`}
+                        download
+                      >
+                        {entry.name}
+                      </a>{' '}
+                      <span className="text-bambu-gray">({Math.round(entry.bytes / 1024)} KB)</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
 
           {/* Summary */}
           <div className="p-3 bg-bambu-dark rounded-lg text-sm space-y-1">

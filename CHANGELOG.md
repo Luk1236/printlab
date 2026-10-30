@@ -3,6 +3,58 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.17.0 (30.10.2026) — Angebots-Link, E-Rechnung, Zeitraffer und Einmess-Assistent
+
+- **Plattenwechsel bricht bei unbekannter Betttemperatur ab.** Bisher lief er dann sofort los — bei getrennter
+  MQTT-Verbindung auch auf einer heißen Platte. Jetzt fail-closed mit Eintrag im Audit-Log.
+- **Türprüfung liest den Endschalter wirklich.** Mit konfiguriertem `door_status_command` wird vor dem Wechsel
+  frisch gelesen; ohne Endschalter steht „ohne Endschalter“ im Ergebnis. Vorher galt der gespeicherte Zustand,
+  nach einem Neustart immer „geschlossen“.
+- **Plattenwechsel-Einstellungen je Drucker** (`hardware_{id}.json`); ein vorhandener globaler Bestand gilt
+  weiter als Vorlage. Änderung an einem Drucker wirkt nicht mehr auf die anderen.
+- **Fehlerbild-Aufräumen** rechnet die Obergrenze auf die verbliebenen Bilder: 600 Bilder mit 300 alten ergaben
+  vorher 300 statt 500.
+- **Magazin-Änderung ohne Teilwirkung:** eine abgelehnte Sammeländerung lässt den Zustand unverändert.
+- **KI-Trefferquote je Fehlerbild** in der Fehlerhilfe (richtig/falsch/Quote); Bewertungen werden begrenzt und
+  mit gelöschten Treffern entfernt.
+- **KI:** Bild wird vor dem Umwandeln verkleinert (Speicher auf dem Pi), Hintergrundaufgaben werden gehalten,
+  und die Bildanalyse hat ein Zeitbudget.
+- **Geldbeträge** in Angebot und Rechnung werden in Cent (`Decimal`) gerechnet und einmal gerundet.
+- **Assistent:** „Abbrechen“ stoppt eine laufende Antwort, „Neues Gespräch“ bricht sie ab.
+- Fehlermeldungen der Hardware-, Wartungs-, Kalibrier- und Spaghetti-Routen sind jetzt deutsch.
+- **Trainingsset-Export:** Die Fehlerbild-Sammlung lässt sich als ZIP herunterladen (Bilder, `labels.jsonl` mit
+  Fehlerbild, Sicherheit, Begründung und eigener Bewertung, `meta.json`, `README.txt`) — direkt in der Fehlerhilfe.
+- **KI-Hinweis als eigene Meldung:** Ist die KI-Erkennung eingeschaltet, kommt nach einer Fehlwarnung ein kurzer
+  Hinweis mit Fehlerbild, Sicherheit und Begründung. Die Warnung selbst wartet nie auf das Bildmodell.
+- **Filter für die Fehlerbild-Sammlung** in der Fehlerhilfe (Name, Anlass, Zeitpunkt) statt nur der letzten 20.
+- `requirements.lock` mit festen Versionen; Installation: `pip install -r requirements.txt -c requirements.lock`.
+- Neuer Test als Obergrenze für stille `except: pass`-Handler; MakerWorld-Hilfsfunktionen in ein eigenes Modul
+  ausgelagert und geprüft.
+- **Öffentlicher Angebots-Link:** Ein Angebot lässt sich als Link verschicken, den der Kunde ohne Anmeldung
+  öffnet und dort zusagt oder ablehnt. Das Merkmal in der Adresse ist die Berechtigung, der Link läuft nach
+  einer Frist ab, ein neuer Link macht den alten ungültig, und zurückziehen geht jederzeit. Die Seite zeigt nur
+  Kundenangaben, Positionen und Gesamtpreis — nicht die interne Kalkulation. Antworten sind einmalig; ein
+  doppelt abgeschicktes Formular dreht die Entscheidung nicht um.
+- **Zeitraffer als MP4 aus den Schichtbildern:** Mit eingeschalteter Aufbewahrung bleiben die Schichtbilder
+  nach dem Druck liegen (`data/timelapse_kept/`), und im Zeitraffer-Editor lässt sich daraus mit wählbarer
+  Bildrate ein MP4 rendern (`data/timelapse_exports/`). Aufbewahrung mit Tages- und Anzahlgrenzen; auch ein
+  fehlgeschlagenes automatisches Stechen kostet die Bilder dann nicht mehr.
+- **Automatische Umverteilung:** Scheitert ein Auftrag (nicht: Abbruch durch den Benutzer), wird er einmal als
+  neuer Eintrag auf ein anderes Gerät desselben Modells eingereiht. Je Auftragskette eine Merkliste in
+  `data/auto_requeue_log.json`, Meldung über `queue_job_added`, Protokoll in der Oberfläche. Standardmäßig aus.
+- **E-Rechnung (XRechnung, UBL):** Rechnungen lassen sich als XRechnung-XML herunterladen. Fehlende
+  Pflichtangaben (Firma, Anschrift, Steuernummer/USt-IdNr., E-Mail, Kunde, Daten, Steuerhinweis) werden vorher
+  als Liste gemeldet und es wird kein XML erzeugt. **Nicht** zertifiziert und nicht gegen den KoSIT-Validator
+  geprüft; kein ZUGFeRD. Die rechtliche Prüfung bleibt bei der Steuerberatung.
+- **Nachbestellvorschlag:** Auf Basis der vorhandenen Prognose (`stock_forecast`): fällige Materialien mit
+  Bestellmenge in ganzen Rollen, günstigstem Lieferanten aus den gepflegten Angeboten und geschätzten Kosten;
+  im Spoolman-Betrieb aus dem Spoolman-Bestand (ohne Preise). Zielbestand und Mindestmenge einstellbar.
+- **Einmess-Assistent Plattenwechsel:** Referenz-, Aufnahme-, Ablage- und optionale Magazinposition, Tür- und
+  Endschalterprüfung, Probelauf, Name der einmessenden Person; Abschluss nur mit allen Pflichtschritten und
+  ohne doppelte Positionen. Ein begonnener, nicht abgeschlossener Assistent sperrt den Plattenwechsel — auch
+  die Automatik. Protokoll als Textdatei. Der Assistent erzeugt **keine** Bewegungsfolge; die muss am Gerät
+  erprobt werden.
+
 ## v1.16.0 (30.10.2026) — KI-Erkennung mit Rückmeldung und Anleitung
 
 - **Rückmeldung pro Treffer:** Jeder erkannte Fehler lässt sich als richtig oder falsch bewerten; die letzte Bewertung zählt

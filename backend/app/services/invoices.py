@@ -16,10 +16,12 @@ import json
 import threading
 import uuid
 from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal
 from typing import Any
 
 from backend.app.core.config import settings
 from backend.app.services import quote_history
+from backend.app.utils.money import as_float, money
 
 INVOICES_PATH = settings.base_dir / "invoices.json"
 MAX_ENTRIES = 5000
@@ -194,18 +196,25 @@ def overdue(today: date | None = None) -> list[dict[str, Any]]:
 
 
 def totals() -> dict[str, dict[str, float]]:
-    """Summen je Währung: offen, überfällig, bezahlt (stornierte zählen nicht)."""
-    result: dict[str, dict[str, float]] = {}
+    """Summen je Währung: offen, überfällig, bezahlt (stornierte zählen nicht).
+
+    Summiert in ``Decimal`` und rundet einmal am Ende: wiederholtes ``round()`` auf ``float`` driften
+    bei vielen Rechnungen um Cents auseinander.
+    """
+    sums: dict[str, dict[str, Decimal]] = {}
     overdue_ids = {i["id"] for i in overdue()}
     for item in _read():
         if item.get("status") == "cancelled":
             continue
-        row = result.setdefault(str(item.get("currency") or "EUR"), {"open": 0.0, "overdue": 0.0, "paid": 0.0})
-        amount = float(item.get("total") or 0)
+        row = sums.setdefault(
+            str(item.get("currency") or "EUR"),
+            {"open": Decimal(0), "overdue": Decimal(0), "paid": Decimal(0)},
+        )
+        amount = money(item.get("total") or 0)
         if item.get("status") == "paid":
-            row["paid"] = round(row["paid"] + amount, 2)
+            row["paid"] += amount
         else:
-            row["open"] = round(row["open"] + amount, 2)
+            row["open"] += amount
             if item["id"] in overdue_ids:
-                row["overdue"] = round(row["overdue"] + amount, 2)
-    return result
+                row["overdue"] += amount
+    return {currency: {key: as_float(value) for key, value in row.items()} for currency, row in sums.items()}

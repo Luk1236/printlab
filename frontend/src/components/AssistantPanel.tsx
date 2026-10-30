@@ -85,6 +85,8 @@ export function AssistantPanel({ canConfigure }: { canConfigure: boolean }) {
       .streamAssistantChat(userTurns, lang, (delta) => {
         live += delta;
         setTurns((prev) => {
+          // Der Live-Turn ist der letzte Eintrag — es sei denn, jemand hat das Gespräch inzwischen geleert.
+          if (!prev.length || prev[prev.length - 1].role !== 'assistant') return prev;
           const copy = [...prev];
           copy[copy.length - 1] = { ...copy[copy.length - 1], content: live };
           return copy;
@@ -92,6 +94,7 @@ export function AssistantPanel({ canConfigure }: { canConfigure: boolean }) {
       }, controller.signal)
       .then((answer) =>
         setTurns((prev) => {
+          if (!prev.length || prev[prev.length - 1].role !== 'assistant') return prev;
           const copy = [...prev];
           copy[copy.length - 1] = {
             role: 'assistant',
@@ -141,11 +144,26 @@ export function AssistantPanel({ canConfigure }: { canConfigure: boolean }) {
             <Bot className="w-5 h-5 text-bambu-green" />
             {t('assistant.title')}
           </h2>
-          {turns.length > 0 && (
-            <Button size="sm" variant="ghost" onClick={() => { setTurns([]); setActionStates({}); }}>
-              {t('assistant.newChat')}
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {pending && (
+              <Button size="sm" variant="ghost" onClick={() => streamControl.current?.abort()}>
+                {t('assistant.stop')}
+              </Button>
+            )}
+            {turns.length > 0 && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  streamControl.current?.abort();
+                  setTurns([]);
+                  setActionStates({});
+                }}
+              >
+                {t('assistant.newChat')}
+              </Button>
+            )}
+          </div>
         </div>
         <p className="text-xs text-bambu-gray">{t('assistant.intro')}</p>
 

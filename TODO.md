@@ -1,6 +1,6 @@
 # TODO — PrintLab
 
-**Stand:** 30.10.2026, Version 1.16.0 · **Basis:** Bambuddy 1.2.5.7 (AGPL-3.0, Herkunft: `NOTICE`) · **Branch:** `bambu-monitor-port`
+**Stand:** 30.10.2026, Version 1.17.0 · **Basis:** Bambuddy 1.2.5.7 (AGPL-3.0, Herkunft: `NOTICE`) · **Branch:** `bambu-monitor-port`
 
 Was fertig ist, steht mit Datum im `CHANGELOG.md`. Die ausführliche Bewertung (Risiken R1–R16, Verbesserungen, Erweiterungen)
 steht in `docs/ANALYSE-2026-10-28.md`, die Abnahme in `docs/ABNAHME.md`.
@@ -9,6 +9,16 @@ steht in `docs/ANALYSE-2026-10-28.md`, die Abnahme in `docs/ABNAHME.md`.
 
 PrintLab (Pi 5, nativ, systemd-Benutzerdienst), Fernzugriff über Tailscale, Updates aus der Oberfläche, Sicherung vor dem
 Update mit Rückbau, Überwachung mit Meldung, Angebote mit PDF, Kamera-Einmessung, Zustand des Geräts, Anmeldung vorgeschrieben.
+
+## Zuletzt erledigt (30.10.2026, uncommittet)
+
+Alle Befunde F1–F10 aus `docs/ANALYSE-2026-10-30.md` sind behoben (Plattenwechsel fail-closed bei Temperatur und
+Tür, Aufräumen der Fehlerbilder, Magazin-Änderung ohne Teilwirkung, Einstellungen je Drucker, KI-Haushalt,
+Geldrechnung in Cent) und die Verbesserungen 1–12 umgesetzt (u. a. `requirements.lock`, KI-Trefferquote je
+Fehlerbild, Abbrechen im Assistenten, Filter der Fehlerbild-Sammlung). **Alle acht Erweiterungen sind umgesetzt:**
+Trainingsset-Export, KI-Hinweis als eigene Meldung, öffentlicher Angebots-Link mit Zusage/Ablehnung, Zeitraffer-MP4
+aus aufbewahrten Schichtbildern, automatische Umverteilung, XRechnung-XML, Nachbestellvorschlag und der
+Einmess-Assistent für den Plattenwechsel. Details und Grenzen im `CHANGELOG.md`.
 
 ## Offen, nur mit deiner Hand oder echter Hardware
 
@@ -20,7 +30,13 @@ Update mit Rückbau, Überwachung mit Meldung, Angebote mit PDF, Kamera-Einmessu
 - [ ] **SSD** statt SD-Karte für den Pi (Warnung erscheint unter Wartung → Zustand des Geräts).
 - [ ] **Hardware abnehmen:** Tür-Servo mit Endschaltern, Not-Halt, Slicer über Tailscale, Kamera-Einmessung an echten
       Fotos (Checkliste in `docs/ABNAHME.md`).
-- [ ] **Plattenwechsel:** Bewegungsfolge vermessen und umsetzen; bis dahin bleibt `swap` gesperrt.
+- [ ] **Plattenwechsel:** Mit dem Einmess-Assistenten die Positionen an der echten Mechanik aufnehmen und daraus
+      die Bewegungsfolge ableiten; erst nach Probelauf `swap` freigeben. Eine begonnene, nicht abgeschlossene
+      Einmessung sperrt den Wechsel bereits (auch die Automatik).
+- [ ] **E-Rechnung abnehmen:** XRechnung mit der Steuerberatung und gegen den KoSIT-Validator prüfen lassen, bevor
+      sie an Kunden geht; ZUGFeRD fehlt bewusst (braucht PDF/A-3).
+- [ ] **Angebots-Link und Nachbestellvorschlag erproben:** Link auf dem Mobilgerät öffnen und beantworten;
+      Lieferantenpreise pflegen und den Vorschlag gegen den tatsächlichen Verbrauch prüfen (auch im Spoolman-Betrieb).
 - [ ] Übersetzungen der 13 Nebensprachen von Muttersprachlern gegenlesen lassen.
 
 ## Technisch offen
@@ -30,6 +46,9 @@ Update mit Rückbau, Überwachung mit Meldung, Angebote mit PDF, Kamera-Einmessu
       und `print_scheduler.py` (~8 740). `main.py` ist praktisch nur noch Verdrahtung und bleibt an der Grenze (11 054/11 075);
       neue Funktionen gehören in eigene Module bzw. `fork_routers.py`.
 - [ ] Volle E2E-Prüfung MakerWorld → PC-Slicer → Warteschlange.
+- [ ] Komplette Unit-Suite in der CI (lokal nach 10 Minuten abgebrochen); `requirements.lock` vor der
+      Docker-/Pi-Umstellung im Bau prüfen.
+- [ ] Stille `except Exception: pass`-Handler abbauen (43, durch `test_error_handling_budget.py` gedeckelt).
 - [ ] Docker-/ARM-Image auf einem Pi 4/5 starten und prüfen.
 - [ ] Fehlerhilfe: die zwölf Fließtexte der Fehlerbilder von Muttersprachlern übersetzen lassen (Titel und Kurzfassungen
       sind englisch hinterlegt) und die Schwellen der beiden Regeln in der Oberfläche einstellbar machen (derzeit nur

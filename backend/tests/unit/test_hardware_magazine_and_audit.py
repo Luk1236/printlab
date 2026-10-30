@@ -31,6 +31,17 @@ class TestEditSlots:
         assert ok is False
         assert "Unbekannter Status" in msg
 
+    def test_rejected_request_changes_nothing(self, extension):
+        """Regression: eine abgelehnte Sammeländerung darf den Zustand nicht halb anwenden."""
+        ok, _ = extension.edit_slots([{"id": 1, "label": "NEU"}, {"id": 2, "status": "kaputt"}])
+        assert ok is False
+        slots = {s["id"]: s for s in extension.status()["slots"]}
+        assert slots[1]["label"] == "PEI A"
+        assert not extension.magazine_path.exists()  # nichts geschrieben
+        # Ein zweiter, gültiger Aufruf beginnt bei den unveränderten Ausgangswerten.
+        ok, _ = extension.edit_slots([{"id": 1, "label": "PEI A"}])
+        assert ok is True
+
     def test_clearing_occupied_removes_print_marker(self, extension):
         extension.edit_slots([{"id": 5, "status": "occupied"}])
         extension.edit_slots([{"id": 5, "status": "empty"}])
@@ -127,6 +138,47 @@ class TestDoorStatus:
         ok, msg = extension.check_door_status()
         assert ok, msg
         assert extension.status()["door"] == "open"
+
+    def test_verify_reads_the_sensor_not_the_cache(self, tmp_path):
+        """Vor einer Bewegung muss der Endschalter frisch gelesen werden."""
+        import sys
+
+        extension = HardwareExtension(config_path=tmp_path / "hardware.json", magazine_path=tmp_path / "magazine.json")
+        assert extension.verify_door_closed()[0] is True  # Katalog: gespeicherter Zustand "closed"
+        ok, msg = extension.update_config(
+            {"mode": "command", "door_status_command": [sys.executable, "-c", "print('DOOR:OPEN')"]}
+        )
+        assert ok, msg
+        closed, note = extension.verify_door_closed()
+        assert closed is False and "open" in note
+        assert extension.status()["door"] == "open"  # die Abfrage hat den Zustand wirklich gesetzt
+
+    def test_verify_without_sensor_says_so(self, extension):
+        closed, note = extension.verify_door_closed()
+        assert closed is True
+        assert "ohne Endschalter" in note
+
+    def test_verify_closed_sensor(self, tmp_path):
+        import sys
+
+        extension = HardwareExtension(config_path=tmp_path / "hardware.json", magazine_path=tmp_path / "magazine.json")
+        extension.update_config(
+            {"mode": "command", "door_status_command": [sys.executable, "-c", "print('DOOR:CLOSED')"]}
+        )
+        closed, note = extension.verify_door_closed()
+        assert closed is True
+        assert "geschlossen" in note
+
+    def test_verify_fails_closed_when_the_sensor_command_fails(self, tmp_path):
+        import sys
+
+        extension = HardwareExtension(config_path=tmp_path / "hardware.json", magazine_path=tmp_path / "magazine.json")
+        extension.update_config(
+            {"mode": "command", "door_status_command": [sys.executable, "-c", "import sys; sys.exit(3)"]}
+        )
+        closed, note = extension.verify_door_closed()
+        assert closed is False
+        assert "Tür" in note or "Befehl" in note
 
     def test_unknown_output_is_reported(self, tmp_path):
         import sys

@@ -53,6 +53,10 @@ import { SetupChecklistCard } from '../components/SetupChecklistCard';
 import { SetupBanner, SetupWizardCard } from '../components/SetupWizardCard';
 import { AlertChannelsCard } from '../components/AlertChannelsCard';
 import { PlateTuningCard } from '../components/PlateTuningCard';
+import { PlateWizardCard } from '../components/PlateWizardCard';
+import { AutoRequeueCard } from '../components/AutoRequeueCard';
+import { StockReorderCard } from '../components/StockReorderCard';
+import { TimelapseRetentionCard } from '../components/TimelapseRetentionCard';
 import { AssistantPanel } from '../components/AssistantPanel';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -1290,7 +1294,11 @@ export function MaintenancePage() {
         <div className="space-y-6">
           <MaintenanceProgramsCard canControl={hasPermission('printers:control')} />
           <HardwareAdminCard canControl={hasPermission('printers:control')} />
+          <PlateWizardCard canControl={hasPermission('printers:control')} />
           <PlateTuningCard canControl={hasPermission('settings:update')} />
+          <AutoRequeueCard canEdit={hasPermission('queue:update_all')} />
+          <StockReorderCard canEdit={hasPermission('inventory:forecast_write')} />
+          <TimelapseRetentionCard canEdit={hasPermission('archives:update_all')} />
         </div>
       ) : activeTab === 'assistant' ? (
         <AssistantPanel canConfigure={hasPermission('settings:update')} />

@@ -10,6 +10,7 @@ from fastapi import FastAPI
 
 from backend.app.api.routes import (
     assistant,
+    auto_requeue,
     customers,
     error_help,
     failure_images,
@@ -18,10 +19,14 @@ from backend.app.api.routes import (
     monthly_report,
     plate_calibration,
     plate_tuning,
+    plate_wizard,
     quote,
     quote_queue,
+    quote_share,
+    reorder,
     selftest,
     spaghetti_check,
+    timelapse_export,
 )
 
 
@@ -47,3 +52,13 @@ def register_fork_routers(app: FastAPI, prefix: str) -> None:
     app.include_router(customers.router, prefix=prefix)
     # Fehlerhilfe: Fehlerbild-Bibliothek und optionale Gegenmaßnahmen.
     app.include_router(error_help.router, prefix=prefix)
+    # Zeitraffer: aufbewahrte Schichtbilder als MP4 rendern.
+    app.include_router(timelapse_export.router, prefix=prefix)
+    # Automatische Umverteilung eines gescheiterten Auftrags (einmal, anderes Gerät).
+    app.include_router(auto_requeue.router, prefix=prefix)
+    # Nachbestellvorschlag aus Verbrauchsprognose, Lieferant und Preis.
+    app.include_router(reorder.router, prefix=prefix)
+    # Öffentlicher Angebots-Link mit Zusage/Ablehnung (Seite ohne Anmeldung).
+    app.include_router(quote_share.router, prefix=prefix)
+    # Einmess-Assistent für den Plattenwechsel (Messwerte, Sperre, Protokoll).
+    app.include_router(plate_wizard.router, prefix=prefix)

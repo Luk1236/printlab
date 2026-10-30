@@ -75,6 +75,24 @@ def test_pruning_removes_expired_files(isolated_dir, monkeypatch):
     assert (isolated_dir / fresh).exists()
 
 
+def test_pruning_counts_survivors_not_the_old_total(isolated_dir, monkeypatch):
+    """Regression: zu alte Bilder dürfen die Übergrenze nicht auf die frische Menge anrechnen.
+
+    Vorher wurden 600 Bilder mit 300 alten zu 300 statt 500 aufgeräumt — die Übergrenze wurde auf die
+    alte Gesamtzahl gerechnet und traf danach frische Bilder.
+    """
+    old = [failure_images.save_failure_image(f"alt{i}".encode(), "ai") for i in range(5)]
+    fresh = [failure_images.save_failure_image(f"neu{i}".encode(), "ai") for i in range(5)]
+    age = failure_images._MAX_AGE_SECONDS + 60
+    for i, name in enumerate(old):
+        os.utime(isolated_dir / name, (time.time() - age - i, time.time() - age - i))
+    monkeypatch.setattr(failure_images, "_MAX_FILES", 6)
+    failure_images._prune(isolated_dir)
+    remaining = {p.name for p in isolated_dir.iterdir()}
+    assert remaining == set(fresh)
+    assert len(remaining) == 5  # unter der Grenze: nichts Frisches wird gelöscht
+
+
 def test_delete_only_touches_valid_entries(isolated_dir):
     name = failure_images.save_failure_image(b"x", "ai")
     assert failure_images.delete_failure_image(name) is True

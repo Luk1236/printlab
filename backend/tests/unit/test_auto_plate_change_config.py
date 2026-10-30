@@ -18,7 +18,11 @@ def isolated_config(tmp_path, monkeypatch):
     """Point both the hardware config and the automation at a temp dir."""
     cfg = tmp_path / "hardware.json"
     monkeypatch.setattr(hardware_extension, "CONFIG_PATH", cfg)
-    monkeypatch.setattr(auto_plate_change, "_config_path", lambda: cfg)
+    monkeypatch.setattr(
+        auto_plate_change,
+        "_config_path",
+        lambda printer_id=None: cfg if printer_id is None else tmp_path / f"hardware_{printer_id}.json",
+    )
     from backend.app.services import audit_log
 
     monkeypatch.setattr(audit_log, "LOG_PATH", tmp_path / "audit_log.jsonl")
@@ -66,7 +70,7 @@ class TestConfig:
 
 class TestScheduleGate:
     def test_schedule_is_a_noop_when_disabled(self, monkeypatch):
-        monkeypatch.setattr(auto_plate_change, "read_config", lambda: dict(auto_plate_change.DEFAULTS))
+        monkeypatch.setattr(auto_plate_change, "read_config", lambda printer_id=None: dict(auto_plate_change.DEFAULTS))
         assert auto_plate_change.schedule(1, "job") is False
         assert 1 not in auto_plate_change._TASKS
 
@@ -77,7 +81,9 @@ class TestScheduleGate:
             pending.append(job_name)
 
         monkeypatch.setattr(auto_plate_change, "_run_change", fake_run)
-        monkeypatch.setattr(auto_plate_change, "read_config", lambda: dict(auto_plate_change.DEFAULTS, enabled=True))
+        monkeypatch.setattr(
+            auto_plate_change, "read_config", lambda printer_id=None: dict(auto_plate_change.DEFAULTS, enabled=True)
+        )
 
         async def main():
             assert auto_plate_change.schedule(1, "Wartung") is True
@@ -92,7 +98,7 @@ class TestScheduleGate:
         monkeypatch.setattr(
             auto_plate_change,
             "read_config",
-            lambda: dict(auto_plate_change.DEFAULTS, enabled=True, only_with_queue=True),
+            lambda printer_id=None: dict(auto_plate_change.DEFAULTS, enabled=True, only_with_queue=True),
         )
         monkeypatch.setattr(auto_plate_change, "_has_pending_queue_item", lambda pid: False)
 
@@ -113,7 +119,7 @@ class TestScheduleGate:
         monkeypatch.setattr(
             auto_plate_change,
             "read_config",
-            lambda: dict(auto_plate_change.DEFAULTS, enabled=True, only_with_queue=True),
+            lambda printer_id=None: dict(auto_plate_change.DEFAULTS, enabled=True, only_with_queue=True),
         )
         monkeypatch.setattr(auto_plate_change, "_has_pending_queue_item", lambda pid: True)
 

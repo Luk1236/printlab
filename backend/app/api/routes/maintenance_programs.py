@@ -29,7 +29,7 @@ async def _get_printer(printer_id: int, db: AsyncSession) -> Printer:
     result = await db.execute(select(Printer).where(Printer.id == printer_id))
     printer = result.scalar_one_or_none()
     if printer is None:
-        raise HTTPException(404, "Printer not found")
+        raise HTTPException(404, "Drucker nicht gefunden.")
     return printer
 
 
@@ -97,7 +97,7 @@ async def start_program(
         raise HTTPException(400, "Bitte zuerst bestätigen, dass die Druckplatte frei ist.")
     client = printer_manager.get_client(printer_id)
     if client is None:
-        raise HTTPException(400, "Printer not connected")
+        raise HTTPException(400, "Drucker ist nicht verbunden.")
     model = printer.model or printer_manager.get_model(printer_id)
     ok, message = service.start(printer_id, key, client, model, runs)
     if not ok:

@@ -122,3 +122,7 @@ feature_votes.sh
 /hardware_*.json
 /magazine_*.json
 /quote_history.json
+
+# Lokale Werkzeug- und Testreste
+.claude/
+/timelapse_frames/

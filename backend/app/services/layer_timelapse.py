@@ -271,6 +271,24 @@ async def on_layer_change(printer_id: int, layer_num: int):
         await session.capture_layer(layer_num)
 
 
+def _finish_frames(session: "TimelapseSession") -> None:
+    """Schichtbilder aufbewahren (Zeitraffer-Export) oder wie bisher löschen.
+
+    Die Aufbewahrung kostet Platz; sie ist deshalb eine Einstellung und gilt
+    ab dem nächsten Druck. Schlägt das Verschieben fehl, wird gelöscht wie
+    zuvor — ein voller Datenträger darf den Druckabschluss nicht stören.
+    """
+    from backend.app.services import timelapse_export
+
+    try:
+        wanted = timelapse_export.read_config()["keep_frames"] and session.archive_id
+        if wanted and timelapse_export.keep_frames(session.archive_id, session.frames_dir, session.session_id):
+            return
+    except OSError as e:
+        logger.warning("Could not keep timelapse frames for archive %s: %s", session.archive_id, e)
+    session.cleanup()
+
+
 async def on_print_complete(printer_id: int) -> Path | None:
     """Stitch timelapse and return path. Cleans up session.
 
@@ -300,16 +318,13 @@ async def on_print_complete(printer_id: int) -> Path | None:
     _finalizing_sessions[printer_id] = session.session_id
     try:
         success = await session.stitch(output_path)
-        if success:
-            # Cleanup frames after successful stitch
-            session.cleanup()
-            return output_path
-        else:
-            session.cleanup()
-            return None
+        # Auch nach einem fehlgeschlagenen Stich bleiben die Bilder liegen, wenn
+        # die Aufbewahrung an ist: daraus lässt sich das MP4 später rendern.
+        _finish_frames(session)
+        return output_path if success else None
     except Exception as e:
         logger.error("Timelapse completion failed: %s", e)
-        session.cleanup()
+        _finish_frames(session)
         return None
     finally:
         _finalizing_sessions.pop(printer_id, None)

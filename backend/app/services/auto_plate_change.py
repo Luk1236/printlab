@@ -38,6 +38,7 @@ logger = logging.getLogger(__name__)
 CONFIG_PATH = None  # spät gesetzt, siehe _set_config_path()
 _LAST: dict[int, dict[str, Any]] = {}
 _TASKS: dict[int, asyncio.Task] = {}
+_BROADCAST_TASKS: set[asyncio.Task] = set()
 
 DEFAULTS: dict[str, Any] = {
     "enabled": False,
@@ -55,32 +56,43 @@ DEFAULTS: dict[str, Any] = {
 }
 
 
-def _set_config_path() -> Path:
-    """Liefert den Pfad zu ``data/hardware.json`` (lazily, nach Settings-Import)."""
-    from backend.app.services.hardware_extension import CONFIG_PATH
+def _config_path(printer_id: int | None = None) -> Path:
+    """Datei mit dem Abschnitt ``auto_plate_change``.
 
-    return CONFIG_PATH
+    Mit ``printer_id`` liegt die Einstellung neben der Hardware dieses Druckers (``hardware_{id}.json``),
+    ohne in der gemeinsamen ``hardware.json``. Bis v1.16 war sie immer global; ein vorhandener globaler
+    Eintrag gilt weiter als Vorlage, solange der Drucker noch keine eigene Einstellung hat.
+    """
+    from backend.app.services.hardware_extension import CONFIG_PATH, printer_config_path
+
+    return CONFIG_PATH if printer_id is None else printer_config_path(printer_id)
 
 
-def _config_path() -> Path:
-    return _set_config_path()
+def _read_section(path: Path) -> dict[str, Any] | None:
+    """Der ``auto_plate_change``-Abschnitt einer Datei, wenn er da ist (sonst None)."""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    section = data.get("auto_plate_change") if isinstance(data, dict) else None
+    return section if isinstance(section, dict) else None
 
 
 def _read_config(section_path: Path) -> dict[str, Any]:
     cfg: dict[str, Any] = dict(DEFAULTS)
-    try:
-        data = json.loads(section_path.read_text(encoding="utf-8"))
-        section = data.get("auto_plate_change") if isinstance(data, dict) else None
-        if isinstance(section, dict):
-            cfg.update({k: section[k] for k in DEFAULTS if k in section})
-    except (OSError, ValueError):
-        pass
+    section = _read_section(section_path)
+    if section:
+        cfg.update({k: section[k] for k in DEFAULTS if k in section})
     return cfg
 
 
-def read_config() -> dict[str, Any]:
+def read_config(printer_id: int | None = None) -> dict[str, Any]:
     """Aktuelle Automatik-Konfiguration (mit Standardwerten)."""
-    cfg = _read_config(_config_path())
+    path = _config_path(printer_id)
+    cfg = _read_config(path)
+    if printer_id is not None and _read_section(path) is None:
+        # Bestandsinstallation: die Einstellung lag global, gilt weiter bis der Drucker eine eigene bekommt.
+        cfg = _read_config(_config_path())
     try:
         cfg["cooldown_bed_temp"] = float(cfg["cooldown_bed_temp"])
         cfg["max_wait_seconds"] = max(0, int(cfg["max_wait_seconds"]))
@@ -92,16 +104,22 @@ def read_config() -> dict[str, Any]:
     return cfg
 
 
-def write_config(update: dict[str, Any]) -> dict[str, Any]:
-    """Konfiguration abspeichern (nur bekannte Schlüssel, Werte typisiert)."""
-    path = _config_path()
+def write_config(update: dict[str, Any], printer_id: int | None = None) -> dict[str, Any]:
+    """Konfiguration abspeichern (nur bekannte Schlüssel, Werte typisiert).
+
+    Ohne ``printer_id`` global, sonst in der Datei dieses Druckers. Ein globaler Bestand dient dabei als
+    Ausgangspunkt, damit ein Drucker nicht plötzlich auf Standardwerte zurückfällt.
+    """
+    path = _config_path(printer_id)
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(data, dict):
             data = {}
     except (OSError, ValueError):
         data = {}
-    section = data.get("auto_plate_change") if isinstance(data.get("auto_plate_change"), dict) else {}
+    section = data.get("auto_plate_change") if isinstance(data.get("auto_plate_change"), dict) else None
+    if section is None:
+        section = dict(_read_section(_config_path()) or {})
     if "enabled" in update:
         section["enabled"] = bool(update["enabled"])
     for key in ("skip_if_offline", "only_with_queue", "notify", "auto_confirm_plate_clear"):
@@ -126,7 +144,7 @@ def write_config(update: dict[str, Any]) -> dict[str, Any]:
     tmp = path.with_name(path.name + ".tmp")
     tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     tmp.replace(path)
-    return read_config()
+    return read_config(printer_id)
 
 
 def last_run(printer_id: int) -> dict[str, Any] | None:
@@ -186,7 +204,10 @@ def _broadcast(payload: dict[str, Any]) -> None:
     try:
         from backend.app.main import ws_manager
 
-        asyncio.get_running_loop().create_task(ws_manager.broadcast(payload))
+        # Referenz halten: der Event-Loop hält nur schwache Referenzen auf Aufgaben.
+        task = asyncio.get_running_loop().create_task(ws_manager.broadcast(payload))
+        _BROADCAST_TASKS.add(task)
+        task.add_done_callback(_BROADCAST_TASKS.discard)
     except Exception as exc:  # pragma: no cover - Broadcast ist optional
         logger.debug("[AutoPlateChange] Broadcast fehlgeschlagen: %s", exc)
 
@@ -243,7 +264,13 @@ async def _wait_and_change(printer_id, job_name, cfg, record, printer_manager, g
                 if isinstance(temps.get(key), (int, float)):
                     bed = float(temps[key])
                     break
-        if bed is None or bed <= threshold:
+        if bed is None:
+            # Fail-closed: ohne Betttemperatur ist die Abkühlung nicht belegt. Früher lief der Wechsel
+            # hier trotzdem los — bei getrennter MQTT-Verbindung oder unbekanntem Feldnamen auch auf
+            # einer 100 °C heißen Platte.
+            await record(False, "Betttemperatur unbekannt — Plattenwechsel nicht angetreten (Sicherheit).")
+            return
+        if bed <= threshold:
             break
         if waited >= max_wait:
             await record(
@@ -254,16 +281,29 @@ async def _wait_and_change(printer_id, job_name, cfg, record, printer_manager, g
         await asyncio.sleep(poll)
         waited += poll
 
-    hw = get_hardware(printer_id)
-    hw_status = hw.status()
-    if hw_status.get("door") != "closed":
-        await record(False, "Tür ist offen bzw. unbestätigt — Plattenwechsel nicht angetreten.")
+    # Ein begonnener, nicht abgeschlossener Einmess-Assistent sperrt auch die Automatik.
+    from backend.app.services import plate_wizard
+
+    blocked = plate_wizard.blocks_plate_change(printer_id)
+    if blocked:
+        await record(False, f"{blocked} Plattenwechsel nicht angetreten.")
         return
+
+    hw = get_hardware(printer_id)
+    # Die Tür wird hier frisch geprüft: mit konfiguriertem Endschalter wird ``door_status_command``
+    # ausgeführt, ohne Endschalter bleibt es beim gespeicherten Zustand (dann steht das im Ergebnis).
+    door_ok, door_note = await asyncio.to_thread(hw.verify_door_closed)
+    if not door_ok:
+        await record(False, f"Tür ist offen bzw. unbestätigt ({door_note}) — Plattenwechsel nicht angetreten.")
+        return
+    hw_status = hw.status()
     if hw_status.get("busy"):
         await record(False, "Hardware-Vorgang läuft bereits — kein automatischer Wechsel.")
         return
 
     ok, message = await asyncio.to_thread(hw.change_plate, job_name)
+    if ok and "ohne Endschalter" in door_note:
+        message = f"{message} ({door_note})"
     warning = _low_supply_warning(hw.status(), cfg) if ok else None
     if ok and cfg.get("auto_confirm_plate_clear"):
         confirmed, note = await _confirm_plate_clear(printer_id, float(cfg["plate_clear_min_confidence"]))
@@ -363,7 +403,7 @@ def cancel(printer_id: int | None = None, reason: str = "") -> int:
 
 def schedule(printer_id: int, job_name: str = "") -> bool:
     """Automatik nach Druckende antreten (nur wenn eingeschaltet)."""
-    cfg = read_config()
+    cfg = read_config(printer_id)
     if not cfg.get("enabled"):
         return False
     if cfg.get("only_with_queue"):

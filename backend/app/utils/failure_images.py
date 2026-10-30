@@ -46,19 +46,28 @@ def failure_images_dir() -> Path:
 
 
 def _prune(directory: Path) -> None:
-    """Best-effort: zu alte und zu viele Bilder löschen (älteste zuerst)."""
+    """Best-effort: zu alte und zu viele Bilder löschen (älteste zuerst).
+
+    Die Übergrenze gilt für die Bilder, die den Altersschnitt **überlebt** haben. Früher wurde sie auf
+    die alte Gesamtzahl gerechnet und danach noch einmal so viele frische Bilder gelöscht (600 Bilder,
+    300 zu alt → nur 300 statt 500 übrig).
+    """
     try:
         entries = [entry for entry in directory.iterdir() if entry.is_file() and _FILENAME_RE.fullmatch(entry.name)]
         cutoff = time.time() - _MAX_AGE_SECONDS
+        survivors: list[tuple[float, Path]] = []
         for entry in entries:
             try:
-                if entry.stat().st_mtime < cutoff:
+                mtime = entry.stat().st_mtime
+                if mtime < cutoff:
                     entry.unlink()
+                    continue
+                survivors.append((mtime, entry))
             except OSError:
                 continue
-        over = len(entries) - _MAX_FILES
+        over = len(survivors) - _MAX_FILES
         if over > 0:
-            for entry in sorted(entries, key=lambda item: item.stat().st_mtime)[:over]:
+            for _mtime, entry in sorted(survivors, key=lambda item: item[0])[:over]:
                 try:
                     entry.unlink()
                 except OSError:

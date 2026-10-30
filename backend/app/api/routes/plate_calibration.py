@@ -62,7 +62,7 @@ async def capture_bed_reference(
     result = await db.execute(select(Printer).where(Printer.id == printer_id))
     printer = result.scalar_one_or_none()
     if printer is None:
-        raise HTTPException(404, "Printer not found")
+        raise HTTPException(404, "Drucker nicht gefunden.")
     import logging
 
     snapshot = await _capture_snapshot_for_notification(printer_id, printer, logging.getLogger(__name__))
@@ -77,7 +77,7 @@ async def capture_bed_reference(
 async def _printer_exists(printer_id: int, db: AsyncSession) -> None:
     result = await db.execute(select(Printer).where(Printer.id == printer_id))
     if result.scalar_one_or_none() is None:
-        raise HTTPException(404, "Printer not found")
+        raise HTTPException(404, "Drucker nicht gefunden.")
 
 
 @router.get("/{printer_id}/plate-calibration")
@@ -125,7 +125,7 @@ async def preview_plate_calibration(
     result = await db.execute(select(Printer).where(Printer.id == printer_id))
     printer = result.scalar_one_or_none()
     if printer is None:
-        raise HTTPException(404, "Printer not found")
+        raise HTTPException(404, "Drucker nicht gefunden.")
     if not plate_calibration.status(printer_id)["calibrated"]:
         raise HTTPException(400, "Keine Einmessung gespeichert.")
     snapshot = await _capture_snapshot_for_notification(printer_id, printer, logging.getLogger(__name__))

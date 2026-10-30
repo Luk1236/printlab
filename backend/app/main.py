@@ -7365,6 +7365,17 @@ async def on_print_complete(printer_id: int, data: dict):
 
         await run_with_retry(_update_queue_status, label="queue status update")
 
+        # Automatische Umverteilung nach einem echten Fehlschlag (abschaltbar,
+        # höchstens einmal je Auftragskette, Ziel: anderes Gerät desselben Modells).
+        if queue_item_id is not None and queue_status == "failed":
+            try:
+                from backend.app.services import auto_requeue
+
+                async with async_session() as requeue_db:
+                    await auto_requeue.maybe_requeue(requeue_db, queue_item_id, queue_status)
+            except Exception as e:
+                logger.warning("Auto-requeue failed for queue item %s: %s", queue_item_id, e)
+
         # Post-commit side effects (notifications, MQTT relay, auto-off) use
         # their own sessions and have their own error handling — no retry needed.
         if queue_item_id is not None:
@@ -10414,6 +10425,10 @@ PUBLIC_API_PREFIXES = [
     # /dl/ slicer downloads below). The route grants nothing beyond writing
     # good/reject on the one archive the token was minted for.
     "/api/v1/archives/confirm/",
+    # Öffentlicher Angebots-Link (Angebote): der Kunde antwortet ohne Sitzung.
+    # Das Merkmal in der Adresse ist die Berechtigung; die Seite zeigt nur
+    # Kundenangaben und schreibt ausschließlich die Zusage/Ablehnung.
+    "/api/v1/quote/shared/",
 ]
 
 # Route patterns that are public (read-only display data)

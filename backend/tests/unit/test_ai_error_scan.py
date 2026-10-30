@@ -104,6 +104,23 @@ class TestFeedback:
         assert ai_error_scan.feedback_summary() == {"correct": 0, "wrong": 1}
         assert ai_error_scan.list_findings(10)[0]["verdict"] == "wrong"
 
+    def test_accuracy_is_reported_per_pattern(self):
+        first = ai_error_scan.record(
+            {"pattern_id": "stringing", "confidence": 0.9, "reason": "", "model": "m"}, source="upload"
+        )
+        second = ai_error_scan.record(
+            {"pattern_id": "stringing", "confidence": 0.8, "reason": "", "model": "m"}, source="upload"
+        )
+        third = ai_error_scan.record(
+            {"pattern_id": "warping", "confidence": 0.7, "reason": "", "model": "m"}, source="upload"
+        )
+        ai_error_scan.record_feedback(first["id"], "correct")
+        ai_error_scan.record_feedback(second["id"], "wrong")
+        ai_error_scan.record_feedback(third["id"], "wrong")
+        stats = ai_error_scan.feedback_by_pattern()
+        assert stats["stringing"] == {"correct": 1, "wrong": 1, "total": 2, "accuracy": 50}
+        assert stats["warping"] == {"correct": 0, "wrong": 1, "total": 1, "accuracy": 0}
+
     def test_unknown_finding_is_refused(self):
         with pytest.raises(KeyError):
             ai_error_scan.record_feedback("nope", "correct")
@@ -114,6 +131,152 @@ class TestFeedback:
         )
         with pytest.raises(ValueError):
             ai_error_scan.record_feedback(finding["id"], "maybe")
+
+
+class TestHousekeeping:
+    """F6/F7/F8: Bewertungen begrenzen, Aufgaben halten, Bilder sparsam lesen."""
+
+    @pytest.fixture(autouse=True)
+    def _tmp_paths(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(ai_error_scan, "FINDINGS_PATH", tmp_path / "findings.jsonl")
+        monkeypatch.setattr(ai_error_scan, "FEEDBACK_PATH", tmp_path / "feedback.jsonl")
+
+    def _finding(self, pattern="stringing"):
+        return ai_error_scan.record(
+            {"pattern_id": pattern, "confidence": 0.9, "reason": "", "model": "m"}, source="upload"
+        )
+
+    def test_old_feedback_is_capped(self, monkeypatch):
+        monkeypatch.setattr(ai_error_scan, "MAX_FEEDBACK", 3)
+        finding = self._finding()
+        for _ in range(5):
+            ai_error_scan.record_feedback(finding["id"], "correct")
+        lines = ai_error_scan.FEEDBACK_PATH.read_text(encoding="utf-8").splitlines()
+        assert len(lines) == 3
+
+    def test_feedback_of_pruned_findings_is_removed(self, monkeypatch):
+        monkeypatch.setattr(ai_error_scan, "MAX_FINDINGS", 1)
+        first = self._finding("stringing")
+        ai_error_scan.record_feedback(first["id"], "correct")
+        second = self._finding("warping")
+        ai_error_scan.record_feedback(second["id"], "wrong")
+        third = self._finding("ghosting")  # kickt die ersten beiden aus den Treffern
+        assert [entry["id"] for entry in ai_error_scan.list_findings(10)] == [third["id"]]
+        saved = {
+            json.loads(line)["finding_id"]
+            for line in ai_error_scan.FEEDBACK_PATH.read_text(encoding="utf-8").splitlines()
+        }
+        assert first["id"] not in saved and second["id"] not in saved
+
+    def test_spawn_keeps_the_task_alive(self):
+        ran: list[int] = []
+
+        async def job():
+            ran.append(1)
+
+        async def main():
+            ai_error_scan._spawn(job())
+            assert len(ai_error_scan._tasks) == 1
+            await asyncio.sleep(0)
+
+        asyncio.run(main())
+        assert ran == [1]
+        assert ai_error_scan._tasks == set()
+
+    def test_large_image_is_scaled_before_conversion(self):
+        import io
+
+        from PIL import Image
+
+        source = Image.new("RGB", (2400, 1800), "red")
+        buffer = io.BytesIO()
+        source.save(buffer, format="JPEG")
+        encoded = ai_error_scan._prepare_image(buffer.getvalue())
+        with Image.open(io.BytesIO(__import__("base64").b64decode(encoded))) as shrunk:
+            assert max(shrunk.size) <= 768
+
+    def test_absurd_pixel_count_is_refused(self, monkeypatch):
+        from PIL import Image
+
+        monkeypatch.setattr(ai_error_scan, "MAX_IMAGE_PIXELS", 100)
+        import io
+
+        buffer = io.BytesIO()
+        Image.new("RGB", (40, 40), "blue").save(buffer, format="PNG")
+        with pytest.raises(ai_error_scan.AiScanError):
+            ai_error_scan._prepare_image(buffer.getvalue())
+
+
+class TestAnnounce:
+    """Der KI-Hinweis kommt als eigene Meldung — die Warnung selbst wartet nie auf das Modell."""
+
+    @pytest.fixture(autouse=True)
+    def _tmp_paths(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(ai_error_scan, "FINDINGS_PATH", tmp_path / "findings.jsonl")
+        monkeypatch.setattr(ai_error_scan, "FEEDBACK_PATH", tmp_path / "feedback.jsonl")
+
+    def test_hint_message_is_built_from_the_finding(self, monkeypatch):
+        from backend.app.core import database
+        from backend.app.services import notification_service
+
+        calls = []
+
+        async def fake_app_message(db, sender, title, message):
+            calls.append((sender, title, message))
+
+        class DummySession:
+            async def __aenter__(self):
+                return None
+
+            async def __aexit__(self, *args):
+                return False
+
+        monkeypatch.setattr(notification_service.notification_service, "on_app_message", fake_app_message)
+        monkeypatch.setattr(database, "async_session", lambda: DummySession())
+
+        asyncio.run(
+            ai_error_scan._announce(
+                {"pattern_id": "stringing", "confidence": 0.82, "reason": "Fäden an der Düse"},
+                "fail_ai_20260101_120000_" + "a" * 32 + ".jpg",
+            )
+        )
+        assert len(calls) == 1
+        sender, title, message = calls[0]
+        assert sender == "PrintLab"
+        assert title.startswith("KI-Hinweis:")
+        assert "82 %" in message and "Fäden an der Düse" in message and "Bild:" in message
+
+    def test_printer_events_announce_but_uploads_do_not(self, monkeypatch):
+        announced = []
+
+        async def fake_announce(result, image_name):
+            announced.append(result["pattern_id"])
+
+        monkeypatch.setattr(ai_error_scan, "_announce", fake_announce)
+        result = {"pattern_id": "warping", "confidence": 0.9, "reason": "", "model": "m"}
+        with patch.object(ai_error_scan, "classify", AsyncMock(return_value=result)):
+            asyncio.run(ai_error_scan.scan_and_record(b"x", source="plate_not_empty", config={}))
+            assert announced == ["warping"]
+            asyncio.run(ai_error_scan.scan_and_record(b"x", source="upload", config={}))
+            assert announced == ["warping"]
+
+    def test_a_failing_notification_never_breaks_the_scan(self, monkeypatch):
+        from backend.app.core import database
+        from backend.app.services import notification_service
+
+        async def broken(*args, **kwargs):
+            raise RuntimeError("kein Meldeweg")
+
+        class DummySession:
+            async def __aenter__(self):
+                return None
+
+            async def __aexit__(self, *args):
+                return False
+
+        monkeypatch.setattr(notification_service.notification_service, "on_app_message", broken)
+        monkeypatch.setattr(database, "async_session", lambda: DummySession())
+        asyncio.run(ai_error_scan._announce({"pattern_id": "ghosting", "confidence": 0.7, "reason": ""}, None))
 
 
 class TestBatch:

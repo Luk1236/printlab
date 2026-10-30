@@ -41,6 +41,6 @@ async def set_spaghetti_check(
     if result.scalar_one_or_none() is None:
         from fastapi import HTTPException
 
-        raise HTTPException(404, "Printer not found")
+        raise HTTPException(404, "Drucker nicht gefunden.")
     spaghetti_check.read_config()  # ensure file exists for next reads
     return spaghetti_check.write_config(data.model_dump())

@@ -23,7 +23,16 @@ from backend.app.api.routes.settings import DEFAULT_SETTINGS, get_setting
 from backend.app.core.auth import RequirePermissionIfAuthEnabled
 from backend.app.core.database import get_db
 from backend.app.core.permissions import Permission
-from backend.app.services import company_profile, invoices, price_list, quote_actuals, quote_history, quote_pdf
+from backend.app.services import (
+    company_profile,
+    einvoice,
+    invoices,
+    price_list,
+    quote_actuals,
+    quote_history,
+    quote_pdf,
+)
+from backend.app.utils.money import as_float, money, to_decimal
 
 router = APIRouter(prefix="/quote", tags=["quote"])
 
@@ -310,6 +319,45 @@ async def invoice_pdf(
     )
 
 
+@router.get("/invoices/{invoice_id}/einvoice/check")
+async def check_invoice_einvoice(
+    invoice_id: str,
+    _=RequirePermissionIfAuthEnabled(Permission.ARCHIVES_READ),
+):
+    """Pflichtangaben für XRechnung prüfen, ohne eine Datei zu erzeugen."""
+    invoice = invoices.get(invoice_id)
+    if invoice is None:
+        raise HTTPException(404, "Rechnung nicht gefunden.")
+    issues = einvoice.validate(invoice, company_profile.read())
+    return {"valid": not issues, "issues": issues}
+
+
+@router.get("/invoices/{invoice_id}/einvoice")
+async def download_invoice_einvoice(
+    invoice_id: str,
+    _=RequirePermissionIfAuthEnabled(Permission.ARCHIVES_READ),
+):
+    """Rechnung als XRechnung-XML (UBL) herunterladen.
+
+    Fehlt eine Pflichtangabe, wird nichts erzeugt: die Antwort nennt alle
+    fehlenden Angaben. Ob das Format für den eigenen Betrieb verlangt wird und
+    welche Angaben Pflicht sind, klärt die Steuerberatung — dieses XML ist
+    weder zertifiziert noch gegen den KoSIT-Validator geprüft.
+    """
+    invoice = invoices.get(invoice_id)
+    if invoice is None:
+        raise HTTPException(404, "Rechnung nicht gefunden.")
+    try:
+        xml = einvoice.build_xml(invoice, company_profile.read())
+    except einvoice.EInvoiceError as exc:
+        raise HTTPException(422, {"message": "Pflichtangaben fehlen.", "issues": exc.issues}) from exc
+    return Response(
+        xml,
+        media_type="application/xml",
+        headers={"Content-Disposition": f'attachment; filename="{einvoice.filename(invoice)}"'},
+    )
+
+
 @router.delete("/history/{entry_id}")
 async def delete_quote(
     entry_id: str,
@@ -344,23 +392,24 @@ async def quote_for_archive(
     labor_rate = await _float_setting(db, "labor_rate_per_hour")
     markup_percent = await _float_setting(db, "quote_markup_percent")
 
-    material_cost = (grams / 1000.0) * material_rate
-    energy_cost = (minutes / 60.0) * (power_watts / 1000.0) * energy_per_kwh
-    labor_cost = (labor_minutes / 60.0) * labor_rate
-    subtotal = material_cost + energy_cost + labor_cost
-    markup_amount = subtotal * (markup_percent / 100.0)
+    # Geldbeträge in Cent rechnen, erst am Ende als float ausgeben (siehe utils/money.py).
+    material_cost = money(to_decimal(grams) / 1000 * to_decimal(material_rate))
+    energy_cost = money(to_decimal(minutes) / 60 * to_decimal(power_watts) / 1000 * to_decimal(energy_per_kwh))
+    labor_cost = money(to_decimal(labor_minutes) / 60 * to_decimal(labor_rate))
+    subtotal = money(material_cost + energy_cost + labor_cost)
+    markup_amount = money(subtotal * to_decimal(markup_percent) / 100)
     currency_code = (await get_setting(db, "currency")) or "EUR"
     return {
         "archive_id": archive_id,
         "currency": currency_code,
         "grams": round(grams, 2),
         "duration_minutes": round(minutes, 1),
-        "material": round(material_cost, 2),
-        "energy": round(energy_cost, 2),
-        "labor": round(labor_cost, 2),
-        "subtotal": round(subtotal, 2),
-        "markup": round(markup_amount, 2),
-        "total": round(subtotal + markup_amount, 2),
+        "material": as_float(material_cost),
+        "energy": as_float(energy_cost),
+        "labor": as_float(labor_cost),
+        "subtotal": as_float(subtotal),
+        "markup": as_float(markup_amount),
+        "total": as_float(subtotal + markup_amount),
     }
 
 
@@ -385,12 +434,12 @@ async def quote(
     labor_rate = await _float_setting(db, "labor_rate_per_hour")
     markup_percent = await _float_setting(db, "quote_markup_percent")
 
-    material_cost = (grams / 1000.0) * material_rate
-    energy_cost = (duration_minutes / 60.0) * (power_watts / 1000.0) * energy_per_kwh
-    labor_cost = (labor_minutes / 60.0) * labor_rate
-    subtotal = material_cost + energy_cost + labor_cost
-    markup_amount = subtotal * (markup_percent / 100.0)
-    total = subtotal + markup_amount
+    material_cost = money(to_decimal(grams) / 1000 * to_decimal(material_rate))
+    energy_cost = money(to_decimal(duration_minutes) / 60 * to_decimal(power_watts) / 1000 * to_decimal(energy_per_kwh))
+    labor_cost = money(to_decimal(labor_minutes) / 60 * to_decimal(labor_rate))
+    subtotal = money(material_cost + energy_cost + labor_cost)
+    markup_amount = money(subtotal * to_decimal(markup_percent) / 100)
+    total = money(subtotal + markup_amount)
 
     currency_code = currency or (await get_setting(db, "currency")) or "EUR"
     return {
@@ -405,10 +454,10 @@ async def quote(
             "labor_rate_per_hour": labor_rate,
             "markup_percent": markup_percent,
         },
-        "material": round(material_cost, 2),
-        "energy": round(energy_cost, 2),
-        "labor": round(labor_cost, 2),
-        "subtotal": round(subtotal, 2),
-        "markup": round(markup_amount, 2),
-        "total": round(total, 2),
+        "material": as_float(material_cost),
+        "energy": as_float(energy_cost),
+        "labor": as_float(labor_cost),
+        "subtotal": as_float(subtotal),
+        "markup": as_float(markup_amount),
+        "total": as_float(total),
     }

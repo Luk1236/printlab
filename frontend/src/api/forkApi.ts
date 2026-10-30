@@ -410,7 +410,63 @@ export interface AiScanResponse {
   findings: AiScanFinding[];
   counts: Record<string, number>;
   feedback?: { correct: number; wrong: number };
+  feedback_by_pattern?: Record<string, { correct: number; wrong: number; total: number; accuracy: number }>;
   batch?: AiScanBatch;
+}
+
+export interface QuoteShareLink {
+  created_at: string | null;
+  expires_at: string | null;
+  status: 'open' | 'accepted' | 'declined' | 'revoked';
+  responded_at: string | null;
+  note: string;
+  expired: boolean;
+  token_tail: string;
+}
+
+export interface PlateWizardState {
+  printer_id: number;
+  steps: Record<
+    string,
+    { at?: string; position?: { x: number; y: number; z: number }; confirmed?: boolean; sensor?: boolean; note?: string }
+  >;
+  started_at: string | null;
+  completed_at: string | null;
+  operator: string;
+  revision: number;
+  steps_required: string[];
+  steps_optional: string[];
+  missing: string[];
+  started: boolean;
+  complete: boolean;
+  position_problem: string | null;
+  blocks_plate_change?: boolean;
+}
+
+export interface ReorderProposal {
+  material: string;
+  subtype: string | null;
+  brand: string | null;
+  color_name: string | null;
+  remaining_g: number;
+  daily_rate_g: number;
+  days_remaining: number | null;
+  lead_time_days: number;
+  coverage_days: number;
+  stock_break: boolean;
+  rolls: number;
+  grams: number;
+  spool_size_g: number;
+  supplier: string | null;
+  price_per_kg: number | null;
+  estimated_cost: number | null;
+  reason: string;
+}
+
+export interface AutoRequeueConfig {
+  enabled: boolean;
+  max_retries: number;
+  require_sibling: boolean;
 }
 
 export interface ForkApiDeps {
@@ -423,6 +479,18 @@ export function createForkApi({ request, apiBase, getAuthToken }: ForkApiDeps) {
   return {
     runSelfTest: () => request<SelfTestReport>('/selftest', { method: 'POST' }),
   listFailureImages: () => request<FailureImage[]>('/failure-images/'),
+    exportFailureImages: async (): Promise<{ blob: Blob; filename: string }> => {
+      const token = getAuthToken();
+      const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+      const response = await fetch(`${apiBase}/failure-images/export`, { headers });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(typeof error.detail === 'string' ? error.detail : `HTTP ${response.status}`);
+      }
+      const disposition = response.headers.get('Content-Disposition') ?? '';
+      const match = disposition.match(/filename="?([^";]+)"?/);
+      return { blob: await response.blob(), filename: match?.[1] ?? 'fehlerbilder.zip' };
+    },
   deleteFailureImage: (name: string) =>
     request<{ message: string }>(`/failure-images/${encodeURIComponent(name)}`, { method: 'DELETE' }),
     getAssistantStatus: () => request<AssistantStatus>('/assistant/status'),
@@ -628,6 +696,76 @@ export function createForkApi({ request, apiBase, getAuthToken }: ForkApiDeps) {
     ),
   getCountermeasureLog: (limit = 30) =>
     request<CountermeasureLogEntry[]>(`/error-help/countermeasures/log?limit=${limit}`),
+  // Angebots-Link: öffentliche Seite ohne Anmeldung, Zusage/Ablehnung durch den Kunden.
+  createQuoteShare: (quoteId: string, days = 14) =>
+    request<{ token: string; url: string; expires_at: string }>(`/quote/history/${quoteId}/share`, {
+      method: 'POST',
+      body: JSON.stringify({ days }),
+    }),
+  listQuoteShares: (quoteId: string) =>
+    request<{ shares: QuoteShareLink[] }>(`/quote/history/${quoteId}/shares`),
+  revokeQuoteShare: (quoteId: string) =>
+    request<{ revoked: boolean }>(`/quote/history/${quoteId}/share`, { method: 'DELETE' }),
+  // E-Rechnung: Pflichtangaben prüfen und XML laden.
+  checkEInvoice: (invoiceId: string) =>
+    request<{ valid: boolean; issues: string[] }>(`/quote/invoices/${invoiceId}/einvoice/check`),
+  downloadEInvoiceXml: async (invoiceId: string): Promise<{ blob: Blob; filename: string }> => {
+    const token = getAuthToken();
+    const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+    const response = await fetch(`${apiBase}/quote/invoices/${invoiceId}/einvoice`, { headers });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      const detail = error.detail;
+      const message = typeof detail === 'string' ? detail : detail?.issues?.join(' ') || `HTTP ${response.status}`;
+      throw new Error(message);
+    }
+    const match = (response.headers.get('Content-Disposition') ?? '').match(/filename="?([^";]+)"?/);
+    return { blob: await response.blob(), filename: match?.[1] ?? 'XRechnung.xml' };
+  },
+  // Zeitraffer aus aufbewahrten Schichtbildern.
+  getTimelapseFrames: (archiveId: number) =>
+    request<{ sources: { session: string; frames: number }[]; exports: { name: string; bytes: number; created: string }[] }>(
+      `/archives/${archiveId}/timelapse/frames`
+    ),
+  renderTimelapseMp4: (archiveId: number, fps?: number) =>
+    request<{ name: string; frames: number; fps: number; bytes: number }>(
+      `/archives/${archiveId}/timelapse/frames/export`,
+      { method: 'POST', body: JSON.stringify({ fps: fps ?? null }) }
+    ),
+  getTimelapseExportConfig: () =>
+    request<{ keep_frames: boolean; retention_days: number; max_kept_per_archive: number; max_exports_per_archive: number; fps: number }>(
+      '/archives/timelapse-export/config'
+    ),
+  saveTimelapseExportConfig: (update: Record<string, unknown>) =>
+    request('/archives/timelapse-export/config', { method: 'PUT', body: JSON.stringify(update) }),
+  // Automatische Umverteilung gescheiterter Aufträge.
+  getAutoRequeue: () => request<AutoRequeueConfig>('/auto-requeue/config'),
+  saveAutoRequeue: (update: Partial<AutoRequeueConfig>) =>
+    request<AutoRequeueConfig>('/auto-requeue/config', { method: 'PUT', body: JSON.stringify(update) }),
+  getAutoRequeueLog: (limit = 20) =>
+    request<{ entries: { root_id: number; retry_id: number; target: string; reason: string; at: string }[] }>(
+      `/auto-requeue/log?limit=${limit}`
+    ),
+  // Nachbestellvorschlag.
+  getReorderProposals: () =>
+    request<{ mode: string; proposals: ReorderProposal[]; checked_skus: number }>('/reorder/proposals'),
+  getReorderConfig: () => request<{ coverage_days: number; min_order_grams: number }>('/reorder/config'),
+  saveReorderConfig: (update: Record<string, unknown>) =>
+    request('/reorder/config', { method: 'PUT', body: JSON.stringify(update) }),
+  // Einmess-Assistent Plattenwechsel.
+  getPlateWizard: (printerId: number) => request<PlateWizardState>(`/printers/${printerId}/hardware/plate-wizard`),
+  savePlateWizardStep: (printerId: number, step: string, payload: Record<string, unknown>) =>
+    request<PlateWizardState>(`/printers/${printerId}/hardware/plate-wizard/steps/${step}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+  completePlateWizard: (printerId: number, operator: string) =>
+    request<PlateWizardState>(`/printers/${printerId}/hardware/plate-wizard/complete`, {
+      method: 'POST',
+      body: JSON.stringify({ operator }),
+    }),
+  resetPlateWizard: (printerId: number) =>
+    request<PlateWizardState>(`/printers/${printerId}/hardware/plate-wizard/reset`, { method: 'POST' }),
   getAiScan: () => request<AiScanResponse>('/error-help/ai-scan'),
   saveAiScan: (update: Partial<AiScanConfigState>) =>
     request<AiScanResponse>('/error-help/ai-scan', { method: 'PUT', body: JSON.stringify(update) }),

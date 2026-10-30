@@ -6,6 +6,7 @@ import {
   BookOpen,
   ChevronDown,
   Cpu,
+  Download,
   Fan,
   Gauge,
   Images,
@@ -263,6 +264,7 @@ export function ErrorHelpPage() {
   const [aiFile, setAiFile] = useState<File | null>(null);
   const [aiResult, setAiResult] = useState<AiScanResult | null>(null);
   const [failureImageName, setFailureImageName] = useState('');
+  const [failureFilter, setFailureFilter] = useState('');
   const [historyPattern, setHistoryPattern] = useState<string | null>(null);
 
   const canControl = hasPermission('printers:control');
@@ -296,6 +298,13 @@ export function ErrorHelpPage() {
     queryFn: () => api.listFailureImages(),
     enabled: hasPermission('camera:view'),
   });
+  // Die Sammlung kann bis zu 500 Bilder umfassen; ohne Filter ist die Auswahl unbrauchbar.
+  const failureFilterTerm = failureFilter.trim().toLowerCase();
+  const filteredFailureImages = (failureImages.data ?? []).filter(
+    (image) =>
+      !failureFilterTerm ||
+      `${image.name} ${image.event} ${image.timestamp}`.toLowerCase().includes(failureFilterTerm),
+  );
 
   const aiSave = useMutation({
     mutationFn: (update: { vision_model?: string; error_scan_enabled?: boolean; error_scan_min_confidence?: number }) =>
@@ -330,6 +339,22 @@ export function ErrorHelpPage() {
     },
     onError: (error: Error) => showToast(error.message, 'error'),
   });
+  const aiExport = useMutation({
+    mutationFn: () => api.exportFailureImages(),
+    onSuccess: ({ blob, filename }) => {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showToast(t('errorHelp.aiExportDone'));
+    },
+    onError: (error: Error) => showToast(error.message, 'error'),
+  });
+
   const aiBatch = useMutation({
     mutationFn: () => api.scanAiCollection(10),
     onSuccess: () => {
@@ -786,7 +811,15 @@ export function ErrorHelpPage() {
                   {aiUpload.isPending ? t('errorHelp.aiScanning') : t('errorHelp.aiAnalyze')}
                 </Button>
                 {failureImages.data && failureImages.data.length > 0 && (
-                  <span className="flex items-center gap-2">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <input
+                      type="search"
+                      value={failureFilter}
+                      onChange={(event) => setFailureFilter(event.target.value)}
+                      placeholder={t('errorHelp.aiFailureSearch')}
+                      className="w-32 rounded-lg bg-bambu-dark border border-bambu-dark-tertiary px-2 py-1.5 text-xs text-white"
+                      aria-label={t('errorHelp.aiFailureSearch')}
+                    />
                     <select
                       value={failureImageName}
                       onChange={(event) => setFailureImageName(event.target.value)}
@@ -794,9 +827,9 @@ export function ErrorHelpPage() {
                       aria-label={t('errorHelp.aiFailureImage')}
                     >
                       <option value="">{t('errorHelp.aiFailureImage')}</option>
-                      {failureImages.data.slice(0, 20).map((image) => (
+                      {filteredFailureImages.slice(0, 50).map((image) => (
                         <option key={image.name} value={image.name}>
-                          {image.name}
+                          {image.event} · {image.timestamp.replace('T', ' ').slice(0, 16)}
                         </option>
                       ))}
                     </select>
@@ -830,6 +863,20 @@ export function ErrorHelpPage() {
                     <Images className="w-3.5 h-3.5" />
                   )}
                   {t('errorHelp.aiBatch')}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={aiExport.isPending || !failureImages.data?.length}
+                  onClick={() => aiExport.mutate()}
+                  title={t('errorHelp.aiExportHint')}
+                >
+                  {aiExport.isPending ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Download className="w-3.5 h-3.5" />
+                  )}
+                  {t('errorHelp.aiExport')}
                 </Button>
                 {aiScan.data.batch && (aiScan.data.batch.running || aiScan.data.batch.total > 0) && (
                   <span className="text-xs text-bambu-gray" role="status">
@@ -881,6 +928,20 @@ export function ErrorHelpPage() {
                     </span>
                   )}
                 </div>
+                {aiScan.data.feedback_by_pattern && Object.keys(aiScan.data.feedback_by_pattern).length > 0 && (
+                  <p className="text-[11px] text-bambu-gray mb-1">
+                    {t('errorHelp.aiAccuracy')}{' '}
+                    {Object.entries(aiScan.data.feedback_by_pattern)
+                      .sort((a, b) => b[1].total - a[1].total)
+                      .slice(0, 3)
+                      .map(([id, row]) => {
+                        const hit = data?.patterns.find((entry) => entry.id === id);
+                        const title = hit ? (german ? hit.title : hit.title_en) : id;
+                        return `${title} ${row.accuracy}% (${row.total})`;
+                      })
+                      .join(' · ')}
+                  </p>
+                )}
                 {(aiScan.data.findings ?? []).length === 0 ? (
                   <p className="text-xs text-bambu-gray">{t('errorHelp.aiNoFindings')}</p>
                 ) : (

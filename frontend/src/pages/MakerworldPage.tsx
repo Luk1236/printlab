@@ -12,6 +12,7 @@ import {
   type MakerworldResolvedModel,
 } from '../api/client';
 import { openInSlicer, resolveDesktopSlicer, type SlicerType } from '../utils/slicer';
+import { flattenFolderTree, pickNumber, pickObject, pickString, proxyCdn, proxyCdnUrlsInHtml } from '../utils/makerworld';
 import { Button } from '../components/Button';
 import { Card, CardContent, CardHeader } from '../components/Card';
 import { ConfirmModal } from '../components/ConfirmModal';
@@ -19,63 +20,6 @@ import { SliceModal, type SliceSource } from '../components/SliceModal';
 import { Cog } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-
-// MakerWorld's API payloads are passed through as opaque dicts; these helpers
-// pull known fields out in a type-safe way so a missing/renamed field shows
-// up as an empty string rather than crashing the render.
-function pickString(obj: Record<string, unknown> | undefined, key: string): string {
-  const value = obj?.[key];
-  return typeof value === 'string' ? value : '';
-}
-
-// Rewrite MakerWorld CDN URLs inside HTML content (design summary, etc.) to
-// use PrintLab's thumbnail proxy. MakerWorld summaries are authored HTML and
-// commonly contain ``<img src="https://makerworld.bblmw.com/...">`` tags;
-// PrintLab's img-src CSP only allows ``'self' data: blob:``, so these would
-// otherwise be blocked. Pairs with ``proxyCdn`` below for explicit <img>
-// renders.
-function proxyCdnUrlsInHtml(html: string): string {
-  return html.replace(
-    /(https?:\/\/(?:makerworld|public-cdn)\.bblmw\.com\/[^\s"']+)/gi,
-    (match) => `/api/v1/makerworld/thumbnail?url=${encodeURIComponent(match)}`,
-  );
-}
-
-// MakerWorld CDN images can't be hotlinked — PrintLab's img-src CSP blocks
-// external hosts. Route them through the /makerworld/thumbnail proxy.
-// Empty string in → empty string out so the ``{coverUrl && ...}`` checks
-// in the render keep short-circuiting.
-function proxyCdn(url: string): string {
-  if (!url) return '';
-  if (!/^https?:\/\/(makerworld|public-cdn)\.bblmw\.com\//i.test(url)) return url;
-  return `/api/v1/makerworld/thumbnail?url=${encodeURIComponent(url)}`;
-}
-function pickNumber(obj: Record<string, unknown> | undefined, key: string): number | null {
-  const value = obj?.[key];
-  return typeof value === 'number' ? value : null;
-}
-function pickObject(obj: Record<string, unknown> | undefined, key: string): Record<string, unknown> | undefined {
-  const value = obj?.[key];
-  return value && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : undefined;
-}
-
-// Depth-first flatten of the library folder tree so it can be rendered in a
-// single <select>. Each entry carries its ``depth`` so the UI can indent the
-// option label.
-type FlatFolder = { folder: import('../api/client').LibraryFolderTree; depth: number };
-function flattenFolderTree(
-  tree: import('../api/client').LibraryFolderTree,
-  depth = 0,
-  out: FlatFolder[] = [],
-): FlatFolder[] {
-  out.push({ folder: tree, depth });
-  for (const child of tree.children ?? []) {
-    flattenFolderTree(child, depth + 1, out);
-  }
-  return out;
-}
 
 // Time-based phase heuristic for the import progress indicator. The backend
 // does the work as one synchronous HTTP request (no streaming progress), so

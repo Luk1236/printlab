@@ -13,6 +13,7 @@ import { InvoicesPanel } from './InvoicesPanel';
 import { MonthlyReportPanel } from './MonthlyReportPanel';
 import { QuoteActualsPanel } from './QuoteActualsPanel';
 import { QuoteExtraItems } from './QuoteExtraItems';
+import { QuoteShareButton } from './QuoteShareButton';
 import { extrasTotal, itemAmount, validItems } from '../utils/quoteItems';
 import type { ExtraItemDraft } from '../utils/quoteItems';
 
@@ -389,6 +390,7 @@ export function QuoteCalculator() {
                     >
                       {t('quote.pdf')}
                     </Button>
+                    <QuoteShareButton quoteId={entry.id} />
                     <Button
                       size="sm"
                       variant="ghost"

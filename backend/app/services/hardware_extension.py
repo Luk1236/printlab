@@ -381,6 +381,27 @@ class HardwareExtension:
             with self._lock:
                 self._busy = False
 
+    def verify_door_closed(self) -> tuple[bool, str]:
+        """Tür vor einer Bewegung prüfen — mit Endschalter wirklich lesen.
+
+        Mit konfiguriertem ``door_status_command`` wird der Endschalter **jetzt** abgefragt, nicht der
+        gespeicherte Zustand geglaubt. Ohne Endschalter (oder im Simulationsmodus) gilt der gespeicherte
+        Zustand, und die Rückmeldung sagt „ohne Endschalter“ — der Aufrufer kann das sichtbar machen.
+        Fail-closed: fehlgeschlagene oder unklare Abfrage heißt „nicht bestätigt“.
+        """
+        status_cmd = self._config.get("door_status_command")
+        configured = bool(status_cmd) and (not isinstance(status_cmd, str) or bool(status_cmd.strip()))
+        reads_sensor = self._config["mode"] == "command" and configured
+        if reads_sensor:
+            ok, message = self.check_door_status()
+            if not ok:
+                return False, message
+        with self._lock:
+            door = self._door
+        if door != "closed":
+            return False, f"Endschalter meldet {door}"
+        return True, "Endschalter: geschlossen" if reads_sensor else "ohne Endschalter"
+
     # --- Plattenwechsel ----------------------------------------------------
 
     def change_plate(self, job_name: str = "") -> tuple[bool, str]:
@@ -477,7 +498,10 @@ class HardwareExtension:
             if self._busy:
                 return False, "Es läuft bereits ein Hardware-Vorgang."
             changes: list[str] = []
-            by_id = {slot["id"]: slot for slot in self._magazine["slots"]}
+            # Auf einer Kopie arbeiten: eine später abgelehnte Eingabe darf frühere Fächer nicht
+            # schon im Speicher verändern (sonst zeigt die Oberfläche einen Stand, der nie gespeichert wurde).
+            slots = [dict(slot) for slot in self._magazine["slots"]]
+            by_id = {slot["id"]: slot for slot in slots}
             for item in slots_in:
                 try:
                     slot_id = int(item.get("id"))
@@ -503,6 +527,7 @@ class HardwareExtension:
                     changes.append(f"Fach {slot_id}: {status}")
             if not changes:
                 return False, "Keine gültigen Änderungen übermittelt."
+            self._magazine["slots"] = slots
             self._save_magazine()
             return True, "; ".join(changes)
 
@@ -581,6 +606,11 @@ def _printer_paths(printer_id: int) -> tuple[Path, Path]:
         CONFIG_PATH.with_name(f"hardware_{printer_id}.json"),
         MAGAZINE_PATH.with_name(f"magazine_{printer_id}.json"),
     )
+
+
+def printer_config_path(printer_id: int) -> Path:
+    """Konfigurationsdatei eines Druckers (Hardware und Plattenwechsel-Automatik)."""
+    return _printer_paths(printer_id)[0]
 
 
 def get_hardware(printer_id: int | None = None) -> HardwareExtension:

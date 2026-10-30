@@ -31,7 +31,7 @@ async def _printer_or_404(printer_id: int, db: AsyncSession) -> Printer:
     result = await db.execute(select(Printer).where(Printer.id == printer_id))
     printer = result.scalar_one_or_none()
     if printer is None:
-        raise HTTPException(404, "Printer not found")
+        raise HTTPException(404, "Drucker nicht gefunden.")
     return printer
 
 
@@ -43,18 +43,18 @@ async def _printer_and_guard(printer_id: int, db: AsyncSession) -> Printer:
     result = await db.execute(select(Printer).where(Printer.id == printer_id))
     printer = result.scalar_one_or_none()
     if printer is None:
-        raise HTTPException(404, "Printer not found")
+        raise HTTPException(404, "Drucker nicht gefunden.")
     # Im Simulationsmodus wird keine echte Hardware bewegt; dann darf man auch
     # ohne verbundenen Drucker testen. Im Befehlsmodus gelten die harten Sperren.
     if get_hardware(printer_id).status()["mode"] == "simulated":
         return printer
     client = printer_manager.get_client(printer_id)
     if client is None or not client.state.connected:
-        raise HTTPException(400, "Printer not connected")
+        raise HTTPException(400, "Drucker ist nicht verbunden.")
     if client.state.state == "unknown":
-        raise HTTPException(400, "Printer state unknown")
+        raise HTTPException(400, "Druckerzustand unbekannt.")
     if client.state.state in ACTIVE_STATES:
-        raise HTTPException(400, "Locked while printing")
+        raise HTTPException(400, "Während eines Drucks gesperrt.")
     return printer
 
 
@@ -67,7 +67,7 @@ async def get_hardware_status(
     return {
         **get_hardware(printer_id).status(),
         "auto_plate_change": {
-            **auto_plate_change.read_config(),
+            **auto_plate_change.read_config(printer_id),
             "last_run": auto_plate_change.last_run(printer_id),
         },
     }
@@ -118,7 +118,7 @@ async def get_hardware_config(
 ):
     """Hardware-Konfiguration (Befehle, Modus, Automatik) zum Anzeigen."""
     hw = get_hardware(printer_id)
-    return {**hw.config(), "auto_plate_change": auto_plate_change.read_config()}
+    return {**hw.config(), "auto_plate_change": auto_plate_change.read_config(printer_id)}
 
 
 @router.put("/{printer_id}/hardware/config")
@@ -145,7 +145,7 @@ async def set_hardware_config(
     merged = dict(data)
     if "auto_plate_change" in data:
         if isinstance(data["auto_plate_change"], dict):
-            auto_plate_change.write_config(data["auto_plate_change"])
+            auto_plate_change.write_config(data["auto_plate_change"], printer_id)
         merged.pop("auto_plate_change")
     hw = get_hardware(printer_id)
     ok, message = await asyncio.to_thread(hw.update_config, merged)
@@ -163,7 +163,7 @@ async def set_hardware_config(
         "success": True,
         "message": message,
         **hw.config(),
-        "auto_plate_change": auto_plate_change.read_config(),
+        "auto_plate_change": auto_plate_change.read_config(printer_id),
     }
 
 
@@ -174,7 +174,7 @@ async def update_auto_plate_change(
     _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_CONTROL),
 ):
     """Automatik-Konfiguration (Plattenwechsel nach Druckende) setzen."""
-    cfg = auto_plate_change.write_config(payload or {})
+    cfg = auto_plate_change.write_config(payload or {}, printer_id)
     return {
         "auto_plate_change": {
             **cfg,
@@ -194,7 +194,7 @@ async def cancel_auto_plate_change(
         "success": True,
         "cancelled": cancelled,
         "auto_plate_change": {
-            **auto_plate_change.read_config(),
+            **auto_plate_change.read_config(printer_id),
             "last_run": auto_plate_change.last_run(printer_id),
         },
     }
@@ -255,6 +255,13 @@ async def change_plate(
     db: AsyncSession = Depends(get_db),
 ):
     await _printer_and_guard(printer_id, db)
+    # Eine halb eingemessene Mechanik darf sich nicht bewegen: solange der
+    # Einmess-Assistent begonnen und nicht abgeschlossen ist, kein Wechsel.
+    from backend.app.services import plate_wizard
+
+    blocked = plate_wizard.blocks_plate_change(printer_id)
+    if blocked:
+        raise HTTPException(409, blocked)
     ok, message = await asyncio.to_thread(get_hardware(printer_id).change_plate, job)
     _audit("plate_change", ok, message, printer_id, user, {"job": job})
     if not ok:
@@ -319,7 +326,7 @@ async def emergency_stop(
     """Not-Halt: funktioniert bewusst auch bei Druck/offline, ohne den normalen Guard."""
     result = await db.execute(select(Printer).where(Printer.id == printer_id))
     if result.scalar_one_or_none() is None:
-        raise HTTPException(404, "Printer not found")
+        raise HTTPException(404, "Drucker nicht gefunden.")
     auto_plate_change.cancel(printer_id, reason="Not-Halt")
     ok, message = await asyncio.to_thread(get_hardware(printer_id).emergency_stop)
     _audit("emergency_stop", ok, message, printer_id, user)

@@ -1,6 +1,7 @@
 """Tests for the auto plate change refinements: persisted queue gate, cancel, low-supply warning."""
 
 import asyncio
+import json
 from types import SimpleNamespace
 
 import pytest
@@ -12,7 +13,11 @@ from backend.app.services import auto_plate_change, hardware_extension
 def isolated_config(tmp_path, monkeypatch):
     cfg = tmp_path / "hardware.json"
     monkeypatch.setattr(hardware_extension, "CONFIG_PATH", cfg)
-    monkeypatch.setattr(auto_plate_change, "_config_path", lambda: cfg)
+    monkeypatch.setattr(
+        auto_plate_change,
+        "_config_path",
+        lambda printer_id=None: cfg if printer_id is None else tmp_path / f"hardware_{printer_id}.json",
+    )
     from backend.app.services import audit_log
 
     monkeypatch.setattr(audit_log, "LOG_PATH", tmp_path / "audit_log.jsonl")
@@ -75,12 +80,19 @@ def _patch_runtime(monkeypatch, state, hw):
 
 
 class FakeHardware:
-    def __init__(self, supply=1):
+    def __init__(self, supply=1, door_ok=True, door_note="Endschalter: geschlossen"):
         self.supply = supply
         self.changed: list[str] = []
+        self.door_ok = door_ok
+        self.door_note = door_note
+        self.door_checks = 0
 
     def status(self):
         return {"door": "closed", "busy": False, "supply_ready": self.supply, "storage_empty": 3}
+
+    def verify_door_closed(self):
+        self.door_checks += 1
+        return self.door_ok, self.door_note
 
     def change_plate(self, job):
         self.changed.append(job)
@@ -116,7 +128,7 @@ class TestRunChange:
         hw = FakeHardware()
         _patch_runtime(monkeypatch, state, hw)
         cfg = dict(auto_plate_change.DEFAULTS, enabled=True, poll_seconds=1, max_wait_seconds=60)
-        monkeypatch.setattr(auto_plate_change, "read_config", lambda: cfg)
+        monkeypatch.setattr(auto_plate_change, "read_config", lambda printer_id=None: cfg)
 
         async def main():
             assert auto_plate_change.schedule(4, "job") is True
@@ -134,6 +146,69 @@ class TestRunChange:
     def test_cancel_ignores_other_printers_and_finished_tasks(self):
         assert auto_plate_change.cancel(99) == 0
         assert auto_plate_change.cancel() == 0
+
+
+class TestSafetyGuards:
+    """Fail-closed: ohne belegte Betttemperatur oder bestätigte Tür wird nicht bewegt."""
+
+    @pytest.mark.parametrize("temperatures", [None, {}, {"nozzle": 200.0}, {"bed_temp": None}])
+    def test_missing_bed_temperature_aborts(self, monkeypatch, temperatures):
+        state = SimpleNamespace(connected=True, state="FINISH", temperatures=temperatures)
+        hw = FakeHardware()
+        _patch_runtime(monkeypatch, state, hw)
+        cfg = dict(auto_plate_change.DEFAULTS, enabled=True, notify=False)
+        asyncio.run(auto_plate_change._run_change(1, "job", cfg))
+        last = auto_plate_change.last_run(1)
+        assert last["ok"] is False
+        assert "Betttemperatur unbekannt" in last["message"]
+        assert hw.changed == []
+
+    def test_open_door_aborts_before_any_movement(self, monkeypatch):
+        state = SimpleNamespace(connected=True, state="FINISH", temperatures={"bed_temp": 30.0})
+        hw = FakeHardware(door_ok=False, door_note="Endschalter meldet open")
+        _patch_runtime(monkeypatch, state, hw)
+        cfg = dict(auto_plate_change.DEFAULTS, enabled=True, notify=False)
+        asyncio.run(auto_plate_change._run_change(1, "job", cfg))
+        last = auto_plate_change.last_run(1)
+        assert last["ok"] is False
+        assert "Tür" in last["message"] and "open" in last["message"]
+        assert hw.changed == []
+
+    def test_door_is_checked_fresh_once(self, monkeypatch):
+        state = SimpleNamespace(connected=True, state="FINISH", temperatures={"bed_temp": 30.0})
+        hw = FakeHardware(supply=3, door_note="ohne Endschalter")
+        _patch_runtime(monkeypatch, state, hw)
+        cfg = dict(auto_plate_change.DEFAULTS, enabled=True, notify=False)
+        asyncio.run(auto_plate_change._run_change(1, "job", cfg))
+        assert hw.door_checks == 1
+        assert "ohne Endschalter" in auto_plate_change.last_run(1)["message"]
+
+
+class TestPerPrinterConfig:
+    """Seit F5 gilt die Plattenwechsel-Automatik je Drucker, nicht mehr global."""
+
+    def test_settings_of_one_printer_leave_the_other_alone(self):
+        auto_plate_change.write_config({"enabled": True, "cooldown_bed_temp": 55.0}, printer_id=1)
+        assert auto_plate_change.read_config(1)["enabled"] is True
+        assert auto_plate_change.read_config(1)["cooldown_bed_temp"] == 55.0
+        assert auto_plate_change.read_config(2)["enabled"] is False
+        assert auto_plate_change.read_config(2)["cooldown_bed_temp"] == auto_plate_change.DEFAULTS["cooldown_bed_temp"]
+
+    def test_legacy_global_setting_is_used_until_the_printer_has_its_own(self):
+        auto_plate_change.write_config({"cooldown_bed_temp": 50.0})  # global, wie bis v1.16
+        assert auto_plate_change.read_config(3)["cooldown_bed_temp"] == 50.0
+        auto_plate_change.write_config({"cooldown_bed_temp": 40.0}, printer_id=3)
+        assert auto_plate_change.read_config(3)["cooldown_bed_temp"] == 40.0
+        assert auto_plate_change.read_config(4)["cooldown_bed_temp"] == 50.0  # global unverändert
+
+    def test_per_printer_write_keeps_the_hardware_commands_of_that_printer(self, tmp_path):
+        path = tmp_path / "hardware_7.json"
+        path.write_text('{"mode": "command", "door_open_command": "tool.exe"}', encoding="utf-8")
+        auto_plate_change.write_config({"enabled": True}, printer_id=7)
+        saved = json.loads(path.read_text(encoding="utf-8"))
+        assert saved["mode"] == "command"
+        assert saved["door_open_command"] == "tool.exe"
+        assert saved["auto_plate_change"]["enabled"] is True
 
 
 class TestWriteValidation:

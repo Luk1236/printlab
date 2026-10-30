@@ -21,13 +21,27 @@ Filament-/Spulenverwaltung, Benachrichtigungen, Kamera, Virtual Printer, Benutze
 - **Wartungsprogramme** – Öl verteilen und Gewindestangen schmieren, mit Sicherheitsprüfung und
   Pflichtbestätigung „Platte frei“; Wartungsdruck direkt in die Warteschlange.
 - **Tür und Plattenwechsler** – Magazin mit Simulations- und Befehlsmodus, Endschalterprüfung,
-  Not-Halt. Automatischer Plattenwechsel nach Druckende (Abkühlung, Türprüfung, nur bei wartendem
-  Auftrag, abbrechbar, Füllstand-Warnung).
+  Not-Halt. Automatischer Plattenwechsel nach Druckende: wartet auf die Abkühlung, liest die Tür
+  (mit `door_status_command` frisch am Endschalter, sonst gilt der gespeicherte Zustand und das Ergebnis
+  sagt „ohne Endschalter“), bricht ab, wenn die Betttemperatur unbekannt ist, ist abbrechbar und warnt bei
+  knappem Magazin. „Nur bei wartendem Auftrag“ ist optional und standardmäßig aus. Einstellungen gelten
+  je Drucker.
 - **Optik-Prüfung (nur Warnung)** – Kamera-Einmessung über vier Plattenecken, Leerbett-Prüfung beim
   Start, Bauteil-Wächter (auch pro Auftrag), Erste-Schicht-Inspektor, Spaghetti-/Abbruch-Erkennung.
 - **Schicht-Stopp** – Pause bei einer Zielschicht.
 - **Angebotskalkulator** – Material, Strom, Stundenlohn und Aufschlag; Preisliste je Material;
-  Angebot direkt am Warteschlangen-Auftrag; Monatsreport mit CSV-Export.
+  Angebot direkt am Warteschlangen-Auftrag; Monatsreport mit CSV-Export. Angebote lassen sich als
+  **öffentlicher Link** verschicken: der Kunde sagt ohne Anmeldung zu oder ab, der Link läuft ab und ist
+  zurückziehbar. Rechnungen gibt es als PDF und als **XRechnung-XML** (Pflichtangaben werden vorher geprüft;
+  die rechtliche Prüfung bleibt bei der Steuerberatung).
+- **Zeitraffer** – Schichtbilder lassen sich aufbewahren und daraus jederzeit ein MP4 rendern (auch wenn das
+  automatische Stechen fehlschlug); Aufbewahrung mit Tages- und Anzahlgrenze.
+- **Warteschlange** – **automatische Umverteilung**: ein gescheiterter Auftrag wird einmal auf ein anderes
+  Gerät desselben Modells eingereiht, mit Protokoll und Meldung; Abbrüche durch den Benutzer nie.
+- **Nachbestellvorschlag** – aus Verbrauchsprognose, Bestand und Lieferzeit: was jetzt bestellt werden sollte,
+  mit Rollen, günstigstem Lieferanten und geschätzten Kosten (eigene Verwaltung oder Spoolman).
+- **Einmess-Assistent Plattenwechsel** – führt durch Referenz-, Aufnahme- und Ablageposition, Türprüfung und
+  Probelauf und hält das Protokoll fest; eine begonnene, nicht abgeschlossene Einmessung sperrt den Wechsel.
 - **PC-Slicer** – Bambu Studio auf dem PC als Slicer-Dienst, mit Zugriffsschutz.
 - Deutsche Oberfläche, helles und dunkles Prusa-Design, Barrierefreiheit nach WCAG AA.
 

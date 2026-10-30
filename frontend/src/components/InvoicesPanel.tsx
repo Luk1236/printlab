@@ -44,15 +44,29 @@ export function InvoicesPanel({ canEdit }: { canEdit: boolean }) {
     },
   });
 
+  const saveBlob = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const download = async (invoice: Invoice) => {
     try {
       const { blob, filename } = await api.downloadInvoicePdf(invoice.id, lang);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      link.click();
-      URL.revokeObjectURL(url);
+      saveBlob(blob, filename);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : t('common.error'), 'error');
+    }
+  };
+
+  // XRechnung-XML: fehlende Pflichtangaben kommen als lesbare Liste zurück, kein leeres XML.
+  const downloadXml = async (invoice: Invoice) => {
+    try {
+      const { blob, filename } = await api.downloadEInvoiceXml(invoice.id);
+      saveBlob(blob, filename);
     } catch (error) {
       showToast(error instanceof Error ? error.message : t('common.error'), 'error');
     }
@@ -104,6 +118,17 @@ export function InvoicesPanel({ canEdit }: { canEdit: boolean }) {
                   <Button size="sm" variant="ghost" aria-label={`${t('invoices.pdf')} ${invoice.number}`} onClick={() => download(invoice)}>
                     {t('invoices.pdf')}
                   </Button>
+                  {invoice.status !== 'cancelled' && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      aria-label={`E-Rechnung ${invoice.number}`}
+                      title="XRechnung-XML (Pflichtangaben werden vorher geprüft)"
+                      onClick={() => downloadXml(invoice)}
+                    >
+                      E-Rechnung
+                    </Button>
+                  )}
                   {canEdit && invoice.status === 'open' && (
                     <>
                       <Button size="sm" variant="secondary" disabled={busy} onClick={() => pay.mutate(invoice.id)} aria-label={`${t('invoices.markPaid')} ${invoice.number}`}>

@@ -35,11 +35,15 @@ logger = logging.getLogger(__name__)
 FINDINGS_PATH = settings.base_dir / "ai_error_findings.jsonl"
 FEEDBACK_PATH = settings.base_dir / "ai_error_feedback.jsonl"
 MAX_FINDINGS = 2000
+MAX_FEEDBACK = 4000
 MAX_IMAGE_BYTES = 15 * 1024 * 1024
+MAX_IMAGE_PIXELS = 40_000_000  # ~40 MP; darüber ist es kein Kamerabild mehr
 _ALLOWED_IDS = {pattern["id"] for pattern in error_patterns.PATTERNS}
 _lock = threading.Lock()
 _write_lock = threading.Lock()
 _auto_semaphore = asyncio.Semaphore(1)
+_tasks: set[asyncio.Task] = set()
+_ANNOUNCE_SOURCES = frozenset({"plate_not_empty", "ai_failure_detection"})
 _batch_lock = threading.Lock()
 _batch: dict[str, Any] = {"running": False, "done": 0, "total": 0, "matched": 0, "errors": 0, "started": None}
 
@@ -58,8 +62,14 @@ def _prepare_image(image_bytes: bytes) -> str:
         from PIL import Image
 
         with Image.open(io.BytesIO(image_bytes)) as img:
+            if img.width * img.height > MAX_IMAGE_PIXELS:
+                raise AiScanError("Das Bild ist zu groß (mehr als 40 Megapixel).")
+            # Erst verkleinern, dann umwandeln: umgekehrt liegen bei einem 12-MP-Foto ~36 MB RGB
+            # im Speicher (und bei einem großen PNG noch mehr). ``draft`` verkleinert JPEGs schon
+            # beim Dekodieren.
+            img.draft("RGB", (768, 768))
+            img.thumbnail((768, 768))
             rgb = img.convert("RGB")
-            rgb.thumbnail((768, 768))
             buffer = io.BytesIO()
             rgb.save(buffer, format="JPEG", quality=82)
             return base64.b64encode(buffer.getvalue()).decode()
@@ -187,10 +197,15 @@ async def classify(image_bytes: bytes, config: dict[str, Any] | None = None) -> 
     timeout = float(max(60, min(600, int(config.get("timeout_seconds") or 180))))
     image_b64 = _prepare_image(image_bytes)
     started = time.monotonic()
-    if await _is_ollama(base_url, timeout=min(timeout, 5.0)):
-        content = await _ollama_vision(base_url, model, image_b64, timeout)
-    else:
-        content = await _openai_vision(base_url, model, image_b64, timeout)
+    # Zeitbudget für das ganze Bild: der HTTP-Timeout greift pro Lesevorgang, ein langsam tröpfelnder
+    # Server kann ihn umgehen. So hängt weder die Stapelprüfung noch ein Upload endlos.
+    try:
+        if await _is_ollama(base_url, timeout=min(timeout, 5.0)):
+            content = await asyncio.wait_for(_ollama_vision(base_url, model, image_b64, timeout), timeout=timeout)
+        else:
+            content = await asyncio.wait_for(_openai_vision(base_url, model, image_b64, timeout), timeout=timeout)
+    except asyncio.TimeoutError as exc:
+        raise AiScanError(f"Die Bildanalyse hat das Zeitlimit von {timeout:.0f} s überschritten.") from exc
     result = _parse_reply(content)
     result["model"] = model
     result["duration_ms"] = int((time.monotonic() - started) * 1000)
@@ -238,6 +253,45 @@ def _trim() -> None:
     tmp = FINDINGS_PATH.with_suffix(".tmp")
     tmp.write_text("\n".join(keep) + "\n", encoding="utf-8")
     tmp.replace(FINDINGS_PATH)
+    keep_ids: set[str] = set()
+    for line in keep:
+        try:
+            keep_ids.add(str(json.loads(line).get("id")))
+        except (ValueError, AttributeError):
+            continue
+    _trim_feedback(keep_ids)
+
+
+def _trim_feedback(keep_ids: set[str] | None = None) -> None:
+    """Bewertungen begrenzen und solche zu entfernten Treffern mitlöschen.
+
+    Vorher wuchs ``ai_error_feedback.jsonl`` unbegrenzt und enthielt nach dem Kürzen der Treffer
+    Bewertungen, zu denen es keinen Treffer mehr gab.
+    """
+    try:
+        lines = FEEDBACK_PATH.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return
+    kept: list[str] = []
+    for line in lines:
+        try:
+            entry = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(entry, dict):
+            continue
+        finding_id = str(entry.get("finding_id") or "")
+        if not finding_id:
+            continue
+        if keep_ids is not None and finding_id not in keep_ids:
+            continue
+        kept.append(line)
+    kept = kept[-MAX_FEEDBACK:]
+    if len(kept) == len(lines):
+        return
+    tmp = FEEDBACK_PATH.with_suffix(".tmp")
+    tmp.write_text("\n".join(kept) + ("\n" if kept else ""), encoding="utf-8")
+    tmp.replace(FEEDBACK_PATH)
 
 
 def _all() -> list[dict[str, Any]]:
@@ -300,6 +354,8 @@ def record_feedback(finding_id: str, verdict: str) -> dict[str, Any]:
         FEEDBACK_PATH.parent.mkdir(parents=True, exist_ok=True)
         with FEEDBACK_PATH.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        if len(_feedback_lines()) > MAX_FEEDBACK:
+            _trim_feedback()
     return entry
 
 
@@ -308,6 +364,32 @@ def feedback_summary() -> dict[str, int]:
     for verdict in _feedback_map().values():
         counts_[verdict] += 1
     return counts_
+
+
+def feedback_by_pattern() -> dict[str, dict[str, int]]:
+    """Trefferquote je Fehlerbild: richtig, falsch, gesamt und Quote in Prozent.
+
+    Nur bewertete Treffer zählen; ohne Bewertung bleibt das Fehlerbild draußen. Damit lässt sich die
+    Erkennung kalibrieren (welches Fehlerbild wird zuverlässig erkannt, welches nicht), statt nur die
+    Gesamtzahl zu sehen.
+    """
+    with _lock:
+        findings = {str(entry.get("id")): entry for entry in _all()}
+        verdicts = _feedback_map()
+    out: dict[str, dict[str, int]] = {}
+    for finding_id, verdict in verdicts.items():
+        finding = findings.get(finding_id)
+        if finding is None:
+            continue
+        pattern_id = str(finding.get("pattern_id") or "")
+        if not pattern_id:
+            continue
+        row = out.setdefault(pattern_id, {"correct": 0, "wrong": 0, "total": 0, "accuracy": 0})
+        row[verdict] += 1
+    for row in out.values():
+        row["total"] = row["correct"] + row["wrong"]
+        row["accuracy"] = round(row["correct"] * 100 / row["total"]) if row["total"] else 0
+    return out
 
 
 def find_finding(finding_id: str) -> dict[str, Any] | None:
@@ -375,13 +457,24 @@ def start_batch(limit: int = 10) -> dict[str, Any]:
             _batch["running"] = False
             return dict(_batch)
     try:
-        loop = asyncio.get_running_loop()
+        asyncio.get_running_loop()
     except RuntimeError as exc:
         with _batch_lock:
             _batch["running"] = False
         raise AiScanError("Keine Ereignisschleife für die Stapelprüfung.") from exc
-    loop.create_task(_run_batch(todo, config))
+    _spawn(_run_batch(todo, config))
     return batch_status()
+
+
+def _spawn(coro: Any) -> None:
+    """Hintergrundaufgabe am Leben halten, bis sie fertig ist.
+
+    Der Event-Loop hält nur schwache Referenzen: ohne diese Menge kann der Garbage Collector eine
+    laufende Stapelprüfung oder einen Broadcast mitten im Lauf abräumen.
+    """
+    task = asyncio.get_running_loop().create_task(coro)
+    _tasks.add(task)
+    task.add_done_callback(_tasks.discard)
 
 
 async def _run_batch(names: list[str], config: dict[str, Any]) -> None:
@@ -424,7 +517,36 @@ async def scan_and_record(
     threshold = int(config.get("error_scan_min_confidence", 60))
     if result.get("pattern_id") and float(result.get("confidence", 0)) * 100 >= threshold:
         record(result, source=source, printer_id=printer_id, image_name=image_name)
+        if source in _ANNOUNCE_SOURCES and config.get("error_scan_notify", True):
+            await _announce(result, image_name)
     return result
+
+
+async def _announce(result: dict[str, Any], image_name: str | None) -> None:
+    """KI-Hinweis als eigene Meldung nachreichen (die Warnung selbst nie verzögern).
+
+    Die Bildanalyse dauert auf dem Pi eine bis zwei Minuten. Sie in die ursprüngliche Warnung zu
+    hängen würde den Alarm blockieren; deshalb kommt der Hinweis als kurze zweite Meldung.
+    """
+    try:
+        from backend.app.core.database import async_session
+        from backend.app.services import error_patterns, notification_service
+
+        pattern = next((entry for entry in error_patterns.PATTERNS if entry["id"] == result["pattern_id"]), None)
+        title = f"KI-Hinweis: {pattern['title'] if pattern else result['pattern_id']}"
+        confidence = int(round(float(result.get("confidence", 0)) * 100))
+        parts = [f"{confidence} % Sicherheit"]
+        if result.get("reason"):
+            parts.append(str(result["reason"]))
+        if image_name:
+            parts.append(f"Bild: {image_name}")
+        parts.append("Einordnung: Hinweis, keine Diagnose.")
+        async with async_session() as db:
+            await notification_service.notification_service.on_app_message(
+                db, sender="PrintLab", title=title, message=" — ".join(parts)
+            )
+    except Exception:  # noqa: BLE001 - eine Meldung darf die Prüfung nicht abbrechen
+        logger.warning("AI hint notification failed", exc_info=True)
 
 
 def schedule_failure_scan(image_bytes: bytes, printer_id: int | None, source: str) -> bool:
@@ -436,7 +558,7 @@ def schedule_failure_scan(image_bytes: bytes, printer_id: int | None, source: st
     if not config.get("error_scan_enabled"):
         return False
     try:
-        loop = asyncio.get_running_loop()
+        asyncio.get_running_loop()
     except RuntimeError:
         return False
 
@@ -447,5 +569,5 @@ def schedule_failure_scan(image_bytes: bytes, printer_id: int | None, source: st
             except Exception:  # noqa: BLE001 - Hintergrundprüfung darf nichts abbrechen
                 logger.warning("AI error scan failed", exc_info=True)
 
-    loop.create_task(_run())
+    _spawn(_run())
     return True
