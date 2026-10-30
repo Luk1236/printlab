@@ -8,12 +8,16 @@ import {
   Cpu,
   Fan,
   Gauge,
+  Images,
   Loader2,
   Search,
   ShieldAlert,
   SlidersHorizontal,
   Thermometer,
+  ThumbsDown,
+  ThumbsUp,
   Wrench,
+  X,
   Zap,
 } from 'lucide-react';
 
@@ -93,6 +97,7 @@ function PatternCard({
   onApply,
   detections = 0,
   lastFinding = null,
+  onHistory,
 }: {
   pattern: ErrorPattern;
   categories: ErrorCategory[];
@@ -103,6 +108,7 @@ function PatternCard({
   onApply: (action: ErrorPatternAction) => void;
   detections?: number;
   lastFinding?: AiScanFinding | null;
+  onHistory?: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const german = i18n.language.startsWith('de');
@@ -145,6 +151,9 @@ function PatternCard({
       </button>
       {expanded && (
         <div className="px-4 pb-4 space-y-3 border-t border-bambu-dark-tertiary/60 pt-3">
+          <div className="rounded-lg bg-gradient-to-br from-bambu-dark-tertiary/70 to-bambu-dark p-3">
+            <ErrorPatternIllustration patternId={pattern.id} className="w-full max-h-48" />
+          </div>
           <List title={t('errorHelp.causes')} icon={<AlertTriangle className="w-3.5 h-3.5" />} items={asList(pattern.causes)} />
           <List title={t('errorHelp.slicer')} icon={<SlidersHorizontal className="w-3.5 h-3.5" />} items={asList(pattern.slicer)} />
           <List title={t('errorHelp.automation')} icon={<Cpu className="w-3.5 h-3.5" />} items={asList(pattern.automation)} />
@@ -154,6 +163,12 @@ function PatternCard({
               {new Date(lastFinding.ts).toLocaleString(i18n.language)} ·{' '}
               {Math.round(lastFinding.confidence * 100)} %{lastFinding.reason ? ` · ${lastFinding.reason}` : ''}
             </div>
+          )}
+          {detections > 0 && onHistory && (
+            <Button size="sm" variant="ghost" onClick={onHistory}>
+              <Cpu className="w-3.5 h-3.5" />
+              {t('errorHelp.aiHistory')}
+            </Button>
           )}
           {actions.length > 0 && (
             <div className="pt-1">
@@ -184,6 +199,56 @@ function PatternCard({
   );
 }
 
+function FindingRow({
+  finding,
+  title,
+  canRate,
+  onFeedback,
+}: {
+  finding: AiScanFinding;
+  title: string;
+  canRate: boolean;
+  onFeedback: (verdict: 'correct' | 'wrong') => void;
+}) {
+  const { t, i18n } = useTranslation();
+  return (
+    <li className="flex flex-col md:flex-row md:items-baseline gap-1 md:gap-2 text-xs border-b border-bambu-dark-tertiary/50 pb-1 last:border-0">
+      <span className="text-bambu-gray tabular-nums shrink-0">{new Date(finding.ts).toLocaleString(i18n.language)}</span>
+      <span className="text-white shrink-0">{title}</span>
+      <span className="text-bambu-gray shrink-0">{Math.round(finding.confidence * 100)} %</span>
+      <span className="text-bambu-gray-light min-w-0 flex-1">{finding.reason}</span>
+      {finding.id && (
+        <span className="flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            disabled={!canRate}
+            onClick={() => onFeedback('correct')}
+            aria-label={t('errorHelp.aiMarkCorrect')}
+            title={t('errorHelp.aiMarkCorrect')}
+            className={`p-1 rounded transition-colors disabled:opacity-40 ${
+              finding.verdict === 'correct' ? 'text-bambu-green' : 'text-bambu-gray hover:text-bambu-green'
+            }`}
+          >
+            <ThumbsUp className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            disabled={!canRate}
+            onClick={() => onFeedback('wrong')}
+            aria-label={t('errorHelp.aiMarkWrong')}
+            title={t('errorHelp.aiMarkWrong')}
+            className={`p-1 rounded transition-colors disabled:opacity-40 ${
+              finding.verdict === 'wrong' ? 'text-red-500' : 'text-bambu-gray hover:text-red-500'
+            }`}
+          >
+            <ThumbsDown className="w-3.5 h-3.5" />
+          </button>
+        </span>
+      )}
+    </li>
+  );
+}
+
 export function ErrorHelpPage() {
   const { t, i18n } = useTranslation();
   const { hasPermission } = useAuth();
@@ -198,6 +263,7 @@ export function ErrorHelpPage() {
   const [aiFile, setAiFile] = useState<File | null>(null);
   const [aiResult, setAiResult] = useState<AiScanResult | null>(null);
   const [failureImageName, setFailureImageName] = useState('');
+  const [historyPattern, setHistoryPattern] = useState<string | null>(null);
 
   const canControl = hasPermission('printers:control');
   const canConfigure = hasPermission('settings:update');
@@ -218,7 +284,12 @@ export function ErrorHelpPage() {
   const aiScan = useQuery({
     queryKey: ['ai-scan'],
     queryFn: () => api.getAiScan(),
-    refetchInterval: 60_000,
+    refetchInterval: (query) => (query.state.data?.batch?.running ? 5_000 : 60_000),
+  });
+  const aiHistory = useQuery({
+    queryKey: ['ai-scan-history', historyPattern],
+    queryFn: () => api.getAiFindings(50, historyPattern ?? undefined),
+    enabled: historyPattern !== null,
   });
   const failureImages = useQuery({
     queryKey: ['failure-images'],
@@ -248,6 +319,22 @@ export function ErrorHelpPage() {
     onSuccess: (data) => {
       setAiResult(data.result);
       queryClient.invalidateQueries({ queryKey: ['ai-scan'] });
+    },
+    onError: (error: Error) => showToast(error.message, 'error'),
+  });
+  const aiFeedback = useMutation({
+    mutationFn: ({ id, verdict }: { id: string; verdict: 'correct' | 'wrong' }) => api.sendAiFeedback(id, verdict),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ai-scan'] });
+      queryClient.invalidateQueries({ queryKey: ['ai-scan-history'] });
+    },
+    onError: (error: Error) => showToast(error.message, 'error'),
+  });
+  const aiBatch = useMutation({
+    mutationFn: () => api.scanAiCollection(10),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ai-scan'] });
+      showToast(t('errorHelp.aiBatchStarted'));
     },
     onError: (error: Error) => showToast(error.message, 'error'),
   });
@@ -400,6 +487,10 @@ export function ErrorHelpPage() {
                   }}
                   detections={aiScan.data?.counts[pattern.id] ?? 0}
                   lastFinding={lastFindingByPattern.get(pattern.id) ?? null}
+                  onHistory={() => {
+                    setHistoryPattern(pattern.id);
+                    requestAnimationFrame(() => document.getElementById('ai-scan-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+                  }}
                 />
               );
             })}
@@ -601,7 +692,7 @@ export function ErrorHelpPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card id="ai-scan-card">
         <CardContent className="space-y-4">
           <div>
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
@@ -726,6 +817,38 @@ export function ErrorHelpPage() {
                 )}
               </div>
 
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={!canControl || aiBatch.isPending || Boolean(aiScan.data.batch?.running)}
+                  onClick={() => aiBatch.mutate()}
+                >
+                  {aiBatch.isPending || aiScan.data.batch?.running ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Images className="w-3.5 h-3.5" />
+                  )}
+                  {t('errorHelp.aiBatch')}
+                </Button>
+                {aiScan.data.batch && (aiScan.data.batch.running || aiScan.data.batch.total > 0) && (
+                  <span className="text-xs text-bambu-gray" role="status">
+                    {aiScan.data.batch.running
+                      ? t('errorHelp.aiBatchProgress', {
+                          done: aiScan.data.batch.done,
+                          total: aiScan.data.batch.total,
+                          matched: aiScan.data.batch.matched,
+                        })
+                      : t('errorHelp.aiBatchDone', {
+                          done: aiScan.data.batch.done,
+                          total: aiScan.data.batch.total,
+                          matched: aiScan.data.batch.matched,
+                          errors: aiScan.data.batch.errors,
+                        })}
+                  </span>
+                )}
+              </div>
+
               {aiResult && (
                 <div className="rounded-lg border border-bambu-dark-tertiary bg-bambu-dark-secondary/60 p-3 space-y-1">
                   <p className="text-sm font-semibold text-white">
@@ -747,27 +870,31 @@ export function ErrorHelpPage() {
               )}
 
               <div>
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-bambu-gray mb-1">{t('errorHelp.aiFindings')}</h3>
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-bambu-gray">{t('errorHelp.aiFindings')}</h3>
+                  {aiScan.data.feedback && (aiScan.data.feedback.correct > 0 || aiScan.data.feedback.wrong > 0) && (
+                    <span className="text-[11px] text-bambu-gray">
+                      {t('errorHelp.aiFeedbackSummary', {
+                        correct: aiScan.data.feedback.correct,
+                        wrong: aiScan.data.feedback.wrong,
+                      })}
+                    </span>
+                  )}
+                </div>
                 {(aiScan.data.findings ?? []).length === 0 ? (
                   <p className="text-xs text-bambu-gray">{t('errorHelp.aiNoFindings')}</p>
                 ) : (
                   <ul className="space-y-1">
-                    {aiScan.data.findings.slice(0, 8).map((finding, index) => {
+                    {aiScan.data.findings.slice(0, 8).map((finding) => {
                       const hit = data?.patterns.find((entry) => entry.id === finding.pattern_id);
                       return (
-                        <li
-                          key={`${finding.ts}-${index}`}
-                          className="flex flex-col md:flex-row md:items-baseline gap-1 md:gap-2 text-xs border-b border-bambu-dark-tertiary/50 pb-1 last:border-0"
-                        >
-                          <span className="text-bambu-gray tabular-nums shrink-0">
-                            {new Date(finding.ts).toLocaleString(i18n.language)}
-                          </span>
-                          <span className="text-white shrink-0">
-                            {hit ? (german ? hit.title : hit.title_en) : finding.pattern_id}
-                          </span>
-                          <span className="text-bambu-gray shrink-0">{Math.round(finding.confidence * 100)} %</span>
-                          <span className="text-bambu-gray-light min-w-0">{finding.reason}</span>
-                        </li>
+                        <FindingRow
+                          key={finding.id || `${finding.ts}-${finding.pattern_id}`}
+                          finding={finding}
+                          title={hit ? (german ? hit.title : hit.title_en) : finding.pattern_id}
+                          canRate={canControl}
+                          onFeedback={(verdict) => aiFeedback.mutate({ id: finding.id, verdict })}
+                        />
                       );
                     })}
                   </ul>
@@ -777,6 +904,50 @@ export function ErrorHelpPage() {
           )}
         </CardContent>
       </Card>
+
+      {historyPattern && (
+        <Card>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-lg font-semibold text-white">
+                {t('errorHelp.aiHistoryTitle', {
+                  pattern: (() => {
+                    const hit = data?.patterns.find((entry) => entry.id === historyPattern);
+                    return hit ? (german ? hit.title : hit.title_en) : historyPattern;
+                  })(),
+                })}
+              </h2>
+              <Button size="sm" variant="ghost" onClick={() => setHistoryPattern(null)} aria-label={t('common.close')}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            {aiHistory.isLoading && (
+              <p className="text-xs text-bambu-gray flex items-center gap-2" role="status">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> {t('common.loading')}
+              </p>
+            )}
+            {aiHistory.data && aiHistory.data.findings.length === 0 && (
+              <p className="text-xs text-bambu-gray">{t('errorHelp.aiHistoryEmpty')}</p>
+            )}
+            {aiHistory.data && aiHistory.data.findings.length > 0 && (
+              <ul className="space-y-1">
+                {aiHistory.data.findings.map((finding) => (
+                  <FindingRow
+                    key={finding.id || `${finding.ts}-${finding.pattern_id}`}
+                    finding={finding}
+                    title={(() => {
+                      const hit = data?.patterns.find((entry) => entry.id === finding.pattern_id);
+                      return hit ? (german ? hit.title : hit.title_en) : finding.pattern_id;
+                    })()}
+                    canRate={canControl}
+                    onFeedback={(verdict) => aiFeedback.mutate({ id: finding.id, verdict })}
+                  />
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardContent className="space-y-3">

@@ -8121,6 +8121,16 @@ export default {
     }
   },
   errorHelp: {
+    aiBatch: '컬렉션 확인',
+    aiBatchProgress: '{{done}}/{{total}} · {{matched}}건 감지',
+    aiBatchDone: '완료: {{done}}/{{total}} · {{matched}}건 감지 · {{errors}}건 오류',
+    aiBatchStarted: '일괄 확인을 시작했습니다.',
+    aiMarkCorrect: '감지가 맞음',
+    aiMarkWrong: '감지가 틀림',
+    aiFeedbackSummary: '{{correct}}건 맞음 · {{wrong}}건 틀림',
+    aiHistory: '기록',
+    aiHistoryTitle: '기록: {{pattern}}',
+    aiHistoryEmpty: '이 불량에 대한 결과가 없습니다.',
     aiTitle: 'AI 오류 감지 (로컬)',
     aiHint: '카메라 이미지를 로컬 이미지 모델로 분석해 인쇄 불량으로 분류합니다. 진단이 아닌 참고 정보이며, 결과는 해당 카드에 표시됩니다. 기본값은 꺼짐입니다.',
     aiServerOk: '모델 서버에 연결됨, 이미지 모델 “{{model}}”이 있습니다.',

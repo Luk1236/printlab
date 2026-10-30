@@ -12,6 +12,7 @@ from backend.app.services import ai_error_scan, assistant_config, assistant_llm
 def _isolated(tmp_path, monkeypatch):
     monkeypatch.setattr(assistant_config, "_path", lambda data_dir: tmp_path / "assistant.json")
     monkeypatch.setattr(ai_error_scan, "FINDINGS_PATH", tmp_path / "findings.jsonl")
+    monkeypatch.setattr(ai_error_scan, "FEEDBACK_PATH", tmp_path / "feedback.jsonl")
     monkeypatch.setattr(
         assistant_llm,
         "status",
@@ -112,3 +113,31 @@ class TestFindings:
         )
         body = (await async_client.get("/api/v1/error-help/ai-scan/findings?pattern_id=warping")).json()
         assert [entry["pattern_id"] for entry in body["findings"]] == ["warping"]
+
+    @pytest.mark.asyncio
+    async def test_feedback_marks_a_finding_and_survives_in_the_list(self, async_client: AsyncClient):
+        finding = ai_error_scan.record(
+            {"pattern_id": "warping", "confidence": 0.8, "reason": "", "model": "m"}, source="upload"
+        )
+        assert finding is not None
+        response = await async_client.post(
+            f"/api/v1/error-help/ai-scan/findings/{finding['id']}/feedback", json={"verdict": "wrong"}
+        )
+        assert response.status_code == 200
+        assert response.json()["feedback"] == {"correct": 0, "wrong": 1}
+        assert response.json()["findings"][0]["verdict"] == "wrong"
+
+    @pytest.mark.asyncio
+    async def test_feedback_for_an_unknown_finding_is_a_404(self, async_client: AsyncClient):
+        response = await async_client.post(
+            "/api/v1/error-help/ai-scan/findings/does-not-exist/feedback", json={"verdict": "correct"}
+        )
+        assert response.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_a_collection_scan_can_be_started(self, async_client: AsyncClient):
+        with patch.object(ai_error_scan, "start_batch", return_value={"running": True, "total": 4}) as start:
+            response = await async_client.post("/api/v1/error-help/ai-scan/scan-collection", json={"limit": 4})
+        assert response.status_code == 200
+        assert start.call_args.args[0] == 4
+        assert response.json()["running"] is True

@@ -358,6 +358,7 @@ export interface CountermeasureLogEntry {
 }
 
 export interface AiScanFinding {
+  id: string;
   ts: string;
   pattern_id: string;
   confidence: number;
@@ -367,6 +368,16 @@ export interface AiScanFinding {
   source: 'upload' | 'failure_image' | string;
   printer_id: number | null;
   image_name: string | null;
+  verdict?: 'correct' | 'wrong' | null;
+}
+
+export interface AiScanBatch {
+  running: boolean;
+  done: number;
+  total: number;
+  matched: number;
+  errors: number;
+  started: string | null;
 }
 
 export interface AiScanConfigState {
@@ -398,6 +409,8 @@ export interface AiScanResponse {
   vision_present: boolean;
   findings: AiScanFinding[];
   counts: Record<string, number>;
+  feedback?: { correct: number; wrong: number };
+  batch?: AiScanBatch;
 }
 
 export interface ForkApiDeps {
@@ -635,5 +648,19 @@ export function createForkApi({ request, apiBase, getAuthToken }: ForkApiDeps) {
       `/error-help/ai-scan/failure-image/${encodeURIComponent(name)}`,
       { method: 'POST' }
     ),
+  getAiFindings: (limit: number, patternId?: string) =>
+    request<{ findings: AiScanFinding[]; counts: Record<string, number> }>(
+      `/error-help/ai-scan/findings?limit=${limit}${patternId ? `&pattern_id=${encodeURIComponent(patternId)}` : ''}`
+    ),
+  sendAiFeedback: (findingId: string, verdict: 'correct' | 'wrong') =>
+    request<{ findings: AiScanFinding[]; feedback: { correct: number; wrong: number } }>(
+      `/error-help/ai-scan/findings/${encodeURIComponent(findingId)}/feedback`,
+      { method: 'POST', body: JSON.stringify({ verdict }) }
+    ),
+  scanAiCollection: (limit = 10) =>
+    request<AiScanBatch>('/error-help/ai-scan/scan-collection', {
+      method: 'POST',
+      body: JSON.stringify({ limit }),
+    }),
   };
 }

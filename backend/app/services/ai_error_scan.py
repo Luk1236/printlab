@@ -20,6 +20,7 @@ import json
 import logging
 import threading
 import time
+import uuid
 from datetime import datetime, timezone
 from typing import Any
 
@@ -27,16 +28,20 @@ import httpx
 
 from backend.app.core.config import settings
 from backend.app.services import assistant_config, error_patterns
+from backend.app.utils import failure_images
 
 logger = logging.getLogger(__name__)
 
 FINDINGS_PATH = settings.base_dir / "ai_error_findings.jsonl"
+FEEDBACK_PATH = settings.base_dir / "ai_error_feedback.jsonl"
 MAX_FINDINGS = 2000
 MAX_IMAGE_BYTES = 15 * 1024 * 1024
 _ALLOWED_IDS = {pattern["id"] for pattern in error_patterns.PATTERNS}
 _lock = threading.Lock()
 _write_lock = threading.Lock()
 _auto_semaphore = asyncio.Semaphore(1)
+_batch_lock = threading.Lock()
+_batch: dict[str, Any] = {"running": False, "done": 0, "total": 0, "matched": 0, "errors": 0, "started": None}
 
 
 class AiScanError(RuntimeError):
@@ -203,6 +208,7 @@ def record(
     if not result.get("pattern_id"):
         return None
     entry = {
+        "id": uuid.uuid4().hex[:16],
         "ts": datetime.now(timezone.utc).isoformat(),
         "pattern_id": result["pattern_id"],
         "confidence": round(float(result.get("confidence", 0)), 3),
@@ -250,11 +256,78 @@ def _all() -> list[dict[str, Any]]:
     return out
 
 
+def _feedback_lines() -> list[dict[str, Any]]:
+    try:
+        lines = FEEDBACK_PATH.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return []
+    out = []
+    for line in lines:
+        try:
+            entry = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(entry, dict) and entry.get("finding_id"):
+            out.append(entry)
+    return out
+
+
+def _feedback_map() -> dict[str, str]:
+    """Letzte Bewertung je Treffer."""
+    latest: dict[str, str] = {}
+    for entry in _feedback_lines():
+        finding_id = str(entry.get("finding_id") or "")
+        verdict = str(entry.get("verdict") or "")
+        if finding_id and verdict in ("correct", "wrong"):
+            latest[finding_id] = verdict
+    return latest
+
+
+def record_feedback(finding_id: str, verdict: str) -> dict[str, Any]:
+    """Einen Treffer als richtig oder falsch bewerten (letzte Bewertung zählt)."""
+    if verdict not in ("correct", "wrong"):
+        raise ValueError("verdict muss 'correct' oder 'wrong' sein")
+    finding = find_finding(finding_id)
+    if finding is None:
+        raise KeyError(finding_id)
+    entry = {
+        "ts": datetime.now(timezone.utc).isoformat(),
+        "finding_id": finding_id,
+        "verdict": verdict,
+        "pattern_id": finding.get("pattern_id"),
+    }
+    with _write_lock:
+        FEEDBACK_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with FEEDBACK_PATH.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    return entry
+
+
+def feedback_summary() -> dict[str, int]:
+    counts_ = {"correct": 0, "wrong": 0}
+    for verdict in _feedback_map().values():
+        counts_[verdict] += 1
+    return counts_
+
+
+def find_finding(finding_id: str) -> dict[str, Any] | None:
+    if not finding_id:
+        return None
+    with _lock:
+        for entry in _all():
+            if entry.get("id") == finding_id:
+                return entry
+    return None
+
+
 def list_findings(limit: int = 50, pattern_id: str | None = None) -> list[dict[str, Any]]:
     with _lock:
         entries = _all()
+        verdicts = _feedback_map()
     if pattern_id:
         entries = [entry for entry in entries if entry.get("pattern_id") == pattern_id]
+    for entry in entries:
+        entry["verdict"] = verdicts.get(str(entry.get("id") or ""))
     return entries[: max(1, min(limit, MAX_FINDINGS))]
 
 
@@ -265,6 +338,76 @@ def counts() -> dict[str, int]:
             pattern_id = str(entry.get("pattern_id"))
             out[pattern_id] = out.get(pattern_id, 0) + 1
     return out
+
+
+def batch_status() -> dict[str, Any]:
+    with _batch_lock:
+        return dict(_batch)
+
+
+def start_batch(limit: int = 10) -> dict[str, Any]:
+    """Gesammelte Fehlerbilder der Reihe nach prüfen (Hintergrund).
+
+    Bereits geprüfte Bilder (gleicher Dateiname in den Treffern) werden
+    übersprungen, damit ein zweiter Lauf nicht dieselbe Arbeit macht.
+    """
+    config = assistant_config.read(settings.base_dir)
+    if not str(config.get("vision_model") or config.get("model") or "").strip():
+        raise AiScanError("Es ist kein Bildmodell eingestellt.")
+    capped = max(1, min(50, int(limit)))
+    with _batch_lock:
+        if _batch["running"]:
+            return dict(_batch)
+        images = failure_images.list_failure_images()[:capped]
+        seen = {entry.get("image_name") for entry in _all() if entry.get("image_name")}
+        todo = [image["name"] for image in images if image["name"] not in seen]
+        _batch.update(
+            {
+                "running": True,
+                "done": 0,
+                "total": len(todo),
+                "matched": 0,
+                "errors": 0,
+                "started": datetime.now(timezone.utc).isoformat(),
+            }
+        )
+        if not todo:
+            _batch["running"] = False
+            return dict(_batch)
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError as exc:
+        with _batch_lock:
+            _batch["running"] = False
+        raise AiScanError("Keine Ereignisschleife für die Stapelprüfung.") from exc
+    loop.create_task(_run_batch(todo, config))
+    return batch_status()
+
+
+async def _run_batch(names: list[str], config: dict[str, Any]) -> None:
+    try:
+        for name in names:
+            path = failure_images.find_failure_image(name)
+            if path is None:
+                with _batch_lock:
+                    _batch["done"] += 1
+                continue
+            try:
+                image = await asyncio.to_thread(path.read_bytes)
+                async with _auto_semaphore:
+                    result = await scan_and_record(image, source="failure_image", image_name=name, config=config)
+                with _batch_lock:
+                    _batch["done"] += 1
+                    if result.get("pattern_id"):
+                        _batch["matched"] += 1
+            except Exception:  # noqa: BLE001 - ein kaputtes Bild stoppt den Rest nicht
+                logger.warning("AI batch scan failed for %s", name, exc_info=True)
+                with _batch_lock:
+                    _batch["done"] += 1
+                    _batch["errors"] += 1
+    finally:
+        with _batch_lock:
+            _batch["running"] = False
 
 
 async def scan_and_record(

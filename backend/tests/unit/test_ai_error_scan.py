@@ -1,5 +1,6 @@
 """KI-Fehlererkennung: Antwort lesen, Treffer ablegen und zählen."""
 
+import asyncio
 import json
 from unittest.mock import AsyncMock, patch
 
@@ -80,3 +81,105 @@ def test_entries_are_json_lines(tmp_path, monkeypatch):
     ai_error_scan.record({"pattern_id": "ghosting", "confidence": 1, "reason": "", "model": "m"}, source="upload")
     line = json.loads(path.read_text(encoding="utf-8").splitlines()[0])
     assert line["pattern_id"] == "ghosting" and line["source"] == "upload"
+    assert line["id"]
+
+
+class TestFeedback:
+    @pytest.fixture(autouse=True)
+    def _tmp_paths(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(ai_error_scan, "FINDINGS_PATH", tmp_path / "findings.jsonl")
+        monkeypatch.setattr(ai_error_scan, "FEEDBACK_PATH", tmp_path / "feedback.jsonl")
+        monkeypatch.setattr(
+            ai_error_scan,
+            "_batch",
+            {"running": False, "done": 0, "total": 0, "matched": 0, "errors": 0, "started": None},
+        )
+
+    def test_latest_verdict_wins_and_shows_in_the_list(self):
+        finding = ai_error_scan.record(
+            {"pattern_id": "curling", "confidence": 0.9, "reason": "", "model": "m"}, source="upload"
+        )
+        ai_error_scan.record_feedback(finding["id"], "correct")
+        ai_error_scan.record_feedback(finding["id"], "wrong")
+        assert ai_error_scan.feedback_summary() == {"correct": 0, "wrong": 1}
+        assert ai_error_scan.list_findings(10)[0]["verdict"] == "wrong"
+
+    def test_unknown_finding_is_refused(self):
+        with pytest.raises(KeyError):
+            ai_error_scan.record_feedback("nope", "correct")
+
+    def test_only_known_verdicts_are_accepted(self):
+        finding = ai_error_scan.record(
+            {"pattern_id": "ghosting", "confidence": 0.9, "reason": "", "model": "m"}, source="upload"
+        )
+        with pytest.raises(ValueError):
+            ai_error_scan.record_feedback(finding["id"], "maybe")
+
+
+class TestBatch:
+    @pytest.fixture(autouse=True)
+    def _tmp_paths(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(ai_error_scan, "FINDINGS_PATH", tmp_path / "findings.jsonl")
+        monkeypatch.setattr(ai_error_scan, "FEEDBACK_PATH", tmp_path / "feedback.jsonl")
+        monkeypatch.setattr(
+            ai_error_scan,
+            "_batch",
+            {"running": False, "done": 0, "total": 0, "matched": 0, "errors": 0, "started": None},
+        )
+        images = []
+        for name in ("one.jpg", "two.jpg"):
+            path = tmp_path / name
+            path.write_bytes(b"fake")
+            images.append({"name": name, "event": "ai_failure_detection"})
+        monkeypatch.setattr(ai_error_scan.failure_images, "list_failure_images", lambda: images)
+        monkeypatch.setattr(
+            ai_error_scan.failure_images,
+            "find_failure_image",
+            lambda name: tmp_path / name if (tmp_path / name).is_file() else None,
+        )
+        monkeypatch.setattr(ai_error_scan.assistant_config, "read", lambda data_dir: {"vision_model": "m"})
+
+    def test_batch_classifies_and_counts(self):
+        async def run():
+            with patch.object(
+                ai_error_scan,
+                "scan_and_record",
+                AsyncMock(return_value={"pattern_id": "stringing", "confidence": 0.9}),
+            ):
+                ai_error_scan.start_batch(5)
+                for _ in range(100):
+                    if not ai_error_scan.batch_status()["running"]:
+                        break
+                    await asyncio.sleep(0.01)
+
+        asyncio.run(run())
+        status = ai_error_scan.batch_status()
+        assert status == {
+            "running": False,
+            "done": 2,
+            "total": 2,
+            "matched": 2,
+            "errors": 0,
+            "started": status["started"],
+        }
+
+    def test_already_scanned_images_are_skipped(self):
+        ai_error_scan.record(
+            {"pattern_id": "stringing", "confidence": 0.9, "reason": "", "model": "m"},
+            source="failure_image",
+            image_name="one.jpg",
+        )
+
+        async def run():
+            with patch.object(
+                ai_error_scan, "scan_and_record", AsyncMock(return_value={"pattern_id": "stringing"})
+            ) as scan:
+                status = ai_error_scan.start_batch(5)
+                for _ in range(100):
+                    if not ai_error_scan.batch_status()["running"]:
+                        break
+                    await asyncio.sleep(0.01)
+                assert scan.await_count == 1
+                assert status["total"] == 1
+
+        asyncio.run(run())

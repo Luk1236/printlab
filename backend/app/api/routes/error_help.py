@@ -8,6 +8,7 @@ Gegenmaßnahmen ``SETTINGS_UPDATE``, ein Sofort-Eingriff am laufenden Druck
 from __future__ import annotations
 
 import asyncio
+from typing import Literal
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel, Field
@@ -78,7 +79,17 @@ async def _ai_payload() -> dict:
         "vision_present": vision_model in (server.get("models") or []),
         "findings": ai_error_scan.list_findings(30),
         "counts": ai_error_scan.counts(),
+        "feedback": ai_error_scan.feedback_summary(),
+        "batch": ai_error_scan.batch_status(),
     }
+
+
+class FeedbackRequest(BaseModel):
+    verdict: Literal["correct", "wrong"]
+
+
+class BatchRequest(BaseModel):
+    limit: int = Field(default=10, ge=1, le=50)
 
 
 @router.get("/ai-scan")
@@ -144,6 +155,33 @@ async def get_ai_findings(
 ):
     """Erkannte Fehlerbilder, neueste zuerst."""
     return {"findings": ai_error_scan.list_findings(limit, pattern_id), "counts": ai_error_scan.counts()}
+
+
+@router.post("/ai-scan/findings/{finding_id}/feedback")
+async def rate_finding(
+    finding_id: str,
+    payload: FeedbackRequest,
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.PRINTERS_CONTROL),
+):
+    """Rückmeldung zu einem Treffer: richtig oder falsch."""
+    try:
+        ai_error_scan.record_feedback(finding_id, payload.verdict)
+    except KeyError as exc:
+        raise HTTPException(404, "Treffer nicht gefunden") from exc
+    return {"findings": ai_error_scan.list_findings(30), "feedback": ai_error_scan.feedback_summary()}
+
+
+@router.post("/ai-scan/scan-collection")
+async def scan_collection(
+    payload: BatchRequest,
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.PRINTERS_CONTROL),
+):
+    """Gesammelte Fehlerbilder im Hintergrund durchprüfen."""
+    try:
+        status = ai_error_scan.start_batch(payload.limit)
+    except ai_error_scan.AiScanError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    return status
 
 
 @router.get("")
