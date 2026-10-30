@@ -3,6 +3,15 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.14.1 (30.10.2026) — Bilder zur Fehlerhilfe
+
+- **Jedes Fehlerbild hat eine Zeichnung:** zwölf schematische Darstellungen (Heat Creep, Unter-/Überextrusion, Stringing,
+  Warping, Curling, Elefantenfuß, Schichtablösung, Layer Shift, Ghosting, Z-Wobble, Bauteil-Verlust) stehen links neben
+  dem Titel der Fehlerkarte. Zeichnungen statt Fotos: keine Lizenzfragen, offline auf dem Pi verfügbar und in hellem wie
+  dunklem Design lesbar.
+- Intern: `CoverImage` (Titelbild mit Vollbild-Overlay) nach `components/printer/CoverImage.tsx` ausgelagert;
+  `PrintersPage.tsx` fällt auf 9 656 Zeilen, das Budget sinkt auf 9 675.
+
 ## v1.14.0 (30.10.2026) — MakerWorld im MakerWorld-Layout
 
 - **MakerWorld-Seite neu gestaltet:** Kopfleiste mit Logo, großer Suche, Sammlungsauswahl und Konto-Zugang; die Importe stehen
