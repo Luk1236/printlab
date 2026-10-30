@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { RefreshCw } from 'lucide-react';
 
 import { api } from '../api/client';
-import type { AutoRequeueConfig } from '../api/client';
+import type { AutoRequeueConfig } from '../api/forkApi';
 import { Card, CardContent } from './Card';
 import { useToast } from '../contexts/ToastContext';
 

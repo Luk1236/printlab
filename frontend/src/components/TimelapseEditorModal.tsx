@@ -74,6 +74,19 @@ export function TimelapseEditorModal({
     queryFn: () => api.getTimelapseFrames(archiveId),
     retry: false,
   });
+  const downloadExport = async (name: string) => {
+    try {
+      const { blob, filename } = await api.downloadTimelapseMp4(archiveId, name);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Download fehlgeschlagen', 'error');
+    }
+  };
   const renderFrames = useMutation({
     mutationFn: () => api.renderTimelapseMp4(archiveId, framesFps),
     onSuccess: (result) => {
@@ -570,14 +583,14 @@ export function TimelapseEditorModal({
               {frames.exports.length > 0 && (
                 <ul className="space-y-1 text-xs">
                   {frames.exports.map((entry) => (
-                    <li key={entry.name}>
-                      <a
+                    <li key={entry.name} className="flex flex-wrap items-center gap-1">
+                      <button
+                        type="button"
                         className="text-bambu-green hover:underline break-all"
-                        href={`/api/v1/archives/${archiveId}/timelapse/frames/exports/${entry.name}`}
-                        download
+                        onClick={() => downloadExport(entry.name)}
                       >
                         {entry.name}
-                      </a>{' '}
+                      </button>
                       <span className="text-bambu-gray">({Math.round(entry.bytes / 1024)} KB)</span>
                     </li>
                   ))}

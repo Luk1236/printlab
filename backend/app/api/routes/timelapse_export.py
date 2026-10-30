@@ -78,7 +78,11 @@ async def render_timelapse_mp4(
 
 
 @router.get("/{archive_id}/timelapse/frames/exports/{name}")
-async def download_timelapse_mp4(archive_id: int, name: str):
+async def download_timelapse_mp4(
+    archive_id: int,
+    name: str,
+    _=RequirePermissionIfAuthEnabled(Permission.ARCHIVES_READ),
+):
     path = timelapse_export.resolve_export(archive_id, name)
     if path is None:
         raise HTTPException(404, "Video nicht gefunden.")

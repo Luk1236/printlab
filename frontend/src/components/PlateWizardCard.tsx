@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ClipboardCheck, Move3d, RotateCcw } from 'lucide-react';
 
 import { api } from '../api/client';
-import type { PlateWizardState, Printer } from '../api/client';
+import type { Printer } from '../api/client';
+import type { PlateWizardState } from '../api/forkApi';
 import { Button } from './Button';
 import { Card, CardContent } from './Card';
 import { useToast } from '../contexts/ToastContext';

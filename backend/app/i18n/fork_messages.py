@@ -122,11 +122,14 @@ _RAW: list[tuple[str, str]] = [
         "This maintenance program is only set up for the P2S.",
     ),
     (r"Der Drucker ist nicht verbunden\.", "The printer is not connected."),
+    # Kurzform ohne Artikel (Hardware- und Wartungsrouten).
+    (r"Drucker ist nicht verbunden\.", "The printer is not connected."),
     (
         r"Der Druckerzustand ist noch unbekannt\. Bitte den ersten Status abwarten\.",
         "The printer state is still unknown. Please wait for the first status.",
     ),
     (r"Das Wartungsprogramm ist während eines Drucks gesperrt\.", "The maintenance program is locked while printing."),
+    (r"Während eines Drucks gesperrt\.", "Locked while printing."),
     (
         r"Bitte zuerst bestätigen, dass die Druckplatte frei ist\.",
         "Please confirm first that the build plate is clear.",

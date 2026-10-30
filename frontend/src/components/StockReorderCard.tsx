@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ShoppingCart } from 'lucide-react';
 
 import { api } from '../api/client';
-import type { ReorderProposal } from '../api/client';
+import type { ReorderProposal } from '../api/forkApi';
 import { Card, CardContent } from './Card';
 import { useToast } from '../contexts/ToastContext';
 

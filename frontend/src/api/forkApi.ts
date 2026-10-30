@@ -732,6 +732,19 @@ export function createForkApi({ request, apiBase, getAuthToken }: ForkApiDeps) {
       `/archives/${archiveId}/timelapse/frames/export`,
       { method: 'POST', body: JSON.stringify({ fps: fps ?? null }) }
     ),
+  downloadTimelapseMp4: async (archiveId: number, name: string): Promise<{ blob: Blob; filename: string }> => {
+    const token = getAuthToken();
+    const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+    const response = await fetch(
+      `${apiBase}/archives/${archiveId}/timelapse/frames/exports/${encodeURIComponent(name)}`,
+      { headers }
+    );
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(typeof error.detail === 'string' ? error.detail : `HTTP ${response.status}`);
+    }
+    return { blob: await response.blob(), filename: name };
+  },
   getTimelapseExportConfig: () =>
     request<{ keep_frames: boolean; retention_days: number; max_kept_per_archive: number; max_exports_per_archive: number; fps: number }>(
       '/archives/timelapse-export/config'

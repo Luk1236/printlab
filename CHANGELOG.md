@@ -3,6 +3,16 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.17.1 (30.10.2026) — Fehlerbehebungen zu 1.17.0
+
+- **Frontend-Typprüfung:** Die neuen API-Typen werden direkt aus `api/forkApi.ts` importiert; `client.ts` gibt sie
+  nicht weiter und liegt am Zeilenbudget. `npm run typecheck` (das ist `tsc -b`, nicht `tsc --noEmit`) ist grün.
+- **Englische Übersetzung:** Drei deutsche Meldungen aus Hardware und Wartung („Drucker ist nicht verbunden.“,
+  „Während eines Drucks gesperrt.“) haben wieder eine Regel in `i18n/fork_messages.py`.
+- **Sicherheit der neuen Download-Route:** Das MP4 aus den Schichtbildern verlangt jetzt `archives:read`; die
+  Oberfläche lädt es mit Anmeldung statt über einen offenen Link. Die öffentliche Angebotsseite (GET/POST) steht
+  mit Begründung in der Routen-Allowlist des Sicherheitstests.
+
 ## v1.17.0 (30.10.2026) — Angebots-Link, E-Rechnung, Zeitraffer und Einmess-Assistent
 
 - **Plattenwechsel bricht bei unbekannter Betttemperatur ab.** Bisher lief er dann sofort los — bei getrennter

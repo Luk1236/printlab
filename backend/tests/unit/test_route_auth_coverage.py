@@ -97,6 +97,12 @@ _PUBLIC_ROUTES: frozenset[tuple[str, str]] = frozenset(
         # confirmation page and writes nothing; the POST behind it records.
         ("GET", "/api/v1/archives/confirm/{token}/{verdict}"),
         ("POST", "/api/v1/archives/confirm/{token}/{verdict}"),
+        # Public quote link — the customer has no session. The random token in
+        # the path is the credential: it expires, is revocable, and only ever
+        # shows one quote's customer-facing data. The GET writes nothing; the
+        # POST records one accept/decline for that quote and refuses a second.
+        ("GET", "/api/v1/quote/shared/{token}"),
+        ("POST", "/api/v1/quote/shared/{token}"),
         # Notification snapshot (#3089) — HA, Bark and Slack fetch it with no
         # session. The filename embeds secrets.token_urlsafe(24) and is the
         # credential; the handler serves only names of that exact shape, younger
