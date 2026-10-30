@@ -8445,7 +8445,7 @@ export default {
     aiEnable: 'Algılamayı aç',
     aiThreshold: 'En düşük güven (%)',
     aiModel: 'Görüntü modeli',
-    aiModelHint: 'Boş = asistanın modeli',
+    aiModelHint: 'Boş = asistanın modeli · görüntüler için qwen2.5vl:3b gibi bir görüntü modeli',
     aiUploadLabel: 'Görüntüyü denetle',
     aiAnalyze: 'Analiz et',
     aiScanning: 'Model düşünüyor …',

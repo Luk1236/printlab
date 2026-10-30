@@ -8569,7 +8569,7 @@ errors: {
     aiEnable: 'Aktivera detektering',
     aiThreshold: 'Lägsta säkerhet (%)',
     aiModel: 'Bildmodell',
-    aiModelHint: 'Tom = assistentens modell',
+    aiModelHint: 'Tom = assistentens modell · för bilder en bildmodell som qwen2.5vl:3b',
     aiUploadLabel: 'Kontrollera bild',
     aiAnalyze: 'Analysera',
     aiScanning: 'Modellen tänker …',

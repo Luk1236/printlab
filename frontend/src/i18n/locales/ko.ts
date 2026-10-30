@@ -8139,7 +8139,7 @@ export default {
     aiEnable: '감지 사용',
     aiThreshold: '최소 신뢰도 (%)',
     aiModel: '이미지 모델',
-    aiModelHint: '비우면 어시스턴트 모델 사용',
+    aiModelHint: '비우면 어시스턴트 모델 사용 · 이미지는 qwen2.5vl:3b 같은 비전 모델',
     aiUploadLabel: '이미지 확인',
     aiAnalyze: '분석',
     aiScanning: '모델이 생각 중 …',

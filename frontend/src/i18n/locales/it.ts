@@ -8505,7 +8505,7 @@ export default {
     aiEnable: 'Attiva rilevamento',
     aiThreshold: 'Affidabilità minima (%)',
     aiModel: 'Modello immagine',
-    aiModelHint: 'Vuoto = modello dell’assistente',
+    aiModelHint: 'Vuoto = modello dell’assistente · per le immagini un modello visivo come qwen2.5vl:3b',
     aiUploadLabel: 'Verifica immagine',
     aiAnalyze: 'Analizza',
     aiScanning: 'Il modello sta pensando …',

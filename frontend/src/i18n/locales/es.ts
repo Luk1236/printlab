@@ -8528,7 +8528,7 @@ export default {
     aiEnable: 'Activar detección',
     aiThreshold: 'Confianza mínima (%)',
     aiModel: 'Modelo de imagen',
-    aiModelHint: 'Vacío = modelo del asistente',
+    aiModelHint: 'Vacío = modelo del asistente · para imágenes, un modelo de visión como qwen2.5vl:3b',
     aiUploadLabel: 'Comprobar imagen',
     aiAnalyze: 'Analizar',
     aiScanning: 'El modelo piensa …',

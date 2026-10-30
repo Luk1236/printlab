@@ -8503,7 +8503,7 @@ export default {
     aiEnable: '启用识别',
     aiThreshold: '最低置信度（%）',
     aiModel: '图像模型',
-    aiModelHint: '留空 = 助手模型',
+    aiModelHint: '留空 = 助手模型 · 图片请使用 qwen2.5vl:3b 等视觉模型',
     aiUploadLabel: '检查图片',
     aiAnalyze: '分析',
     aiScanning: '模型思考中 …',

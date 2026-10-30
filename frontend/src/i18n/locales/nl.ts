@@ -8571,7 +8571,7 @@ export default {
     aiEnable: 'Detectie inschakelen',
     aiThreshold: 'Minimale zekerheid (%)',
     aiModel: 'Beeldmodel',
-    aiModelHint: 'Leeg = model van de assistent',
+    aiModelHint: 'Leeg = model van de assistent · voor afbeeldingen een beeldmodel zoals qwen2.5vl:3b',
     aiUploadLabel: 'Afbeelding controleren',
     aiAnalyze: 'Analyseren',
     aiScanning: 'Model denkt na …',

@@ -8520,7 +8520,7 @@ export default {
     aiEnable: 'Erkennung einschalten',
     aiThreshold: 'Mindest-Sicherheit (%)',
     aiModel: 'Bildmodell',
-    aiModelHint: 'Leer = Modell des Assistenten',
+    aiModelHint: 'Leer = Modell des Assistenten · für Bilder ein Vision-Modell wie qwen2.5vl:3b',
     aiUploadLabel: 'Bild prüfen',
     aiAnalyze: 'Analysieren',
     aiScanning: 'Modell denkt …',

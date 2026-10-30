@@ -8503,7 +8503,7 @@ export default {
     aiEnable: '啟用辨識',
     aiThreshold: '最低信賴度（%）',
     aiModel: '影像模型',
-    aiModelHint: '留空 = 助理模型',
+    aiModelHint: '留空 = 助理模型 · 圖片請使用 qwen2.5vl:3b 等視覺模型',
     aiUploadLabel: '檢查圖片',
     aiAnalyze: '分析',
     aiScanning: '模型思考中 …',

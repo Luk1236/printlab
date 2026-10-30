@@ -3,6 +3,19 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.16.0 (30.10.2026) — KI-Erkennung mit Rückmeldung und Anleitung
+
+- **Rückmeldung pro Treffer:** Jeder erkannte Fehler lässt sich als richtig oder falsch bewerten; die letzte Bewertung zählt
+  und die Summe steht in der KI-Karte. Damit lässt sich die Trefferquote mit eigenen Bildern messen.
+- **Verlauf je Fehlerbild:** Von der Fehlerkarte aus die letzten 50 Treffer mit Datum, Sicherheit, Begründung und Bewertung.
+- **Stapelprüfung der Sammlung:** Gesammelte Fehlerbilder im Hintergrund durchprüfen (zehn je Lauf), mit Fortschritt;
+  bereits geprüfte Bilder werden übersprungen.
+- **Systemprüfung** meldet jetzt auch die KI-Fehlererkennung: ausgeschaltet, Server weg, Bildmodell fehlt (mit
+  `ollama pull …`) oder bereit — samt Dauer der letzten Bildprüfung.
+- **Anleitung** `docs/KI-EINRICHTUNG.md`: Ollama einrichten, `qwen2.5:3b` als Text-Assistent und **`qwen2.5vl:3b` als
+  Bildmodell**. In der Oberfläche steht der Hinweis, dass `qwen2.5:3b` keine Bilder sehen kann.
+- Die aufgeklappte Fehlerkarte zeigt die Zeichnung groß statt nur als Miniatur.
+
 ## v1.15.0 (30.10.2026) — Fehlererkennung mit lokaler KI
 
 - **KI-Fehlererkennung (lokal):** Ein Kamerabild wird vom lokalen Bildmodell (Ollama oder OpenAI-kompatibler Server,

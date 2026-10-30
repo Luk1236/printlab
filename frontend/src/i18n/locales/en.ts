@@ -8571,7 +8571,7 @@ export default {
     aiEnable: 'Enable detection',
     aiThreshold: 'Minimum confidence (%)',
     aiModel: 'Vision model',
-    aiModelHint: 'Empty = assistant model',
+    aiModelHint: 'Empty = assistant model · for images use a vision model such as qwen2.5vl:3b',
     aiUploadLabel: 'Check an image',
     aiAnalyze: 'Analyse',
     aiScanning: 'Model is thinking …',

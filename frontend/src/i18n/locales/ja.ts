@@ -8519,7 +8519,7 @@ export default {
     aiEnable: '検出を有効にする',
     aiThreshold: '最低信頼度（%）',
     aiModel: '画像モデル',
-    aiModelHint: '空欄 = アシスタントのモデル',
+    aiModelHint: '空欄 = アシスタントのモデル · 画像には qwen2.5vl:3b などの視覚モデル',
     aiUploadLabel: '画像を確認',
     aiAnalyze: '解析',
     aiScanning: 'モデルが考えています …',
