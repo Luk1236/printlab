@@ -3,6 +3,16 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.14.0 (30.10.2026) — MakerWorld im MakerWorld-Layout
+
+- **MakerWorld-Seite neu gestaltet:** Kopfleiste mit Logo, großer Suche, Sammlungsauswahl und Konto-Zugang; die Importe stehen
+  als bildstarke Karten in einem responsiven Raster (zwei bis fünf Spalten). Beim Darüberfahren erscheinen die Aktionen
+  „In der Bibliothek öffnen“, „Im Slicer öffnen/slicen“ und „Original auf MakerWorld öffnen“. Suche und Sammlungen filtern
+  den Bestand, Trefferzahl und leerer Zustand sind beschriftet.
+- Der Import über einen Modell-Link (URL einfügen → Platten → importieren) bleibt unverändert.
+- Ehrliche Grenze: MakerWorlds Such-Schnittstelle liefert auch bei direkter Anfrage leere Ergebnisse (`total: 0`); die Seite
+  zeigt deshalb die eigenen MakerWorld-Importe im MakerWorld-Layout, neue Modelle kommen über den Modell-Link.
+
 ## v1.13.1 (29.10.2026) — Schneller, aufgeräumt, sicher veröffentlicht
 
 - **Deutlich schnellerer Start:** Jede Seite wird erst beim Aufruf geladen, und eingebündelt sind nur noch Deutsch und Englisch — die
