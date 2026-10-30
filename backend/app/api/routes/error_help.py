@@ -7,17 +7,28 @@ Gegenmaßnahmen ``SETTINGS_UPDATE``, ein Sofort-Eingriff am laufenden Druck
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+import asyncio
+
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.core.auth import RequirePermissionIfAuthEnabled
+from backend.app.core.config import settings
 from backend.app.core.database import get_db
 from backend.app.core.permissions import Permission
 from backend.app.models.printer import Printer
 from backend.app.models.user import User
-from backend.app.services import audit_log, countermeasures, error_patterns
+from backend.app.services import (
+    ai_error_scan,
+    assistant_config,
+    assistant_llm,
+    audit_log,
+    countermeasures,
+    error_patterns,
+)
+from backend.app.utils import failure_images
 
 router = APIRouter(prefix="/error-help", tags=["error-help"])
 
@@ -43,6 +54,96 @@ class CountermeasuresConfig(BaseModel):
 
 class ManualActionRequest(BaseModel):
     action_id: str
+
+
+class AiScanConfig(BaseModel):
+    vision_model: str | None = Field(default=None, max_length=100)
+    error_scan_enabled: bool | None = None
+    error_scan_min_confidence: int | None = Field(default=None, ge=0, le=100)
+
+
+async def _ai_payload() -> dict:
+    config = assistant_config.read(settings.base_dir)
+    server = await assistant_llm.status(config)
+    vision_model = str(config.get("vision_model") or config.get("model") or "")
+    return {
+        "config": {
+            "vision_model": config.get("vision_model", ""),
+            "error_scan_enabled": bool(config.get("error_scan_enabled", False)),
+            "error_scan_min_confidence": int(config.get("error_scan_min_confidence", 60)),
+            "model": config.get("model", ""),
+        },
+        "server": server,
+        "vision_model": vision_model,
+        "vision_present": vision_model in (server.get("models") or []),
+        "findings": ai_error_scan.list_findings(30),
+        "counts": ai_error_scan.counts(),
+    }
+
+
+@router.get("/ai-scan")
+async def get_ai_scan(
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.PRINTERS_READ),
+):
+    """KI-Fehlererkennung: Einstellungen, Modellstatus, Treffer und Zählungen."""
+    return await _ai_payload()
+
+
+@router.put("/ai-scan")
+async def put_ai_scan(
+    payload: AiScanConfig,
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.SETTINGS_UPDATE),
+):
+    """Bildmodell, Freigabe und Mindest-Sicherheit ändern."""
+    update = payload.model_dump(exclude_none=True)
+    try:
+        assistant_config.write(settings.base_dir, update)
+    except assistant_config.AssistantConfigError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    return await _ai_payload()
+
+
+@router.post("/ai-scan/upload")
+async def scan_upload(
+    file: UploadFile = File(...),
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.PRINTERS_CONTROL),
+):
+    """Ein hochgeladenes Bild klassifizieren und den Treffer ablegen."""
+    image = await file.read()
+    if not image:
+        raise HTTPException(400, "Die Datei ist leer.")
+    try:
+        result = await ai_error_scan.scan_and_record(image, source="upload")
+    except ai_error_scan.AiScanError as exc:
+        raise HTTPException(502, str(exc)) from exc
+    return {"result": result, "findings": ai_error_scan.list_findings(30), "counts": ai_error_scan.counts()}
+
+
+@router.post("/ai-scan/failure-image/{name}")
+async def scan_failure_image(
+    name: str,
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.CAMERA_VIEW),
+):
+    """Ein Bild aus der Fehlerbild-Sammlung klassifizieren."""
+    path = failure_images.find_failure_image(name)
+    if path is None:
+        raise HTTPException(404, "Fehlerbild nicht gefunden")
+    try:
+        image = await asyncio.to_thread(path.read_bytes)
+        result = await ai_error_scan.scan_and_record(image, source="failure_image", image_name=name)
+    except ai_error_scan.AiScanError as exc:
+        raise HTTPException(502, str(exc)) from exc
+    return {"result": result, "findings": ai_error_scan.list_findings(30), "counts": ai_error_scan.counts()}
+
+
+@router.get("/ai-scan/findings")
+async def get_ai_findings(
+    limit: int = Query(default=50, ge=1, le=200),
+    pattern_id: str | None = Query(default=None),
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.PRINTERS_READ),
+):
+    """Erkannte Fehlerbilder, neueste zuerst."""
+    return {"findings": ai_error_scan.list_findings(limit, pattern_id), "counts": ai_error_scan.counts()}
 
 
 @router.get("")

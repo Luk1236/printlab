@@ -1915,6 +1915,9 @@ class NotificationService:
         """
         if image_data:
             await asyncio.to_thread(failure_images.save_failure_image, image_data, "ai_failure_detection")
+            from backend.app.services import ai_error_scan
+
+            ai_error_scan.schedule_failure_scan(image_data, printer_id, "ai_failure_detection")
         providers = await self._get_providers_for_event(db, "on_ai_failure_detection", printer_id)
         if not providers:
             return
@@ -1950,6 +1953,9 @@ class NotificationService:
         """Handle plate not empty event - objects detected on build plate before print."""
         if image_data:
             await asyncio.to_thread(failure_images.save_failure_image, image_data, "plate_not_empty")
+            from backend.app.services import ai_error_scan
+
+            ai_error_scan.schedule_failure_scan(image_data, printer_id, "plate_not_empty")
         providers = await self._get_providers_for_event(db, "on_plate_not_empty", printer_id)
         if not providers:
             return

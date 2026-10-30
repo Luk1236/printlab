@@ -66,11 +66,22 @@ const countermeasures = {
   printers: [],
 };
 
+const aiScan = {
+  config: { vision_model: 'qwen3.5:4b', error_scan_enabled: false, error_scan_min_confidence: 60, model: 'qwen2.5:3b' },
+  server: { reachable: true, models: ['qwen3.5:4b'], model_present: true, error: '' },
+  vision_model: 'qwen3.5:4b',
+  vision_present: true,
+  findings: [],
+  counts: {},
+};
+
 function mockApi() {
   server.use(
     http.get('*/api/v1/error-help', () => HttpResponse.json(catalog)),
     http.get('*/api/v1/error-help/countermeasures', () => HttpResponse.json(countermeasures)),
-    http.get('*/api/v1/error-help/countermeasures/log', () => HttpResponse.json([]))
+    http.get('*/api/v1/error-help/countermeasures/log', () => HttpResponse.json([])),
+    http.get('*/api/v1/error-help/ai-scan', () => HttpResponse.json(aiScan)),
+    http.get('*/api/v1/failure-images/', () => HttpResponse.json([]))
   );
 }
 
@@ -114,5 +125,8 @@ describe('ErrorHelpPage', () => {
       screen.getByText(/at most 3 actions per rule and print, at least 600 seconds apart/)
     ).toBeInTheDocument();
     expect(screen.getByText('No actions logged yet.')).toBeInTheDocument();
+    expect(screen.getByText('AI error detection (local)')).toBeInTheDocument();
+    expect(screen.getByText(/vision model “qwen3\.5:4b” is present/)).toBeInTheDocument();
+    expect(screen.getByText('No hits yet.')).toBeInTheDocument();
   });
 });

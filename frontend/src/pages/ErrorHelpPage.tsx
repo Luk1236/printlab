@@ -19,6 +19,8 @@ import {
 
 import { api } from '../api/client';
 import type {
+  AiScanFinding,
+  AiScanResult,
   CountermeasureLogEntry,
   CountermeasuresConfig,
   CountermeasurePrinter,
@@ -89,6 +91,8 @@ function PatternCard({
   actions,
   canControl,
   onApply,
+  detections = 0,
+  lastFinding = null,
 }: {
   pattern: ErrorPattern;
   categories: ErrorCategory[];
@@ -97,6 +101,8 @@ function PatternCard({
   actions: ErrorPatternAction[];
   canControl: boolean;
   onApply: (action: ErrorPatternAction) => void;
+  detections?: number;
+  lastFinding?: AiScanFinding | null;
 }) {
   const { t, i18n } = useTranslation();
   const german = i18n.language.startsWith('de');
@@ -122,6 +128,15 @@ function PatternCard({
               {german ? category.title : category.title_en}
             </span>
           )}
+          {detections > 0 && (
+            <span
+              className="inline-flex items-center gap-1 mt-2 ml-1.5 text-[10px] uppercase tracking-wide text-bambu-green border border-bambu-green/40 rounded-full px-2 py-0.5"
+              title={t('errorHelp.aiDetectedCount', { count: detections })}
+            >
+              <Cpu className="w-3 h-3" aria-hidden="true" />
+              {t('errorHelp.aiDetectedCount', { count: detections })}
+            </span>
+          )}
         </span>
         <ChevronDown
           className={`w-4 h-4 shrink-0 mt-1 text-bambu-gray transition-transform ${expanded ? 'rotate-180' : ''}`}
@@ -133,6 +148,13 @@ function PatternCard({
           <List title={t('errorHelp.causes')} icon={<AlertTriangle className="w-3.5 h-3.5" />} items={asList(pattern.causes)} />
           <List title={t('errorHelp.slicer')} icon={<SlidersHorizontal className="w-3.5 h-3.5" />} items={asList(pattern.slicer)} />
           <List title={t('errorHelp.automation')} icon={<Cpu className="w-3.5 h-3.5" />} items={asList(pattern.automation)} />
+          {lastFinding && (
+            <div className="rounded-lg border border-bambu-green/30 bg-bambu-green/5 px-3 py-2 text-xs text-bambu-gray-light">
+              <span className="text-bambu-green font-medium">{t('errorHelp.aiLast')}</span>{' '}
+              {new Date(lastFinding.ts).toLocaleString(i18n.language)} ·{' '}
+              {Math.round(lastFinding.confidence * 100)} %{lastFinding.reason ? ` · ${lastFinding.reason}` : ''}
+            </div>
+          )}
           {actions.length > 0 && (
             <div className="pt-1">
               <h4 className="text-xs font-semibold uppercase tracking-wide text-bambu-gray mb-1.5 flex items-center gap-1.5">
@@ -173,6 +195,9 @@ export function ErrorHelpPage() {
   const [expanded, setExpanded] = useState<string | null>('heat_creep');
   const [printerId, setPrinterId] = useState<number | null>(null);
   const [pending, setPending] = useState<{ action: ErrorPatternAction; printer: CountermeasurePrinter } | null>(null);
+  const [aiFile, setAiFile] = useState<File | null>(null);
+  const [aiResult, setAiResult] = useState<AiScanResult | null>(null);
+  const [failureImageName, setFailureImageName] = useState('');
 
   const canControl = hasPermission('printers:control');
   const canConfigure = hasPermission('settings:update');
@@ -189,6 +214,42 @@ export function ErrorHelpPage() {
     queryKey: ['countermeasure-log'],
     queryFn: () => api.getCountermeasureLog(30),
     refetchInterval: 30_000,
+  });
+  const aiScan = useQuery({
+    queryKey: ['ai-scan'],
+    queryFn: () => api.getAiScan(),
+    refetchInterval: 60_000,
+  });
+  const failureImages = useQuery({
+    queryKey: ['failure-images'],
+    queryFn: () => api.listFailureImages(),
+    enabled: hasPermission('camera:view'),
+  });
+
+  const aiSave = useMutation({
+    mutationFn: (update: { vision_model?: string; error_scan_enabled?: boolean; error_scan_min_confidence?: number }) =>
+      api.saveAiScan(update),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ai-scan'] });
+      showToast(t('errorHelp.settingsSaved'));
+    },
+    onError: (error: Error) => showToast(error.message, 'error'),
+  });
+  const aiUpload = useMutation({
+    mutationFn: (file: File) => api.scanAiErrorImage(file),
+    onSuccess: (data) => {
+      setAiResult(data.result);
+      queryClient.invalidateQueries({ queryKey: ['ai-scan'] });
+    },
+    onError: (error: Error) => showToast(error.message, 'error'),
+  });
+  const aiFailureImage = useMutation({
+    mutationFn: (name: string) => api.scanFailureImage(name),
+    onSuccess: (data) => {
+      setAiResult(data.result);
+      queryClient.invalidateQueries({ queryKey: ['ai-scan'] });
+    },
+    onError: (error: Error) => showToast(error.message, 'error'),
   });
 
   const save = useMutation({
@@ -233,6 +294,14 @@ export function ErrorHelpPage() {
     for (const action of data?.manual_actions ?? []) map.set(action.id, action);
     return map;
   }, [data?.manual_actions]);
+
+  const lastFindingByPattern = useMemo(() => {
+    const map = new Map<string, AiScanFinding>();
+    for (const finding of aiScan.data?.findings ?? []) {
+      if (!map.has(finding.pattern_id)) map.set(finding.pattern_id, finding);
+    }
+    return map;
+  }, [aiScan.data?.findings]);
 
   const patchPrinter = (printer: CountermeasurePrinter, change: { enabled?: boolean; rule?: string; value?: boolean }) => {
     if (!config) return;
@@ -329,6 +398,8 @@ export function ErrorHelpPage() {
                   onApply={(action) => {
                     if (activePrinter) setPending({ action, printer: activePrinter });
                   }}
+                  detections={aiScan.data?.counts[pattern.id] ?? 0}
+                  lastFinding={lastFindingByPattern.get(pattern.id) ?? null}
                 />
               );
             })}
@@ -526,6 +597,183 @@ export function ErrorHelpPage() {
                 </label>
               </div>
             </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+              <Cpu className="w-5 h-5 text-bambu-green" />
+              {t('errorHelp.aiTitle')}
+            </h2>
+            <p className="text-xs text-bambu-gray mt-1 max-w-3xl">{t('errorHelp.aiHint')}</p>
+          </div>
+
+          {aiScan.isLoading && (
+            <p className="text-xs text-bambu-gray flex items-center gap-2" role="status">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /> {t('common.loading')}
+            </p>
+          )}
+
+          {aiScan.data && (
+            <>
+              <p
+                className={`text-xs ${
+                  aiScan.data.server.reachable && aiScan.data.vision_present
+                    ? 'text-bambu-green'
+                    : 'text-amber-700 dark:text-amber-400'
+                }`}
+              >
+                {!aiScan.data.server.reachable
+                  ? t('errorHelp.aiServerDown', { error: aiScan.data.server.error || '–' })
+                  : aiScan.data.vision_present
+                    ? t('errorHelp.aiServerOk', { model: aiScan.data.vision_model })
+                    : t('errorHelp.aiModelMissing', { model: aiScan.data.vision_model })}
+              </p>
+
+              <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
+                <label className="flex items-center gap-2 text-sm text-white">
+                  <Toggle
+                    checked={aiScan.data.config.error_scan_enabled}
+                    onChange={(value) => aiSave.mutate({ error_scan_enabled: value })}
+                    disabled={!canConfigure}
+                  />
+                  {t('errorHelp.aiEnable')}
+                </label>
+                <label className="text-xs text-bambu-gray-light flex flex-col gap-1">
+                  {t('errorHelp.aiThreshold')}
+                  <input
+                    key={`ai-threshold-${aiScan.data.config.error_scan_min_confidence}`}
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={5}
+                    defaultValue={aiScan.data.config.error_scan_min_confidence}
+                    disabled={!canConfigure}
+                    onBlur={(event) => {
+                      const value = Number(event.target.value);
+                      if (Number.isFinite(value) && value >= 0 && value <= 100) {
+                        aiSave.mutate({ error_scan_min_confidence: value });
+                      }
+                    }}
+                    className="w-20 rounded-lg bg-bambu-dark border border-bambu-dark-tertiary px-2 py-1 text-sm text-white"
+                  />
+                </label>
+                <label className="text-xs text-bambu-gray-light flex flex-col gap-1">
+                  {t('errorHelp.aiModel')}
+                  <input
+                    key={`ai-model-${aiScan.data.config.vision_model}`}
+                    type="text"
+                    defaultValue={aiScan.data.config.vision_model}
+                    placeholder={aiScan.data.config.model}
+                    disabled={!canConfigure}
+                    onBlur={(event) => aiSave.mutate({ vision_model: event.target.value.trim() })}
+                    className="w-48 rounded-lg bg-bambu-dark border border-bambu-dark-tertiary px-2 py-1 text-sm text-white placeholder:text-bambu-gray/60"
+                  />
+                  <span className="text-[10px] text-bambu-gray">{t('errorHelp.aiModelHint')}</span>
+                </label>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="text-xs text-bambu-gray-light flex items-center gap-2">
+                  <span>{t('errorHelp.aiUploadLabel')}</span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(event) => setAiFile(event.target.files?.[0] ?? null)}
+                    className="text-xs text-bambu-gray"
+                  />
+                </label>
+                <Button
+                  size="sm"
+                  disabled={!aiFile || aiUpload.isPending || !canControl}
+                  onClick={() => aiFile && aiUpload.mutate(aiFile)}
+                >
+                  {aiUpload.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+                  {aiUpload.isPending ? t('errorHelp.aiScanning') : t('errorHelp.aiAnalyze')}
+                </Button>
+                {failureImages.data && failureImages.data.length > 0 && (
+                  <span className="flex items-center gap-2">
+                    <select
+                      value={failureImageName}
+                      onChange={(event) => setFailureImageName(event.target.value)}
+                      className="max-w-[16rem] rounded-lg bg-bambu-dark border border-bambu-dark-tertiary px-2 py-1.5 text-xs text-white"
+                      aria-label={t('errorHelp.aiFailureImage')}
+                    >
+                      <option value="">{t('errorHelp.aiFailureImage')}</option>
+                      {failureImages.data.slice(0, 20).map((image) => (
+                        <option key={image.name} value={image.name}>
+                          {image.name}
+                        </option>
+                      ))}
+                    </select>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      disabled={!failureImageName || aiFailureImage.isPending || !canControl}
+                      onClick={() => aiFailureImage.mutate(failureImageName)}
+                    >
+                      {aiFailureImage.isPending ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Search className="w-3.5 h-3.5" />
+                      )}
+                      {t('errorHelp.aiScanFailure')}
+                    </Button>
+                  </span>
+                )}
+              </div>
+
+              {aiResult && (
+                <div className="rounded-lg border border-bambu-dark-tertiary bg-bambu-dark-secondary/60 p-3 space-y-1">
+                  <p className="text-sm font-semibold text-white">
+                    {aiResult.pattern_id
+                      ? (() => {
+                          const hit = data?.patterns.find((entry) => entry.id === aiResult.pattern_id);
+                          return hit ? (german ? hit.title : hit.title_en) : aiResult.pattern_id;
+                        })()
+                      : t('errorHelp.aiNoDefect')}
+                  </p>
+                  {aiResult.pattern_id && (
+                    <p className="text-xs text-bambu-gray">
+                      {t('errorHelp.aiConfidence', { value: Math.round(aiResult.confidence * 100) })}
+                      {aiResult.duration_ms ? ` · ${(aiResult.duration_ms / 1000).toFixed(0)} s` : ''}
+                    </p>
+                  )}
+                  {aiResult.reason && <p className="text-xs text-bambu-gray-light">{aiResult.reason}</p>}
+                </div>
+              )}
+
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-bambu-gray mb-1">{t('errorHelp.aiFindings')}</h3>
+                {(aiScan.data.findings ?? []).length === 0 ? (
+                  <p className="text-xs text-bambu-gray">{t('errorHelp.aiNoFindings')}</p>
+                ) : (
+                  <ul className="space-y-1">
+                    {aiScan.data.findings.slice(0, 8).map((finding, index) => {
+                      const hit = data?.patterns.find((entry) => entry.id === finding.pattern_id);
+                      return (
+                        <li
+                          key={`${finding.ts}-${index}`}
+                          className="flex flex-col md:flex-row md:items-baseline gap-1 md:gap-2 text-xs border-b border-bambu-dark-tertiary/50 pb-1 last:border-0"
+                        >
+                          <span className="text-bambu-gray tabular-nums shrink-0">
+                            {new Date(finding.ts).toLocaleString(i18n.language)}
+                          </span>
+                          <span className="text-white shrink-0">
+                            {hit ? (german ? hit.title : hit.title_en) : finding.pattern_id}
+                          </span>
+                          <span className="text-bambu-gray shrink-0">{Math.round(finding.confidence * 100)} %</span>
+                          <span className="text-bambu-gray-light min-w-0">{finding.reason}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

@@ -357,6 +357,49 @@ export interface CountermeasureLogEntry {
   details?: Record<string, unknown>;
 }
 
+export interface AiScanFinding {
+  ts: string;
+  pattern_id: string;
+  confidence: number;
+  reason: string;
+  model: string | null;
+  duration_ms: number | null;
+  source: 'upload' | 'failure_image' | string;
+  printer_id: number | null;
+  image_name: string | null;
+}
+
+export interface AiScanConfigState {
+  vision_model: string;
+  error_scan_enabled: boolean;
+  error_scan_min_confidence: number;
+  model: string;
+}
+
+export interface AiScanServer {
+  reachable: boolean;
+  models: string[];
+  model_present: boolean;
+  error: string;
+}
+
+export interface AiScanResult {
+  pattern_id: string | null;
+  confidence: number;
+  reason: string;
+  model?: string;
+  duration_ms?: number;
+}
+
+export interface AiScanResponse {
+  config: AiScanConfigState;
+  server: AiScanServer;
+  vision_model: string;
+  vision_present: boolean;
+  findings: AiScanFinding[];
+  counts: Record<string, number>;
+}
+
 export interface ForkApiDeps {
   request: <T>(endpoint: string, options?: RequestInit) => Promise<T>;
   apiBase: string;
@@ -572,5 +615,25 @@ export function createForkApi({ request, apiBase, getAuthToken }: ForkApiDeps) {
     ),
   getCountermeasureLog: (limit = 30) =>
     request<CountermeasureLogEntry[]>(`/error-help/countermeasures/log?limit=${limit}`),
+  getAiScan: () => request<AiScanResponse>('/error-help/ai-scan'),
+  saveAiScan: (update: Partial<AiScanConfigState>) =>
+    request<AiScanResponse>('/error-help/ai-scan', { method: 'PUT', body: JSON.stringify(update) }),
+  scanAiErrorImage: async (file: File): Promise<{ result: AiScanResult; findings: AiScanFinding[]; counts: Record<string, number> }> => {
+    const form = new FormData();
+    form.append('file', file);
+    const headers: Record<string, string> = {};
+    if (getAuthToken()) headers['Authorization'] = `Bearer ${getAuthToken()}`;
+    const response = await fetch(`${apiBase}/error-help/ai-scan/upload`, { method: 'POST', headers, body: form });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(typeof error.detail === 'string' ? error.detail : `HTTP ${response.status}`);
+    }
+    return response.json();
+  },
+  scanFailureImage: (name: string) =>
+    request<{ result: AiScanResult; findings: AiScanFinding[]; counts: Record<string, number> }>(
+      `/error-help/ai-scan/failure-image/${encodeURIComponent(name)}`,
+      { method: 'POST' }
+    ),
   };
 }

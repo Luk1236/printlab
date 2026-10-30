@@ -20,6 +20,11 @@ DEFAULTS: dict[str, Any] = {
     "model": "qwen2.5:3b",
     "timeout_seconds": 180,
     "max_tokens": 500,
+    # KI-Fehlererkennung (Fehlerhilfe): eigenes Bildmodell, Freigabe und
+    # Mindest-Sicherheit. Leerer Modellname nutzt das Assistenten-Modell.
+    "vision_model": "",
+    "error_scan_enabled": False,
+    "error_scan_min_confidence": 60,
 }
 TIMEOUT_RANGE = (10, 900)
 TOKENS_RANGE = (50, 4000)
@@ -83,6 +88,20 @@ def write(data_dir: Path | str, update: dict[str, Any]) -> dict[str, Any]:
         if not model or len(model) > 100:
             raise AssistantConfigError("Der Modellname fehlt oder ist zu lang.")
         config["model"] = model
+    if "vision_model" in update:
+        vision_model = str(update["vision_model"] or "").strip()
+        if len(vision_model) > 100:
+            raise AssistantConfigError("Der Name des Bildmodells ist zu lang.")
+        config["vision_model"] = vision_model
+    if "error_scan_enabled" in update:
+        if not isinstance(update["error_scan_enabled"], bool):
+            raise AssistantConfigError("„error_scan_enabled“ muss wahr oder falsch sein.")
+        config["error_scan_enabled"] = update["error_scan_enabled"]
+    if "error_scan_min_confidence" in update:
+        value = update["error_scan_min_confidence"]
+        if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 100:
+            raise AssistantConfigError("Die Mindest-Sicherheit muss zwischen 0 und 100 liegen.")
+        config["error_scan_min_confidence"] = value
     for key, (low, high), message in (
         ("timeout_seconds", TIMEOUT_RANGE, "Die Zeitgrenze muss zwischen 10 und 900 Sekunden liegen."),
         ("max_tokens", TOKENS_RANGE, "Die Antwortlänge muss zwischen 50 und 4000 Wörtern (Tokens) liegen."),
