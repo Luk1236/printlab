@@ -61,6 +61,7 @@ class AiScanConfig(BaseModel):
     vision_model: str | None = Field(default=None, max_length=100)
     error_scan_enabled: bool | None = None
     error_scan_min_confidence: int | None = Field(default=None, ge=0, le=100)
+    error_scan_notify: bool | None = None
 
 
 async def _ai_payload() -> dict:
@@ -72,6 +73,7 @@ async def _ai_payload() -> dict:
             "vision_model": config.get("vision_model", ""),
             "error_scan_enabled": bool(config.get("error_scan_enabled", False)),
             "error_scan_min_confidence": int(config.get("error_scan_min_confidence", 60)),
+            "error_scan_notify": bool(config.get("error_scan_notify", True)),
             "model": config.get("model", ""),
         },
         "server": server,

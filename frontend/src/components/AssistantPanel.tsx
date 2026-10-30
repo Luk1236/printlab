@@ -192,8 +192,14 @@ export function AssistantPanel({ canConfigure }: { canConfigure: boolean }) {
                 <input
                   value={draft.model}
                   onChange={(event) => setField({ model: event.target.value })}
+                  list="assistant-model-list"
                   className="mt-1 w-full bg-bambu-dark-tertiary border border-bambu-dark-tertiary rounded-lg px-2 py-1.5 text-white text-sm font-mono"
                 />
+                <datalist id="assistant-model-list">
+                  {(server?.models ?? []).map((model) => (
+                    <option key={model} value={model} />
+                  ))}
+                </datalist>
               </label>
               <label className="text-xs text-bambu-gray">
                 {t('assistant.timeout')}

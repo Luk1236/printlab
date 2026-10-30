@@ -8503,6 +8503,9 @@ export default {
     noWriteAccess: 'Sie haben keine Berechtigung, Prognoseeinstellungen zu ändern.',
   },
   errorHelp: {
+    aiModelAssistant: 'Assistenten-Modell ({{model}})',
+    aiNotify: 'Hinweis als eigene Meldung',
+    aiNotifyHint: 'Läuft über Kanäle mit „Nachrichten verbundener Apps“; die Warnung selbst wartet nie auf das Bildmodell.',
     aiBatch: 'Sammlung prüfen',
     aiBatchProgress: '{{done}}/{{total}} · {{matched}} Treffer',
     aiBatchDone: 'Fertig: {{done}}/{{total}} · {{matched}} Treffer · {{errors}} Fehler',

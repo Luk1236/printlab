@@ -8104,6 +8104,9 @@ export default {
     noWriteAccess: "У вас нет прав на изменение настроек прогноза.",
   },
   errorHelp: {
+    aiModelAssistant: 'Модель ассистента ({{model}})',
+    aiNotify: 'Подсказка ИИ отдельным сообщением',
+    aiNotifyHint: 'Идёт через каналы с «Сообщения подключённых приложений»; само оповещение никогда не ждёт модель изображений.',
     aiBatch: 'Проверить коллекцию',
     aiBatchProgress: '{{done}}/{{total}} · найдено {{matched}}',
     aiBatchDone: 'Готово: {{done}}/{{total}} · найдено {{matched}} · ошибок {{errors}}',

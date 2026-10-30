@@ -8554,6 +8554,9 @@ export default {
     noWriteAccess: 'Je hebt geen machtiging om prognose-instellingen te wijzigen.',
   },
   errorHelp: {
+    aiModelAssistant: 'Model van de assistent ({{model}})',
+    aiNotify: 'AI-hint als apart bericht',
+    aiNotifyHint: 'Gaat via kanalen met ‘Berichten van verbonden apps’; de waarschuwing wacht nooit op het beeldmodel.',
     aiBatch: 'Verzameling controleren',
     aiBatchProgress: '{{done}}/{{total}} · {{matched}} treffers',
     aiBatchDone: 'Klaar: {{done}}/{{total}} · {{matched}} treffers · {{errors}} fouten',

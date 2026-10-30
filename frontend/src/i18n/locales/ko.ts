@@ -8122,6 +8122,9 @@ export default {
     }
   },
   errorHelp: {
+    aiModelAssistant: '어시스턴트 모델 ({{model}})',
+    aiNotify: 'AI 힌트를 별도 메시지로',
+    aiNotifyHint: '“연결된 앱 메시지”가 켜진 채널로 전송됩니다. 경고 자체는 이미지 모델을 기다리지 않습니다.',
     aiBatch: '컬렉션 확인',
     aiBatchProgress: '{{done}}/{{total}} · {{matched}}건 감지',
     aiBatchDone: '완료: {{done}}/{{total}} · {{matched}}건 감지 · {{errors}}건 오류',

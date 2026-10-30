@@ -25,6 +25,7 @@ DEFAULTS: dict[str, Any] = {
     "vision_model": "",
     "error_scan_enabled": False,
     "error_scan_min_confidence": 60,
+    "error_scan_notify": True,
 }
 TIMEOUT_RANGE = (10, 900)
 TOKENS_RANGE = (50, 4000)
@@ -102,6 +103,10 @@ def write(data_dir: Path | str, update: dict[str, Any]) -> dict[str, Any]:
         if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 100:
             raise AssistantConfigError("Die Mindest-Sicherheit muss zwischen 0 und 100 liegen.")
         config["error_scan_min_confidence"] = value
+    if "error_scan_notify" in update:
+        if not isinstance(update["error_scan_notify"], bool):
+            raise AssistantConfigError("„error_scan_notify“ muss wahr oder falsch sein.")
+        config["error_scan_notify"] = update["error_scan_notify"]
     for key, (low, high), message in (
         ("timeout_seconds", TIMEOUT_RANGE, "Die Zeitgrenze muss zwischen 10 und 900 Sekunden liegen."),
         ("max_tokens", TOKENS_RANGE, "Die Antwortlänge muss zwischen 50 und 4000 Wörtern (Tokens) liegen."),

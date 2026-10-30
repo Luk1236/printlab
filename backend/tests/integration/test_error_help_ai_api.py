@@ -41,6 +41,7 @@ class TestScanConfig:
             "vision_model": "qwen3.5:4b",
             "error_scan_enabled": True,
             "error_scan_min_confidence": 70,
+            "error_scan_notify": True,
             "model": "qwen2.5:3b",
         }
         assert response.json()["vision_present"] is True

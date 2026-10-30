@@ -8552,6 +8552,9 @@ errors: {
     noWriteAccess: 'Du har inte behörighet att modifiera prognosinställningar.',
   },
   errorHelp: {
+    aiModelAssistant: 'Assistentens modell ({{model}})',
+    aiNotify: 'AI-tips som eget meddelande',
+    aiNotifyHint: 'Går via kanaler med ”Meddelanden från anslutna appar”; larmet väntar aldrig på bildmodellen.',
     aiBatch: 'Kontrollera samlingen',
     aiBatchProgress: '{{done}}/{{total}} · {{matched}} träffar',
     aiBatchDone: 'Klart: {{done}}/{{total}} · {{matched}} träffar · {{errors}} fel',

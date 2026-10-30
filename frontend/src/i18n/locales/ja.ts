@@ -8502,6 +8502,9 @@ export default {
     noWriteAccess: '予測設定を変更する権限がありません。',
   },
   errorHelp: {
+    aiModelAssistant: 'アシスタントのモデル（{{model}}）',
+    aiNotify: 'AI ヒントを個別メッセージで',
+    aiNotifyHint: '「接続アプリのメッセージ」が有効なチャネルに届きます。警告自体は画像モデルを待ちません。',
     aiBatch: 'コレクションを確認',
     aiBatchProgress: '{{done}}/{{total}} · {{matched}} 件検出',
     aiBatchDone: '完了: {{done}}/{{total}} · {{matched}} 件検出 · {{errors}} 件のエラー',

@@ -8554,6 +8554,9 @@ export default {
     noWriteAccess: 'You do not have permission to modify forecast settings.',
   },
   errorHelp: {
+    aiModelAssistant: 'Assistant model ({{model}})',
+    aiNotify: 'AI hint as its own message',
+    aiNotifyHint: 'Goes through channels with “Messages from connected apps”; the alert itself never waits for the vision model.',
     aiBatch: 'Check collection',
     aiBatchProgress: '{{done}}/{{total}} · {{matched}} hits',
     aiBatchDone: 'Done: {{done}}/{{total}} · {{matched}} hits · {{errors}} errors',

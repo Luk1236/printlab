@@ -8544,6 +8544,9 @@ export default {
     noWriteAccess: "Ви не маєте дозволу змінювати налаштування прогнозу.",
   },
   errorHelp: {
+    aiModelAssistant: 'Модель асистента ({{model}})',
+    aiNotify: 'Підказка ШІ окремим повідомленням',
+    aiNotifyHint: 'Надходить через канали з «Повідомлення підключених застосунків»; саме оповіщення ніколи не чекає на модель зображень.',
     aiBatch: 'Перевірити колекцію',
     aiBatchProgress: '{{done}}/{{total}} · знайдено {{matched}}',
     aiBatchDone: 'Готово: {{done}}/{{total}} · знайдено {{matched}} · помилок {{errors}}',

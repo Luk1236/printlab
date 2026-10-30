@@ -307,8 +307,12 @@ export function ErrorHelpPage() {
   );
 
   const aiSave = useMutation({
-    mutationFn: (update: { vision_model?: string; error_scan_enabled?: boolean; error_scan_min_confidence?: number }) =>
-      api.saveAiScan(update),
+    mutationFn: (update: {
+      vision_model?: string;
+      error_scan_enabled?: boolean;
+      error_scan_min_confidence?: number;
+      error_scan_notify?: boolean;
+    }) => api.saveAiScan(update),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ai-scan'] });
       showToast(t('errorHelp.settingsSaved'));
@@ -748,6 +752,11 @@ export function ErrorHelpPage() {
                     ? t('errorHelp.aiServerOk', { model: aiScan.data.vision_model })
                     : t('errorHelp.aiModelMissing', { model: aiScan.data.vision_model })}
               </p>
+              {aiScan.data.server.reachable && aiScan.data.server.models.length > 0 && (
+                <p className="text-[11px] text-bambu-gray">
+                  {t('assistant.serverModels', { list: aiScan.data.server.models.join(', ') })}
+                </p>
+              )}
 
               <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
                 <label className="flex items-center gap-2 text-sm text-white">
@@ -779,16 +788,38 @@ export function ErrorHelpPage() {
                 </label>
                 <label className="text-xs text-bambu-gray-light flex flex-col gap-1">
                   {t('errorHelp.aiModel')}
-                  <input
+                  <select
                     key={`ai-model-${aiScan.data.config.vision_model}`}
-                    type="text"
-                    defaultValue={aiScan.data.config.vision_model}
-                    placeholder={aiScan.data.config.model}
+                    value={aiScan.data.config.vision_model}
                     disabled={!canConfigure}
-                    onBlur={(event) => aiSave.mutate({ vision_model: event.target.value.trim() })}
-                    className="w-48 rounded-lg bg-bambu-dark border border-bambu-dark-tertiary px-2 py-1 text-sm text-white placeholder:text-bambu-gray/60"
-                  />
+                    onChange={(event) => aiSave.mutate({ vision_model: event.target.value })}
+                    className="w-56 rounded-lg bg-bambu-dark border border-bambu-dark-tertiary px-2 py-1 text-sm text-white"
+                  >
+                    <option value="">{t('errorHelp.aiModelAssistant', { model: aiScan.data.config.model })}</option>
+                    {aiScan.data.server.models.map((model) => (
+                      <option key={model} value={model}>
+                        {model}
+                      </option>
+                    ))}
+                    {aiScan.data.config.vision_model &&
+                      !aiScan.data.server.models.includes(aiScan.data.config.vision_model) && (
+                        <option value={aiScan.data.config.vision_model}>
+                          {aiScan.data.config.vision_model}
+                        </option>
+                      )}
+                  </select>
                   <span className="text-[10px] text-bambu-gray">{t('errorHelp.aiModelHint')}</span>
+                </label>
+                <label className="flex items-center gap-2 text-sm text-white">
+                  <Toggle
+                    checked={aiScan.data.config.error_scan_notify}
+                    onChange={(value) => aiSave.mutate({ error_scan_notify: value })}
+                    disabled={!canConfigure}
+                  />
+                  <span className="flex flex-col">
+                    {t('errorHelp.aiNotify')}
+                    <span className="text-[10px] font-normal text-bambu-gray">{t('errorHelp.aiNotifyHint')}</span>
+                  </span>
                 </label>
               </div>
 

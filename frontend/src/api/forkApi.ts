@@ -384,6 +384,7 @@ export interface AiScanConfigState {
   vision_model: string;
   error_scan_enabled: boolean;
   error_scan_min_confidence: number;
+  error_scan_notify: boolean;
   model: string;
 }
 

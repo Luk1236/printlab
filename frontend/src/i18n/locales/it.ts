@@ -8488,6 +8488,9 @@ export default {
     noWriteAccess: 'Non hai il permesso di modificare le impostazioni di previsione.',
   },
   errorHelp: {
+    aiModelAssistant: 'Modello dell’assistente ({{model}})',
+    aiNotify: 'Avviso IA come messaggio separato',
+    aiNotifyHint: 'Passa dai canali con «Messaggi di app collegate»; l’avviso non attende mai il modello immagine.',
     aiBatch: 'Controlla raccolta',
     aiBatchProgress: '{{done}}/{{total}} · {{matched}} risultati',
     aiBatchDone: 'Fatto: {{done}}/{{total}} · {{matched}} risultati · {{errors}} errori',

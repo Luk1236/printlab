@@ -8486,6 +8486,9 @@ export default {
     noWriteAccess: '您沒有修改預測設定的權限。',
   },
   errorHelp: {
+    aiModelAssistant: '助理模型（{{model}}）',
+    aiNotify: 'AI 提示作為獨立訊息',
+    aiNotifyHint: '透過開啟「已連接應用程式訊息」的通道送出；警告本身從不等待影像模型。',
     aiBatch: '檢查收集',
     aiBatchProgress: '{{done}}/{{total}} · 辨識 {{matched}} 個',
     aiBatchDone: '完成：{{done}}/{{total}} · 辨識 {{matched}} 個 · {{errors}} 個錯誤',

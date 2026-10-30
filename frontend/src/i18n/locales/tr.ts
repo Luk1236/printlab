@@ -8428,6 +8428,9 @@ export default {
     noWriteAccess: 'Tahmin ayarlarını değiştirme izniniz yok.',
   },
   errorHelp: {
+    aiModelAssistant: 'Asistan modeli ({{model}})',
+    aiNotify: 'AI ipucu ayrı mesaj olarak',
+    aiNotifyHint: '“Bağlı uygulama mesajları” açık kanallardan gider; uyarı görüntü modelini asla beklemez.',
     aiBatch: 'Koleksiyonu denetle',
     aiBatchProgress: '{{done}}/{{total}} · {{matched}} sonuç',
     aiBatchDone: 'Bitti: {{done}}/{{total}} · {{matched}} sonuç · {{errors}} hata',

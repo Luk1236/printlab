@@ -8486,6 +8486,9 @@ export default {
     noWriteAccess: '您没有修改预测设置的权限。',
   },
   errorHelp: {
+    aiModelAssistant: '助手模型（{{model}}）',
+    aiNotify: 'AI 提示作为单独消息',
+    aiNotifyHint: '通过开启“已连接应用消息”的通道发送；警告本身从不等待图像模型。',
     aiBatch: '检查收集',
     aiBatchProgress: '{{done}}/{{total}} · 识别 {{matched}} 个',
     aiBatchDone: '完成：{{done}}/{{total}} · 识别 {{matched}} 个 · {{errors}} 个错误',
