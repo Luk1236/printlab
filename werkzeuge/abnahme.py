@@ -7,7 +7,8 @@ Aufruf auf dem Pi (im Ordner ~/printlab):
 Rückgabecode: 0 = alles in Ordnung oder nur Hinweise, 1 = mindestens ein Fehler.
 
 Stufen: OK (in Ordnung), WARN (sollte man beheben), FAIL (so nicht sicher/stabil), SKIP (hier nicht prüfbar).
-Was echte Hardware braucht (Tür-Servo, Endschalter, Plattenwechsler, Drucker, Slicer) steht in docs/ABNAHME.md.
+Was echte Hardware braucht (Tür-Servo, Endschalter, Plattenwechsler, Drucker, Slicer): docs/ABNAHME-PI.md
+Abschnitte 3 (Reihenfolge am Gerät) und docs/ABNAHME.md (alle Prüfungen).
 """
 
 import json

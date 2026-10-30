@@ -1,5 +1,9 @@
 # Abnahme: was automatisch geprüft wird und was du selbst testen musst
 
+Für eine Sitzung am Gerät in sinnvoller Reihenfolge (Update → Angebots-Link → Hardware, mit Erwartungen,
+Abbruchkriterien und Protokoll) gibt es die Arbeitsliste [`ABNAHME-PI.md`](ABNAHME-PI.md). Dieses Dokument bleibt die
+Übersicht aller Prüfungen und die Referenz für Mechanik, Kamera und Betrieb.
+
 ## 1. Automatischer Check auf dem Pi
 
 ```bash
@@ -64,4 +68,6 @@ Reihenfolge von „kann nichts kaputtmachen" bis „bewegt Mechanik". Jeden Punk
 - [ ] **Tür mit Endschaltern:** `door_open`, `door_close`, `door_check`; bei verdecktem Schalter muss es mit Fehler abbrechen
       (nie „offen" melden, ohne dass der Schalter es bestätigt).
 - [ ] **Not-Halt-Befehl:** `gpio_mechanik.py stop` trennt die Motorfreigabe (Pull-Up am Freigabe-Pin prüfen).
-- [ ] **Plattenwechsel:** bleibt gesperrt, bis die Bewegungsfolge vermessen und umgesetzt ist.
+- [ ] **Plattenwechsel:** Positionen im Einmess-Assistenten aufnehmen (Wartung → Hardware & Optik). Eine begonnene,
+      nicht abgeschlossene Einmessung sperrt den Wechsel samt Automatik; erst nach Probelauf freigeben. Ablauf in
+      [`ABNAHME-PI.md`](ABNAHME-PI.md) Abschnitte 3.2–3.5.

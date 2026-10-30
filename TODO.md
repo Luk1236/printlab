@@ -22,6 +22,9 @@ Einmess-Assistent für den Plattenwechsel. Details und Grenzen im `CHANGELOG.md`
 
 ## Offen, nur mit deiner Hand oder echter Hardware
 
+Am Gerät in einer Sitzung abarbeiten: [`docs/ABNAHME-PI.md`](docs/ABNAHME-PI.md) — Update, Angebots-Link, Hardware in
+dieser Reihenfolge, mit Erwartungen, Abbruchkriterien und Protokoll.
+
 - [ ] **Signaturschlüssel erzeugen** und Tags signieren, Schlüssel auf dem Pi hinterlegen (`docs/UPDATE-SIGNATUR.md`).
 - [ ] **GitHub-Konto absichern:** Passkey/2FA, alte Tokens widerrufen, Regelsatz für Branch und Tags.
 - [ ] **Sicherung nach außen:** USB-Stick oder NAS als `PRINTLAB_BACKUP_TARGET` eintragen (`docs/INSTALLATION-PI.md`).
@@ -29,22 +32,28 @@ Einmess-Assistent für den Plattenwechsel. Details und Grenzen im `CHANGELOG.md`
 - [ ] **HTTPS-Zertifikate** in der Tailscale-Verwaltung einschalten, dann „HTTPS einschalten" in PrintLab.
 - [ ] **SSD** statt SD-Karte für den Pi (Warnung erscheint unter Wartung → Zustand des Geräts).
 - [ ] **Hardware abnehmen:** Tür-Servo mit Endschaltern, Not-Halt, Slicer über Tailscale, Kamera-Einmessung an echten
-      Fotos (Checkliste in `docs/ABNAHME.md`).
+      Fotos (Checkliste in `docs/ABNAHME-PI.md` Abschnitt 3, Mechanik in `docs/ABNAHME.md`).
 - [ ] **Plattenwechsel:** Mit dem Einmess-Assistenten die Positionen an der echten Mechanik aufnehmen und daraus
       die Bewegungsfolge ableiten; erst nach Probelauf `swap` freigeben. Eine begonnene, nicht abgeschlossene
-      Einmessung sperrt den Wechsel bereits (auch die Automatik).
+      Einmessung sperrt den Wechsel bereits (auch die Automatik). Ablauf: `docs/ABNAHME-PI.md` Abschnitte 3.2–3.5.
 - [ ] **E-Rechnung abnehmen:** XRechnung mit der Steuerberatung und gegen den KoSIT-Validator prüfen lassen, bevor
       sie an Kunden geht; ZUGFeRD fehlt bewusst (braucht PDF/A-3).
-- [ ] **Angebots-Link und Nachbestellvorschlag erproben:** Link auf dem Mobilgerät öffnen und beantworten;
-      Lieferantenpreise pflegen und den Vorschlag gegen den tatsächlichen Verbrauch prüfen (auch im Spoolman-Betrieb).
+- [ ] **Angebots-Link und Nachbestellvorschlag erproben:** Link auf dem Mobilgerät öffnen und beantworten
+      (`docs/ABNAHME-PI.md` Abschnitt 2); Lieferantenpreise pflegen und den Vorschlag gegen den tatsächlichen Verbrauch
+      prüfen (auch im Spoolman-Betrieb).
 - [ ] Übersetzungen der 13 Nebensprachen von Muttersprachlern gegenlesen lassen.
 
 ## Technisch offen
 
-- [ ] Große Dateien weiter zerlegen; der Test `test_file_size_budget.py` verhindert nur das Wachsen. Nächster Schnitt: die
-      Druckerkarte selbst (`PrinterCard` in `PrintersPage.tsx`, ~5 600 Zeilen in einer Funktion), danach `client.ts` (~9 700)
-      und `print_scheduler.py` (~8 740). `main.py` ist praktisch nur noch Verdrahtung und bleibt an der Grenze (11 054/11 075);
-      neue Funktionen gehören in eigene Module bzw. `fork_routers.py`.
+- [ ] Große Dateien weiter zerlegen; der Test `test_file_size_budget.py` verhindert nur das Wachsen. Schnitt am
+      30.10.2026: `print_scheduler.py` von 8 740 auf 6 023 Zeilen (−31 %), Grenze auf 6 025 gesenkt. Helfer liegen in
+      `backend/app/services/scheduler/` (filament, nozzles, chamber, dispatch), Vorheizen/Warmhalten und Trocknung als
+      Mixins (`preheat.py`, `drying.py`); alles bleibt über `print_scheduler` importierbar. Die ausgelagerten Methoden
+      lösen `printer_manager`, `time`, `datetime`, `notification_service`, `supports_drying` über das Fassadenmodul auf,
+      damit die 232 bestehenden Test-Patches unverändert greifen. **Nächster Schritt:** `_start_print` (1 165 Zeilen) und
+      `check_queue` (~930 Zeilen) aus der Klasse lösen; danach die Druckerkarte (`PrinterCard` in `PrintersPage.tsx`,
+      ~5 600 Zeilen in einer Funktion) und `client.ts` (~9 700). `main.py` ist praktisch nur noch Verdrahtung und bleibt
+      an der Grenze (11 069/11 075); neue Funktionen gehören in eigene Module bzw. `fork_routers.py`.
 - [ ] Volle E2E-Prüfung MakerWorld → PC-Slicer → Warteschlange.
 - [ ] Komplette Unit-Suite in der CI (lokal nach 10 Minuten abgebrochen); `requirements.lock` vor der
       Docker-/Pi-Umstellung im Bau prüfen.

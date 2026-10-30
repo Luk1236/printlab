@@ -47,7 +47,8 @@ Filament-/Spulenverwaltung, Benachrichtigungen, Kamera, Virtual Printer, Benutze
 
 Die laufende Aufgabenliste steht in [`TODO.md`](TODO.md), die Änderungen je Version in
 [`CHANGELOG.md`](CHANGELOG.md), die Beschreibung der Erweiterungen in
-[`docs/BAMBU-MONITOR-PORT.md`](docs/BAMBU-MONITOR-PORT.md).
+[`docs/BAMBU-MONITOR-PORT.md`](docs/BAMBU-MONITOR-PORT.md). Wer am Gerät abnimmt, arbeitet
+[`docs/ABNAHME-PI.md`](docs/ABNAHME-PI.md) durch: Update, Angebots-Link und Hardware in dieser Reihenfolge.
 
 ## Schnellstart
 
