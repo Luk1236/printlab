@@ -64,6 +64,7 @@ TITLES = {
     "channels": L("Meldekanäle", "Notification channels"),
     "probe_notification": L("Probemeldung „Termin in Gefahr“", "Test message “due date at risk”"),
     "assistant": L("KI-Assistent", "AI assistant"),
+    "ai_scan": L("KI-Fehlererkennung", "AI error detection"),
     "probe_assistant": L("Probefrage an das Modell", "Test question to the model"),
     "backup": L("Sicherungen", "Backups"),
     "device": L("Zustand des Geräts", "Device health"),
@@ -302,6 +303,53 @@ async def probe_notification(d: Deps) -> Result:
     )
 
 
+async def check_ai_scan(d: Deps) -> Result:
+    """Ist das Bildmodell der Fehlerhilfe vorhanden, wenn die Erkennung läuft?"""
+    config = d.assistant_config
+    if not config.get("error_scan_enabled"):
+        return Result(
+            "ai_scan",
+            SKIP,
+            L("Die KI-Fehlererkennung ist ausgeschaltet.", "AI error detection is turned off."),
+        )
+    server = await d.assistant_status(config)
+    if not server.get("reachable"):
+        return Result(
+            "ai_scan",
+            FAIL,
+            L("Kein Modell-Server für die Bildprüfung erreichbar.", "No model server reachable for image checks."),
+            L("Auf dem Pi: werkzeuge/ki_einrichten.sh ausführen.", "On the Pi: run werkzeuge/ki_einrichten.sh."),
+        )
+    vision = str(config.get("vision_model") or config.get("model") or "").strip()
+    models = server.get("models") or []
+    if vision and models and vision not in models:
+        return Result(
+            "ai_scan",
+            WARN,
+            L(f"Das Bildmodell „{vision}“ fehlt auf dem Server.", f"The vision model “{vision}” is missing on the server."),
+            L(f"ollama pull {vision}", f"ollama pull {vision}"),
+        )  # fmt: skip
+    try:
+        from backend.app.services import ai_error_scan
+
+        last = (ai_error_scan.list_findings(1) or [None])[0]
+    except Exception:  # noqa: BLE001 - die Prüfung darf nicht am Verlauf scheitern
+        last = None
+    extra_de = extra_en = ""
+    if last and last.get("duration_ms"):
+        seconds = round(last["duration_ms"] / 1000)
+        extra_de = f" Letzte Prüfung dauerte {seconds} s."
+        extra_en = f" Last check took {seconds} s."
+    return Result(
+        "ai_scan",
+        OK,
+        L(
+            "Modell-Server erreichbar, Bildmodell vorhanden." + extra_de,
+            "Model server reachable, vision model present." + extra_en,
+        ),
+    )
+
+
 async def check_assistant(d: Deps) -> Result:
     config = d.assistant_config
     if not config.get("enabled"):
@@ -482,6 +530,7 @@ async def run(d: Deps, lang: str = "de") -> dict[str, Any]:
     await add("auth", lambda: check_auth(d))
     await add("update_guard", lambda: check_guard(d))
     assistant = await add("assistant", lambda: check_assistant(d))
+    await add("ai_scan", lambda: check_ai_scan(d))
     await add("probe_notification", lambda: probe_notification(d))
     await add("probe_assistant", lambda: probe_assistant(d, assistant))
 

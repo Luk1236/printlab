@@ -230,6 +230,41 @@ class TestProbes:
         skipped = await selftest.probe_assistant(deps(db_session, assistant_config=config), down)
         assert skipped.status == selftest.SKIP
 
+    @pytest.mark.asyncio
+    async def test_ai_scan_states(self, db_session, monkeypatch):
+        from backend.app.services import ai_error_scan
+
+        monkeypatch.setattr(ai_error_scan, "list_findings", lambda limit=1: [])
+        off = await selftest.check_ai_scan(deps(db_session))
+        assert off.status == selftest.SKIP
+        config = {
+            "enabled": True,
+            "base_url": "http://x:1",
+            "model": "m",
+            "vision_model": "vision",
+            "error_scan_enabled": True,
+        }
+        down = await selftest.check_ai_scan(
+            deps(db_session, assistant_config=config, assistant_status=AsyncMock(return_value={"reachable": False}))
+        )
+        assert down.status == selftest.FAIL
+        missing = await selftest.check_ai_scan(
+            deps(
+                db_session,
+                assistant_config=config,
+                assistant_status=AsyncMock(return_value={"reachable": True, "models": ["m"]}),
+            )
+        )
+        assert missing.status == selftest.WARN and missing.fix["de"] == "ollama pull vision"
+        ready = await selftest.check_ai_scan(
+            deps(
+                db_session,
+                assistant_config=config,
+                assistant_status=AsyncMock(return_value={"reachable": True, "models": ["m", "vision"]}),
+            )
+        )
+        assert ready.status == selftest.OK
+
 
 class TestRun:
     @pytest.mark.asyncio
@@ -249,6 +284,7 @@ class TestRun:
             "auth",
             "update_guard",
             "assistant",
+            "ai_scan",
             "probe_notification",
             "probe_assistant",
         ]
@@ -269,7 +305,7 @@ class TestRun:
         out = await selftest.run(deps(db_session, scheduler_running=boom), "en")
         scheduler = next(r for r in out["results"] if r["id"] == "scheduler")
         assert scheduler["status"] == "fail" and "Planer kaputt" in scheduler["detail"]
-        assert len(out["results"]) == 13 and out["summary"]["fail"] >= 1
+        assert len(out["results"]) == 14 and out["summary"]["fail"] >= 1
 
     @pytest.mark.asyncio
     async def test_a_failing_health_snapshot_does_not_break_the_run(self, db_session):
@@ -373,7 +409,7 @@ class TestApi:
         german = (await async_client.post("/api/v1/selftest")).json()
         english = (await async_client.post("/api/v1/selftest", headers={"Accept-Language": "en"})).json()
         assert german["results"][0]["title"] == "Datenbank" and english["results"][0]["title"] == "Database"
-        assert len(german["results"]) == 13 and set(german["summary"]) == {"ok", "warn", "fail", "skip"}
+        assert len(german["results"]) == 14 and set(german["summary"]) == {"ok", "warn", "fail", "skip"}
 
     @pytest.mark.asyncio
     async def test_a_second_run_at_the_same_time_gets_429(self, async_client: AsyncClient):
