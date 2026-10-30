@@ -1,6 +1,6 @@
 # TODO — PrintLab
 
-**Stand:** 30.10.2026, Version 1.14.1 · **Basis:** Bambuddy 1.2.5.7 (AGPL-3.0, Herkunft: `NOTICE`) · **Branch:** `bambu-monitor-port`
+**Stand:** 30.10.2026, Version 1.15.0 · **Basis:** Bambuddy 1.2.5.7 (AGPL-3.0, Herkunft: `NOTICE`) · **Branch:** `bambu-monitor-port`
 
 Was fertig ist, steht mit Datum im `CHANGELOG.md`. Die ausführliche Bewertung (Risiken R1–R16, Verbesserungen, Erweiterungen)
 steht in `docs/ANALYSE-2026-10-28.md`, die Abnahme in `docs/ABNAHME.md`.
@@ -36,6 +36,8 @@ Update mit Rückbau, Überwachung mit Meldung, Angebote mit PDF, Kamera-Einmessu
       über `data/countermeasures.json`).
 - [ ] Fehlerhilfe am Gerät erproben: die beiden Bauraum-Regeln im Trockenlauf gegen einen echten PLA- und ABS-Druck
       laufen lassen, bevor der Trockenlauf abgeschaltet wird.
+- [ ] KI-Fehlererkennung am Gerät erproben (Bildmodell auf dem Pi, Latenz messen) und ein kleines Vision-Modell
+      empfehlen; Treffer mit echten Fehlerbildern gegenprüfen, bevor die automatische Prüfung eingeschaltet wird.
 
 ## Bewusst nicht im Fokus
 

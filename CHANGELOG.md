@@ -3,6 +3,21 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.15.0 (30.10.2026) — Fehlererkennung mit lokaler KI
+
+- **KI-Fehlererkennung (lokal):** Ein Kamerabild wird vom lokalen Bildmodell (Ollama oder OpenAI-kompatibler Server,
+  z. B. `qwen3.5:4b`) einem der zwölf Fehlerbilder zugeordnet. Treffer ab der eingestellten Mindest-Sicherheit landen in
+  `data/ai_error_findings.jsonl`; die Fehlerkarte zeigt „N× erkannt“ samt letzter Begründung und Datum.
+- **Prüfen per Klick:** In der Fehlerhilfe ein Bild hochladen oder ein gesammeltes Fehlerbild auswählen und analysieren.
+  Die Karte nennt Modellstatus, fehlende Modelle (mit `ollama pull …`), Bildmodell und Mindest-Sicherheit.
+- **Automatisch möglich:** Nach AI- und „Platte nicht frei“-Warnungen prüft PrintLab das Bild im Hintergrund — nur wenn die
+  Erkennung ausdrücklich eingeschaltet ist. **Standardmäßig aus**; die Erkennung ist ein Hinweis, keine Diagnose.
+- Live gegen den lokalen Server geprüft: gültiges JSON, ein Software-Screenshot ergab korrekt „kein Fehlerbild“. Ein
+  Bildmodell braucht auf dem Entwicklungs-PC rund 85–150 s pro Bild (erster Aufruf inkl. Modellstart länger); für den Pi
+  ist ein kleineres Vision-Modell sinnvoll.
+- Intern: `services/ai_error_scan.py`, Endpunkte `/error-help/ai-scan/*`, Erweiterung der Assistenten-Einstellungen
+  (`vision_model`, `error_scan_enabled`, `error_scan_min_confidence`).
+
 ## v1.14.1 (30.10.2026) — Bilder zur Fehlerhilfe
 
 - **Jedes Fehlerbild hat eine Zeichnung:** zwölf schematische Darstellungen (Heat Creep, Unter-/Überextrusion, Stringing,
