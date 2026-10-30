@@ -339,7 +339,7 @@ class TestExhaustLabelModelListsAgree:
 
     The backend keeps ``EXHAUST_FAN_LABEL_MODELS`` (display names plus the N7/N6
     internal codes, since the API can be handed either) and the frontend keeps
-    ``MODELS_WITH_EXHAUST_LABEL`` in PrintersPage.tsx (display names only —
+    ``MODELS_WITH_EXHAUST_LABEL`` in printerCardHelpers.ts (display names only —
     ``printer.model`` is always a display name by the time it reaches the card).
     Both are correct as written, but nothing stopped them drifting apart: adding
     a model to one and forgetting the other silently produces a card labelled
@@ -354,20 +354,37 @@ class TestExhaustLabelModelListsAgree:
 
         # Walk up rather than hard-coding a parent depth, so the test survives
         # the file being moved and works whatever directory pytest runs from.
-        relative = Path("frontend") / "src" / "pages" / "PrintersPage.tsx"
-        source = next(
-            (candidate for parent in Path(__file__).resolve().parents if (candidate := parent / relative).is_file()),
-            None,
-        )
-        if source is None:
+        # The list moved to printerCardHelpers.ts when the printer card left
+        # PrintersPage.tsx; the old location stays as a fallback so the test
+        # passes on both layouts.
+        candidates = [
+            Path("frontend") / "src" / "pages" / "printerCardHelpers.ts",
+            Path("frontend") / "src" / "pages" / "PrintersPage.tsx",
+        ]
+        text = None
+        for relative in candidates:
+            source = next(
+                (
+                    candidate
+                    for parent in Path(__file__).resolve().parents
+                    if (candidate := parent / relative).is_file()
+                ),
+                None,
+            )
+            if source is None:
+                continue
+            candidate_text = source.read_text(encoding="utf-8")
+            if "MODELS_WITH_EXHAUST_LABEL" in candidate_text:
+                text = candidate_text
+                break
+        if text is None:
             pytest.skip("frontend sources not present in this checkout")
-        text = source.read_text(encoding="utf-8")
         match = re.search(
             r"const MODELS_WITH_EXHAUST_LABEL:[^=]*=\s*new Set\(\[(.*?)\]\)",
             text,
             re.DOTALL,
         )
-        assert match, "MODELS_WITH_EXHAUST_LABEL not found in PrintersPage.tsx"
+        assert match, "MODELS_WITH_EXHAUST_LABEL not found in the frontend sources"
         return set(re.findall(r"['\"]([^'\"]+)['\"]", match.group(1)))
 
     def test_frontend_list_is_the_display_name_subset_of_the_backend_list(self):

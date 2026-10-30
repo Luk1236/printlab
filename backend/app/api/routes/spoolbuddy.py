@@ -357,8 +357,7 @@ async def device_heartbeat(
 
         ssh_public_key = await get_public_key()
     except Exception:
-        pass
-
+        logger.debug("SpoolBuddy public key is unavailable", exc_info=True)
     return HeartbeatResponse(
         pending_command=pending,
         pending_write_payload=pending_write,

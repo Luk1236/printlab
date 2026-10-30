@@ -71,7 +71,7 @@ async def _check_port(ip: str, port: int, timeout: float = _PORT_PROBE_TIMEOUT) 
         try:
             await writer.wait_closed()
         except Exception:
-            pass
+            logger.debug("Could not close the diagnostic socket", exc_info=True)
         return True
     except Exception:
         return False
@@ -130,7 +130,7 @@ async def _check_ftps_tls(ip: str, model: str | None, timeout: float = _PORT_PRO
             try:
                 await writer.wait_closed()
             except Exception:
-                pass
+                logger.debug("Could not close the diagnostic socket", exc_info=True)
 
 
 async def _last_print_file_is_reachable(
@@ -273,7 +273,7 @@ def _detect_container_network_mode(runtime: str | None) -> str | None:
             if name.startswith(_HOST_INFRA_PREFIXES):
                 return "host"
     except Exception:
-        pass
+        logger.debug("Could not inspect network interfaces for the container mode", exc_info=True)
     if _has_native_interface():
         return "host"
     if runtime in OCI_RUNTIMES:

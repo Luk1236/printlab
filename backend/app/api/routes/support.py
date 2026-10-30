@@ -236,7 +236,7 @@ def _detect_docker_network_mode() -> str:
             if name.startswith(("docker", "br-", "veth", "virbr")):
                 return "host"
     except Exception:
-        pass
+        logger.debug("Could not inspect network interfaces for the container mode", exc_info=True)
     return "bridge"
 
 
@@ -249,7 +249,7 @@ def _mask_subnet(subnet: str) -> str:
             parts[1] = "x"
             return ".".join(parts)
     except Exception:
-        pass
+        logger.debug("Could not mask the subnet", exc_info=True)
     return subnet
 
 
@@ -289,7 +289,7 @@ def _get_container_memory_limit() -> int | None:
             if val != "max":
                 return int(val)
         except Exception:
-            pass
+            logger.debug("Could not read the cgroup v2 memory limit", exc_info=True)
     # cgroup v1
     v1 = Path("/sys/fs/cgroup/memory/memory.limit_in_bytes")
     if v1.exists():
@@ -299,7 +299,7 @@ def _get_container_memory_limit() -> int | None:
             if val < 2**62:
                 return val
         except Exception:
-            pass
+            logger.debug("Could not read the cgroup v1 memory limit", exc_info=True)
     return None
 
 
@@ -349,15 +349,15 @@ def _collect_process_info() -> dict:
         out["vms_bytes"] = mem.vms
         out["vms_formatted"] = _format_bytes(mem.vms)
     except Exception:
-        pass
+        logger.debug("Could not read the process memory info", exc_info=True)
     try:
         out["num_threads"] = proc.num_threads()
     except Exception:
-        pass
+        logger.debug("Could not read the thread count", exc_info=True)
     try:
         out["uptime_seconds"] = int(time.time() - proc.create_time())
     except Exception:
-        pass
+        logger.debug("Could not read the process uptime", exc_info=True)
     try:
         if sys.platform == "win32":
             # psutil's open_files() kann unter Windows nativ abstürzen (Zugriffsverletzung, beobachtet auf
@@ -367,12 +367,11 @@ def _collect_process_info() -> dict:
         else:
             out["open_files"] = len(proc.open_files())
     except Exception:
-        pass
+        logger.debug("Could not read the open file handles", exc_info=True)
     try:
         out["connections"] = len(proc.net_connections(kind="inet"))
     except Exception:
-        pass
-
+        logger.debug("Could not count the network connections", exc_info=True)
     # Children by executable name only. The count per name is what identifies a
     # leak; the arguments would leak credentials.
     try:
@@ -385,8 +384,7 @@ def _collect_process_info() -> dict:
         out["children_total"] = sum(names.values())
         out["children_by_name"] = dict(sorted(names.items(), key=lambda kv: -kv[1]))
     except Exception:
-        pass
-
+        logger.debug("Could not enumerate the child processes", exc_info=True)
     # Live object counts by type, top 15. Identifies a heap that is growing and
     # what it is growing with — the one thing RSS alone cannot say.
     #
@@ -413,8 +411,7 @@ def _collect_process_info() -> dict:
         out["gc_tracked_objects"] = sum(counts.values())
         out["gc_top_types"] = dict(sorted(counts.items(), key=lambda kv: -kv[1])[:15])
     except Exception:
-        pass
-
+        logger.debug("Could not count the GC-tracked objects", exc_info=True)
     return out
 
 

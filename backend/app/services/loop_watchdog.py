@@ -73,5 +73,5 @@ def stop_loop_watchdog() -> None:
     try:
         faulthandler.cancel_dump_traceback_later()
     except Exception:
-        pass
+        logger.debug("Could not cancel the faulthandler dump timer", exc_info=True)
     logger.info("Event-loop stall watchdog stopped")

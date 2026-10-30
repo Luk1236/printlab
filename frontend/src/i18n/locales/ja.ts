@@ -8595,5 +8595,7 @@ export default {
     thresholds: 'しきい値',
     hotThreshold: '高温しきい値',
     coldThreshold: '低温しきい値',
+    cooldownSeconds: '間隔 (秒)',
+    maxPerPrint: '印刷ごとの上限',
   },
 };

@@ -8647,5 +8647,7 @@ export default {
     thresholds: 'Drempels',
     hotThreshold: 'Te warm vanaf',
     coldThreshold: 'Te koud onder',
+    cooldownSeconds: 'Wachttijd (s)',
+    maxPerPrint: 'Maximaal per print',
   },
 };

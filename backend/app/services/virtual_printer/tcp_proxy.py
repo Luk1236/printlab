@@ -687,8 +687,7 @@ class TCPProxy:
                 try:
                     self.on_disconnect(client_id)
                 except Exception:
-                    pass
-
+                    logger.debug("Disconnect callback raised", exc_info=True)
         self._active_connections.clear()
 
         if self._server:
@@ -714,8 +713,7 @@ class TCPProxy:
             try:
                 self.on_connect(client_id)
             except Exception:
-                pass
-
+                logger.debug("Connect callback raised", exc_info=True)
         try:
             printer_reader, printer_writer = await asyncio.wait_for(
                 asyncio.open_connection(self.target_host, self.target_port),
@@ -774,7 +772,7 @@ class TCPProxy:
                 try:
                     self.on_disconnect(client_id)
                 except Exception:
-                    pass
+                    logger.debug("Disconnect callback raised", exc_info=True)
 
     async def _forward(
         self,

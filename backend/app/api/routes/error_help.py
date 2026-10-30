@@ -308,6 +308,9 @@ async def put_countermeasures(
                     raise HTTPException(400, f"Unbekannte Regel(n): {', '.join(sorted(unknown))}")
             cleaned[str(key)] = value
         update["printers"] = cleaned
+    error = countermeasures.threshold_error(countermeasures.merged_config(update))
+    if error:
+        raise HTTPException(400, error)
     countermeasures.reset_memory()
     return countermeasures.save_config(update)
 

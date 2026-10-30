@@ -8579,5 +8579,7 @@ export default {
     thresholds: '閾值',
     hotThreshold: '過熱閾值',
     coldThreshold: '過冷閾值',
+    cooldownSeconds: '間隔（秒）',
+    maxPerPrint: '每次列印上限',
   },
 };

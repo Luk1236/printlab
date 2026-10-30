@@ -8597,5 +8597,7 @@ export default {
     thresholds: 'Schwellen',
     hotThreshold: 'Zu warm ab',
     coldThreshold: 'Zu kalt unter',
+    cooldownSeconds: 'Abstand (s)',
+    maxPerPrint: 'Höchstens je Druck',
   },
 };

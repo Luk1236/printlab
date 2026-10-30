@@ -1,6 +1,6 @@
 # TODO — PrintLab
 
-**Stand:** 30.10.2026, Version 1.18.0 · **Basis:** Bambuddy 1.2.5.7 (AGPL-3.0, Herkunft: `NOTICE`) · **Branch:** `bambu-monitor-port`
+**Stand:** 30.10.2026, Version 1.19.0 · **Basis:** Bambuddy 1.2.5.7 (AGPL-3.0, Herkunft: `NOTICE`) · **Branch:** `bambu-monitor-port`
 
 Was fertig ist, steht mit Datum im `CHANGELOG.md`. Die ausführliche Bewertung (Risiken R1–R16, Verbesserungen, Erweiterungen)
 steht in `docs/ANALYSE-2026-10-28.md`, die Abnahme in `docs/ABNAHME.md`.
@@ -19,6 +19,23 @@ Fehlerbild, Abbrechen im Assistenten, Filter der Fehlerbild-Sammlung). **Alle ac
 Trainingsset-Export, KI-Hinweis als eigene Meldung, öffentlicher Angebots-Link mit Zusage/Ablehnung, Zeitraffer-MP4
 aus aufbewahrten Schichtbildern, automatische Umverteilung, XRechnung-XML, Nachbestellvorschlag und der
 Einmess-Assistent für den Plattenwechsel. Details und Grenzen im `CHANGELOG.md`.
+
+**Aufräumrunde danach (ebenfalls uncommittet):**
+
+- `_select` im Druckplaner ist nur noch eine Schleife; die beiden Zweige liegen als `_select_pinned` und
+  `_select_for_model` daneben, die `continue` der Auftragsschleife sind `return` geworden.
+- Alle 43 stillen `except Exception: pass` protokollieren jetzt mit `logger.debug(..., exc_info=True)`;
+  das Budget in `test_error_handling_budget.py` steht auf **0**.
+- Fehlerhilfe: Abstand und Höchstzahl je Druck sind in der Karte einstellbar; der Server lehnt
+  „zu warm“ ≥ „zu kalt“ ab (geprüft auf der zusammengeführten Konfiguration, weil die Karte immer nur
+  ein Feld schickt). Zwei neue Schlüssel in allen 15 Sprachen.
+- `PrintersPage.tsx` von 9 656 auf 1 985 Zeilen: `PrinterCard.tsx` (6 255), `PrinterCardParts.tsx`
+  (1 134, nur Komponenten) und `printerCardHelpers.ts` (290, Konstanten/Typen/reine Funktionen).
+- `client.ts` von 9 699 auf 1 009 Zeilen: `core.ts` (270), `types.ts` (4 754), `endpoints.ts` (4 017);
+  `client.ts` exportiert alles weiter, kein Import in der Oberfläche musste geändert werden.
+- `Dockerfile` installiert jetzt mit `-c requirements.lock` — das Image war der letzte Ort ohne feste
+  Versionen. Bauen ließ es sich hier nicht (kein Docker auf dem Rechner).
+- Neues Glossar für die Gegenleser: `docs/UEBERSETZUNG-GLOSSAR.md` (Begriffe, Satzvorlagen, Prüfliste).
 
 ## Offen, nur mit deiner Hand oder echter Hardware
 
@@ -45,28 +62,28 @@ dieser Reihenfolge, mit Erwartungen, Abbruchkriterien und Protokoll.
 
 ## Technisch offen
 
-- [ ] Große Dateien weiter zerlegen; der Test `test_file_size_budget.py` verhindert nur das Wachsen. Schnitt am
-      30.10.2026: `print_scheduler.py` von 8 740 auf 4 846 Zeilen (−45 %), Grenze auf 4 850 gesenkt. Helfer liegen in
-      `backend/app/services/scheduler/` (filament, nozzles, chamber, dispatch, upload, delivery, queue_pass),
-      Vorheizen/Warmhalten und Trocknung als Mixins (`preheat.py`, `drying.py`); alles bleibt über `print_scheduler`
-      importierbar. Die ausgelagerten Bausteine lösen `printer_manager`, `time`, `datetime`, `async_session`,
-      `notification_service`, `ha_sensor_manager`, `supports_drying`, `delete_file_async`, `upload_file_async`,
-      `get_ftp_retry_settings` und `ws_manager` über das Fassadenmodul auf, damit die bestehenden Test-Patches
-      unverändert greifen. `check_queue` ist nur noch ein Aufruf von `QueuePass.run()` → `_collect` (108),
-      `_select` (646), `_finish` (84); die sieben früheren Closures sind Methoden des Durchlaufs. **Nächster Schritt:**
-      `_select` weiter teilen — die beiden Zweige (fester Drucker / Modellzuordnung, je ~200 Zeilen) als eigene
-      Methoden; dafür müssen 16 `continue` zu `return` werden, was nur zulässig ist, weil beide Zweige am Ende des
-      Schleifenkörpers stehen. Danach die Druckerkarte (`PrinterCard` in `PrintersPage.tsx`, ~5 600 Zeilen in einer
-      Funktion) und `client.ts` (~9 700). `main.py` ist praktisch nur noch Verdrahtung und bleibt an der Grenze
-      (11 069/11 075); neue Funktionen gehören in eigene Module bzw. `fork_routers.py`.
-- [ ] Volle E2E-Prüfung MakerWorld → PC-Slicer → Warteschlange.
+- [ ] Große Dateien weiter zerlegen; der Test `test_file_size_budget.py` verhindert nur das Wachsen. Stand
+      30.10.2026: `print_scheduler.py` 4 846 Zeilen (Grenze 4 850), `queue_pass.py` 1 032 (Vorgabe 2 600),
+      `PrintersPage.tsx` 1 985 (Grenze 2 000), `PrinterCard.tsx` 6 255 (Grenze 6 300), `PrinterCardParts.tsx`
+      1 134 (Grenze 1 150), `client.ts` 1 009 (Grenze 1 050), `types.ts` 4 754 (Grenze 4 800), `endpoints.ts`
+      4 017 (Grenze 4 050). **Nächste Schnitte:** (1) die beiden Zweige in `queue_pass.py` weiter teilen —
+      `_select_pinned` und `_select_for_model` sind je ~300/200 Zeilen, die Verfügbarkeitsprüfungen lassen sich
+      als eigene Methoden herausziehen. (2) `PrinterCard.tsx` in Karte, AMS-Bereich und Kamera/Steuerung teilen.
+      (3) `endpoints.ts` nach Bereichen (Drucker, Archive, Warteschlange, Verwaltung) mit Spreading wie in
+      `createForkApi`. `main.py` ist praktisch nur noch Verdrahtung und bleibt an der Grenze (11 069/11 075);
+      neue Funktionen gehören in eigene Module bzw. `fork_routers.py`.
+- [ ] Volle E2E-Prüfung MakerWorld → PC-Slicer → Warteschlange. Die inneren Glieder sind abgesichert
+      (566 Integrationstests zu MakerWorld, Bibliothek und Warteschlange, alle grün); der Slicer-Upload und der
+druckende Drucker brauchen Gerät und Slicer.
 - [ ] Komplette Unit-Suite in der CI (lokal nach 10 Minuten abgebrochen); `requirements.lock` vor der
       Docker-/Pi-Umstellung im Bau prüfen.
-- [ ] Stille `except Exception: pass`-Handler abbauen (43, durch `test_error_handling_budget.py` gedeckelt).
-- [ ] Docker-/ARM-Image auf einem Pi 4/5 starten und prüfen.
+- [x] Stille `except Exception: pass`-Handler abbauen — erledigt, Budget steht auf 0.
+- [ ] Docker-/ARM-Image auf einem Pi 4/5 starten und prüfen. Das `Dockerfile` ist statisch geprüft und
+      installiert jetzt mit `-c requirements.lock`; auf diesem Rechner gibt es kein Docker, deshalb ungetestet.
 - [ ] Fehlerhilfe: die zwölf Fließtexte der Fehlerbilder von Muttersprachlern übersetzen lassen (Titel und Kurzfassungen
-      sind englisch hinterlegt) und die Schwellen der beiden Regeln in der Oberfläche einstellbar machen (derzeit nur
-      über `data/countermeasures.json`).
+      sind englisch hinterlegt). Glossar und Prüfliste: `docs/UEBERSETZUNG-GLOSSAR.md`. Die Schwellen **und** die
+      Grenzen (Abstand, Höchstzahl je Druck) sind in der Oberfläche einstellbar; der Server prüft, dass „zu warm“
+      unter „zu kalt“ liegt.
 - [ ] Fehlerhilfe am Gerät erproben: die beiden Bauraum-Regeln im Trockenlauf gegen einen echten PLA- und ABS-Druck
       laufen lassen, bevor der Trockenlauf abgeschaltet wird.
 - [ ] KI-Fehlererkennung am Gerät erproben (Bildmodell auf dem Pi, Latenz messen) und ein kleines Vision-Modell

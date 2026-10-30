@@ -1,6 +1,7 @@
 """System information API routes."""
 
 import asyncio
+import logging
 import os
 import platform
 import time
@@ -28,6 +29,8 @@ from backend.app.models.user import User
 from backend.app.services.log_health import ScanResult, scan_logs
 from backend.app.services.log_reader import collect_sensitive_strings
 from backend.app.services.printer_manager import printer_manager
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/system", tags=["system"])
 
@@ -496,7 +499,7 @@ async def get_system_info(
                 "version": f"SQLite {sqlite_ver}",
             }
     except Exception:
-        pass
+        logger.debug("Could not read the SQLite version for the system info", exc_info=True)
 
     # Disk usage
     disk = psutil.disk_usage(str(settings.base_dir))

@@ -1297,8 +1297,7 @@ async def get_filament_id_map(
                     clean_name = name.split(" @")[0].strip() if " @" in name else name
                     result[fid] = clean_name
             except Exception:
-                pass
-
+                logger.debug("Ignoring an entry without a usable filament id or name", exc_info=True)
         _filament_id_name_cache = result
         _filament_id_name_cache_time = time.time()
         return result

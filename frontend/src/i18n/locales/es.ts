@@ -8604,5 +8604,7 @@ export default {
     thresholds: 'Umbrales',
     hotThreshold: 'Demasiado calor a partir de',
     coldThreshold: 'Demasiado frío por debajo de',
+    cooldownSeconds: 'Espera (s)',
+    maxPerPrint: 'Máximo por impresión',
   },
 };

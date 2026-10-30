@@ -8581,5 +8581,7 @@ export default {
     thresholds: 'Soglie',
     hotThreshold: 'Troppo caldo oltre',
     coldThreshold: 'Troppo freddo sotto',
+    cooldownSeconds: 'Intervallo (s)',
+    maxPerPrint: 'Massimo per stampa',
   },
 };

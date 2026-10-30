@@ -2292,7 +2292,7 @@ async def assign_spool(
                     if client:
                         client.request_status_update()
                 except Exception:
-                    pass
+                    logger.debug("Ignoring a failed status request after assigning a spool", exc_info=True)
     # pending_config is the "config not landed yet" UI marker. True when the
     # firmware said empty, OR when MQTT couldn't actually publish (printer
     # offline, no client, transient failure). on_ams_change replay re-fires

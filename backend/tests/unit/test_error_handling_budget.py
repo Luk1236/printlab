@@ -1,9 +1,10 @@
 """Sperre gegen stille Fehler: ``except Exception: pass`` darf nicht weiter wachsen.
 
 Breite Handler sind im Netzwerk- und Hardware-Teil oft Absicht (ein kaputter Sensor darf die Meldung
-nicht verhindern), aber ``pass`` ohne Protokoll macht Fehlersuche unmöglich. Dieser Test friert den
-Stand ein: neue stille Handler fallen auf, und beim Aufräumen wird die Zahl kleiner. Ziel ist nicht
-„alle ersetzen“, sondern jeder neue Handler protokolliert mindestens auf ``debug``.
+nicht verhindern), aber ``pass`` ohne Protokoll macht Fehlersuche unmöglich. Die 43 Stellen, die es am
+30.10.2026 noch gab, protokollieren jetzt mit ``logger.debug(..., exc_info=True)``: Ort, Funktion und
+Traceback stehen damit im Log, ohne den Betrieb lauter zu machen. Das Budget steht deshalb auf null —
+jeder neue Handler protokolliert mindestens auf ``debug`` oder begründet im Kommentar, warum nicht.
 """
 
 from __future__ import annotations
@@ -14,8 +15,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 APP = ROOT / "backend" / "app"
 
-# Stand 30.10.2026. Nur senken.
-BUDGET = 43
+# Stand 30.10.2026: alle stillen Handler abgebaut. Nur senken — null ist das Ziel.
+BUDGET = 0
 
 SILENT = re.compile(r"except\s+(?:Exception|BaseException)\s*(?:as\s+\w+)?:\s*\n\s*(?:pass|\.\.\.)\s*(?:\n|$)")
 

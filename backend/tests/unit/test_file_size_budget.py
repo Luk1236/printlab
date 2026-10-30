@@ -13,7 +13,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_LIMIT = 2600
 
-# Höchstzahl der Zeilen je Datei (Stand 28.10.2026, aufgerundet auf 25). Beim Verkleinern hier senken.
+# Höchstzahl der Zeilen je Datei (Stand 30.10.2026, aufgerundet auf 25). Beim Verkleinern hier senken.
 LIMITS = {
     "backend/app/main.py": 11075,
     "backend/app/services/print_scheduler.py": 4850,
@@ -24,8 +24,12 @@ LIMITS = {
     "backend/app/api/routes/printers.py": 4850,
     "backend/app/api/routes/inventory.py": 3200,
     "backend/app/services/notification_service.py": 3000,
-    "frontend/src/pages/PrintersPage.tsx": 9675,
-    "frontend/src/api/client.ts": 9700,
+    "frontend/src/pages/PrintersPage.tsx": 2000,
+    "frontend/src/pages/PrinterCard.tsx": 6300,
+    "frontend/src/pages/PrinterCardParts.tsx": 1150,
+    "frontend/src/api/client.ts": 1050,
+    "frontend/src/api/types.ts": 4800,
+    "frontend/src/api/endpoints.ts": 4050,
     "frontend/src/pages/SettingsPage.tsx": 7850,
     "frontend/src/pages/ArchivesPage.tsx": 4925,
     "frontend/src/pages/FileManagerPage.tsx": 4050,

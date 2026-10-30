@@ -8197,5 +8197,7 @@ export default {
     thresholds: 'Пороги',
     hotThreshold: 'Слишком тепло выше',
     coldThreshold: 'Слишком холодно ниже',
+    cooldownSeconds: 'Интервал (с)',
+    maxPerPrint: 'Максимум на печать',
   },
 };

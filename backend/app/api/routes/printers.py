@@ -1212,7 +1212,7 @@ async def get_printer_cover(
         try:
             await asyncio.shield(leader)
         except Exception:
-            pass
+            logger.debug("Cover request follower failed or was cancelled", exc_info=True)
         if printer_id in _cover_cache and cache_key in _cover_cache[printer_id]:
             return Response(content=_cover_cache[printer_id][cache_key], media_type="image/png")
         if printer_id in _cover_404_cache and cache_key in _cover_404_cache[printer_id]:
@@ -3324,8 +3324,7 @@ async def configure_ams_slot(
             try:
                 await db.rollback()
             except Exception:
-                pass
-
+                logger.debug("Rollback after a failed AMS slot write failed too", exc_info=True)
     # Register a read-back verification (#2582) so the tray telemetry that the
     # status push below returns can confirm the printer accepted this manual
     # slot configuration. Mirrors the inventory/assignment path.

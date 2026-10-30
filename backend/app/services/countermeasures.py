@@ -84,11 +84,35 @@ def load_config() -> dict[str, Any]:
         return _merge(DEFAULT_CONFIG, data if isinstance(data, dict) else {})
 
 
+def merged_config(update: dict[str, Any]) -> dict[str, Any]:
+    """Was ``save_config`` schreiben würde, ohne zu schreiben."""
+    with _lock:
+        return _merge(load_config(), {k: v for k, v in update.items() if k in DEFAULT_CONFIG})
+
+
+def threshold_error(config: dict[str, Any]) -> str | None:
+    """Die beiden Schwellen dürfen sich nicht überlappen.
+
+    Läge „zu warm“ auf oder über „zu kalt“, wären beide Regeln für denselben
+    Bauraum zuständig — je nach Filamentgruppe mit widersprüchlichen Eingriffen.
+    Geprüft wird die *zusammengeführte* Konfiguration, weil die Oberfläche immer
+    nur ein Feld schickt.
+    """
+    thresholds = config.get("thresholds") or {}
+    try:
+        hot = float(thresholds.get("hot_c"))
+        cold = float(thresholds.get("cold_c"))
+    except (TypeError, ValueError):
+        return "Die Schwellen müssen Zahlen in °C sein."
+    if hot >= cold:
+        return f"Die Schwelle „zu warm“ ({hot:g} °C) muss unter „zu kalt“ ({cold:g} °C) liegen."
+    return None
+
+
 def save_config(update: dict[str, Any]) -> dict[str, Any]:
     """Konfiguration zusammenführen und schreiben (nur bekannte Felder)."""
     with _lock:
-        current = load_config()
-        merged = _merge(current, {k: v for k, v in update.items() if k in DEFAULT_CONFIG})
+        merged = merged_config(update)
         CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
         tmp = CONFIG_PATH.with_name(CONFIG_PATH.name + ".tmp")
         tmp.write_text(json.dumps(merged, ensure_ascii=False, indent=2), encoding="utf-8")

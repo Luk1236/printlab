@@ -243,7 +243,7 @@ class TelegramReactionPoller:
             try:
                 description = response.json().get("description") or ""
             except Exception:
-                pass
+                logger.debug("Telegram error response had no readable description", exc_info=True)
             if response.status_code == 409:
                 status = "conflict"
                 message = (

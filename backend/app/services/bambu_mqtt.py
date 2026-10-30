@@ -1732,7 +1732,7 @@ class BambuMQTTClient:
                 if sock:
                     sock.close()
             except Exception:
-                pass
+                logger.debug("Could not close the socket before reconnecting", exc_info=True)
 
     def _on_connect(self, client, userdata, flags, rc, properties=None):
         if rc == 0:

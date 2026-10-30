@@ -3,6 +3,34 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.19.0 (30.10.2026) — Aufgeräumt: stille Fehler, große Dateien, feste Builds
+
+- **Keine stillen Ausnahmen mehr:** Alle 43 `except Exception: pass` in Routen, Planer, virtuellem Drucker und
+  Support-Code protokollieren jetzt mit `logger.debug(..., exc_info=True)`; das Budget in
+  `test_error_handling_budget.py` steht auf 0. Ein Fehler bleibt sichtbar, ohne das Protokoll im Normalbetrieb
+  zu fluten.
+- **Fehlerhilfe vollständig einstellbar:** Abstand und Höchstzahl je Druck sind in der KI-Karte einstellbar
+  (bisher nur die Schwellen). Der Server prüft die zusammengeführte Konfiguration und lehnt „zu warm“ ≥ „zu kalt“
+  mit einer erklärenden Meldung ab — die Karte schickt immer nur ein Feld. Zwei neue Schlüssel in allen 15 Sprachen.
+- **Druckplaner weiter geteilt:** `_select` ist nur noch eine Schleife; die Auswahl nach Anheftung und nach Modell
+  liegen als `_select_pinned` und `_select_for_model` daneben, die `continue` der Auftragsschleife sind `return`
+  geworden. `queue_pass.py` bleibt mit 1 032 Zeilen unter der Vorgabe.
+- **Zwei große Frontend-Dateien zerlegt, Importe unverändert:** `PrintersPage.tsx` 9 656 → 1 985 Zeilen
+  (`PrinterCard.tsx` 6 255, `PrinterCardParts.tsx` 1 134, `printerCardHelpers.ts` 290); `client.ts` 9 699 → 1 008
+  (`core.ts` 270, `types.ts` 4 754, `endpoints.ts` 4 017). `client.ts` bleibt die Fassade, deshalb musste kein
+  Import angefasst werden; das Größenbudget nennt die neuen Grenzen.
+- **Docker-Image mit festen Versionen:** Der Bau installiert mit `-c requirements.lock`. Damit zieht ein frischer
+  Build dieselbe Kombination wie die native Installation, statt jeweils die neuesten Wheels. (Auf diesem Rechner
+  ohne Docker nicht gebaut.)
+- **Weniger fehlschlagende Tests unter Last:** Die asynchronen Abfragen der Oberfläche warten 5 s statt 1 s;
+  einzeln grüne Tests fielen im 334-Dateien-Lauf sonst gelegentlich durch die Standardwartezeit. `lokal_pruefen.py`
+  bricht beim Umleiten der Ausgabe nicht mehr an Sonderzeichen der Windows-Konsole ab.
+- **Übersetzungs-Glossar:** `docs/UEBERSETZUNG-GLOSSAR.md` sammelt Begriffe, Satzvorlagen und eine Prüfliste für die
+  Gegenleser der 13 Nebensprachen.
+- **Prüfstand:** 14 518 Backend-Tests bestanden (186 übersprungen), Frontend-Typprüfung, ESLint und alle
+  Übersetzungen grün; die Kette MakerWorld → Bibliothek → Warteschlange ist mit 566 Integrationstests abgesichert.
+  Slicer-Upload und der druckende Drucker brauchen weiterhin Gerät und Slicer (`docs/ABNAHME-PI.md`).
+
 ## v1.18.0 (30.10.2026) — Laufende Überwachung, Modellwahl und aufgeräumter Planer
 
 - **Laufende Fehlerüberwachung auf dem Pi:** Während eines Drucks holt PrintLab im eingestellten Abstand

@@ -8645,5 +8645,7 @@ errors: {
     thresholds: 'Tröskelvärden',
     hotThreshold: 'För varmt över',
     coldThreshold: 'För kallt under',
+    cooldownSeconds: 'Intervall (s)',
+    maxPerPrint: 'Max per utskrift',
   },
 };

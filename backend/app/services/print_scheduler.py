@@ -799,7 +799,7 @@ class PrintScheduler(PreheatMixin, DryingMixin):
                     try:
                         await cleanup_db.rollback()
                     except Exception:
-                        pass
+                        logger.debug("Rollback after a failed budget release failed too", exc_info=True)
                     if attempt == 3:
                         logger.error(
                             "Queue item %s: failed to release budget reservation after %d attempts: %s",
@@ -943,7 +943,7 @@ class PrintScheduler(PreheatMixin, DryingMixin):
                 try:
                     await db.rollback()
                 except Exception:
-                    pass
+                    logger.debug("Rollback after a failed dispatch-claim clear failed too", exc_info=True)
                 if attempt == 3:
                     logger.warning(
                         "Queue item %s: failed to clear dispatch claim after %d attempts: %s "
@@ -1740,7 +1740,7 @@ class PrintScheduler(PreheatMixin, DryingMixin):
                 reason="filament_unmappable",
             )
         except Exception:
-            pass
+            logger.debug("Could not send the filament-unmappable notification", exc_info=True)
 
     async def _compute_ams_mapping_for_printer(
         self, db: AsyncSession, printer_id: int, item: PrintQueueItem
@@ -4005,7 +4005,7 @@ class PrintScheduler(PreheatMixin, DryingMixin):
                         reason="nozzle_mismatch",
                     )
                 except Exception:
-                    pass
+                    logger.debug("Could not send the nozzle-mismatch notification", exc_info=True)
                 await self._power_off_if_needed(db, item)
                 return
 
@@ -4127,7 +4127,7 @@ class PrintScheduler(PreheatMixin, DryingMixin):
                     reason="upload_failed",
                 )
             except Exception:
-                pass
+                logger.debug("Could not send the upload-failed notification", exc_info=True)
             await self._power_off_if_needed(db, item)
             return
 
@@ -4227,7 +4227,7 @@ class PrintScheduler(PreheatMixin, DryingMixin):
                     reason="cancelled_mid_dispatch",
                 )
             except Exception:
-                pass
+                logger.debug("Could not send the cancelled-mid-dispatch notification", exc_info=True)
             return
         # Sync the in-memory item so subsequent code that reads item.status /
         # item.started_at sees the values we just persisted.
@@ -4501,8 +4501,7 @@ class PrintScheduler(PreheatMixin, DryingMixin):
                     reason="start_command_failed",
                 )
             except Exception:
-                pass
-
+                logger.debug("Could not send the start-command-failed notification", exc_info=True)
             await self._power_off_if_needed(db, item)
 
     @staticmethod
@@ -4590,7 +4589,7 @@ class PrintScheduler(PreheatMixin, DryingMixin):
                         printer_id=printer_id,
                     )
                 except Exception:
-                    pass
+                    logger.debug("Could not send the queue-item acked event", exc_info=True)
                 return
             drying_ams_ids = drying_ams_ids or _drying_ams_ids(status)
             # Checked only after the active-state exit above: a stale HMS left
@@ -4627,7 +4626,7 @@ class PrintScheduler(PreheatMixin, DryingMixin):
                             printer_id=printer_id,
                         )
                     except Exception:
-                        pass
+                        logger.debug("Could not send the queue-item acked event", exc_info=True)
                     return
                 drying_ams_ids = drying_ams_ids or _drying_ams_ids(status)
                 # Same ordering rule as Phase A: a running print wins over a

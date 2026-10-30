@@ -8521,5 +8521,7 @@ export default {
     thresholds: 'Eşikler',
     hotThreshold: 'Şundan sıcak:',
     coldThreshold: 'Şundan soğuk:',
+    cooldownSeconds: 'Aralık (sn)',
+    maxPerPrint: 'Baskı başına en fazla',
   },
 };

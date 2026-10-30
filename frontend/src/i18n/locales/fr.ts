@@ -8582,5 +8582,7 @@ export default {
     thresholds: 'Seuils',
     hotThreshold: 'Trop chaud à partir de',
     coldThreshold: 'Trop froid en dessous de',
+    cooldownSeconds: 'Délai (s)',
+    maxPerPrint: 'Maximum par impression',
   },
 };

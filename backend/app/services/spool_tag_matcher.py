@@ -186,7 +186,7 @@ async def create_spool_from_tray(db: AsyncSession, tray_data: dict) -> Spool:
 
             slicer_filament_name = _BUILTIN_FILAMENT_NAMES.get(tray_info_idx)
         except Exception:
-            pass
+            logger.debug("Built-in filament names are unavailable", exc_info=True)
         # Fallback: use tray_sub_brands as the display name
         if not slicer_filament_name and tray_sub_brands:
             slicer_filament_name = tray_sub_brands
@@ -391,8 +391,7 @@ async def link_tag_to_inventory_spool(db: AsyncSession, spool: Spool, tray_data:
             if name and not spool.slicer_filament_name:
                 spool.slicer_filament_name = name
         except Exception:
-            pass
-
+            logger.debug("Built-in filament names are unavailable", exc_info=True)
     await db.flush()
     logger.info(
         "Linked RFID tag to existing spool %d (tag=%s uuid=%s origin=rfid_linked)",

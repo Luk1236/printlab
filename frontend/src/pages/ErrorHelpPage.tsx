@@ -739,6 +739,47 @@ export function ErrorHelpPage() {
                   </span>
                 </label>
               </div>
+
+              <div className="flex flex-wrap items-end gap-4">
+                <label className="text-xs text-bambu-gray-light flex flex-col gap-1">
+                  {t('errorHelp.cooldownSeconds')}
+                  <input
+                    key={`cooldown-${config.cooldown_seconds}`}
+                    type="number"
+                    min={60}
+                    max={3600}
+                    step={30}
+                    defaultValue={config.cooldown_seconds}
+                    disabled={!canConfigure}
+                    onBlur={(event) => {
+                      const value = Number(event.target.value);
+                      if (Number.isFinite(value) && value >= 60 && value <= 3600 && value !== config.cooldown_seconds) {
+                        save.mutate({ cooldown_seconds: value });
+                      }
+                    }}
+                    className="w-24 rounded-lg bg-bambu-dark border border-bambu-dark-tertiary px-2 py-1 text-sm text-white"
+                  />
+                </label>
+                <label className="text-xs text-bambu-gray-light flex flex-col gap-1">
+                  {t('errorHelp.maxPerPrint')}
+                  <input
+                    key={`max-${config.max_per_print}`}
+                    type="number"
+                    min={1}
+                    max={10}
+                    step={1}
+                    defaultValue={config.max_per_print}
+                    disabled={!canConfigure}
+                    onBlur={(event) => {
+                      const value = Number(event.target.value);
+                      if (Number.isFinite(value) && value >= 1 && value <= 10 && value !== config.max_per_print) {
+                        save.mutate({ max_per_print: value });
+                      }
+                    }}
+                    className="w-20 rounded-lg bg-bambu-dark border border-bambu-dark-tertiary px-2 py-1 text-sm text-white"
+                  />
+                </label>
+              </div>
             </div>
           )}
         </CardContent>

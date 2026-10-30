@@ -8648,5 +8648,7 @@ export default {
     thresholds: 'Thresholds',
     hotThreshold: 'Too warm above',
     coldThreshold: 'Too cold below',
+    cooldownSeconds: 'Cooldown (s)',
+    maxPerPrint: 'Max per print',
   },
 };

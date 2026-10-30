@@ -5,7 +5,7 @@
 
 import '@testing-library/jest-dom';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { server } from './mocks/server';
 
 // Initialize i18n for tests (suppresses react-i18next warnings)
@@ -16,6 +16,12 @@ import '../i18n';
 // every getByText('File Manager') assertion.
 import i18nForTests from '../i18n';
 i18nForTests.changeLanguage('en');
+
+// Async queries wait 1 s by default. With 300+ test files in parallel on a
+// loaded machine, a single MSW round-trip can exceed that and fail a test that
+// passes on its own. Give the same queries the room the 10 s test timeout
+// already allows; the assertions themselves are unchanged.
+configure({ asyncUtilTimeout: 5000 });
 
 // Setup MSW server
 beforeAll(() =>

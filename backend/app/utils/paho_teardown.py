@@ -64,11 +64,11 @@ def retire_paho_client(client, label: str) -> None:
         try:
             client.disconnect()
         except Exception:
-            pass
+            logger.debug("Disconnect during teardown failed", exc_info=True)
         try:
             client.loop_stop()
         except Exception:
-            pass
+            logger.debug("Loop stop during teardown failed", exc_info=True)
         waited = time.monotonic() - started
         if waited >= _RETIRE_SLOW_SECONDS:
             # The stall that used to be the event loop's. Worth saying out
@@ -93,4 +93,4 @@ def retire_paho_client(client, label: str) -> None:
         try:
             client.disconnect()
         except Exception:
-            pass
+            logger.debug("Disconnect after a failed teardown thread failed", exc_info=True)

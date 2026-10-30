@@ -75,7 +75,7 @@ async def _check_port(ip: str, port: int, timeout: float = _PORT_PROBE_TIMEOUT) 
         try:
             await writer.wait_closed()
         except Exception:
-            pass
+            logger.debug("Could not close the diagnostic socket", exc_info=True)
         return True
     except Exception:
         return False

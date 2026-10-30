@@ -3908,7 +3908,7 @@ async def _dispatch_outcome_confirmation_safely(
         try:
             await db.rollback()
         except Exception:
-            pass
+            logging.getLogger(__name__).debug("Rollback after a failed outcome confirmation failed too", exc_info=True)
 
 
 async def dispatch_outcome_confirmation(
@@ -4483,8 +4483,7 @@ async def on_print_start(printer_id: int, data: dict):
                             _ut_session.plate_id = _stored_plate_id
                             logger.info("[CALLBACK] Injected plate_id into usage tracker session: %s", _stored_plate_id)
                     except Exception:
-                        pass
-
+                        logger.debug("Could not attach the plate id to the usage-tracker session", exc_info=True)
                 # Set up energy tracking (#941: persist start on archive row)
                 await _record_energy_start(archive, printer_id, db, context="expected-print")
 

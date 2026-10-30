@@ -13,7 +13,11 @@ export default defineConfig({
       },
     },
     setupFiles: ['./src/__tests__/setup.ts'],
-    testTimeout: 10000,
+    // Heavy jsdom panels load their metadata through a dynamic import. On a
+    // loaded machine (OneDrive sync, Defender) that first import alone can take
+    // longer than 10 s, so the test times out before its assertions run. Give
+    // the tests room; a genuine hang still trips the limit.
+    testTimeout: 30000,
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     exclude: ['node_modules', 'dist'],
     coverage: {

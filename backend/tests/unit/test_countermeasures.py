@@ -127,6 +127,26 @@ class TestEvaluate:
         assert len(countermeasures.evaluate(7, state(chamber=41), "X1C", config(), NOW)) == 1
 
 
+class TestThresholds:
+    def test_the_defaults_leave_a_band_between_the_rules(self):
+        assert countermeasures.threshold_error(countermeasures.DEFAULT_CONFIG) is None
+
+    def test_hot_at_or_above_cold_is_refused(self):
+        assert countermeasures.threshold_error({"thresholds": {"hot_c": 45, "cold_c": 45}})
+        assert countermeasures.threshold_error({"thresholds": {"hot_c": 50, "cold_c": 45}})
+        assert countermeasures.threshold_error({"thresholds": {"hot_c": 38, "cold_c": 46}}) is None
+
+    def test_a_partial_update_is_checked_against_the_stored_other_value(self):
+        # Die Oberfläche schickt immer nur das geänderte Feld; die Prüfung
+        # arbeitet auf der zusammengeführten Konfiguration.
+        merged = countermeasures.merged_config({"thresholds": {"hot_c": 47}})
+        assert merged["thresholds"]["cold_c"] == countermeasures.DEFAULT_CONFIG["thresholds"]["cold_c"]
+        assert countermeasures.threshold_error(merged)
+
+    def test_non_numeric_thresholds_are_refused(self):
+        assert countermeasures.threshold_error({"thresholds": {"hot_c": "warm", "cold_c": 45}})
+
+
 class TestManualCommand:
     def test_bed_delta_uses_the_current_target(self):
         command, error = countermeasures.build_manual_command({"bed_delta": -5}, state(bed_target=42), "X1C")

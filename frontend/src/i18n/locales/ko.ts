@@ -8215,5 +8215,7 @@ export default {
     thresholds: '임계값',
     hotThreshold: '너무 더움 기준',
     coldThreshold: '너무 추움 기준',
+    cooldownSeconds: '간격(초)',
+    maxPerPrint: '인쇄당 최대',
   },
 };

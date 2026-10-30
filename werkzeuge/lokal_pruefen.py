@@ -25,6 +25,15 @@ import subprocess
 import sys
 from pathlib import Path
 
+# Die Testausgabe enthält Zeichen wie „❯“. Wird die Ausgabe in eine Datei
+# umgeleitet (Windows-Konsole, cp1252), stirbt das Skript sonst mitten in der
+# Ergebniszeile und der eigentliche Befund geht verloren.
+try:
+    sys.stdout.reconfigure(errors="replace")
+    sys.stderr.reconfigure(errors="replace")
+except AttributeError:  # pragma: no cover - nur sehr alte Python-Versionen
+    pass
+
 ROOT = Path(__file__).resolve().parent.parent
 FRONTEND = ROOT / "frontend"
 BLOCKED_MARKERS = ("Anwendungssteuerungsrichtlinie", "application control policy", "Cannot find native binding")
