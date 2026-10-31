@@ -3,6 +3,21 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.20.0 (31.10.2026) — Sortierte Oberfläche, geübte lokale KI
+
+- **Seitenleiste gegliedert:** Drucken, Material & Kosten, Betrieb und Verwaltung; die eigene Reihenfolge gilt weiter
+  innerhalb der Gruppe, externe Links und künftige Einträge stehen sichtbar unter „Mehr“. Tastenkürzel 1–9 folgen der
+  angezeigten Reihenfolge.
+- **Systemzustand im Menü:** Die bisher nur über die direkte Adresse erreichbare Seite `/system` ist jetzt verlinkt
+  (`settings:read`). Die ungenutzte Seite `UsersPage.tsx` ist entfernt.
+- **Lokale Überwachung praxistauglicher:** Das Bildmodell bleibt bei Ollama 30 Minuten im Speicher (`keep_alive`), statt
+  bei jeder Runde neu zu laden. Pro Prüfung werden 1–3 Bilder aufgenommen (Standard 2) und nach Mehrheit entschieden;
+  ein einzelner Ausreißer löst nichts aus. Die Mindest-Sicherheit lässt sich je Fehlerbild festlegen.
+- **Treffer führen zur Hilfe:** Jede Trefferzeile hat „Fehlerbild öffnen“ und springt zur passenden Karte mit Erklärung,
+  Slicer-Hinweisen und Gegenmaßnahmen.
+- **Systemprüfung** meldet zusätzlich die laufende Überwachung: aus, noch nicht gelaufen, letzter Fehler oder „läuft,
+  zuletzt …“.
+
 ## v1.19.0 (30.10.2026) — Aufgeräumt: stille Fehler, große Dateien, feste Builds
 
 - **Keine stillen Ausnahmen mehr:** Alle 43 `except Exception: pass` in Routen, Planer, virtuellem Drucker und
