@@ -1,5 +1,11 @@
 export default {
   nav: {
+    groupPrint: '인쇄',
+    groupMaterial: '재료 및 비용',
+    groupOperations: '운영',
+    groupAdmin: '관리',
+    groupMore: '더 보기',
+    systemStatus: '시스템 상태',
     printers: '프린터',
     archives: '아카이브',
     queue: '대기열',

@@ -1,6 +1,12 @@
 export default {
   // Navigation
   nav: {
+    groupPrint: 'Utskrift',
+    groupMaterial: 'Material och kostnader',
+    groupOperations: 'Drift',
+    groupAdmin: 'Förvaltning',
+    groupMore: 'Mer',
+    systemStatus: 'Systemstatus',
     printers: 'Skrivare',
     archives: 'Arkiv',
     queue: 'Utskriftskö',

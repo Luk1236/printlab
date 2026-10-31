@@ -1,6 +1,12 @@
 export default {
   // Navigation
   nav: {
+    groupPrint: 'Stampa',
+    groupMaterial: 'Materiale e costi',
+    groupOperations: 'Esercizio',
+    groupAdmin: 'Amministrazione',
+    groupMore: 'Altro',
+    systemStatus: 'Stato del sistema',
     printers: 'Stampanti',
     archives: 'Archivi',
     queue: 'Coda di stampa',

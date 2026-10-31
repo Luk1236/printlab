@@ -1,5 +1,11 @@
 export default {
   nav: {
+    groupPrint: 'Печать',
+    groupMaterial: 'Материал и расходы',
+    groupOperations: 'Эксплуатация',
+    groupAdmin: 'Администрирование',
+    groupMore: 'Ещё',
+    systemStatus: 'Состояние системы',
     printers: "Принтеры",
     archives: "Архив",
     queue: "Очередь печати",

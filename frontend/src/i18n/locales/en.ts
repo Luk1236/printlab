@@ -1,6 +1,12 @@
 export default {
   // Navigation
   nav: {
+    groupPrint: 'Printing',
+    groupMaterial: 'Material & costs',
+    groupOperations: 'Operations',
+    groupAdmin: 'Administration',
+    groupMore: 'More',
+    systemStatus: 'System status',
     printers: 'Printers',
     archives: 'Archives',
     queue: 'Print Queue',

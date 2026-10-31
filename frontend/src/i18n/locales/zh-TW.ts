@@ -1,6 +1,12 @@
 export default {
   // Navigation
   nav: {
+    groupPrint: '列印',
+    groupMaterial: '材料與成本',
+    groupOperations: '運行',
+    groupAdmin: '管理',
+    groupMore: '更多',
+    systemStatus: '系統狀態',
     printers: '印表機',
     archives: '歸檔',
     queue: '列印佇列',

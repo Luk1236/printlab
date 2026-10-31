@@ -1,6 +1,12 @@
 export default {
   // Navigation
   nav: {
+    groupPrint: 'Друк',
+    groupMaterial: 'Матеріал і витрати',
+    groupOperations: 'Експлуатація',
+    groupAdmin: 'Адміністрування',
+    groupMore: 'Ще',
+    systemStatus: 'Стан системи',
     printers: "Принтери",
     archives: "Архіви",
     queue: "Черга друку",

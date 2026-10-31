@@ -1,6 +1,12 @@
 export default {
   // Navigation
   nav: {
+    groupPrint: '印刷',
+    groupMaterial: '材料とコスト',
+    groupOperations: '運用',
+    groupAdmin: '管理',
+    groupMore: 'その他',
+    systemStatus: 'システム状態',
     printers: 'プリンター',
     archives: 'アーカイブ',
     queue: '印刷キュー',

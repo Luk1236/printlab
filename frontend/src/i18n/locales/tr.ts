@@ -1,6 +1,12 @@
 export default {
   // Navigasyon
   nav: {
+    groupPrint: 'Yazdırma',
+    groupMaterial: 'Malzeme ve maliyet',
+    groupOperations: 'İşletim',
+    groupAdmin: 'Yönetim',
+    groupMore: 'Daha fazla',
+    systemStatus: 'Sistem durumu',
     printers: 'Yazıcılar',
     archives: 'Arşivler',
     queue: 'Baskı Kuyruğu',
