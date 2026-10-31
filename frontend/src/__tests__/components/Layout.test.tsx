@@ -182,7 +182,7 @@ describe('Layout', () => {
       expect(document.querySelector('aside a[href="/finance"]')).toBeNull();
     });
 
-    it('appears between Statistics and Settings once billing is on', async () => {
+    it('appears in the Material group once billing is on', async () => {
       server.use(
         http.get('/api/v1/settings/ui-flags', () =>
           HttpResponse.json({
@@ -202,8 +202,8 @@ describe('Layout', () => {
 
       const sidebar = document.querySelector('aside');
       const hrefs = Array.from(sidebar?.querySelectorAll('a[href]') ?? []).map((a) => a.getAttribute('href'));
-      expect(hrefs.indexOf('/finance')).toBeGreaterThan(hrefs.indexOf('/stats'));
-      expect(hrefs.indexOf('/finance')).toBeLessThan(hrefs.indexOf('/settings'));
+      expect(hrefs.indexOf('/finance')).toBeGreaterThan(hrefs.indexOf('/inventory'));
+      expect(hrefs.indexOf('/finance')).toBeLessThan(hrefs.indexOf('/maintenance'));
     });
   });
 
