@@ -265,6 +265,25 @@ class TestProbes:
         )
         assert ready.status == selftest.OK
 
+    @pytest.mark.asyncio
+    async def test_ai_watch_states(self, db_session, monkeypatch):
+        from backend.app.services import local_ai_watch
+
+        monkeypatch.setattr(local_ai_watch, "load_config", lambda: {"enabled": False})
+        off = await selftest.check_ai_watch(deps(db_session))
+        assert off.status == selftest.SKIP
+        monkeypatch.setattr(local_ai_watch, "load_config", lambda: {"enabled": True})
+        never = await selftest.check_ai_watch(deps(db_session))
+        assert never.status == selftest.WARN
+        monkeypatch.setattr(
+            local_ai_watch, "status", lambda: {"state": {"last_run": "2026-10-31T10:00:00+00:00", "last_error": None}}
+        )
+        running = await selftest.check_ai_watch(deps(db_session))
+        assert running.status == selftest.OK and "2026-10-31 10:00" in running.detail["de"]
+        monkeypatch.setattr(local_ai_watch, "status", lambda: {"state": {"last_run": None, "last_error": "Kamera weg"}})
+        broken = await selftest.check_ai_watch(deps(db_session))
+        assert broken.status == selftest.WARN and "Kamera weg" in broken.detail["de"]
+
 
 class TestRun:
     @pytest.mark.asyncio
@@ -285,6 +304,7 @@ class TestRun:
             "update_guard",
             "assistant",
             "ai_scan",
+            "ai_watch",
             "probe_notification",
             "probe_assistant",
         ]
@@ -305,7 +325,7 @@ class TestRun:
         out = await selftest.run(deps(db_session, scheduler_running=boom), "en")
         scheduler = next(r for r in out["results"] if r["id"] == "scheduler")
         assert scheduler["status"] == "fail" and "Planer kaputt" in scheduler["detail"]
-        assert len(out["results"]) == 14 and out["summary"]["fail"] >= 1
+        assert len(out["results"]) == 15 and out["summary"]["fail"] >= 1
 
     @pytest.mark.asyncio
     async def test_a_failing_health_snapshot_does_not_break_the_run(self, db_session):
@@ -409,7 +429,7 @@ class TestApi:
         german = (await async_client.post("/api/v1/selftest")).json()
         english = (await async_client.post("/api/v1/selftest", headers={"Accept-Language": "en"})).json()
         assert german["results"][0]["title"] == "Datenbank" and english["results"][0]["title"] == "Database"
-        assert len(german["results"]) == 14 and set(german["summary"]) == {"ok", "warn", "fail", "skip"}
+        assert len(german["results"]) == 15 and set(german["summary"]) == {"ok", "warn", "fail", "skip"}
 
     @pytest.mark.asyncio
     async def test_a_second_run_at_the_same_time_gets_429(self, async_client: AsyncClient):

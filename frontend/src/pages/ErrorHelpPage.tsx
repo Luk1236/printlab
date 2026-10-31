@@ -206,11 +206,13 @@ function FindingRow({
   title,
   canRate,
   onFeedback,
+  onOpenPattern,
 }: {
   finding: AiScanFinding;
   title: string;
   canRate: boolean;
   onFeedback: (verdict: 'correct' | 'wrong') => void;
+  onOpenPattern?: () => void;
 }) {
   const { t, i18n } = useTranslation();
   return (
@@ -219,6 +221,16 @@ function FindingRow({
       <span className="text-white shrink-0">{title}</span>
       <span className="text-bambu-gray shrink-0">{Math.round(finding.confidence * 100)} %</span>
       <span className="text-bambu-gray-light min-w-0 flex-1">{finding.reason}</span>
+      {onOpenPattern && (
+        <button
+          type="button"
+          onClick={onOpenPattern}
+          className="shrink-0 inline-flex items-center gap-1 text-bambu-green hover:underline"
+        >
+          <BookOpen className="w-3.5 h-3.5" aria-hidden="true" />
+          {t('errorHelp.aiOpenPattern')}
+        </button>
+      )}
       {finding.id && (
         <span className="flex items-center gap-1 shrink-0">
           <button
@@ -441,6 +453,14 @@ export function ErrorHelpPage() {
     }
     return map;
   }, [aiScan.data?.findings]);
+
+  const openPattern = (patternId: string) => {
+    setExpanded(patternId);
+    setHistoryPattern(null);
+    requestAnimationFrame(() =>
+      document.querySelector(`[data-testid="pattern-${patternId}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    );
+  };
 
   const patchPrinter = (printer: CountermeasurePrinter, change: { enabled?: boolean; rule?: string; value?: boolean }) => {
     if (!config) return;
@@ -1050,6 +1070,7 @@ export function ErrorHelpPage() {
                           title={hit ? (german ? hit.title : hit.title_en) : finding.pattern_id}
                           canRate={canControl}
                           onFeedback={(verdict) => aiFeedback.mutate({ id: finding.id, verdict })}
+                          onOpenPattern={() => openPattern(finding.pattern_id)}
                         />
                       );
                     })}
@@ -1113,6 +1134,24 @@ export function ErrorHelpPage() {
                         />
                       </label>
                       <label className="text-xs text-bambu-gray-light flex flex-col gap-1">
+                        {t('errorHelp.aiWatchFrames')}
+                        <input
+                          key={`watch-frames-${aiWatch.data.config.frames}`}
+                          type="number"
+                          min={1}
+                          max={3}
+                          defaultValue={aiWatch.data.config.frames}
+                          disabled={!canConfigure}
+                          onBlur={(event) => {
+                            const value = Number(event.target.value);
+                            if (Number.isFinite(value) && value >= 1 && value <= 3) {
+                              watchSave.mutate({ frames: value });
+                            }
+                          }}
+                          className="w-16 rounded-lg bg-bambu-dark border border-bambu-dark-tertiary px-2 py-1 text-sm text-white"
+                        />
+                      </label>
+                      <label className="text-xs text-bambu-gray-light flex flex-col gap-1">
                         {t('errorHelp.aiWatchCooldown')}
                         <input
                           key={`watch-cooldown-${aiWatch.data.config.cooldown_minutes}`}
@@ -1145,6 +1184,41 @@ export function ErrorHelpPage() {
                         </select>
                       </label>
                     </div>
+                    <details className="rounded-lg border border-bambu-dark-tertiary/60 px-3 py-2">
+                      <summary className="cursor-pointer text-xs text-bambu-gray-light">{t('errorHelp.aiWatchThresholds')}</summary>
+                      <p className="text-[10px] text-bambu-gray mt-1">{t('errorHelp.aiWatchThresholdHint')}</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                        {(data?.patterns ?? []).map((pattern) => (
+                          <label key={pattern.id} className="text-[11px] text-bambu-gray-light flex items-center justify-between gap-2">
+                            <span className="truncate" title={german ? pattern.title : pattern.title_en}>
+                              {german ? pattern.title : pattern.title_en}
+                            </span>
+                            <input
+                              key={`watch-threshold-${pattern.id}-${aiWatch.data.config.thresholds[pattern.id] ?? ''}`}
+                              type="number"
+                              min={0}
+                              max={100}
+                              defaultValue={aiWatch.data.config.thresholds[pattern.id] ?? ''}
+                              placeholder={String(aiWatch.data.config.min_confidence)}
+                              disabled={!canConfigure}
+                              onBlur={(event) => {
+                                const next = { ...aiWatch.data.config.thresholds };
+                                const raw = event.target.value.trim();
+                                if (raw === '') {
+                                  delete next[pattern.id];
+                                } else {
+                                  const value = Number(raw);
+                                  if (!Number.isFinite(value) || value < 0 || value > 100) return;
+                                  next[pattern.id] = value;
+                                }
+                                watchSave.mutate({ thresholds: next });
+                              }}
+                              className="w-16 shrink-0 rounded-lg bg-bambu-dark border border-bambu-dark-tertiary px-2 py-1 text-sm text-white placeholder:text-bambu-gray/50"
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    </details>
                     <div className="flex flex-wrap items-center gap-3">
                       <Button
                         size="sm"
@@ -1238,6 +1312,7 @@ export function ErrorHelpPage() {
                     })()}
                     canRate={canControl}
                     onFeedback={(verdict) => aiFeedback.mutate({ id: finding.id, verdict })}
+                    onOpenPattern={() => openPattern(finding.pattern_id)}
                   />
                 ))}
               </ul>

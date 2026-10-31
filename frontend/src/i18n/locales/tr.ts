@@ -8428,6 +8428,10 @@ export default {
     noWriteAccess: 'Tahmin ayarlarını değiştirme izniniz yok.',
   },
   errorHelp: {
+    aiOpenPattern: 'Hatayı aç',
+    aiWatchFrames: 'Denetim başına görüntü',
+    aiWatchThresholds: 'Hata başına eşik',
+    aiWatchThresholdHint: 'Boş = genel en düşük güven. Birden çok görüntü çoğunlukla kararlaştırılır.',
     aiWatchTitle: 'Sürekli izleme (yerel)',
     aiWatchHint: 'Baskı sırasında kamera görüntüleri alır ve yerel görüntü modeliyle inceler. Ancak art arda birkaç tespit tetikler; sonra mesaj ve isteğe bağlı duraklatma. Varsayılan olarak kapalı ve Obico\'dan çok daha yavaş.',
     aiWatchEnable: 'İzlemeyi aç',

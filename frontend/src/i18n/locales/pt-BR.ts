@@ -8488,6 +8488,10 @@ export default {
     noWriteAccess: 'Você não tem permissão para modificar as configurações de previsão.',
   },
   errorHelp: {
+    aiOpenPattern: 'Abrir defeito',
+    aiWatchFrames: 'Imagens por verificação',
+    aiWatchThresholds: 'Limiares por defeito',
+    aiWatchThresholdHint: 'Vazio = confiança mínima geral. Várias imagens são decididas por maioria.',
     aiWatchTitle: 'Monitoramento contínuo (local)',
     aiWatchHint: 'Captura imagens da câmera durante a impressão e analisa com o modelo local. Só vários acertos seguidos disparam; depois aviso e, opcionalmente, pausa. Desativado por padrão e bem mais lento que o Obico.',
     aiWatchEnable: 'Ativar monitoramento',

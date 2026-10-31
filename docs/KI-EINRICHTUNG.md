@@ -101,8 +101,14 @@ unter „Laufende Überwachung (lokal)“:
 | Überwachung einschalten | Standard aus |
 | Abstand | Minuten zwischen zwei Bildern (mindestens 2) |
 | Treffer in Folge | Wie oft dasselbe Fehlerbild bestätigt werden muss (Standard 2) |
+| Bilder je Prüfung | Aufnahmen pro Runde (1–3, Standard 2); entschieden wird nach Mehrheit |
 | Pause zwischen Meldungen | Ruhezeit nach einer Meldung (Standard 30 Minuten) |
 | Aktion | „Nur melden“ oder „Pausieren und melden“ |
+| Schwellen je Fehlerbild | Eigene Mindest-Sicherheit je Fehlerbild; leer = allgemeiner Wert |
+
+Damit das Modell nicht bei jeder Runde neu geladen wird, hält PrintLab es bei Ollama
+30 Minuten im Speicher (`keep_alive`). Der erste Aufruf nach einem Neustart dauert
+trotzdem länger.
 
 Ablauf bei einem Treffer: Bild wird in der Fehlerbild-Sammlung abgelegt, ein Treffer für
 die Fehlerhilfe festgehalten (zählt in „N× erkannt“), eine Meldung über die Kanäle

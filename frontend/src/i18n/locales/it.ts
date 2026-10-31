@@ -8488,6 +8488,10 @@ export default {
     noWriteAccess: 'Non hai il permesso di modificare le impostazioni di previsione.',
   },
   errorHelp: {
+    aiOpenPattern: 'Apri difetto',
+    aiWatchFrames: 'Immagini per controllo',
+    aiWatchThresholds: 'Soglie per difetto',
+    aiWatchThresholdHint: 'Vuoto = affidabilità minima generale. Più immagini vengono decise a maggioranza.',
     aiWatchTitle: 'Controllo continuo (locale)',
     aiWatchHint: 'Cattura immagini durante la stampa e le analizza con il modello locale. Servono più rilevamenti consecutivi; poi messaggio e, se vuoi, pausa. Disattivato per impostazione predefinita e molto più lento di Obico.',
     aiWatchEnable: 'Attiva controllo',

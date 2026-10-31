@@ -8552,6 +8552,10 @@ errors: {
     noWriteAccess: 'Du har inte behörighet att modifiera prognosinställningar.',
   },
   errorHelp: {
+    aiOpenPattern: 'Öppna fel',
+    aiWatchFrames: 'Bilder per kontroll',
+    aiWatchThresholds: 'Trösklar per fel',
+    aiWatchThresholdHint: 'Tom = global lägsta säkerhet. Flera bilder avgörs med majoritet.',
     aiWatchTitle: 'Löpande övervakning (lokal)',
     aiWatchHint: 'Tar kamerabilder under utskriften och låter den lokala bildmodellen granska dem. Först flera träffar i rad utlöser; då meddelande och eventuellt paus. Avstängt som standard och mycket långsammare än Obico.',
     aiWatchEnable: 'Aktivera övervakning',

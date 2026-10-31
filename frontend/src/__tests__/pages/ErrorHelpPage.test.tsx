@@ -91,6 +91,9 @@ function mockApi() {
           action: 'notify',
           cooldown_minutes: 30,
           printers: [],
+          frames: 2,
+          frame_gap_seconds: 2,
+          thresholds: {},
         },
         state: { started: null, last_run: null, last_error: null },
         printers: [],
@@ -107,8 +110,8 @@ describe('ErrorHelpPage', () => {
     render(<ErrorHelpPage />);
 
     expect(await screen.findByText('Troubleshooting')).toBeInTheDocument();
-    expect(await screen.findByText('Heat creep')).toBeInTheDocument();
-    expect(screen.getByText('Warping')).toBeInTheDocument();
+    expect(await screen.findByTestId('pattern-heat_creep')).toBeInTheDocument();
+    expect(screen.getByTestId('pattern-warping')).toBeInTheDocument();
     // Jedes Fehlerbild bringt seine schematische Zeichnung mit (Miniatur,
     // beim aufgeklappten Eintrag zusätzlich groß).
     expect(screen.getAllByTestId('error-illustration-heat_creep').length).toBeGreaterThan(0);
@@ -116,8 +119,8 @@ describe('ErrorHelpPage', () => {
 
     await user.type(screen.getByRole('searchbox'), 'warp');
 
-    await waitFor(() => expect(screen.queryByText('Heat creep')).not.toBeInTheDocument());
-    expect(screen.getByText('Warping')).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByTestId('pattern-heat_creep')).not.toBeInTheDocument());
+    expect(screen.getByTestId('pattern-warping')).toBeInTheDocument();
   });
 
   it('filters by category chip', async () => {
@@ -127,8 +130,8 @@ describe('ErrorHelpPage', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Thermal' }));
 
-    await waitFor(() => expect(screen.queryByText('Heat creep')).not.toBeInTheDocument());
-    expect(screen.getByText('Warping')).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByTestId('pattern-heat_creep')).not.toBeInTheDocument());
+    expect(screen.getByTestId('pattern-warping')).toBeInTheDocument();
   });
 
   it('shows the automation switches and the safety limits', async () => {

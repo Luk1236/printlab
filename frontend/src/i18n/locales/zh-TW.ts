@@ -8486,6 +8486,10 @@ export default {
     noWriteAccess: '您沒有修改預測設定的權限。',
   },
   errorHelp: {
+    aiOpenPattern: '開啟缺陷',
+    aiWatchFrames: '每次檢查圖片數',
+    aiWatchThresholds: '依缺陷設定閾值',
+    aiWatchThresholdHint: '留空 = 全域最低信賴度。多張圖片以多數決定。',
     aiWatchTitle: '持續監控（本機）',
     aiWatchHint: '列印過程中擷取攝影機畫面並用本機影像模型檢查。只有連續多次辨識到同一缺陷才觸發，然後送出訊息並可選暫停。預設關閉，比 Obico 慢得多。',
     aiWatchEnable: '啟用監控',

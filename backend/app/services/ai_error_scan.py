@@ -127,6 +127,10 @@ async def _ollama_vision(base_url: str, model: str, image_b64: str, timeout: flo
         "messages": [{"role": "user", "content": _prompt(), "images": [image_b64]}],
         "stream": False,
         "think": False,
+        # Modell nach der Prüfung im Speicher halten: der erste Aufruf lädt es
+        # sonst bei jeder Runde erneut (Minuten), und die laufende Überwachung
+        # prüft regelmäßig.
+        "keep_alive": "30m",
         "options": {"temperature": 0, "num_predict": 220},
     }
     async with httpx.AsyncClient(timeout=timeout) as client:

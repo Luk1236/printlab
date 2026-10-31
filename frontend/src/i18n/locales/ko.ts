@@ -8122,6 +8122,10 @@ export default {
     }
   },
   errorHelp: {
+    aiOpenPattern: '불량 열기',
+    aiWatchFrames: '검사당 이미지 수',
+    aiWatchThresholds: '불량별 임계값',
+    aiWatchThresholdHint: '비우면 전체 최소 신뢰도. 여러 이미지는 다수결로 판단합니다.',
     aiWatchTitle: '상시 감시 (로컬)',
     aiWatchHint: '인쇄 중 카메라 이미지를 가져와 로컬 이미지 모델로 확인합니다. 같은 불량이 연속으로 여러 번 감지되어야 작동하며, 알림과 선택적 일시정지를 합니다. 기본값은 꺼짐이며 Obico보다 훨씬 느립니다.',
     aiWatchEnable: '감시 사용',

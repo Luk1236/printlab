@@ -8554,6 +8554,10 @@ export default {
     noWriteAccess: 'Je hebt geen machtiging om prognose-instellingen te wijzigen.',
   },
   errorHelp: {
+    aiOpenPattern: 'Fout openen',
+    aiWatchFrames: 'Beelden per controle',
+    aiWatchThresholds: 'Drempels per fout',
+    aiWatchThresholdHint: 'Leeg = algemene minimale zekerheid. Meerdere beelden worden bij meerderheid beslist.',
     aiWatchTitle: 'Doorlopende controle (lokaal)',
     aiWatchHint: 'Maakt tijdens het printen camerabeelden en laat het lokale beeldmodel ernaar kijken. Pas meerdere treffers achter elkaar grijpen in; dan bericht en eventueel pauze. Standaard uit en veel langzamer dan Obico.',
     aiWatchEnable: 'Controle inschakelen',

@@ -8503,6 +8503,10 @@ export default {
     noWriteAccess: 'Sie haben keine Berechtigung, Prognoseeinstellungen zu ändern.',
   },
   errorHelp: {
+    aiOpenPattern: 'Fehlerbild öffnen',
+    aiWatchFrames: 'Bilder je Prüfung',
+    aiWatchThresholds: 'Schwellen je Fehlerbild',
+    aiWatchThresholdHint: 'Leer = allgemeine Mindest-Sicherheit. Mehrere Bilder werden per Mehrheit entschieden.',
     aiWatchTitle: 'Laufende Überwachung (lokal)',
     aiWatchHint: 'Holt während des Drucks selbst Kamerabilder und prüft sie mit dem lokalen Bildmodell. Erst mehrere Treffer hintereinander lösen aus; dann Meldung und optional Pause. Standardmäßig aus und deutlich langsamer als Obico.',
     aiWatchEnable: 'Überwachung einschalten',

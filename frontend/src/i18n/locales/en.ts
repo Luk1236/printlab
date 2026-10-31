@@ -8554,6 +8554,10 @@ export default {
     noWriteAccess: 'You do not have permission to modify forecast settings.',
   },
   errorHelp: {
+    aiOpenPattern: 'Open defect',
+    aiWatchFrames: 'Frames per check',
+    aiWatchThresholds: 'Thresholds per defect',
+    aiWatchThresholdHint: 'Empty = global minimum confidence. Multiple frames are decided by majority.',
     aiWatchTitle: 'Continuous watch (local)',
     aiWatchHint: 'Captures camera images during the print and checks them with the local vision model. Only several hits in a row trigger; then a message and optionally a pause. Off by default and much slower than Obico.',
     aiWatchEnable: 'Enable watch',

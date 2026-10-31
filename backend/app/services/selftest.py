@@ -65,6 +65,7 @@ TITLES = {
     "probe_notification": L("Probemeldung „Termin in Gefahr“", "Test message “due date at risk”"),
     "assistant": L("KI-Assistent", "AI assistant"),
     "ai_scan": L("KI-Fehlererkennung", "AI error detection"),
+    "ai_watch": L("Laufende KI-Überwachung", "Continuous AI watch"),
     "probe_assistant": L("Probefrage an das Modell", "Test question to the model"),
     "backup": L("Sicherungen", "Backups"),
     "device": L("Zustand des Geräts", "Device health"),
@@ -350,6 +351,42 @@ async def check_ai_scan(d: Deps) -> Result:
     )
 
 
+async def check_ai_watch(d: Deps) -> Result:
+    """Läuft die laufende Bildprüfung, wenn sie eingeschaltet ist?"""
+    from backend.app.services import local_ai_watch
+
+    config = local_ai_watch.load_config()
+    if not config.get("enabled"):
+        return Result(
+            "ai_watch",
+            SKIP,
+            L("Die laufende Überwachung ist ausgeschaltet.", "Continuous watch is turned off."),
+        )
+    state = local_ai_watch.status()["state"]
+    if state.get("last_error"):
+        return Result(
+            "ai_watch",
+            WARN,
+            L(f"Die letzte Runde meldete: {state['last_error']}", f"The last round reported: {state['last_error']}"),
+            L("Bildmodell und Kamera prüfen; Einzelheiten in der Fehlerhilfe.", "Check the vision model and camera; details in the troubleshooting page."),
+        )  # fmt: skip
+    if not state.get("last_run"):
+        return Result(
+            "ai_watch",
+            WARN,
+            L("Die Überwachung ist eingeschaltet, lief aber noch nicht.", "The watch is enabled but has not run yet."),
+            L("Nach dem Start einige Minuten warten oder „Jetzt prüfen“ drücken.", "Wait a few minutes after startup or press “Check now”."),
+        )  # fmt: skip
+    return Result(
+        "ai_watch",
+        OK,
+        L(
+            f"Läuft, zuletzt {state['last_run'][:16].replace('T', ' ')}.",
+            f"Running, last {state['last_run'][:16].replace('T', ' ')}.",
+        ),
+    )
+
+
 async def check_assistant(d: Deps) -> Result:
     config = d.assistant_config
     if not config.get("enabled"):
@@ -531,6 +568,7 @@ async def run(d: Deps, lang: str = "de") -> dict[str, Any]:
     await add("update_guard", lambda: check_guard(d))
     assistant = await add("assistant", lambda: check_assistant(d))
     await add("ai_scan", lambda: check_ai_scan(d))
+    await add("ai_watch", lambda: check_ai_watch(d))
     await add("probe_notification", lambda: probe_notification(d))
     await add("probe_assistant", lambda: probe_assistant(d, assistant))
 

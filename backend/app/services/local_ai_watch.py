@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from backend.app.core.config import settings
-from backend.app.services import ai_error_scan, assistant_config
+from backend.app.services import ai_error_scan, assistant_config, error_patterns
 from backend.app.utils import failure_images
 
 logger = logging.getLogger(__name__)
@@ -35,6 +35,9 @@ DEFAULTS: dict[str, Any] = {
     "action": "notify",  # notify | pause
     "cooldown_minutes": 30,
     "printers": [],  # leer = alle aktiven Drucker
+    "frames": 2,  # Bilder je Prüfung (Mehrheitsentscheid)
+    "frame_gap_seconds": 2,
+    "thresholds": {},  # Sicherheit je Fehlerbild, überschreibt min_confidence
 }
 ACTIONS = ("notify", "pause")
 MIN_INTERVAL = 120
@@ -61,6 +64,11 @@ def load_config() -> dict[str, Any]:
             data = {}
         config = _merge(DEFAULTS, data if isinstance(data, dict) else {})
         config["printers"] = [int(p) for p in config.get("printers") or []]
+        config["thresholds"] = {
+            str(key): int(value)
+            for key, value in (config.get("thresholds") or {}).items()
+            if isinstance(value, int) and not isinstance(value, bool)
+        }
         return config
 
 
@@ -78,6 +86,16 @@ def save_config(update: dict[str, Any]) -> dict[str, Any]:
                 config[key] = value
             elif key == "printers":
                 config[key] = sorted({int(p) for p in value or []})
+            elif key == "thresholds":
+                allowed = {pattern["id"] for pattern in error_patterns.PATTERNS}
+                cleaned: dict[str, int] = {}
+                for pattern_id, threshold in (value or {}).items():
+                    if pattern_id not in allowed:
+                        continue
+                    value_int = int(threshold)
+                    if 0 <= value_int <= 100:
+                        cleaned[str(pattern_id)] = value_int
+                config[key] = cleaned
             else:
                 value = int(value)
                 config[key] = value
@@ -85,6 +103,8 @@ def save_config(update: dict[str, Any]) -> dict[str, Any]:
         config["min_confidence"] = max(0, min(100, int(config["min_confidence"])))
         config["min_consecutive"] = max(1, min(10, int(config["min_consecutive"])))
         config["cooldown_minutes"] = max(0, min(1440, int(config["cooldown_minutes"])))
+        config["frames"] = max(1, min(3, int(config["frames"])))
+        config["frame_gap_seconds"] = max(1, min(15, int(config["frame_gap_seconds"])))
         CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
         tmp = CONFIG_PATH.with_name(CONFIG_PATH.name + ".tmp")
         tmp.write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -188,40 +208,75 @@ async def check_once(only_printer: int | None = None) -> list[dict[str, Any]]:
             try:
                 from backend.app.services.obico_detection import capture_frame_for_printer
 
-                frame = await capture_frame_for_printer(printer_id)
+                frames: list[bytes] = []
+                for index in range(int(config["frames"])):
+                    frame = await capture_frame_for_printer(printer_id)
+                    if frame:
+                        frames.append(frame)
+                    if index + 1 < int(config["frames"]):
+                        await asyncio.sleep(int(config["frame_gap_seconds"]))
             except Exception as exc:  # noqa: BLE001
                 state["last_error"] = str(exc)[:200]
                 results.append({"printer_id": printer_id, "error": state["last_error"]})
                 continue
-            if not frame:
+            if not frames:
                 state["last_error"] = "Kein Kamerabild erhalten."
                 results.append({"printer_id": printer_id, "error": state["last_error"]})
                 continue
             state["last_checked"] = now.isoformat()
             state["last_error"] = None
-            try:
-                result = await ai_error_scan.classify(frame, assistant_cfg)
-            except Exception as exc:  # noqa: BLE001 - ein Fehlschlag beendet die Runde nicht
-                state["last_error"] = str(exc)[:200]
+            attempts: list[tuple[bytes, dict[str, Any]]] = []
+            last_exc: Exception | None = None
+            for frame in frames:
+                try:
+                    attempts.append((frame, await ai_error_scan.classify(frame, assistant_cfg)))
+                except Exception as exc:  # noqa: BLE001 - ein Bild darf die Runde nicht beenden
+                    last_exc = exc
+            if not attempts:
+                state["last_error"] = str(last_exc or "Die Bildanalyse ist fehlgeschlagen.")[:200]
                 results.append({"printer_id": printer_id, "error": state["last_error"]})
                 continue
 
-            pattern_id = result.get("pattern_id")
-            confidence = float(result.get("confidence", 0))
+            # Nur Treffer über der Schwelle des jeweiligen Fehlerbilds zählen;
+            # danach entscheidet die Mehrheit der aufgenommenen Bilder.
+            qualified = [
+                (frame, result)
+                for frame, result in attempts
+                if result.get("pattern_id")
+                and float(result.get("confidence", 0)) * 100
+                >= int(config["thresholds"].get(result["pattern_id"], config["min_confidence"]))
+            ]
+            chosen: tuple[bytes, dict[str, Any]] | None = None
+            if qualified:
+                from collections import Counter
+
+                counts = Counter(result["pattern_id"] for _frame, result in qualified)
+                top_pattern, top_count = counts.most_common(1)[0]
+                if top_count * 2 > len(attempts):
+                    chosen = max(
+                        (pair for pair in qualified if pair[1]["pattern_id"] == top_pattern),
+                        key=lambda pair: float(pair[1].get("confidence", 0)),
+                    )
+            display = chosen or max(attempts, key=lambda pair: float(pair[1].get("confidence", 0)))
+            display_result = display[1]
+            pattern_id = display_result.get("pattern_id")
+            confidence = float(display_result.get("confidence", 0))
             state["last_confidence"] = confidence
             state["last_pattern"] = pattern_id
             entry = {
                 "printer_id": printer_id,
                 "pattern_id": pattern_id,
                 "confidence": confidence,
-                "reason": result.get("reason", ""),
+                "reason": display_result.get("reason", ""),
                 "action": None,
+                "confirmed": chosen is not None,
             }
-            if not pattern_id or confidence * 100 < config["min_confidence"]:
+            if chosen is None:
                 state["pattern"] = None
                 state["count"] = 0
                 results.append(entry)
                 continue
+            frame, result = chosen
             state["count"] = state["count"] + 1 if state.get("pattern") == pattern_id else 1
             state["pattern"] = pattern_id
 

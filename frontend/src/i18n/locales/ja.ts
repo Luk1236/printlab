@@ -8502,6 +8502,10 @@ export default {
     noWriteAccess: '予測設定を変更する権限がありません。',
   },
   errorHelp: {
+    aiOpenPattern: '不良を開く',
+    aiWatchFrames: '1回の確認あたりの画像数',
+    aiWatchThresholds: '不良ごとのしきい値',
+    aiWatchThresholdHint: '空欄 = 全体の最低信頼度。複数画像は多数決で判定します。',
     aiWatchTitle: '常時監視（ローカル）',
     aiWatchHint: '印刷中にカメラ画像を取得し、ローカルの画像モデルで確認します。同じ不良が連続して検出されたときだけ作動し、通知と任意の一時停止を行います。既定はオフで、Obico よりかなり遅いです。',
     aiWatchEnable: '監視を有効にする',

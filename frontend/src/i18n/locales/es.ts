@@ -8511,6 +8511,10 @@ export default {
     noWriteAccess: 'No tiene permiso para modificar los ajustes de previsión.',
   },
   errorHelp: {
+    aiOpenPattern: 'Abrir defecto',
+    aiWatchFrames: 'Imágenes por comprobación',
+    aiWatchThresholds: 'Umbrales por defecto',
+    aiWatchThresholdHint: 'Vacío = confianza mínima general. Varias imágenes se deciden por mayoría.',
     aiWatchTitle: 'Vigilancia continua (local)',
     aiWatchHint: 'Toma imágenes de la cámara durante la impresión y las analiza con el modelo local. Solo varios aciertos seguidos disparan; luego aviso y, opcionalmente, pausa. Desactivado por defecto y mucho más lento que Obico.',
     aiWatchEnable: 'Activar vigilancia',

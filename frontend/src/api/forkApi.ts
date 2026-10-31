@@ -478,6 +478,9 @@ export interface AiWatchConfig {
   action: 'notify' | 'pause';
   cooldown_minutes: number;
   printers: number[];
+  frames: number;
+  frame_gap_seconds: number;
+  thresholds: Record<string, number>;
 }
 
 export interface AiWatchPrinter {

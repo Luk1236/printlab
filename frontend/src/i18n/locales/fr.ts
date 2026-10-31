@@ -8489,6 +8489,10 @@ export default {
     noWriteAccess: 'Vous n\'avez pas la permission de modifier les paramètres de prévision.',
   },
   errorHelp: {
+    aiOpenPattern: 'Ouvrir le défaut',
+    aiWatchFrames: 'Images par contrôle',
+    aiWatchThresholds: 'Seuils par défaut',
+    aiWatchThresholdHint: 'Vide = confiance minimale globale. Plusieurs images sont départagées à la majorité.',
     aiWatchTitle: 'Surveillance continue (locale)',
     aiWatchHint: 'Prend des images de la caméra pendant l’impression et les analyse avec le modèle local. Il faut plusieurs détections d’affilée ; ensuite message et éventuellement pause. Désactivé par défaut et bien plus lent qu’Obico.',
     aiWatchEnable: 'Activer la surveillance',

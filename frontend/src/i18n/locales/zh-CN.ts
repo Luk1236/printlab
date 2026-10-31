@@ -8486,6 +8486,10 @@ export default {
     noWriteAccess: '您没有修改预测设置的权限。',
   },
   errorHelp: {
+    aiOpenPattern: '打开缺陷',
+    aiWatchFrames: '每次检查图片数',
+    aiWatchThresholds: '按缺陷设置阈值',
+    aiWatchThresholdHint: '留空 = 全局最低置信度。多张图片按多数决定。',
     aiWatchTitle: '持续监控（本地）',
     aiWatchHint: '打印过程中抓取摄像头画面并用本地图像模型检查。只有连续多次识别到同一缺陷才触发，然后发送消息并可选暂停。默认关闭，比 Obico 慢得多。',
     aiWatchEnable: '启用监控',

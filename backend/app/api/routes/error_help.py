@@ -104,6 +104,9 @@ class WatchConfigRequest(BaseModel):
     action: Literal["notify", "pause"] | None = None
     cooldown_minutes: int | None = Field(default=None, ge=0, le=1440)
     printers: list[int] | None = None
+    frames: int | None = Field(default=None, ge=1, le=3)
+    frame_gap_seconds: int | None = Field(default=None, ge=1, le=15)
+    thresholds: dict[str, int] | None = None
 
 
 class WatchCheckRequest(BaseModel):
