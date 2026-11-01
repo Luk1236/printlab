@@ -21,6 +21,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { Link, Unlink, Signal, Clock, MoreVertical, Trash2, RefreshCw, RotateCw, HardDrive, AlertTriangle, Terminal, Zap, Wrench, ChevronDown, EyeOff, Pencil, ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Layers, Video, Loader2, Square, Pause, Play, X, Fan, Wind, AirVent, Download, ScanSearch, CheckCircle, CheckSquare, XCircle, User, Home, Printer as PrinterIcon, Info, Cable, Flame, Hourglass, Snowflake, Gauge, DoorOpen, DoorClosed, Move, LogIn, LogOut, Stethoscope, ScanEye, LineChart as LineChartIcon, ExternalLink, PictureInPicture2, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { ConfirmOutcomeDialog } from '../components/ConfirmOutcomeDialog';
+import { SliceModal, type SliceSource } from '../components/SliceModal';
 import { useNavigate } from 'react-router-dom';
 import { api, firmwareApi } from '../api/client';
 import { formatKValue } from '../utils/kValue';
@@ -79,6 +80,9 @@ import {
   buildCardScaleStyle,
   dryingBlockedKey,
   getStatusDisplay,
+  isProject3mf,
+  isSlicedFileName,
+  needsSlicingMessage,
 } from './printerCardHelpers';
 import {
   AmsNameHoverCard,
@@ -217,6 +221,9 @@ export function PrinterCard({
   const [showDiagnostic, setShowDiagnostic] = useState(false);
   const closePrinterInfo = useCallback(() => setShowPrinterInfo(false), []);
   const [printAfterUpload, setPrintAfterUpload] = useState<{ id: number; filename: string } | null>(null);
+  // Ein 3MF-Projekt (noch nicht geslict) lässt sich nicht drucken. Statt einer
+  // Sackgassen-Meldung wird es hochgeladen und der Slicedialog geöffnet.
+  const [sliceAfterUpload, setSliceAfterUpload] = useState<SliceSource | null>(null);
   // AMS drying popover state: which AMS unit has the popover open
   const [dryingPopoverAmsId, setDryingPopoverAmsId] = useState<number | null>(null);
   const [dryingPopoverModuleType, setDryingPopoverModuleType] = useState<string>('n3f');
@@ -1604,9 +1611,11 @@ export function PrinterCard({
     const file = droppedFiles[0];
     if (!file) return;
 
-    // Only accept sliced/printable files (.gcode, .gcode.3mf, etc.)
-    const lower = file.name.toLowerCase();
-    if (!lower.endsWith('.gcode') && !lower.includes('.gcode.')) {
+    // Sliced files print as they are; a 3MF project is accepted and handed to
+    // the slice dialog instead of being refused with a dead-end toast.
+    const isSliced = isSlicedFileName(file.name);
+    const project3mf = isProject3mf(file.name);
+    if (!isSliced && !project3mf) {
       showToast(t('printers.dropNotPrintable', 'Only .gcode and .gcode.3mf files can be printed'), 'error');
       return;
     }
@@ -1614,6 +1623,12 @@ export function PrinterCard({
     setIsDropUploading(true);
     try {
       const result = await api.uploadLibraryFile(file, null);
+
+      if (project3mf) {
+        setSliceAfterUpload({ kind: 'libraryFile', id: result.id, filename: result.filename });
+        showToast(needsSlicingMessage(t, result.filename), 'warning');
+        return;
+      }
 
       // Check printer compatibility if sliced_for_model is available in metadata
       const slicedFor = (result.metadata as Record<string, unknown>)?.sliced_for_model as string | undefined;
@@ -4829,12 +4844,18 @@ export function PrinterCard({
           autoUpload
           accept=".gcode,.3mf"
           validateFile={(file) => {
-            const lower = file.name.toLowerCase();
-            if (!lower.endsWith('.gcode') && !lower.includes('.gcode.')) {
+            // Ein 3MF-Projekt ist erlaubt: Es wird nach dem Hochladen nicht
+            // gedruckt, sondern zum Slicen geöffnet.
+            if (!isSlicedFileName(file.name) && !isProject3mf(file.name)) {
               return t('printers.dropNotPrintable', 'Only .gcode and .gcode.3mf files can be printed');
             }
           }}
           onFileUploaded={(uploadedFile) => {
+            if (isProject3mf(uploadedFile.filename)) {
+              setSliceAfterUpload({ kind: 'libraryFile', id: uploadedFile.id, filename: uploadedFile.filename });
+              showToast(needsSlicingMessage(t, uploadedFile.filename), 'warning');
+              return;
+            }
             // Check printer compatibility if sliced_for_model is available in metadata
             const slicedFor = (uploadedFile.metadata as Record<string, unknown>)?.sliced_for_model as string | undefined;
             const printerModel = mapModelCode(printer.model);
@@ -4845,6 +4866,11 @@ export function PrinterCard({
             setPrintAfterUpload({ id: uploadedFile.id, filename: uploadedFile.filename });
           }}
         />
+      )}
+
+      {/* Slice a dropped 3MF project (it has no G-code to print yet) */}
+      {sliceAfterUpload && (
+        <SliceModal source={sliceAfterUpload} onClose={() => setSliceAfterUpload(null)} />
       )}
 
       {/* Print Modal (after upload) */}

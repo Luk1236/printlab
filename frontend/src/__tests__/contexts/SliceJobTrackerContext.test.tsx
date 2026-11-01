@@ -262,6 +262,45 @@ describe('SliceJobTrackerProvider — persistent progress toast', () => {
     expect(screen.getByText(/sidecar segfault/)).toBeDefined();
   });
 
+  it('prepends actionable advice when the backend names the cause', async () => {
+    mockApi.getSliceJob.mockResolvedValue({
+      job_id: 5,
+      status: 'failed',
+      kind: 'library_file',
+      source_id: 104,
+      source_name: 'Planter.3mf',
+      created_at: new Date().toISOString(),
+      started_at: new Date().toISOString(),
+      completed_at: new Date().toISOString(),
+      error_status: 502,
+      error_kind: 'sidecar_unreachable',
+      error_detail: 'Slicer sidecar unreachable: All connection attempts failed',
+    });
+
+    render(
+      <Wrapper>
+        <TrackTrigger id={5} name="Planter.3mf" />
+      </Wrapper>,
+    );
+
+    act(() => {
+      screen.getByText('track-5').click();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(1500);
+    });
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    // Handlungsanweisung aus dem Übersetzungsschlüssel plus die technische
+    // Meldung darunter, damit beides kopiert werden kann.
+    expect(screen.getByText(/Settings → Slicer/)).toBeDefined();
+    expect(screen.getByText(/All connection attempts failed/)).toBeDefined();
+  });
+
   // The backend now exposes a `progress` field on each slice-job poll
   // result, fed by the sidecar's --pipe channel. When a useful frame
   // is present the toast must show "{name} — {stage} ({percent}%) —

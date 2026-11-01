@@ -58,4 +58,7 @@ async def get_slice_job(
     elif job.status == "failed":
         body["error_status"] = job.error_status
         body["error_detail"] = job.error_detail
+        # Stable cause for the frontend to translate; error_detail stays the
+        # technical message for logs and bug reports.
+        body["error_kind"] = job.error_kind
     return body

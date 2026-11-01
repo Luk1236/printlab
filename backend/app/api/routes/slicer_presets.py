@@ -559,6 +559,46 @@ def list_printer_models() -> dict[str, str]:
     return dict(PRINTER_MODEL_MAP)
 
 
+@router.get("/status")
+async def get_slicer_status(
+    db: AsyncSession = Depends(get_db),
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.LIBRARY_UPLOAD),
+) -> dict:
+    """Ist das Slicer-Sidecar erreichbar?
+
+    Die Slice-Maske fragt das vor dem Slicen ab: Ist der Dienst nicht da, wäre
+    der Versuch ein Fehlschlag nach dem Warten. Die Antwort nennt die Adresse
+    mit, denn der häufigste Grund ist eine Adresse, die nur auf dem PC stimmt
+    (``localhost`` auf dem Pi zeigt auf den Pi selbst).
+
+    ``reachable`` ist nur bei einer erfolgreichen Antwort des Sidecars wahr;
+    ein Netzwerkfehler oder eine Fehlerseite heißt „nicht erreichbar“ und
+    liefert den technischen Grund als ``error`` mit.
+    """
+    api_url = await _resolve_slicer_api_url(db)
+    if not api_url:
+        return {"configured": False, "reachable": False, "url": None, "version": None, "error": None}
+
+    service = SlicerApiService(api_url)
+    try:
+        payload = await service.health()
+    except (SlicerApiError, ValueError) as exc:
+        # ValueError = Antwort war kein JSON; für die Oberfläche ist beides
+        # dasselbe: Der Dienst antwortet nicht so, wie er soll.
+        return {"configured": True, "reachable": False, "url": api_url, "version": None, "error": str(exc)}
+    finally:
+        await service.close()
+
+    version = None
+    checks = payload.get("checks") if isinstance(payload, dict) else None
+    if isinstance(checks, dict):
+        for entry in checks.values():
+            if isinstance(entry, dict) and entry.get("version"):
+                version = str(entry["version"])
+                break
+    return {"configured": True, "reachable": True, "url": api_url, "version": version, "error": None}
+
+
 @router.get("/preset-values")
 async def get_preset_values(
     source: str = Query(..., description="Preset tier: 'local', 'cloud', 'orca_cloud' or 'standard'."),

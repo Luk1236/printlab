@@ -518,6 +518,9 @@ class TestSliceLibraryFile:
         assert final["status"] == "failed"
         assert final["error_status"] == 502
         assert "unreachable" in (final["error_detail"] or "").lower()
+        # Die Oberfläche übersetzt anhand dieser Ursache; ohne sie bliebe der
+        # englische Techniktext die einzige Erklärung.
+        assert final["error_kind"] == "sidecar_unreachable"
 
     @pytest.mark.asyncio
     @pytest.mark.integration

@@ -215,9 +215,26 @@ export function SliceJobTrackerProvider({ children }: { children: ReactNode }) {
           );
         }
       } else if (state.status === 'failed') {
+        // Der Backend-Text ist englische Technik („Slicer sidecar unreachable:
+        // All connection attempts failed“). Für die bekannten Ursachen kommt
+        // eine Handlungsanweisung davor; die Technik bleibt darunter stehen,
+        // damit sie in eine Fehlermeldung kopiert werden kann.
+        const advice =
+          state.error_kind === 'sidecar_unreachable'
+            ? t(
+                'slice.failedSidecarUnreachable',
+                'Der Slicer war nicht erreichbar. Prüfe unter Einstellungen → Slicer die Adresse und ob das Sidecar läuft.',
+              )
+            : state.error_kind === 'timeout'
+              ? t(
+                  'slice.failedTimeout',
+                  'Der Slicer hat zu lange nicht geantwortet. Unter Einstellungen → Slicer lässt sich das Zeitlimit erhöhen.',
+                )
+              : '';
+        const detail = state.error_detail || t('slice.failed');
         setSliceError({
           name: prettifyFilename(job.sourceName),
-          detail: state.error_detail || t('slice.failed'),
+          detail: advice ? `${advice}\n\n${detail}` : detail,
         });
       }
 

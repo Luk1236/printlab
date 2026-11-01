@@ -2,6 +2,7 @@ import { Cloud, CloudOff, Cog, Loader2, RefreshCw, X } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import {
   api,
   type PresetRef,
@@ -214,6 +215,7 @@ export function SliceModal({ source, onClose, defaultAutoArrange = false }: Slic
   const { t } = useTranslation();
   const { trackJob } = useSliceJobTracker();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const [printerPreset, setPrinterPreset] = useState<PresetRef | null>(null);
   const [processPreset, setProcessPreset] = useState<PresetRef | null>(null);
@@ -479,6 +481,20 @@ export function SliceModal({ source, onClose, defaultAutoArrange = false }: Slic
   // unreachable sidecar as far as the user is concerned.
   const presetValuesReason = presetValuesQuery.data?.reason ?? (presetValuesQuery.isError ? 'sidecar_unavailable' : undefined);
 
+  // Vorabprüfung: Antwortet das Sidecar überhaupt? Die Warnung oben deckt nur
+  // einen der Wege ab, auf denen das schiefgeht — ohne diese Abfrage bietet die
+  // Maske „Slicen“ an und der Auftrag scheitert erst im Hintergrund mit einer
+  // englischen Rohtmeldung. Ein Fehler der Abfrage selbst (ältere Installation)
+  // sperrt nichts: dann bleibt es beim bisherigen Verhalten.
+  const slicerStatusQuery = useQuery({
+    queryKey: ['slicer-status'],
+    queryFn: api.getSlicerStatus,
+    staleTime: 30_000,
+    retry: false,
+  });
+  const slicerStatus = slicerStatusQuery.data;
+  const sidecarDown = slicerStatus != null && (!slicerStatus.configured || !slicerStatus.reachable);
+
   // Slot list for the settings panel's filament pickers (support base and
   // interface, and the Multimaterial page's per-region options). Those store a
   // plain integer, so without this the user has to map slot numbers onto their
@@ -708,6 +724,7 @@ export function SliceModal({ source, onClose, defaultAutoArrange = false }: Slic
   // read has succeeded (filamentReqsQuery.isSuccess) and every filament slot
   // has a picked profile.
   const isReady =
+    !sidecarDown &&
     printerPreset != null &&
     processPreset != null &&
     filamentReqsQuery.isSuccess &&
@@ -1191,6 +1208,33 @@ export function SliceModal({ source, onClose, defaultAutoArrange = false }: Slic
             </div>
           )}
         </div>
+
+        {sidecarDown && (
+          <div
+            className="mx-4 mb-2 rounded border border-red-900/40 bg-red-900/20 p-3 text-sm text-red-700 dark:text-red-400"
+            role="alert"
+          >
+            <p>
+              {slicerStatus?.configured
+                ? t(
+                    'slice.sidecarUnreachable',
+                    'Der Slicer ist unter {{url}} nicht erreichbar. Läuft das Sidecar auf diesem Rechner? Auf dem Pi muss die Adresse auf den PC zeigen, nicht auf localhost.',
+                    { url: slicerStatus.url ?? '' },
+                  )
+                : t(
+                    'slice.sidecarNotConfigured',
+                    'Es ist kein Slicer eingerichtet. Trage unter Einstellungen → Slicer die Adresse des Sidecars ein.',
+                  )}
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate('/settings?tab=queue')}
+              className="mt-2 rounded border border-red-900/40 px-2 py-1 text-xs hover:bg-red-900/20"
+            >
+              {t('slice.openSlicerSettings', 'Einstellungen → Slicer öffnen')}
+            </button>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="flex-shrink-0 flex justify-end gap-2 px-4 py-3 border-t border-bambu-dark-tertiary/40">

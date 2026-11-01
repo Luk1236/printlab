@@ -13,6 +13,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { screen, waitFor, fireEvent } from '@testing-library/react';
 import { render } from '../utils';
 import { PrintersPage } from '../../pages/PrintersPage';
+import { SliceJobTrackerProvider } from '../../contexts/SliceJobTrackerContext';
 import { http, HttpResponse } from 'msw';
 import { server } from '../mocks/server';
 
@@ -53,7 +54,7 @@ function makeStatus(over: Record<string, unknown>) {
 /** Records every library upload the page attempts. */
 const uploads: string[] = [];
 
-function renderWith(statusOver: Record<string, unknown>) {
+function renderWith(statusOver: Record<string, unknown>, uploadFilename = 'part.gcode') {
   server.use(
     http.get('/api/v1/printers/', () => HttpResponse.json([mockPrinter])),
     http.get('/api/v1/printers/:id/status', () => HttpResponse.json(makeStatus(statusOver))),
@@ -64,10 +65,15 @@ function renderWith(statusOver: Record<string, unknown>) {
       // matched request proves the page attempted the upload without making
       // the test sensitive to that runtime detail.
       uploads.push('request');
-      return HttpResponse.json({ id: 7, filename: 'part.gcode', metadata: {} });
+      return HttpResponse.json({ id: 7, filename: uploadFilename, metadata: {} });
     }),
   );
-  return render(<PrintersPage />);
+  // Der Slicedialog (3MF-Drop) hängt am Tracker, den sonst App.tsx bereitstellt.
+  return render(
+    <SliceJobTrackerProvider>
+      <PrintersPage />
+    </SliceJobTrackerProvider>,
+  );
 }
 
 async function card(): Promise<HTMLElement> {
@@ -186,6 +192,20 @@ describe('PrintersPage — drop onto a busy printer (#2849)', () => {
       expect(submit).not.toBeNull();
       expect(submit!.disabled).toBe(false);
     });
+  });
+
+  it('accepts a 3MF project and opens the slice dialog instead of refusing it', async () => {
+    renderWith({ state: 'IDLE' }, 'Planter.3mf');
+    const el = await card();
+
+    const project = new File(['zip'], 'Planter.3mf', { type: 'model/3mf' });
+    fireEvent.drop(el, { dataTransfer: { files: [project] } });
+
+    await waitFor(() => expect(uploads).toHaveLength(1));
+    expect(
+      await screen.findByText(/is a 3MF project and not sliced yet/),
+    ).toBeInTheDocument();
+    expect(await screen.findByText('Slice model')).toBeInTheDocument();
   });
 
   it('rejects a file that is not printable, busy or not', async () => {

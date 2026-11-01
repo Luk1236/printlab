@@ -1654,6 +1654,19 @@ export interface SliceJobProgress {
   multi_plate_index?: number;
   multi_plate_count?: number;
 }
+/** GET /slicer/status — ob das eingestellte Slicer-Sidecar antwortet.
+ *
+ * ``url`` ist die tatsächlich benutzte Adresse (Einstellung vor env-Vorgabe),
+ * damit die Meldung sie nennen kann: ``localhost`` auf dem Pi zeigt auf den Pi
+ * selbst, nicht auf den PC, auf dem das Sidecar läuft. */
+export interface SlicerStatus {
+  configured: boolean;
+  reachable: boolean;
+  url: string | null;
+  version: string | null;
+  error: string | null;
+}
+
 export interface SliceJobState {
   job_id: number;
   status: SliceJobStatus;
@@ -1670,6 +1683,10 @@ export interface SliceJobState {
   result?: SliceResponse | SliceArchiveResponse;
   error_status?: number;
   error_detail?: string;
+  /** Maschinenlesbare Ursache ("sidecar_unreachable", "timeout", …), damit
+   * die Oberfläche eine Handlungsanweisung statt des englischen Backend-Texts
+   * zeigen kann. Fehlt bei Fehlern ohne eigenen Rat. */
+  error_kind?: string | null;
 }
 export interface LocalPreset {
   id: number;

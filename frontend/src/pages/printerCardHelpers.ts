@@ -270,6 +270,25 @@ export const CARD_BODY_SCALE: Record<number, number> = { 1: 1, 2: 1, 3: 1.2, 4: 
 // converted class names its old fixed value as the fallback, so anything that
 // renders outside a card root -- the portalled temperature popover -- keeps
 // exactly the size it has today.
+/** .gcode oder .gcode.3mf — geslict und direkt druckbar. */
+export function isSlicedFileName(name: string): boolean {
+  const lower = name.toLowerCase();
+  return lower.endsWith('.gcode') || lower.includes('.gcode.');
+}
+
+/** 3MF-Projekt, das erst geslict werden muss (also nicht .gcode.3mf). */
+export function isProject3mf(name: string): boolean {
+  return name.toLowerCase().endsWith('.3mf') && !isSlicedFileName(name);
+}
+
+/** Hinweis nach dem Hochladen eines ungeslicten 3MF-Projekts. */
+export function needsSlicingMessage(
+  t: (key: string, fallback: string, opts?: Record<string, unknown>) => string,
+  name: string,
+): string {
+  return t('printers.needsSlicing', '{{name}} ist ein 3MF-Projekt und noch nicht geslict — der Slicedialog ist geöffnet.', { name });
+}
+
 export function buildCardScaleStyle(cardSize: number): React.CSSProperties {
   const scale = CARD_BODY_SCALE[cardSize] ?? 1;
   // Rounded to a tenth so the values stay readable in devtools.

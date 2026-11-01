@@ -233,6 +233,7 @@ import type {
   SliceJobEnqueueResponse,
   SliceJobProgress,
   SliceJobState,
+  SlicerStatus,
   SliceRequest,
   SlicerPipeline,
   SlicerPipelineCreateRequest,
@@ -3982,6 +3983,13 @@ export const api = {
     request<SlicerPresetValues>(
       `/slicer/preset-values?source=${encodeURIComponent(ref.source)}&id=${encodeURIComponent(ref.id)}`,
     ),
+
+  /**
+   * Ist das eingestellte Sidecar erreichbar? Die Slice-Maske fragt das vor dem
+   * Slicen ab und sperrt den Knopf, statt den Nutzer in einen Fehlschlag
+   * laufen zu lassen. Die Antwort nennt die benutzte Adresse mit.
+   */
+  getSlicerStatus: () => request<SlicerStatus>('/slicer/status'),
 
   // Local Presets (OrcaSlicer imports)
   getLocalPresets: () =>

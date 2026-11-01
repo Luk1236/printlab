@@ -81,6 +81,7 @@ from backend.app.services.pdf_thumbnail import generate_pdf_thumbnail
 from backend.app.services.plate_thumbnail import inject_plate_thumbnails_if_missing
 from backend.app.services.print_confirmation import confirm_outcome_for_new_queue_item
 from backend.app.services.process_overrides import apply_process_overrides
+from backend.app.services.slice_dispatch import SliceJobHttpError
 from backend.app.services.slice_output_check import (
     missing_start_gcode_message,
     start_gcode_is_missing,
@@ -4547,17 +4548,17 @@ async def _run_slicer_with_fallback(
             )
             used_embedded_settings = True
     except SlicerInputError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise SliceJobHttpError(400, str(exc), "invalid_input") from exc
     except SlicerTimeoutError as exc:
         # 504, not 502: the sidecar answered for the whole run, we stopped
         # waiting. Reported separately so the user is told the slice ran out of
         # time and where to change that, rather than that the sidecar is
         # unreachable — which is what a read timeout used to look like (#2730).
-        raise HTTPException(status_code=504, detail=str(exc)) from exc
+        raise SliceJobHttpError(504, str(exc), "timeout") from exc
     except SlicerApiServerError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+        raise SliceJobHttpError(502, str(exc), "slicer_error") from exc
     except SlicerApiUnavailableError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+        raise SliceJobHttpError(502, str(exc), "sidecar_unreachable") from exc
     finally:
         await service.close()
 

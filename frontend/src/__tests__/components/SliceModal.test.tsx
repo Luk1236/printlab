@@ -35,6 +35,7 @@ vi.mock('../../api/client', () => ({
     createSlicerPipeline: vi.fn(),
     getSlicerPrinterModels: vi.fn(),
     getSlicerPresetValues: vi.fn(),
+    getSlicerStatus: vi.fn(),
   },
 }));
 
@@ -51,6 +52,7 @@ const mockApi = api as unknown as {
   createSlicerPipeline: ReturnType<typeof vi.fn>;
   getSlicerPrinterModels: ReturnType<typeof vi.fn>;
   getSlicerPresetValues: ReturnType<typeof vi.fn>;
+  getSlicerStatus: ReturnType<typeof vi.fn>;
 };
 
 function makeUnified(overrides: Partial<UnifiedPresetsResponse> = {}): UnifiedPresetsResponse {
@@ -106,6 +108,13 @@ describe('SliceModal', () => {
     vi.clearAllMocks();
     mockApi.getSlicerPresets.mockResolvedValue(fullThreeTier);
     mockApi.getSlicerPresetValues.mockResolvedValue({ resolved: true, values: {}, reason: 'ok' });
+    mockApi.getSlicerStatus.mockResolvedValue({
+      configured: true,
+      reachable: true,
+      url: 'http://localhost:3001',
+      version: null,
+      error: null,
+    });
     mockApi.getSliceJob.mockResolvedValue({
       job_id: 42,
       status: 'running',
@@ -266,6 +275,28 @@ describe('SliceModal', () => {
       });
     });
     await waitFor(() => expect(onClose).toHaveBeenCalled());
+  });
+
+  it('blocks slicing and names the address when the sidecar is unreachable', async () => {
+    // Vorher bot die Maske „Slicen“ an, obwohl das Sidecar nicht antwortete;
+    // der Auftrag scheiterte dann im Hintergrund mit einem englischen Text.
+    mockApi.getSlicerStatus.mockResolvedValue({
+      configured: true,
+      reachable: false,
+      url: 'http://localhost:3001',
+      version: null,
+      error: 'All connection attempts failed',
+    });
+
+    renderWithTracker({
+      source: { kind: 'libraryFile', id: 100, filename: 'Cube.stl' },
+      onClose: vi.fn(),
+    });
+
+    expect(await screen.findByText(/localhost:3001/)).toBeDefined();
+    const sliceButton = screen.getByRole('button', { name: /^Slice$/ });
+    expect((sliceButton as HTMLButtonElement).disabled).toBe(true);
+    expect(mockApi.sliceLibraryFile).not.toHaveBeenCalled();
   });
 
   it('offers "use the file\'s built-in settings" when the printer matches the design, and sends the flag (#2611)', async () => {

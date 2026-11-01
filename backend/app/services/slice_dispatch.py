@@ -18,6 +18,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Literal
 
+from fastapi import HTTPException
+
 logger = logging.getLogger(__name__)
 
 
@@ -44,6 +46,10 @@ class SliceJob:
     # On failure: HTTP status + error message.
     error_status: int | None = None
     error_detail: str | None = None
+    # Machine-readable cause ("sidecar_unreachable", "timeout", …) so the UI
+    # can say what to do instead of printing the backend's English detail at
+    # a German user. None for failures we have no advice for.
+    error_kind: str | None = None
     # Live progress fed by the sidecar's --pipe channel while the slicer
     # is running. Populated by a polling task spawned alongside the
     # blocking POST /slice request; None when the sidecar doesn't
@@ -114,6 +120,7 @@ class SliceDispatchService:
             job.status = "failed"
             job.error_status = exc.status_code
             job.error_detail = exc.detail
+            job.error_kind = exc.kind
         except Exception as exc:
             logger.exception("Slice job %s failed unexpectedly", job.id)
             job.status = "failed"
@@ -159,10 +166,25 @@ class _SliceJobError(Exception):
     the job. Callers convert ``HTTPException`` to this on the boundary.
     """
 
-    def __init__(self, status_code: int, detail: str) -> None:
+    def __init__(self, status_code: int, detail: str, kind: str | None = None) -> None:
         super().__init__(detail)
         self.status_code = status_code
         self.detail = detail
+        self.kind = kind
+
+
+class SliceJobHttpError(HTTPException):
+    """HTTPException that carries a machine-readable cause for the UI.
+
+    The slice helpers raise it where they know *why* a slice cannot run
+    (sidecar down, time limit, rejected input); the dispatcher copies
+    ``error_kind`` onto the job so the polling response can be translated by
+    the frontend instead of showing the raw English detail.
+    """
+
+    def __init__(self, status_code: int, detail: str, kind: str) -> None:
+        super().__init__(status_code=status_code, detail=detail)
+        self.error_kind = kind
 
 
 def http_exception_to_job_error(exc) -> _SliceJobError:
@@ -170,7 +192,7 @@ def http_exception_to_job_error(exc) -> _SliceJobError:
     type. Handles the common case where slice helpers raise FastAPI's
     ``HTTPException`` for validation / sidecar failures.
     """
-    return _SliceJobError(exc.status_code, str(exc.detail))
+    return _SliceJobError(exc.status_code, str(exc.detail), getattr(exc, "error_kind", None))
 
 
 # Module-level singleton, started/stopped by main.py's lifespan.

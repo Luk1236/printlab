@@ -3,6 +3,21 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.21.2 (01.11.2026) — Slicer sagt, was los ist; 3MF führt zum Slicen
+
+- **Slicer wird vor dem Slicen geprüft:** `GET /slicer/status` fragt das Sidecar. Die Slice-Maske nennt die
+  tatsächlich benutzte Adresse und sperrt „Slicen“, wenn der Dienst nicht antwortet — statt den Nutzer in einen
+  Fehlschlag laufen zu lassen. Der Hinweis sagt auch, dass auf dem Pi die Adresse des PCs stehen muss und nicht
+  `localhost`. Ein Fehler der Statusabfrage selbst (ältere Installation) sperrt nichts.
+- **Fehlerursache wird übersetzt:** Fehlgeschlagene Slice-Aufträge tragen jetzt ein `error_kind`. Bei „Sidecar nicht
+  erreichbar“ und „Zeitlimit“ steht eine Handlungsanweisung über der technischen Meldung, statt nur
+  „Slicer sidecar unreachable: All connection attempts failed“ in Englisch (alle 15 Sprachen).
+- **3MF-Projekt führt zum Slicen:** Wird eine noch nicht geslicte `.3mf` auf eine Druckerkarte gezogen oder im
+  Druck-Dialog ausgewählt, wird sie hochgeladen und der Slicedialog geöffnet. Vorher blieb nur die Meldung „Nur
+  .gcode- und .gcode.3mf-Dateien können gedruckt werden“ — eine Sackgasse, weil ein Projekt erst geslict werden muss.
+- **Tests:** drei für den Status-Endpunkt, zwei für die Fehlerursache (Einheit und durchgereichter Auftrag), je einer
+  für die Sperre der Maske und den 3MF-Drop; die bestehenden 93 Slice-Modal-Tests bleiben grün.
+
 ## v1.21.1 (01.11.2026) — Pfadprüfung nachgezogen
 
 - **CI wieder grün:** Die Pfadprüfung (`test_no_unsafe_path_joins`) meldete die neuen Stellen in

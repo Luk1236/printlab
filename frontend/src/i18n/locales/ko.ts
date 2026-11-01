@@ -1263,6 +1263,7 @@ export default {
     howToEnable: '활성화 방법',
     incompatibleFile: '이 파일은 {{slicedFor}}용으로 슬라이싱되었지만, 이 프린터는 {{printerModel}}입니다',
     dropNotPrintable: '.gcode 및 .gcode.3mf 파일만 인쇄할 수 있습니다',
+    needsSlicing: '{{name}}은(는) 아직 슬라이스되지 않은 3MF 프로젝트입니다. 슬라이스 창을 열었습니다.',
     dropToPrint: '놓아서 인쇄',
     dropToQueue: '놓아서 대기열에 추가',
     addPreflight: {
@@ -4937,6 +4938,11 @@ export default {
     allPlatesToggle: '{{count}}개 플레이트 모두 슬라이싱',
     otherPrinters: '다른 프린터',
     runningWithProgressMultiPlate: '플레이트 {{plateIndex}}/{{plateCount}} • {{name}} — {{stage}} ({{percent}}%) — {{elapsed}}',
+    sidecarUnreachable: '{{url}}의 슬라이서에 연결할 수 없습니다. 이 컴퓨터에서 sidecar가 실행 중인가요? Pi에서는 localhost가 아니라 PC 주소를 지정해야 합니다.',
+    sidecarNotConfigured: '슬라이서가 설정되어 있지 않습니다. 설정 → Slicer에서 sidecar 주소를 입력하세요.',
+    openSlicerSettings: '설정 → Slicer 열기',
+    failedSidecarUnreachable: '슬라이서에 연결할 수 없었습니다. 설정 → Slicer에서 주소와 sidecar 실행 여부를 확인하세요.',
+    failedTimeout: '슬라이서가 제시간에 응답하지 않았습니다. 설정 → Slicer에서 시간 제한을 늘릴 수 있습니다.',
     failedTitle: '슬라이싱 실패',
     bedType: {
       label: '빌드 플레이트',
