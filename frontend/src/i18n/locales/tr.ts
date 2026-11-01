@@ -1,5 +1,9 @@
 export default {
   // Navigasyon
+  slicerBanner: {
+    unreachable: 'Dilimleyiciye ulaşılamıyor ({{url}}). Sidecar yeniden yanıt verene kadar dilimleme kullanılamaz.',
+    openSettings: 'Dilimleyici ayarları',
+  },
   nav: {
     groupPrint: 'Yazdırma',
     groupMaterial: 'Malzeme ve maliyet',
@@ -5124,6 +5128,7 @@ export default {
     runningWithProgress: '{{name}} — {{stage}} (%{{percent}}) — {{elapsed}}',
     runningWithProgressMultiPlate: '{{plateCount}}/{{plateIndex}} plaka • {{name}} — {{stage}} (%{{percent}}) — {{elapsed}}',
     completedToast: '{{name}} dilimlendi',
+    printNow: 'Şimdi yazdır',
     externalWriteFallbackToast: 'Dahili kitaplığa kaydedildi: harici klasöre yazılamadı',
     sidecarUnreachable: '{{url}} adresindeki dilimleyiciye ulaşılamıyor. Sidecar bu makinede çalışıyor mu? Pi üzerinde adres localhost değil, PC’yi göstermelidir.',
     sidecarNotConfigured: 'Yapılandırılmış dilimleyici yok. Ayarlar → Slicer bölümünde sidecar adresini girin.',

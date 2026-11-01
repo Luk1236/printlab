@@ -201,6 +201,71 @@ describe('SliceJobTrackerProvider — persistent progress toast', () => {
     expect(screen.getByText(/Sliced Done\.stl/)).toBeDefined();
   });
 
+  it('offers to print the finished slice from the completion toast', async () => {
+    let pollCount = 0;
+    mockApi.getSliceJob.mockImplementation(async () => {
+      pollCount += 1;
+      if (pollCount === 1) {
+        return {
+          job_id: 30,
+          status: 'running',
+          kind: 'library_file',
+          source_id: 300,
+          source_name: 'Printable.3mf',
+          created_at: new Date().toISOString(),
+          started_at: new Date().toISOString(),
+          completed_at: null,
+        };
+      }
+      return {
+        job_id: 30,
+        status: 'completed',
+        kind: 'library_file',
+        source_id: 300,
+        source_name: 'Printable.3mf',
+        created_at: new Date().toISOString(),
+        started_at: new Date().toISOString(),
+        completed_at: new Date().toISOString(),
+        result: {
+          library_file_id: 555,
+          name: 'Printable.gcode.3mf',
+          print_time_seconds: 3600,
+          filament_used_g: 42,
+          filament_used_mm: 14000,
+          used_embedded_settings: false,
+        },
+      };
+    });
+
+    render(
+      <Wrapper>
+        <TrackTrigger id={30} name="Printable.3mf" />
+      </Wrapper>,
+    );
+
+    act(() => {
+      screen.getByText('track-30').click();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(1500);
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await act(async () => {
+      vi.advanceTimersByTime(1500);
+    });
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    // Der Slice ist fertig und die Meldung bietet den nächsten Schritt an.
+    expect(screen.getByText(/Sliced Printable\.3mf/)).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Print now' })).toBeDefined();
+  });
+
   it('replaces the persistent toast with a transient error toast on failure', async () => {
     let pollCount = 0;
     mockApi.getSliceJob.mockImplementation(async () => {

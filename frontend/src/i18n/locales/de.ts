@@ -1,5 +1,9 @@
 export default {
   // Navigation
+  slicerBanner: {
+    unreachable: 'Der Slicer ist nicht erreichbar ({{url}}). Slicen ist erst wieder möglich, wenn das Sidecar antwortet.',
+    openSettings: 'Slicer-Einstellungen',
+  },
   nav: {
     groupPrint: 'Drucken',
     groupMaterial: 'Material & Kosten',
@@ -5136,6 +5140,7 @@ export default {
     runningWithProgress: '{{name}} – {{stage}} ({{percent}} %) – {{elapsed}}',
     runningWithProgressMultiPlate: 'Plate {{plateIndex}} von {{plateCount}} • {{name}} – {{stage}} ({{percent}} %) – {{elapsed}}',
     completedToast: '{{name}} wurde gesliced',
+    printNow: 'Jetzt drucken',
     externalWriteFallbackToast: 'In der internen Bibliothek gespeichert: In den externen Ordner konnte nicht geschrieben werden',
     sidecarUnreachable: 'Der Slicer ist unter {{url}} nicht erreichbar. Läuft das Sidecar auf diesem Rechner? Auf dem Pi muss die Adresse auf den PC zeigen, nicht auf localhost.',
     sidecarNotConfigured: 'Es ist kein Slicer eingerichtet. Trage unter Einstellungen → Slicer die Adresse des Sidecars ein.',

@@ -175,6 +175,19 @@ export function Layout() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
+  // Antwortet das eingestellte Slicer-Sidecar? Die Slice-Maske fragt dasselbe
+  // beim Öffnen; hier steht es auf jeder Seite, damit ein ausgeschalteter PC
+  // auffällt, bevor jemand ein Modell zum Slicen ablegt. Ein Fehler der
+  // Abfrage selbst (ältere Installation) zeigt nichts an.
+  const { data: slicerStatus } = useQuery({
+    queryKey: ['slicer-status'],
+    queryFn: api.getSlicerStatus,
+    staleTime: 30_000,
+    refetchInterval: (query) => (query.state.data?.configured ? 60_000 : false),
+    retry: false,
+  });
+  const slicerDown = slicerStatus?.configured === true && !slicerStatus.reachable;
+
   // Announcements from the PrintLab maintainers: the sidebar entry above System,
   // the slide-over list, and the banner for unread important/critical ones. The
   // entry is there for whoever may see announcements, also with none published.
@@ -1102,6 +1115,26 @@ export function Layout() {
                  className="text-orange-700 dark:text-orange-400 hover:text-orange-900 dark:hover:text-orange-300 font-medium underline ml-2">
                 {t('printers.howToEnable', { defaultValue: 'How to enable' })}
               </a>
+            </div>
+          </div>
+        )}
+        {slicerDown && (
+          <div className="bg-amber-100 dark:bg-amber-500/20 border-b border-amber-300 dark:border-amber-500/30 px-4 py-2 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-sm min-w-0">
+              <ShieldAlert className="w-4 h-4 text-amber-500 shrink-0" />
+              <span className="text-amber-800 dark:text-amber-200 truncate">
+                {t('slicerBanner.unreachable', {
+                  url: slicerStatus?.url ?? '',
+                  defaultValue:
+                    'The slicer is unreachable ({{url}}). Slicing is unavailable until the sidecar answers again.',
+                })}
+              </span>
+              <button
+                onClick={() => navigate('/settings')}
+                className="text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 font-medium underline shrink-0"
+              >
+                {t('slicerBanner.openSettings', { defaultValue: 'Slicer settings' })}
+              </button>
             </div>
           </div>
         )}

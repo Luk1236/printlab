@@ -65,6 +65,34 @@ class SliceJob:
 _RETENTION_SECONDS = 30 * 60
 
 
+def _notify_failed_job(job: SliceJob) -> None:
+    """Einen fehlgeschlagenen Slice als Browser-Meldung ankündigen.
+
+    Der Fehlerdialog lebt nur, solange die Oberfläche offen ist. Läuft der
+    Slice im Hintergrund und der Browser ist zu, bleibt sonst nur das
+    Protokoll. Der Text nennt die Handlung, die hilft; die Zustellung läuft
+    im Hintergrund (:func:`web_push.schedule`), damit ein langsamer
+    Push-Dienst den Auftrag nicht aufhält.
+    """
+    try:
+        from backend.app.services import web_push
+
+        name = (job.source_name or "Modell")[:120]
+        if job.error_kind == "sidecar_unreachable":
+            body = f"Slicen fehlgeschlagen: Der Slicer ist nicht erreichbar ({name})."
+            url = "/settings"
+        elif job.error_kind == "timeout":
+            body = f"Slicen fehlgeschlagen: Der Slicer hat zu lange nicht geantwortet ({name})."
+            url = "/settings"
+        else:
+            body = f"Slicen fehlgeschlagen: {name}"
+            url = "/files"
+        web_push.schedule("PrintLab", body, url)
+    except Exception:
+        # Eine Meldung ist Beiwerk; der Slice-Auftrag darf daran nicht scheitern.
+        logger.debug("Slice-Fehlermeldung konnte nicht geplant werden", exc_info=True)
+
+
 class SliceDispatchService:
     def __init__(self) -> None:
         self._jobs: dict[int, SliceJob] = {}
@@ -129,6 +157,9 @@ class SliceDispatchService:
         finally:
             job.completed_at = datetime.now(timezone.utc)
             self._tasks.pop(job.id, None)
+
+        if job.status == "failed":
+            _notify_failed_job(job)
 
     def get(self, job_id: int) -> SliceJob | None:
         return self._jobs.get(job_id)

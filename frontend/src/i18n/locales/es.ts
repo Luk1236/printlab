@@ -1,5 +1,9 @@
 export default {
   // Navigation
+  slicerBanner: {
+    unreachable: 'No se puede acceder al slicer ({{url}}). No se puede laminar hasta que el sidecar vuelva a responder.',
+    openSettings: 'Ajustes del slicer',
+  },
   nav: {
     groupPrint: 'Impresión',
     groupMaterial: 'Material y costes',
@@ -5138,6 +5142,7 @@ export default {
     runningWithProgress: '{{name}} — {{stage}} ({{percent}}%) — {{elapsed}}',
     runningWithProgressMultiPlate: 'Bandeja {{plateIndex}} de {{plateCount}} • {{name}} — {{stage}} ({{percent}}%) — {{elapsed}}',
     completedToast: '{{name}} laminado',
+    printNow: 'Imprimir ahora',
     externalWriteFallbackToast: 'Guardado en la biblioteca interna: no se pudo escribir en la carpeta externa',
     sidecarUnreachable: 'No se puede acceder al slicer en {{url}}. ¿Se ejecuta el sidecar en este equipo? En la Raspberry Pi la dirección debe apuntar al PC, no a localhost.',
     sidecarNotConfigured: 'No hay ningún slicer configurado. Introduce la dirección del sidecar en Ajustes → Slicer.',

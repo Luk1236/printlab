@@ -2,7 +2,6 @@ import { PrinterCard } from './PrinterCard';
 import {
   DRYING_PRESETS,
   type PrinterMaintenanceInfo,
-  STATUS_FILTER_OPTIONS,
   STATUS_GROUP_META,
   STATUS_GROUP_ORDER,
   type SortOption,
@@ -10,13 +9,10 @@ import {
   classifyPrinterStatus,
   isKnownStatusFilter,
 } from './printerCardHelpers';
-import {
-  StatusSummaryBar,
-  ToolbarDropdown,
-  ToolbarMenu,
-} from './PrinterCardParts';
+import { StatusSummaryBar } from './PrinterCardParts';
+import { PrinterToolbar } from './PrinterToolbar';
 
-import { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { mapModelCode } from '../utils/printerModel';
 import { openCameraWindow, readStoredCameraViewMode, storeCameraViewMode, type CameraViewMode } from '../utils/camera';
 import { BED_TEMP_DEFAULTS, CHAMBER_TEMP_DEFAULTS, FAN_SPEED_DEFAULTS, NOZZLE_TEMP_DEFAULTS, parsePresetTriple } from '../utils/temperatureFanPresets';
@@ -24,10 +20,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
-import { Plus, AlertTriangle, Power, ChevronDown, Filter, ArrowLeft, ArrowUp, ArrowDown, Search, Loader2, X, CheckSquare, Printer as PrinterIcon, MoreHorizontal, SlidersHorizontal, Stethoscope, LayoutGrid, MonitorPlay, ExternalLink } from 'lucide-react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Plus, AlertTriangle, ChevronDown, ArrowLeft, Search, Loader2, Printer as PrinterIcon, Stethoscope } from 'lucide-react';
 import { api, discoveryApi, ApiError } from '../api/client';
-import type { Printer, PrinterCreate, DiscoveredPrinter, SpoolAssignment, HMSError, PrinterDiagnosticResult } from '../api/client';
+import type { PrinterCreate, DiscoveredPrinter, SpoolAssignment, HMSError, PrinterDiagnosticResult } from '../api/client';
 import { Card, CardContent } from '../components/Card';
 import { Button } from '../components/Button';
 import { ConfirmModal } from '../components/ConfirmModal';
@@ -553,73 +548,6 @@ export function AddPrinterModal({
   );
 }
 
-function usePrinterOfflineStatus(printerId: number) {
-  const { data: status } = useQuery({
-    queryKey: ['printerStatus', printerId],
-    queryFn: () => api.getPrinterStatus(printerId),
-    refetchInterval: 30000,
-  });
-  return !status?.connected;
-}
-
-// Power dropdown item for an offline printer
-function PowerDropdownItem({
-  printer,
-  plug,
-  onPowerOn,
-  isPowering,
-}: {
-  printer: Printer;
-  plug: { id: number; name: string };
-  onPowerOn: (plugId: number) => void;
-  isPowering: boolean;
-}) {
-  const isOffline = usePrinterOfflineStatus(printer.id);
-
-  // Fetch plug status
-  const { data: plugStatus } = useQuery({
-    queryKey: ['smartPlugStatus', plug.id],
-    queryFn: () => api.getSmartPlugStatus(plug.id),
-    refetchInterval: 10000,
-  });
-
-  // Only show if printer is offline
-  if (!isOffline) {
-    return null;
-  }
-
-  return (
-    <div className="flex items-center justify-between px-3 py-2 hover:bg-gray-100 dark:hover:bg-bambu-dark-tertiary">
-      <div className="flex items-center gap-2 min-w-0">
-        <span className="text-sm text-white truncate">{printer.name}</span>
-        {plugStatus && (
-          <span
-            className={`text-xs px-1.5 py-0.5 rounded ${
-              plugStatus.state === 'ON'
-                ? 'bg-bambu-green/20 text-bambu-green'
-                : 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400'
-            }`}
-          >
-            {plugStatus.state || '?'}
-          </span>
-        )}
-      </div>
-      <button
-        onClick={() => onPowerOn(plug.id)}
-        disabled={isPowering || plugStatus?.state === 'ON'}
-        className={`px-2 py-1 text-xs rounded transition-colors flex items-center gap-1 ${
-          plugStatus?.state === 'ON'
-            ? 'bg-bambu-green/20 text-bambu-green cursor-default'
-            : 'bg-bambu-green/20 text-bambu-green hover:bg-bambu-green hover:text-white'
-        }`}
-      >
-        <Power className="w-3 h-3" />
-        {isPowering ? '...' : 'On'}
-      </button>
-    </div>
-  );
-}
-
 export function PrintersPage() {
   const { t } = useTranslation();
   const { resolvedMode, darkAccent, lightAccent } = useTheme();
@@ -636,7 +564,6 @@ export function PrintersPage() {
   const [hideDisconnected, setHideDisconnected] = useState(() => {
     return localStorage.getItem('hideDisconnectedPrinters') === 'true';
   });
-  const [showPowerDropdown, setShowPowerDropdown] = useState(false);
   const [poweringOn, setPoweringOn] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>(() => {
     return (localStorage.getItem('printerSortBy') as SortOption) || 'name';
@@ -1124,7 +1051,6 @@ export function PrintersPage() {
     }
   };
 
-  const cardSizeLabels = ['S', 'M', 'L', 'XL'];
 
   // Increment version counter whenever a printer status cache entry is updated so
   // filteredPrinters re-computes reactively on WebSocket-driven status changes.
@@ -1347,286 +1273,6 @@ export function PrintersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- classifyPrinterStatus & filterKnownHMSErrors are stable module-level functions, not reactive deps; statusCacheVersion forces recompute on WebSocket status updates
   }, [sortBy, sortedPrinters, queryClient, statusCacheVersion]);
 
-  const toolbarRef = useRef<HTMLDivElement>(null);
-  const expandedToolbarControlsRef = useRef<HTMLDivElement>(null);
-  const expandedToolbarWidthRef = useRef(0);
-  const [compactToolbar, setCompactToolbar] = useState(false);
-
-  const measureToolbar = useCallback(() => {
-    const toolbar = toolbarRef.current;
-    if (!toolbar) return;
-
-    const measuredControlsWidth = expandedToolbarControlsRef.current?.offsetWidth;
-    if (measuredControlsWidth) {
-      expandedToolbarWidthRef.current = measuredControlsWidth;
-    }
-
-    const searchMinimumWidth = 220;
-    const gapWidth = 8;
-    const shouldCompact = expandedToolbarWidthRef.current > 0 && toolbar.clientWidth < expandedToolbarWidthRef.current + searchMinimumWidth + gapWidth;
-    setCompactToolbar(prev => (prev === shouldCompact ? prev : shouldCompact));
-  }, []);
-
-  const smartPlugCount = Object.keys(smartPlugByPrinter).length;
-  useLayoutEffect(() => {
-    measureToolbar();
-
-    const toolbar = toolbarRef.current;
-    if (!toolbar) return;
-
-    if (typeof ResizeObserver === 'undefined') {
-      window.addEventListener('resize', measureToolbar);
-      return () => window.removeEventListener('resize', measureToolbar);
-    }
-
-    const resizeObserver = new ResizeObserver(() => measureToolbar());
-    resizeObserver.observe(toolbar);
-    window.addEventListener('resize', measureToolbar);
-
-    return () => {
-      resizeObserver.disconnect();
-      window.removeEventListener('resize', measureToolbar);
-    };
-  }, [
-    measureToolbar,
-    printers?.length,
-    availableLocations.length,
-    hideDisconnected,
-    smartPlugCount,
-  ]);
-
-  const renderFilterControls = (inMenu = false) => (
-    <>
-      {/* Status filter */}
-      {printers && printers.length > 0 && (
-        <ToolbarDropdown
-          value={statusFilter}
-          onChange={handleStatusFilterChange}
-          fullWidth={inMenu}
-          options={STATUS_FILTER_OPTIONS.map(option => ({ value: option.value, label: t(option.labelKey) }))}
-        />
-      )}
-
-      {/* Location filter — only shown when at least one printer has a location */}
-      {printers && printers.length > 0 && availableLocations.length > 0 && (
-        <ToolbarDropdown
-          value={locationFilter}
-          onChange={handleLocationFilterChange}
-          fullWidth={inMenu}
-          options={[
-            { value: 'all', label: t('printers.filter.allLocations') },
-            ...availableLocations.map(loc => ({ value: loc, label: loc })),
-          ]}
-        />
-      )}
-
-      <button
-        type="button"
-        onClick={toggleHideDisconnected}
-        aria-pressed={hideDisconnected}
-        className={`h-8 px-2 rounded-lg border text-sm font-medium transition-colors ${inMenu ? 'w-full' : ''} ${
-          hideDisconnected
-            ? 'bg-bambu-green border-bambu-green text-white'
-            : 'bg-bambu-dark border-bambu-dark-tertiary text-white hover:bg-bambu-dark-tertiary'
-        }`}
-      >
-        {t('printers.hideOffline')}
-      </button>
-    </>
-  );
-
-  const renderViewControls = (inMenu = false) => (
-    <>
-      {/* Sort dropdown */}
-      <div className={`flex items-center gap-1 ${inMenu ? 'w-full' : ''}`}>
-        <ToolbarDropdown<SortOption>
-          value={sortBy}
-          onChange={handleSortChange}
-          fullWidth={inMenu}
-          options={[
-            { value: 'name', label: t('printers.sort.name') },
-            { value: 'status', label: t('printers.sort.status') },
-            { value: 'model', label: t('printers.sort.model') },
-            { value: 'location', label: t('printers.sort.location') },
-            { value: 'eta', label: t('printers.sort.eta') },
-          ]}
-        />
-        <button
-          onClick={toggleSortDirection}
-          className="h-8 shrink-0 px-2 rounded-lg border bg-bambu-dark border-bambu-dark-tertiary text-white hover:bg-bambu-dark-tertiary transition-colors flex items-center justify-center"
-          title={sortAsc ? t('printers.sort.descending') : t('printers.sort.ascending')}
-        >
-          {sortAsc ? (
-            <ArrowUp className="w-4 h-4 text-white" />
-          ) : (
-            <ArrowDown className="w-4 h-4 text-white" />
-          )}
-        </button>
-      </div>
-
-      {/* Page view toggle: Cards / Cam Wall */}
-      <div className={`flex h-8 items-center bg-bambu-dark rounded-lg border border-bambu-dark-tertiary ${inMenu ? 'w-full' : ''}`}>
-        <button
-          type="button"
-          onClick={() => {
-            setPageView('cards');
-            localStorage.setItem('printerPageView', 'cards');
-          }}
-          className={`flex h-full items-center gap-1 rounded-l-lg px-2 text-xs font-medium transition-colors ${inMenu ? 'flex-1 justify-center' : ''} ${
-            pageView === 'cards' ? 'bg-bambu-green text-white' : 'text-white hover:bg-bambu-dark-tertiary'
-          }`}
-          title={t('printers.pageView.cards')}
-          aria-pressed={pageView === 'cards'}
-        >
-          <LayoutGrid className="w-3.5 h-3.5" />
-          {inMenu && <span>{t('printers.pageView.cards')}</span>}
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setPageView('camwall');
-            localStorage.setItem('printerPageView', 'camwall');
-          }}
-          className={`flex h-full items-center gap-1 rounded-r-lg px-2 text-xs font-medium transition-colors ${inMenu ? 'flex-1 justify-center' : ''} ${
-            pageView === 'camwall' ? 'bg-bambu-green text-white' : 'text-white hover:bg-bambu-dark-tertiary'
-          }`}
-          title={t('printers.pageView.camWall')}
-          aria-pressed={pageView === 'camwall'}
-          disabled={!hasPermission('camera:view')}
-        >
-          <MonitorPlay className="w-3.5 h-3.5" />
-          {inMenu && <span>{t('printers.pageView.camWall')}</span>}
-        </button>
-      </div>
-
-      {/* Cam Wall on its own URL (#2531) — the linkable/bookmarkable form of the
-          view, and the page a kiosk token points at. Only offered once the wall
-          is the active view, so it doesn't compete with the toggle above. */}
-      {pageView === 'camwall' && hasPermission('camera:view') && (
-        <RouterLink
-          to="/camwall"
-          className={`flex h-8 items-center gap-1 rounded-lg border border-bambu-dark-tertiary bg-bambu-dark px-2 text-xs font-medium text-white transition-colors hover:bg-bambu-dark-tertiary ${inMenu ? 'w-full justify-center' : ''}`}
-          title={t('printers.pageView.openCamWallPage')}
-        >
-          <ExternalLink className="w-3.5 h-3.5" />
-          {inMenu && <span>{t('printers.pageView.openCamWallPage')}</span>}
-        </RouterLink>
-      )}
-
-      {/* Card size selector */}
-      <div className={`flex h-8 items-center bg-bambu-dark rounded-lg border border-bambu-dark-tertiary ${pageView === 'camwall' ? 'opacity-40 pointer-events-none' : ''} ${inMenu ? 'w-full' : ''}`}>
-        {cardSizeLabels.map((label, index) => {
-          const size = index + 1;
-          const isSelected = cardSize === size;
-          return (
-            <button
-              key={label}
-              onClick={() => {
-                setCompactDrilldownPrinterId(null);
-                setCardSize(size);
-                localStorage.setItem('printerCardSize', String(size));
-              }}
-              className={`h-full px-2 text-xs font-medium transition-colors ${inMenu ? 'flex-1' : ''} ${
-                index === 0 ? 'rounded-l-lg' : ''
-              } ${
-                index === cardSizeLabels.length - 1 ? 'rounded-r-lg' : ''
-              } ${
-                isSelected
-                  ? 'bg-bambu-green text-white'
-                  : 'text-white hover:bg-bambu-dark-tertiary'
-              }`}
-              title={label === 'S' ? t('printers.cardSize.small') : label === 'M' ? t('printers.cardSize.medium') : label === 'L' ? t('printers.cardSize.large') : t('printers.cardSize.extraLarge')}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
-    </>
-  );
-
-  const renderActionControls = (inMenu = false) => (
-    <>
-      {/* Bulk select toggle */}
-      <button
-        onClick={() => {
-          if (selectionMode) clearSelection();
-          else setIsSelectionMode(true);
-        }}
-        className={`h-8 px-2 rounded-lg border transition-colors ${inMenu ? 'w-full justify-center gap-1.5 text-sm font-medium flex items-center' : ''} ${
-          selectionMode
-            ? 'bg-bambu-green border-bambu-green text-white'
-            : 'bg-bambu-dark border-bambu-dark-tertiary text-white hover:bg-bambu-dark-tertiary'
-        }`}
-        title={t('printers.bulk.select')}
-        disabled={!hasPermission('printers:control')}
-      >
-        <CheckSquare className="w-4 h-4" />
-        {inMenu && <span>{t('printers.bulk.select')}</span>}
-      </button>
-
-      {/* Power dropdown for offline printers with smart plugs */}
-      {hideDisconnected && Object.keys(smartPlugByPrinter).length > 0 && (
-        <div className={`relative ${inMenu ? 'w-full' : ''}`}>
-          <button
-            onClick={() => setShowPowerDropdown(!showPowerDropdown)}
-            className={`h-8 flex items-center gap-1.5 px-2 text-sm rounded-lg border transition-colors ${
-              inMenu
-                ? 'w-full justify-between bg-bambu-dark border-bambu-dark-tertiary text-white hover:bg-bambu-dark-tertiary hover:text-white'
-                : 'bg-bambu-dark border-bambu-dark-tertiary text-white hover:bg-bambu-dark-tertiary'
-            }`}
-          >
-            <span className="flex items-center gap-1.5">
-              <Power className="w-4 h-4" />
-              {t('printers.powerOn')}
-            </span>
-            <ChevronDown className={`w-3 h-3 transition-transform ${showPowerDropdown ? 'rotate-180' : ''}`} />
-          </button>
-          {showPowerDropdown && (
-            <>
-              {/* Backdrop to close dropdown */}
-              <div
-                className="fixed inset-0 z-10"
-                onClick={() => setShowPowerDropdown(false)}
-              />
-              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-bambu-dark-secondary border border-gray-200 dark:border-bambu-dark-tertiary rounded-lg shadow-lg z-20 py-1">
-                <div className="px-3 py-2 text-xs text-gray-500 dark:text-bambu-gray border-b border-gray-200 dark:border-bambu-dark-tertiary">
-                  {t('printers.offlinePrintersWithPlugs')}
-                </div>
-                {printers?.filter(p => smartPlugByPrinter[p.id]).map(printer => (
-                  <PowerDropdownItem
-                    key={printer.id}
-                    printer={printer}
-                    plug={smartPlugByPrinter[printer.id]}
-                    onPowerOn={(plugId) => {
-                      setPoweringOn(plugId);
-                      powerOnMutation.mutate(plugId);
-                    }}
-                    isPowering={poweringOn === smartPlugByPrinter[printer.id]?.id}
-                  />
-                ))}
-                {printers?.filter(p => smartPlugByPrinter[p.id]).length === 0 && (
-                  <div className="px-3 py-2 text-sm text-bambu-gray">
-                    No printers with smart plugs
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      )}
-      <Button
-        onClick={() => setShowAddModal(true)}
-        disabled={!hasPermission('printers:create')}
-        title={!hasPermission('printers:create') ? t('printers.permission.noAdd') : undefined}
-        className={`!h-8 !min-h-8 px-2 py-0 ${inMenu ? 'w-full' : ''}`}
-      >
-        <Plus className="w-4 h-4" />
-        {t('printers.addPrinter')}
-      </Button>
-    </>
-  );
-
   return (
     <div className="p-4 md:p-8">
       <div className="space-y-3 mb-6">
@@ -1637,63 +1283,46 @@ export function PrintersPage() {
           </h1>
           <StatusSummaryBar printers={printers} />
         </div>
-        <div ref={toolbarRef} className="relative flex items-center gap-2">
-          {/* Only show search bar when printers exist */}
-          {printers && printers.length > 0 && (
-            <div className="relative min-w-0 flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-bambu-gray/50" />
-              <input
-                type="search"
-                name="printer-search"
-                autoComplete="off"
-                data-1p-ignore
-                data-lpignore="true"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={t('printers.search')}
-                aria-label={t('printers.search')}
-                className="w-full h-8 pl-9 pr-8 bg-bambu-dark border border-bambu-dark-tertiary rounded-lg text-white text-sm placeholder:text-bambu-gray/50 focus:outline-none focus:border-bambu-green"
-              />
-              {search && (
-                <button
-                  type="button"
-                  aria-label={t('common.clear')}
-                  onClick={() => setSearch('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-bambu-gray hover:text-white"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          )}
-          <div
-            ref={expandedToolbarControlsRef}
-            aria-hidden={compactToolbar}
-            inert={compactToolbar}
-            className={`${compactToolbar ? 'absolute -left-[9999px] top-0 flex w-max pointer-events-none opacity-0' : 'flex'} ml-auto items-center justify-end gap-2 flex-nowrap [&>*]:shrink-0`}
-          >
-            <div className="h-6 w-px bg-bambu-dark-tertiary" />
-            <div className="flex items-center gap-2">{renderFilterControls()}</div>
-            <div className="h-6 w-px bg-bambu-dark-tertiary" />
-            <div className="flex items-center gap-2">{renderViewControls()}</div>
-            <div className="h-6 w-px bg-bambu-dark-tertiary" />
-            <div className="flex items-center gap-2">{renderActionControls()}</div>
-          </div>
-
-          {compactToolbar && (
-            <div className="ml-auto flex items-center justify-end gap-1">
-              <ToolbarMenu label={t('printers.toolbar.filters', 'Filters')} icon={<Filter className="w-4 h-4" />}>
-                <div className="flex w-48 flex-col gap-2">{renderFilterControls(true)}</div>
-              </ToolbarMenu>
-              <ToolbarMenu label={t('printers.toolbar.view', 'View')} icon={<SlidersHorizontal className="w-4 h-4" />}>
-                <div className="flex w-48 flex-col gap-2">{renderViewControls(true)}</div>
-              </ToolbarMenu>
-              <ToolbarMenu label={t('printers.toolbar.actions', 'Actions')} icon={<MoreHorizontal className="w-4 h-4" />}>
-                <div className="flex w-48 flex-col gap-2">{renderActionControls(true)}</div>
-              </ToolbarMenu>
-            </div>
-          )}
-        </div>
+        <PrinterToolbar
+          printers={printers}
+          search={search}
+          onSearchChange={setSearch}
+          statusFilter={statusFilter}
+          onStatusFilterChange={handleStatusFilterChange}
+          availableLocations={availableLocations}
+          locationFilter={locationFilter}
+          onLocationFilterChange={handleLocationFilterChange}
+          hideDisconnected={hideDisconnected}
+          onToggleHideDisconnected={toggleHideDisconnected}
+          sortBy={sortBy}
+          onSortChange={handleSortChange}
+          sortAsc={sortAsc}
+          onToggleSortDirection={toggleSortDirection}
+          pageView={pageView}
+          onPageViewChange={(view) => {
+            setPageView(view);
+            localStorage.setItem('printerPageView', view);
+          }}
+          cardSize={cardSize}
+          onCardSizeChange={(size) => {
+            setCompactDrilldownPrinterId(null);
+            setCardSize(size);
+            localStorage.setItem('printerCardSize', String(size));
+          }}
+          hasPermission={hasPermission}
+          selectionMode={selectionMode}
+          onToggleSelection={() => {
+            if (selectionMode) clearSelection();
+            else setIsSelectionMode(true);
+          }}
+          smartPlugByPrinter={smartPlugByPrinter}
+          poweringOn={poweringOn}
+          onPowerOn={(plugId) => {
+            setPoweringOn(plugId);
+            powerOnMutation.mutate(plugId);
+          }}
+          onAddPrinter={() => setShowAddModal(true)}
+        />
       </div>
 
       {isLoading ? (

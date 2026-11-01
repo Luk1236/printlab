@@ -3,6 +3,26 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.22.0 (01.11.2026) — Nach dem Slicen direkt drucken; Ausfälle früher sichtbar
+
+- **„Jetzt drucken“ nach dem Slicen:** Die Fertigmeldung trägt jetzt einen Knopf. Er öffnet den normalen Druckdialog
+  mit dem geslicten `.gcode.3mf` (Bibliotheksdatei oder Archiv) — Druckerauswahl, AMS-Zuordnung und Zeitplan wie im
+  Dateimanager. Die Meldung bleibt dafür 15 s stehen; ohne Ergebnis (ältere Aufträge) bleibt sie wie bisher.
+- **Slicer-Ausfall in der Kopfzeile:** Antwortet das konfigurierte Sidecar nicht, steht auf jeder Seite ein gelber
+  Hinweis mit der Adresse und einem Link zu den Slicer-Einstellungen. Alle 60 s nachgefragt; ein Fehler der Abfrage
+  selbst (ältere Installation) zeigt nichts. Solange kein Slicer eingerichtet ist, erscheint nichts.
+- **Fehlgeschlagene Slices per Browser-Meldung:** Läuft der Slice im Hintergrund und der Browser ist zu, meldet
+  PrintLab den Fehlschlag per Web Push — bei „Sidecar nicht erreichbar“ und „Zeitlimit“ mit der Handlungsanweisung,
+  sonst mit dem Dateinamen. Der Klick öffnet die Einstellungen bzw. den Dateimanager.
+- **Aufgeräumt:** Die Listen- und Filterleiste der Drucker liegt in `PrinterToolbar.tsx` (497 Zeilen), die beiden
+  Auswahlzweige des Planers in `scheduler/selection.py` (Mixin, `QueuePass` erbt). `PrintersPage.tsx` fällt von
+  1 985 auf 1 614 Zeilen, `queue_pass.py` von 1 032 auf 582; die Größengrenzen sind nachgezogen.
+- **Tests:** ein Frontend-Test für den Druck-Knopf in der Fertigmeldung, ein Backend-Test für die Push-Meldung; dazu
+  die bestehenden 50 Layout-/Tracker-Tests und 98 Druckerseiten-Tests. Die 1 060 Planer- und Warteschlangen-Tests
+  bleiben grün.
+- **Abnahme:** [`docs/ABNAHME-PI.md`](docs/ABNAHME-PI.md) führt jetzt in Abschnitt 1b durch Slicer-Prüfung, 3MF-Drop,
+  „Jetzt drucken“ und die Push-Meldung; alle Versionsangaben stehen auf 1.22.0.
+
 ## v1.21.3 (01.11.2026) — Slicer-Verbindung dort prüfen, wo man sie einträgt
 
 - **„Verbindung prüfen“ bei den Slicer-Einstellungen:** Der Knopf fragt `/slicer/status` und zeigt die tatsächlich

@@ -1,5 +1,9 @@
 export default {
   // Navigation
+  slicerBanner: {
+    unreachable: 'O fatiador está inacessível ({{url}}). Não é possível fatiar até que o sidecar responda novamente.',
+    openSettings: 'Configurações do fatiador',
+  },
   nav: {
     groupPrint: 'Impressão',
     groupMaterial: 'Material e custos',
@@ -5122,6 +5126,7 @@ export default {
     runningWithProgress: '{{name}} – {{stage}} ({{percent}}%) – {{elapsed}}',
     runningWithProgressMultiPlate: 'Bandeja {{plateIndex}} de {{plateCount}} • {{name}} – {{stage}} ({{percent}}%) – {{elapsed}}',
     completedToast: '{{name}} fatiado',
+    printNow: 'Imprimir agora',
     externalWriteFallbackToast: 'Salvo na biblioteca interna: não foi possível gravar na pasta externa',
     sidecarUnreachable: 'O slicer em {{url}} não está acessível. O sidecar está rodando nesta máquina? No Pi, o endereço deve apontar para o PC, não para localhost.',
     sidecarNotConfigured: 'Nenhum slicer está configurado. Informe o endereço do sidecar em Configurações → Slicer.',

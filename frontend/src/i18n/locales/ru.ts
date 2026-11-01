@@ -1,4 +1,8 @@
 export default {
+  slicerBanner: {
+    unreachable: 'Слайсер недоступен ({{url}}). Нарезка недоступна, пока sidecar снова не ответит.',
+    openSettings: 'Настройки слайсера',
+  },
   nav: {
     groupPrint: 'Печать',
     groupMaterial: 'Материал и расходы',
@@ -4918,6 +4922,7 @@ export default {
     runningWithProgress: "{{name}} — {{stage}} ({{percent}}%) — {{elapsed}}",
     runningWithProgressMultiPlate: "Пластина {{plateIndex}} из {{plateCount}} • {{name}} — {{stage}} ({{percent}}%) — {{elapsed}}",
     completedToast: "Нарезка {{name}} завершена",
+    printNow: 'Печать сейчас',
     externalWriteFallbackToast: "Сохранено во внутренней библиотеке: не удалось записать во внешнюю папку",
     sidecarUnreachable: 'Слайсер по адресу {{url}} недоступен. Запущен ли sidecar на этой машине? На Pi адрес должен указывать на ПК, а не на localhost.',
     sidecarNotConfigured: 'Слайсер не настроен. Укажите адрес sidecar в Настройки → Slicer.',

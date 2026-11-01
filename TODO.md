@@ -1,6 +1,6 @@
 # TODO — PrintLab
 
-**Stand:** 01.11.2026, Version 1.21.3 · **Basis:** Bambuddy 1.2.5.7 (AGPL-3.0, Herkunft: `NOTICE`) · **Branch:** `bambu-monitor-port`
+**Stand:** 01.11.2026, Version 1.22.0 · **Basis:** Bambuddy 1.2.5.7 (AGPL-3.0, Herkunft: `NOTICE`) · **Branch:** `bambu-monitor-port`
 
 Was fertig ist, steht mit Datum im `CHANGELOG.md`. Die ausführliche Bewertung (Risiken R1–R16, Verbesserungen, Erweiterungen)
 steht in `docs/ANALYSE-2026-10-28.md`, die Abnahme in `docs/ABNAHME.md`.
@@ -11,6 +11,11 @@ PrintLab (Pi 5, nativ, systemd-Benutzerdienst), Fernzugriff über Tailscale, Upd
 Update mit Rückbau, Überwachung mit Meldung, Angebote mit PDF, Kamera-Einmessung, Zustand des Geräts, Anmeldung vorgeschrieben.
 
 ## Zuletzt erledigt (01.11.2026, in v1.21.0)
+
+**Nachtrag v1.22.0:** Der Weg endet nicht mehr im Slicedialog: Die Fertigmeldung bietet **„Jetzt drucken“** und öffnet
+den normalen Druckdialog mit dem Ergebnis. Ein nicht erreichbares Sidecar steht als gelber Hinweis auf jeder Seite, und
+ein im Hintergrund gescheiterter Slice kommt als Browser-Meldung. Dazu die Leiste der Druckerliste
+(`PrinterToolbar.tsx`) und die beiden Planer-Auswahlzweige (`scheduler/selection.py`) ausgelagert.
 
 **Nachtrag v1.21.3:** Der Verbindungstest sitzt jetzt bei den Slicer-Einstellungen und nennt Adresse, Version oder
 Fehlergrund — dieselbe Abfrage, die die Slice-Maske vor dem Slicen macht.
@@ -126,15 +131,15 @@ dieser Reihenfolge, mit Erwartungen, Abbruchkriterien und Protokoll.
 ## Technisch offen
 
 - [ ] Große Dateien weiter zerlegen; der Test `test_file_size_budget.py` verhindert nur das Wachsen. Stand
-      01.11.2026: `print_scheduler.py` 4 845 Zeilen (Grenze 4 850), `queue_pass.py` 1 032 (Vorgabe 2 600),
-      `PrintersPage.tsx` 1 985 (Grenze 2 000), `PrinterCard.tsx` 5 711 (Grenze 5 750), `PrinterCardModals.tsx`
-      569 (neben der Karte), `PrinterCardParts.tsx` 1 134 (Grenze 1 150), `client.ts` 1 008 (Grenze 1 050),
-      `types.ts` 4 754 (Grenze 4 800), `endpoints.ts` 4 017 (Grenze 4 050), `main.py` 10 970 (Grenze 11 000).
-      **Nächste Schnitte:** (1) die beiden Zweige in `queue_pass.py` weiter teilen — `_select_pinned` und
-      `_select_for_model` sind je ~300/200 Zeilen, die Verfügbarkeitsprüfungen lassen sich als eigene Methoden
-      herausziehen. (2) `PrintersPage.tsx` ist mit 1 985 Zeilen fast an der Grenze: die Listen- und Filterleiste
-      in eine eigene Datei. (3) `types.ts` nach Bereichen (Drucker, Archive, Warteschlange, Verwaltung) mit
-      Wiederausgabe wie in `client.ts`. Neue Routen gehören in `fork_routers.py`, nicht mehr in `main.py`.
+      01.11.2026: `print_scheduler.py` 4 845 Zeilen (Grenze 4 850), `queue_pass.py` 582 (Vorgabe 2 600, Auswahl in
+      `selection.py`, 483), `PrintersPage.tsx` 1 614 (Grenze 1 650, Leiste in `PrinterToolbar.tsx`, 497),
+      `PrinterCard.tsx` 5 711 (Grenze 5 750), `PrinterCardModals.tsx` 569 (neben der Karte),
+      `PrinterCardParts.tsx` 1 134 (Grenze 1 150), `client.ts` 1 008 (Grenze 1 050), `types.ts` 4 754 (Grenze 4 800),
+      `endpoints.ts` 4 017 (Grenze 4 050), `main.py` 10 970 (Grenze 11 000).
+      **Nächste Schnitte:** (1) `print_scheduler.py` ist mit 4 845 Zeilen an der Grenze: die Verfügbarkeitsprüfungen
+      aus `selection.py` als eigene Methoden herausziehen, bevor dort etwas dazukommt. (2) `types.ts` nach Bereichen
+      (Drucker, Archive, Warteschlange, Verwaltung) mit Wiederausgabe wie in `client.ts`. Neue Routen gehören in
+      `fork_routers.py`, nicht mehr in `main.py`.
 - [ ] Volle E2E-Prüfung MakerWorld → PC-Slicer → Warteschlange. Die inneren Glieder sind abgesichert
       (566 Integrationstests zu MakerWorld, Bibliothek und Warteschlange, alle grün); der Slicer-Upload und der
 druckende Drucker brauchen Gerät und Slicer.

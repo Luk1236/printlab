@@ -36,8 +36,19 @@ interface DispatchToastData {
 
 interface ToastAction {
   label: string;
-  href: string;
+  /** Link target. Without one the action renders as a button and only
+   *  ``onClick`` runs — used by the slice tracker's "Print now" offer, which
+   *  opens the print dialog in place instead of navigating away. */
+  href?: string;
   onClick?: () => void;
+}
+
+interface ToastOptions {
+  action?: ToastAction;
+  /** Wie lange die Meldung stehen bleibt. Vorgabe: 3 s (Fehler/Warnungen 6 s).
+   *  Eine Meldung mit Aktion braucht länger, sonst ist der Knopf weg, bevor
+   *  man ihn erreicht. */
+  durationMs?: number;
 }
 
 type ShowPersistentToast = (
@@ -57,7 +68,7 @@ interface Toast {
 }
 
 interface ToastContextType {
-  showToast: (message: string, type?: ToastType) => void;
+  showToast: (message: string, type?: ToastType, options?: ToastOptions) => void;
   showPersistentToast: ShowPersistentToast;
   dismissToast: (id: string) => void;
   setViewportSuppressed: (suppressed: boolean) => void;
@@ -161,19 +172,26 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const showToast = useCallback((message: string, type: ToastType = 'success') => {
-    if (!isMountedRef.current) return;
-    const id = Math.random().toString(36).substr(2, 9);
-    setToasts((prev) => [...prev, { id, message, type }]);
-
-    // Auto-dismiss — longer for the types that carry more to read.
-    const timeout = setTimeout(() => {
+  const showToast = useCallback(
+    (message: string, type: ToastType = 'success', options?: ToastOptions) => {
       if (!isMountedRef.current) return;
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-      timeoutRefs.current.delete(id);
-    }, LONG_LIVED_TOAST_TYPES.has(type) ? TOAST_DISMISS_LONG_MS : TOAST_DISMISS_MS);
-    timeoutRefs.current.set(id, timeout);
-  }, []);
+      const id = Math.random().toString(36).substr(2, 9);
+      setToasts((prev) => [...prev, { id, message, type, action: options?.action }]);
+
+      // Auto-dismiss — longer for the types that carry more to read, and longer
+      // still when an explicit duration is asked for (an offer with a button).
+      const duration =
+        options?.durationMs ??
+        (LONG_LIVED_TOAST_TYPES.has(type) ? TOAST_DISMISS_LONG_MS : TOAST_DISMISS_MS);
+      const timeout = setTimeout(() => {
+        if (!isMountedRef.current) return;
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+        timeoutRefs.current.delete(id);
+      }, duration);
+      timeoutRefs.current.set(id, timeout);
+    },
+    [],
+  );
 
   const showPersistentToast = useCallback(
     (id: string, message: string, type: ToastType = 'info', options?: { action?: ToastAction }) => {
@@ -475,20 +493,32 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               <>
                 {icons[toast.type]}
                 <span className="text-white text-sm">{toast.message}</span>
-                {toast.action && (
-                  <a
-                    href={toast.action.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => {
-                      toast.action?.onClick?.();
-                      dismissToast(toast.id);
-                    }}
-                    className="ml-2 px-2 py-1 rounded text-xs font-medium bg-bambu-green/20 text-bambu-green hover:bg-bambu-green/30 whitespace-nowrap"
-                  >
-                    {toast.action.label}
-                  </a>
-                )}
+                {toast.action &&
+                  (toast.action.href ? (
+                    <a
+                      href={toast.action.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => {
+                        toast.action?.onClick?.();
+                        dismissToast(toast.id);
+                      }}
+                      className="ml-2 px-2 py-1 rounded text-xs font-medium bg-bambu-green/20 text-bambu-green hover:bg-bambu-green/30 whitespace-nowrap"
+                    >
+                      {toast.action.label}
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        toast.action?.onClick?.();
+                        dismissToast(toast.id);
+                      }}
+                      className="ml-2 px-2 py-1 rounded text-xs font-medium bg-bambu-green/20 text-bambu-green hover:bg-bambu-green/30 whitespace-nowrap"
+                    >
+                      {toast.action.label}
+                    </button>
+                  ))}
                 <button
                   onClick={() => dismissToast(toast.id)}
                   className="ml-2 text-bambu-gray hover:text-white transition-colors"

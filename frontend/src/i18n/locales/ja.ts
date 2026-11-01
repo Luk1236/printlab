@@ -1,5 +1,9 @@
 export default {
   // Navigation
+  slicerBanner: {
+    unreachable: 'スライサーに接続できません（{{url}}）。サイドカーが応答するまでスライスできません。',
+    openSettings: 'スライサー設定',
+  },
   nav: {
     groupPrint: '印刷',
     groupMaterial: '材料とコスト',
@@ -5135,6 +5139,7 @@ export default {
     runningWithProgress: '{{name}} – {{stage}} ({{percent}}%) – {{elapsed}}',
     runningWithProgressMultiPlate: 'プレート {{plateIndex}} / {{plateCount}} • {{name}} – {{stage}} ({{percent}}%) – {{elapsed}}',
     completedToast: '{{name}}をスライス済み',
+    printNow: '今すぐ印刷',
     externalWriteFallbackToast: '内部ライブラリに保存しました: 外部フォルダーに書き込めませんでした',
     sidecarUnreachable: '{{url}} のスライサーに接続できません。このマシンで sidecar は動作していますか？ Pi では localhost ではなく PC のアドレスを指定してください。',
     sidecarNotConfigured: 'スライサーが設定されていません。設定 → Slicer で sidecar のアドレスを入力してください。',

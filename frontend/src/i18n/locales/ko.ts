@@ -1,4 +1,8 @@
 export default {
+  slicerBanner: {
+    unreachable: '슬라이서에 연결할 수 없습니다({{url}}). 사이드카가 다시 응답할 때까지 슬라이스할 수 없습니다.',
+    openSettings: '슬라이서 설정',
+  },
   nav: {
     groupPrint: '인쇄',
     groupMaterial: '재료 및 비용',
@@ -4921,6 +4925,7 @@ export default {
     runningToast: '{{name}} 슬라이싱 중 — {{elapsed}}',
     runningWithProgress: '{{name}} — {{stage}} ({{percent}}%) — {{elapsed}}',
     completedToast: '{{name}} 슬라이싱 완료',
+    printNow: '지금 인쇄',
     externalWriteFallbackToast: '내부 라이브러리에 저장했습니다: 외부 폴더에 쓸 수 없습니다',
     failedToast: '{{name}} 슬라이싱 실패: {{detail}}',
     tier: {

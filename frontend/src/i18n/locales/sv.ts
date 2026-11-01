@@ -1,5 +1,9 @@
 export default {
   // Navigation
+  slicerBanner: {
+    unreachable: 'Slicern är inte nåbar ({{url}}). Utskärning är otillgänglig tills sidecaren svarar igen.',
+    openSettings: 'Slicerinställningar',
+  },
   nav: {
     groupPrint: 'Utskrift',
     groupMaterial: 'Material och kostnader',
@@ -5170,6 +5174,7 @@ errors: {
     runningWithProgress: '{{name}} — {{stage}} ({{percent}}%) — {{elapsed}}',
     runningWithProgressMultiPlate: 'Platta {{plateIndex}} av {{plateCount}} • {{name}} — {{stage}} ({{percent}}%) — {{elapsed}}',
     completedToast: 'Slicad {{name}}',
+    printNow: 'Skriv ut nu',
     externalWriteFallbackToast: 'Sparad i det interna biblioteket: den externa mappen kunde inte skrivas till',
     sidecarUnreachable: 'Slicern på {{url}} går inte att nå. Kör sidecaren på den här datorn? På Pi:n måste adressen peka på datorn, inte på localhost.',
     sidecarNotConfigured: 'Ingen slicer är konfigurerad. Ange sidecarens adress under Inställningar → Slicer.',

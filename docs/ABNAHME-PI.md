@@ -2,12 +2,13 @@
 
 Diese Liste arbeitet **eine Sitzung am Gerät** ab, in dieser Reihenfolge:
 
-1. **Update** auf 1.18.0 — erst danach sind die neuen Funktionen da, auf die sich die übrigen Punkte beziehen.
-2. **Angebots-Link** — reine Software, kein Risiko für Mechanik oder Druckbetrieb, geht auch vom Schreibtisch und Handy.
-3. **Hardware** — vom Trockenlauf bis zur ersten echten Bewegung, aufsteigend im Risiko.
+1. **Update** auf 1.22.0 — erst danach sind die neuen Funktionen da, auf die sich die übrigen Punkte beziehen.
+2. **Slicer und Druckweg** — der Weg Modell → Slice → Druck, samt Meldung, wenn der Slicer fehlt.
+3. **Angebots-Link** — reine Software, kein Risiko für Mechanik oder Druckbetrieb, geht auch vom Schreibtisch und Handy.
+4. **Hardware** — vom Trockenlauf bis zur ersten echten Bewegung, aufsteigend im Risiko.
 
-Richtwerte: Update 20 Minuten, Angebots-Link 20 Minuten, Hardware 60–90 Minuten. Was die Liste nicht abdeckt (E-Rechnung,
-KI-Fehlerhilfe, Sicherung, HTTPS, Slicer), steht in [`ABNAHME.md`](ABNAHME.md).
+Richtwerte: Update 20 Minuten, Slicer 10 Minuten, Angebots-Link 20 Minuten, Hardware 60–90 Minuten. Was die Liste nicht
+abdeckt (E-Rechnung, KI-Fehlerhilfe, Sicherung, HTTPS), steht in [`ABNAHME.md`](ABNAHME.md).
 
 **Regeln für die ganze Sitzung**
 
@@ -34,14 +35,14 @@ KI-Fehlerhilfe, Sicherung, HTTPS, Slicer), steht in [`ABNAHME.md`](ABNAHME.md).
 
 ---
 
-## 1. Update auf 1.18.0 (20 Minuten)
+## 1. Update auf 1.22.0 (20 Minuten)
 
-Ziel: der Pi läuft auf 1.18.0, und du weißt, dass der Weg zurück funktioniert, bevor irgendetwas anderes passiert.
+Ziel: der Pi läuft auf 1.22.0, und du weißt, dass der Weg zurück funktioniert, bevor irgendetwas anderes passiert.
 
 - [ ] **Einstellungen → Aktualisierungen → „Jetzt prüfen“** drücken.
-      Erwartung: „Update verfügbar: v1.18.0“ (oder neuer), darunter „Versionshinweise“.
+      Erwartung: „Update verfügbar: v1.22.0“ (oder neuer), darunter „Versionshinweise“.
 - [ ] **„Update installieren“** drücken. Die Seite lädt nach dem Neustart selbst neu; falls nicht, von Hand neu laden.
-- [ ] Version gegenprüfen: unter **Einstellungen → Aktualisierungen** steht bei „Aktuelle Version“ **1.18.0**
+- [ ] Version gegenprüfen: unter **Einstellungen → Aktualisierungen** steht bei „Aktuelle Version“ **1.22.0**
       (die Oberfläche zeigt die Version nur dort an).
 - [ ] `journalctl --user -u printlab -n 40` — Erwartung: Start ohne Traceback, kein „Application startup failed“.
 - [ ] Automatischen Check wiederholen (`werkzeuge/abnahme.py`): gleiche oder bessere Einstufung als in Schritt 0.
@@ -56,6 +57,52 @@ Stand samt Datenbank — Dienst neu starten und Log sichern, nicht von Hand Date
 
 **Nicht Teil dieses Blocks:** ein Update, das absichtlich nicht startet, um den Rückbau zu provozieren. Das gehört auf eine
 Testkopie, nicht auf den Betriebs-Pi.
+
+---
+
+## 1b. Slicer und Druckweg (10 Minuten)
+
+Ziel: Der PC-Slicer ist vom Pi aus erreichbar, und nach dem Slicen führt ein Knopf direkt zum Druck — ohne den Umweg über
+die Bibliothek. Das ruhigste Testmodell ist ein kleines Teil, das du notfalls wirklich drucken kannst.
+
+**Voraussetzungen**
+
+- [ ] Slicer-Sidecar läuft auf dem PC (Bambu Studio oder OrcaSlicer mit geöffnetem Port), PC und Pi im selben Netz oder über
+      Tailscale erreichbar — **nicht** `localhost` als Adresse eintragen: das zeigt auf den Pi selbst.
+- [ ] Unter **Einstellungen → Slicer** ist „Slicer-API verwenden“ an und die Adresse des PCs eingetragen, z. B.
+      `http://192.168.1.50:3001`.
+- [ ] In einem zweiten Browsertab die Oberfläche geöffnet, damit ein Neuladen nichts unterbricht.
+
+**Ablauf**
+
+- [ ] **Einstellungen → Slicer → „Verbindung prüfen“** drücken.
+      Erwartung: „Sidecar erreichbar.“ mit Version, darunter die tatsächlich benutzte Adresse. Kommt stattdessen eine rote
+      Meldung, steht dort die Adresse und der Grund (z. B. „All connection attempts failed“).
+- [ ] **Gegenprobe:** Adresse absichtlich auf `http://localhost:3001` ändern, speichern, erneut prüfen.
+      Erwartung: nicht erreichbar, und die Meldung nennt `localhost` — genau der Fehler, den die Prüfung sichtbar machen soll.
+- [ ] Adresse zurückstellen und erneut prüfen. Jetzt muss die Kopfzeile ruhig bleiben: bei erreichbarem Sidecar erscheint
+      **kein** gelber Hinweis. Bei nicht erreichbarem Sidecar steht auf jeder Seite „Der Slicer ist nicht erreichbar (…)“
+      mit einem Link zu den Slicer-Einstellungen.
+- [ ] Eine `.3mf`-Datei (noch **nicht** geslict) aus dem Dateimanager auf die Karte eines Druckers ziehen.
+      Erwartung: Die Datei wird hochgeladen und der Slicedialog öffnet sich — nicht die Meldung „Nur .gcode …“.
+- [ ] Presets prüfen (Drucker, Prozess, Filament), **„Slicen“** drücken, Dialog schließen.
+      Erwartung: Fortschrittsmeldung unten rechts; nach dem Fertigstellen eine grüne Meldung mit dem Dateinamen und dem
+      Knopf **„Jetzt drucken“**.
+- [ ] **„Jetzt drucken“** drücken.
+      Erwartung: Der normale Druckdialog öffnet sich mit dem geslicten `.gcode.3mf`, Druckerauswahl, AMS-Zuordnung und
+      Zeitplan. Für die Abnahme reicht, den Dialog einmal zu prüfen und mit **Abbrechen** zu schließen (oder das kleine
+      Teil wirklich zu drucken).
+- [ ] **Push bei Fehlschlag:** In **Einstellungen → Benachrichtigungen** die Browser-Meldungen für diesen Browser
+      einschalten und „Testmeldung“ bestätigen. Dann die Slicer-Adresse auf eine falsche IP stellen, slicen, Browser-Tab
+      schließen.
+      Erwartung: Kurz darauf kommt eine Browser-Meldung „Slicen fehlgeschlagen: Der Slicer ist nicht erreichbar (…)“;
+      ein Klick öffnet die Einstellungen. Adresse danach zurückstellen.
+- [ ] `journalctl --user -u printlab -n 40` — Erwartung: kein Traceback, kein „Unhandled exception“.
+
+**Abbruch:** Der Slicedialog bietet „Slicen“ an, obwohl die Verbindungsprüfung rot ist → nicht slicen, Befund notieren.
+Öffnet „Jetzt drucken“ einen Dialog ohne Datei oder mit falschem Drucker → nicht absenden, Datei im Dateimanager prüfen.
+Eine Push-Meldung, die trotz falscher Adresse ausbleibt, ist ein Befund (dann Benachrichtigungsstatus im selben Dialog
+prüfen), aber kein Grund, den restlichen Ablauf abzubrechen.
 
 ---
 
@@ -194,7 +241,8 @@ Automatik aus, Not-Halt bereit halten, Befund notieren.
 | Block | Datum | Wer | Ergebnis (ok / Befund) | Bemerkung |
 |---|---|---|---|---|
 | 0 Vorbereitung | | | | |
-| 1 Update auf 1.18.0 | | | | |
+| 1 Update auf 1.22.0 | | | | |
+| 1b Slicer und Druckweg | | | | |
 | 2 Angebots-Link | | | | |
 | 3.1 Trockenlauf | | | | |
 | 3.2 Einmessen | | | | |

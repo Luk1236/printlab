@@ -1,5 +1,9 @@
 export default {
   // Navigation
+  slicerBanner: {
+    unreachable: '無法連線切片器（{{url}}）。在 sidecar 恢復回應之前無法切片。',
+    openSettings: '切片器設定',
+  },
   nav: {
     groupPrint: '列印',
     groupMaterial: '材料與成本',
@@ -5122,6 +5126,7 @@ export default {
     runningWithProgress: '{{name}} – {{stage}} ({{percent}}%) – {{elapsed}}',
     runningWithProgressMultiPlate: '盤面 {{plateIndex}} / {{plateCount}} • {{name}} – {{stage}} ({{percent}}%) – {{elapsed}}',
     completedToast: '已切片 {{name}}',
+    printNow: '立即列印',
     externalWriteFallbackToast: '已儲存到內部庫：無法寫入外部資料夾',
     sidecarUnreachable: '無法連線到 {{url}} 的切片器。這台機器上有執行 sidecar 嗎？在 Pi 上位址應指向電腦，而不是 localhost。',
     sidecarNotConfigured: '尚未設定切片器。請在 設定 → Slicer 中填寫 sidecar 位址。',

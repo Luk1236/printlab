@@ -49,3 +49,35 @@ async def test_failed_job_exposes_the_kind():
     assert job.error_status == 504
     assert job.error_kind == "timeout"
     assert job.error_detail == "Slicer ausgelastet"
+
+
+@pytest.mark.asyncio
+async def test_failed_job_announces_itself_as_a_browser_push(monkeypatch):
+    """Ein gescheiterter Hintergrund-Slice darf nicht nur im Protokoll enden."""
+    from backend.app.services import web_push
+
+    calls: list[tuple[str, str, str]] = []
+    monkeypatch.setattr(
+        web_push,
+        "schedule",
+        lambda title, body, url="/": calls.append((title, body, url)),
+    )
+
+    async def run(job_id: int):
+        raise http_exception_to_job_error(SliceJobHttpError(502, "Slicer sidecar unreachable", "sidecar_unreachable"))
+
+    service = SliceDispatchService()
+    job = await service.enqueue(kind="library_file", source_id=1, source_name="modell.3mf", run=run)
+    for _ in range(100):
+        if job.status == "failed":
+            break
+        await asyncio.sleep(0.01)
+
+    assert job.status == "failed"
+    assert calls == [
+        (
+            "PrintLab",
+            "Slicen fehlgeschlagen: Der Slicer ist nicht erreichbar (modell.3mf).",
+            "/settings",
+        )
+    ]

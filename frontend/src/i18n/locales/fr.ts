@@ -1,5 +1,9 @@
 export default {
   // Navigation
+  slicerBanner: {
+    unreachable: "Le slicer est injoignable ({{url}}). Le tranchage est indisponible jusqu'à ce que le sidecar réponde à nouveau.",
+    openSettings: 'Réglages du slicer',
+  },
   nav: {
     groupPrint: 'Impression',
     groupMaterial: 'Matière et coûts',
@@ -5123,6 +5127,7 @@ export default {
     runningWithProgress: '{{name}} – {{stage}} ({{percent}} %) – {{elapsed}}',
     runningWithProgressMultiPlate: 'Plateau {{plateIndex}} sur {{plateCount}} • {{name}} – {{stage}} ({{percent}} %) – {{elapsed}}',
     completedToast: '{{name}} découpé',
+    printNow: 'Imprimer maintenant',
     externalWriteFallbackToast: 'Enregistré dans la bibliothèque interne : impossible d\'écrire dans le dossier externe',
     sidecarUnreachable: 'Le slicer à {{url}} est injoignable. Le sidecar tourne-t-il sur cette machine ? Sur le Pi, l’adresse doit pointer vers le PC, pas vers localhost.',
     sidecarNotConfigured: 'Aucun slicer n’est configuré. Saisissez l’adresse du sidecar dans Réglages → Slicer.',

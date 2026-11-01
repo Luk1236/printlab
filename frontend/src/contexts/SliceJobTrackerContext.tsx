@@ -18,6 +18,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { api, type SliceJobProgress, type SliceJobState, type SliceJobStatus } from '../api/client';
 import { useToast } from './ToastContext';
 import { AlertModal } from '../components/AlertModal';
+import { PrintModal } from '../components/PrintModal';
 
 interface TrackedJob {
   id: number;
@@ -36,6 +37,12 @@ const POLL_INTERVAL_MS = 1500;
 const TICK_INTERVAL_MS = 1000;
 
 const toastIdFor = (jobId: number) => `slice-job-${jobId}`;
+
+/** Ergebnis, das sich direkt drucken lässt. Bibliotheksdateien und Archive
+ *  tragen verschiedene Kennungen; der Dialog nimmt genau eine davon. */
+type PrintOffer =
+  | { kind: 'libraryFile'; id: number; name: string }
+  | { kind: 'archive'; id: number; name: string };
 
 /** Decode percent-encoded characters in a filename so the toast doesn't
  * show `stormtrooper-helmet%20h2d.3mf` for files that came from a source
@@ -72,6 +79,10 @@ export function SliceJobTrackerProvider({ children }: { children: ReactNode }) {
   // slicer's reason (e.g. "objects over the bed boundary") is actionable and
   // a 3s toast hides it before it can be read.
   const [sliceError, setSliceError] = useState<{ name: string; detail: string } | null>(null);
+  // Nach einem erfolgreichen Slice angebotenes Drucken. Der Knopf in der
+  // Meldung öffnet den normalen Druckdialog für genau diese Datei — dieselben
+  // Optionen (Drucker, AMS, Zeitplan) wie aus dem Dateimanager.
+  const [printOffer, setPrintOffer] = useState<PrintOffer | null>(null);
 
   // Stable mutable ref so the polling effect can read the current list
   // without re-subscribing every time it changes.
@@ -193,9 +204,26 @@ export function SliceJobTrackerProvider({ children }: { children: ReactNode }) {
         // firing on essentially every slice (3MF inputs trigger the
         // embedded-settings fallback as a normal path) and just added
         // noise — see the trailing yellow toast complaint, removed.
+        const result = state.result;
+        const offer: PrintOffer | null = result
+          ? 'library_file_id' in result
+            ? { kind: 'libraryFile', id: result.library_file_id, name: result.name || job.sourceName }
+            : 'archive_id' in result
+              ? { kind: 'archive', id: result.archive_id, name: result.name || job.sourceName }
+              : null
+          : null;
+        // Die Meldung bleibt mit Knopf länger stehen als die üblichen 3 s:
+        // wer den Slice im Hintergrund laufen ließ, kommt nicht in drei
+        // Sekunden zurück.
         showToast(
           t('slice.completedToast', 'Sliced {{name}}', { name: prettifyFilename(job.sourceName) }),
           'success',
+          offer
+            ? {
+                action: { label: t('slice.printNow'), onClick: () => setPrintOffer(offer) },
+                durationMs: 15000,
+              }
+            : undefined,
         );
         // The result normally lands next to its source, including on an
         // external mount. When the mount can't take it the file is still
@@ -315,6 +343,21 @@ export function SliceJobTrackerProvider({ children }: { children: ReactNode }) {
           subtitle={sliceError.name}
           message={sliceError.detail}
           onClose={() => setSliceError(null)}
+        />
+      )}
+      {printOffer && (
+        <PrintModal
+          mode="create"
+          {...(printOffer.kind === 'libraryFile'
+            ? { libraryFileId: printOffer.id }
+            : { archiveId: printOffer.id })}
+          archiveName={printOffer.name}
+          onClose={() => setPrintOffer(null)}
+          onSuccess={() => {
+            setPrintOffer(null);
+            queryClient.invalidateQueries({ queryKey: ['queue'] });
+            queryClient.invalidateQueries({ queryKey: ['archives'] });
+          }}
         />
       )}
     </SliceJobTrackerContext.Provider>
