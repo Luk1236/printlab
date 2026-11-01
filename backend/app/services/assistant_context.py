@@ -137,4 +137,31 @@ async def snapshot(db, status_of, now: datetime | None = None) -> tuple[str, dic
         )
     if len(items) > MAX_ITEMS:
         lines.append(f"({len(items) - MAX_ITEMS} more items not shown)")
+    # KI-Funde und Überwachung gehören in den Kontext, damit der Assistent
+    # „was ist mit dem letzten Druck?“ beantworten kann, ohne zu raten.
+    try:
+        from backend.app.services import ai_error_scan, local_ai_watch
+
+        findings = ai_error_scan.list_findings(3)
+        if findings:
+            lines.append("Recent AI findings (time | pattern | confidence | reason):")
+            for finding in findings:
+                lines.append(
+                    " | ".join(
+                        [
+                            str(finding.get("ts", ""))[:16],
+                            str(finding.get("pattern_id", "")),
+                            f"{round(float(finding.get('confidence', 0)) * 100)}%",
+                            _clean(finding.get("reason", ""), 100),
+                        ]
+                    )
+                )
+        watch = local_ai_watch.status()
+        if watch["config"].get("enabled"):
+            state = watch["state"]
+            lines.append(
+                f"AI watch: enabled, last run {str(state.get('last_run') or '-')[:16]}, error {state.get('last_error') or '-'}"
+            )
+    except Exception:  # noqa: BLE001 - der Kontext darf an einer Zusatzangabe nicht scheitern
+        pass
     return "\n".join(lines), {item.id: _item_name(item) for item in shown if item.status == "pending"}

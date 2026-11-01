@@ -8508,6 +8508,13 @@ export default {
     noWriteAccess: '予測設定を変更する権限がありません。',
   },
   errorHelp: {
+    aiWatchProgress: '進捗 % から確認',
+    aiQuality: '品質: {{correct}} 正解、{{wrong}} 誤り',
+    aiAccuracyShort: '精度',
+    aiThresholdCurrent: 'しきい値',
+    aiApplyThreshold: '適用',
+    aiConfusion: '混同',
+    aiWrongChoose: '正しくは …',
     aiOpenPattern: '不良を開く',
     aiWatchFrames: '1回の確認あたりの画像数',
     aiWatchThresholds: '不良ごとのしきい値',

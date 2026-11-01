@@ -38,6 +38,7 @@ DEFAULTS: dict[str, Any] = {
     "frames": 2,  # Bilder je Prüfung (Mehrheitsentscheid)
     "frame_gap_seconds": 2,
     "thresholds": {},  # Sicherheit je Fehlerbild, überschreibt min_confidence
+    "min_progress_percent": 5,  # erste Schichten/ Aufheizen auslassen
 }
 ACTIONS = ("notify", "pause")
 MIN_INTERVAL = 120
@@ -105,6 +106,7 @@ def save_config(update: dict[str, Any]) -> dict[str, Any]:
         config["cooldown_minutes"] = max(0, min(1440, int(config["cooldown_minutes"])))
         config["frames"] = max(1, min(3, int(config["frames"])))
         config["frame_gap_seconds"] = max(1, min(15, int(config["frame_gap_seconds"])))
+        config["min_progress_percent"] = max(0, min(95, int(config["min_progress_percent"])))
         CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
         tmp = CONFIG_PATH.with_name(CONFIG_PATH.name + ".tmp")
         tmp.write_text(json.dumps(config, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -200,6 +202,9 @@ async def check_once(only_printer: int | None = None) -> list[dict[str, Any]]:
                 continue
             if getattr(printer_status, "state", None) != "RUNNING" or not printer_manager.is_connected(printer_id):
                 _printer_state.pop(printer_id, None)
+                continue
+            progress = float(getattr(printer_status, "progress", 0) or 0)
+            if progress < int(config["min_progress_percent"]):
                 continue
             key = getattr(printer_status, "gcode_file", None) or getattr(printer_status, "subtask_name", None) or "?"
             state = _printer_state.get(printer_id)

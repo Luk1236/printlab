@@ -8434,6 +8434,13 @@ export default {
     noWriteAccess: 'Tahmin ayarlarını değiştirme izniniz yok.',
   },
   errorHelp: {
+    aiWatchProgress: 'Şu ilerlemeden sonra (%)',
+    aiQuality: 'Kalite: {{correct}} doğru, {{wrong}} yanlış',
+    aiAccuracyShort: 'İsabet',
+    aiThresholdCurrent: 'Eşik',
+    aiApplyThreshold: 'Uygula',
+    aiConfusion: 'Karışıklıklar',
+    aiWrongChoose: 'Doğrusu …',
     aiOpenPattern: 'Hatayı aç',
     aiWatchFrames: 'Denetim başına görüntü',
     aiWatchThresholds: 'Hata başına eşik',

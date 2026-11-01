@@ -8492,6 +8492,13 @@ export default {
     noWriteAccess: '您沒有修改預測設定的權限。',
   },
   errorHelp: {
+    aiWatchProgress: '僅從進度 % 起',
+    aiQuality: '品質：{{correct}} 正確，{{wrong}} 錯誤',
+    aiAccuracyShort: '準確率',
+    aiThresholdCurrent: '閾值',
+    aiApplyThreshold: '套用',
+    aiConfusion: '混淆',
+    aiWrongChoose: '正確應為 …',
     aiOpenPattern: '開啟缺陷',
     aiWatchFrames: '每次檢查圖片數',
     aiWatchThresholds: '依缺陷設定閾值',

@@ -71,8 +71,10 @@ ollama list
 
 1. Ein Bild eines Drucks hochladen (oder ein gesammeltes Fehlerbild auswählen).
 2. **Analysieren** drücken. Das Modell antwortet mit Fehlerbild, Sicherheit und Begründung.
-3. Über die Daumen an der Trefferzeile festhalten, ob die Erkennung stimmt. Die Summe
-   steht oben in der Karte.
+3. Über die Daumen an der Trefferzeile festhalten, ob die Erkennung stimmt. Bei „falsch“ lässt sich
+   gleich das richtige Fehlerbild auswählen — daraus entstehen Trefferquote und Verwechslungen.
+   Die Karte zeigt beides unter „Qualität“ und schlägt je Fehlerbild eine Schwelle vor, die sich
+   mit einem Klick übernehmen lässt.
 
 Ein Software-Screenshot ergibt korrekt „kein Fehlerbild“ — das ist ein guter erster
 Funktionstest, ohne dass ein Druck laufen muss.
@@ -102,6 +104,7 @@ unter „Laufende Überwachung (lokal)“:
 | Abstand | Minuten zwischen zwei Bildern (mindestens 2) |
 | Treffer in Folge | Wie oft dasselbe Fehlerbild bestätigt werden muss (Standard 2) |
 | Bilder je Prüfung | Aufnahmen pro Runde (1–3, Standard 2); entschieden wird nach Mehrheit |
+| Erst ab Fortschritt | Erste Schichten/Aufheizen auslassen (Standard 5 %) |
 | Pause zwischen Meldungen | Ruhezeit nach einer Meldung (Standard 30 Minuten) |
 | Aktion | „Nur melden“ oder „Pausieren und melden“ |
 | Schwellen je Fehlerbild | Eigene Mindest-Sicherheit je Fehlerbild; leer = allgemeiner Wert |

@@ -8494,6 +8494,13 @@ export default {
     noWriteAccess: 'Você não tem permissão para modificar as configurações de previsão.',
   },
   errorHelp: {
+    aiWatchProgress: 'Só a partir de progresso (%)',
+    aiQuality: 'Qualidade: {{correct}} corretos, {{wrong}} errados',
+    aiAccuracyShort: 'Precisão',
+    aiThresholdCurrent: 'Limiar',
+    aiApplyThreshold: 'Aplicar',
+    aiConfusion: 'Confusões',
+    aiWrongChoose: 'O correto seria …',
     aiOpenPattern: 'Abrir defeito',
     aiWatchFrames: 'Imagens por verificação',
     aiWatchThresholds: 'Limiares por defeito',

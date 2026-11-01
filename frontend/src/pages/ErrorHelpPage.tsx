@@ -207,14 +207,17 @@ function FindingRow({
   canRate,
   onFeedback,
   onOpenPattern,
+  patterns = [],
 }: {
   finding: AiScanFinding;
   title: string;
   canRate: boolean;
-  onFeedback: (verdict: 'correct' | 'wrong') => void;
+  onFeedback: (verdict: 'correct' | 'wrong', actualPatternId?: string) => void;
   onOpenPattern?: () => void;
+  patterns?: { id: string; label: string }[];
 }) {
   const { t, i18n } = useTranslation();
+  const [wrongOpen, setWrongOpen] = useState(false);
   return (
     <li className="flex flex-col md:flex-row md:items-baseline gap-1 md:gap-2 text-xs border-b border-bambu-dark-tertiary/50 pb-1 last:border-0">
       <span className="text-bambu-gray tabular-nums shrink-0">{new Date(finding.ts).toLocaleString(i18n.language)}</span>
@@ -236,7 +239,10 @@ function FindingRow({
           <button
             type="button"
             disabled={!canRate}
-            onClick={() => onFeedback('correct')}
+            onClick={() => {
+              setWrongOpen(false);
+              onFeedback('correct');
+            }}
             aria-label={t('errorHelp.aiMarkCorrect')}
             title={t('errorHelp.aiMarkCorrect')}
             className={`p-1 rounded transition-colors disabled:opacity-40 ${
@@ -248,7 +254,7 @@ function FindingRow({
           <button
             type="button"
             disabled={!canRate}
-            onClick={() => onFeedback('wrong')}
+            onClick={() => setWrongOpen(!wrongOpen)}
             aria-label={t('errorHelp.aiMarkWrong')}
             title={t('errorHelp.aiMarkWrong')}
             className={`p-1 rounded transition-colors disabled:opacity-40 ${
@@ -257,6 +263,26 @@ function FindingRow({
           >
             <ThumbsDown className="w-3.5 h-3.5" />
           </button>
+          {wrongOpen && (
+            <select
+              autoFocus
+              defaultValue=""
+              onChange={(event) => {
+                if (!event.target.value) return;
+                onFeedback('wrong', event.target.value);
+                setWrongOpen(false);
+              }}
+              aria-label={t('errorHelp.aiWrongChoose')}
+              className="max-w-[12rem] rounded bg-bambu-dark border border-bambu-dark-tertiary px-1 py-0.5 text-[11px] text-white"
+            >
+              <option value="">{t('errorHelp.aiWrongChoose')}</option>
+              {patterns.map((pattern) => (
+                <option key={pattern.id} value={pattern.id}>
+                  {pattern.label}
+                </option>
+              ))}
+            </select>
+          )}
         </span>
       )}
     </li>
@@ -354,7 +380,8 @@ export function ErrorHelpPage() {
     onError: (error: Error) => showToast(error.message, 'error'),
   });
   const aiFeedback = useMutation({
-    mutationFn: ({ id, verdict }: { id: string; verdict: 'correct' | 'wrong' }) => api.sendAiFeedback(id, verdict),
+    mutationFn: ({ id, verdict, actual }: { id: string; verdict: 'correct' | 'wrong'; actual?: string }) =>
+      api.sendAiFeedback(id, verdict, actual),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ai-scan'] });
       queryClient.invalidateQueries({ queryKey: ['ai-scan-history'] });
@@ -461,6 +488,11 @@ export function ErrorHelpPage() {
       document.querySelector(`[data-testid="pattern-${patternId}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     );
   };
+
+  const patternOptions = (data?.patterns ?? []).map((pattern) => ({
+    id: pattern.id,
+    label: german ? pattern.title : pattern.title_en,
+  }));
 
   const patchPrinter = (printer: CountermeasurePrinter, change: { enabled?: boolean; rule?: string; value?: boolean }) => {
     if (!config) return;
@@ -1069,14 +1101,97 @@ export function ErrorHelpPage() {
                           finding={finding}
                           title={hit ? (german ? hit.title : hit.title_en) : finding.pattern_id}
                           canRate={canControl}
-                          onFeedback={(verdict) => aiFeedback.mutate({ id: finding.id, verdict })}
+                          onFeedback={(verdict, actual) => aiFeedback.mutate({ id: finding.id, verdict, actual })}
                           onOpenPattern={() => openPattern(finding.pattern_id)}
+                          patterns={patternOptions}
                         />
                       );
                     })}
                   </ul>
                 )}
               </div>
+
+              {aiScan.data.quality && aiScan.data.quality.patterns.length > 0 && (
+                <details className="rounded-lg border border-bambu-dark-tertiary/60 px-3 py-2">
+                  <summary className="cursor-pointer text-xs text-bambu-gray-light">
+                    {t('errorHelp.aiQuality', {
+                      correct: aiScan.data.quality.feedback.correct,
+                      wrong: aiScan.data.quality.feedback.wrong,
+                    })}
+                  </summary>
+                  <div className="overflow-x-auto mt-2">
+                    <table className="w-full text-[11px]">
+                      <thead>
+                        <tr className="text-left text-bambu-gray">
+                          <th className="py-1 pr-3 font-medium">{t('errorHelp.aiFindings')}</th>
+                          <th className="py-1 pr-3 font-medium">{t('errorHelp.aiAccuracyShort')}</th>
+                          <th className="py-1 pr-3 font-medium">{t('errorHelp.aiThresholdCurrent')}</th>
+                          <th className="py-1 font-medium" />
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {aiScan.data.quality.patterns.map((row) => {
+                          const hit = data?.patterns.find((entry) => entry.id === row.pattern_id);
+                          return (
+                            <tr key={row.pattern_id} className="border-t border-bambu-dark-tertiary/40">
+                              <td className="py-1 pr-3 text-white">
+                                {hit ? (german ? hit.title : hit.title_en) : row.pattern_id}
+                              </td>
+                              <td className="py-1 pr-3 text-bambu-gray-light">
+                                {row.accuracy} % ({row.total})
+                              </td>
+                              <td className="py-1 pr-3 text-bambu-gray-light">
+                                {row.current_threshold} %
+                                {row.suggested_threshold !== null && row.suggested_threshold !== row.current_threshold
+                                  ? ` → ${row.suggested_threshold} %`
+                                  : ''}
+                              </td>
+                              <td className="py-1 text-right">
+                                {row.suggested_threshold !== null &&
+                                  row.suggested_threshold !== row.current_threshold &&
+                                  aiWatch.data && (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      disabled={!canConfigure}
+                                      onClick={() =>
+                                        watchSave.mutate({
+                                          thresholds: {
+                                            ...aiWatch.data!.config.thresholds,
+                                            [row.pattern_id]: row.suggested_threshold!,
+                                          },
+                                        })
+                                      }
+                                    >
+                                      {t('errorHelp.aiApplyThreshold')}
+                                    </Button>
+                                  )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  {aiScan.data.quality.confusion.length > 0 && (
+                    <div className="mt-2">
+                      <h4 className="text-[11px] font-semibold text-bambu-gray">{t('errorHelp.aiConfusion')}</h4>
+                      <ul className="mt-1 space-y-0.5">
+                        {aiScan.data.quality.confusion.slice(0, 8).map((row) => {
+                          const predicted = data?.patterns.find((entry) => entry.id === row.predicted);
+                          const actual = data?.patterns.find((entry) => entry.id === row.actual);
+                          return (
+                            <li key={`${row.predicted}-${row.actual}`} className="text-[11px] text-bambu-gray-light">
+                              {predicted ? (german ? predicted.title : predicted.title_en) : row.predicted} →{' '}
+                              {actual ? (german ? actual.title : actual.title_en) : row.actual} · {row.count}×
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  )}
+                </details>
+              )}
 
               <div className="border-t border-bambu-dark-tertiary/60 pt-4 space-y-3">
                 <div>
@@ -1146,6 +1261,24 @@ export function ErrorHelpPage() {
                             const value = Number(event.target.value);
                             if (Number.isFinite(value) && value >= 1 && value <= 3) {
                               watchSave.mutate({ frames: value });
+                            }
+                          }}
+                          className="w-16 rounded-lg bg-bambu-dark border border-bambu-dark-tertiary px-2 py-1 text-sm text-white"
+                        />
+                      </label>
+                      <label className="text-xs text-bambu-gray-light flex flex-col gap-1">
+                        {t('errorHelp.aiWatchProgress')}
+                        <input
+                          key={`watch-progress-${aiWatch.data.config.min_progress_percent}`}
+                          type="number"
+                          min={0}
+                          max={95}
+                          defaultValue={aiWatch.data.config.min_progress_percent}
+                          disabled={!canConfigure}
+                          onBlur={(event) => {
+                            const value = Number(event.target.value);
+                            if (Number.isFinite(value) && value >= 0 && value <= 95) {
+                              watchSave.mutate({ min_progress_percent: value });
                             }
                           }}
                           className="w-16 rounded-lg bg-bambu-dark border border-bambu-dark-tertiary px-2 py-1 text-sm text-white"
@@ -1311,7 +1444,7 @@ export function ErrorHelpPage() {
                       return hit ? (german ? hit.title : hit.title_en) : finding.pattern_id;
                     })()}
                     canRate={canControl}
-                    onFeedback={(verdict) => aiFeedback.mutate({ id: finding.id, verdict })}
+                    onFeedback={(verdict, actual) => aiFeedback.mutate({ id: finding.id, verdict, actual })}
                     onOpenPattern={() => openPattern(finding.pattern_id)}
                   />
                 ))}

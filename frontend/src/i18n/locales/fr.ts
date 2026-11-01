@@ -8495,6 +8495,13 @@ export default {
     noWriteAccess: 'Vous n\'avez pas la permission de modifier les paramètres de prévision.',
   },
   errorHelp: {
+    aiWatchProgress: 'Seulement à partir de (%)',
+    aiQuality: 'Qualité : {{correct}} correctes, {{wrong}} fausses',
+    aiAccuracyShort: 'Précision',
+    aiThresholdCurrent: 'Seuil',
+    aiApplyThreshold: 'Appliquer',
+    aiConfusion: 'Mélanges',
+    aiWrongChoose: 'Le bon serait …',
     aiOpenPattern: 'Ouvrir le défaut',
     aiWatchFrames: 'Images par contrôle',
     aiWatchThresholds: 'Seuils par défaut',

@@ -8128,6 +8128,13 @@ export default {
     }
   },
   errorHelp: {
+    aiWatchProgress: '진행률 %부터 확인',
+    aiQuality: '품질: {{correct}} 정답, {{wrong}} 오답',
+    aiAccuracyShort: '정확도',
+    aiThresholdCurrent: '임계값',
+    aiApplyThreshold: '적용',
+    aiConfusion: '혼동',
+    aiWrongChoose: '정답은 …',
     aiOpenPattern: '불량 열기',
     aiWatchFrames: '검사당 이미지 수',
     aiWatchThresholds: '불량별 임계값',

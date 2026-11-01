@@ -8509,6 +8509,13 @@ export default {
     noWriteAccess: 'Sie haben keine Berechtigung, Prognoseeinstellungen zu ändern.',
   },
   errorHelp: {
+    aiWatchProgress: 'Erst ab Fortschritt (%)',
+    aiQuality: 'Qualität: {{correct}} richtig, {{wrong}} falsch',
+    aiAccuracyShort: 'Quote',
+    aiThresholdCurrent: 'Schwelle',
+    aiApplyThreshold: 'Übernehmen',
+    aiConfusion: 'Verwechslungen',
+    aiWrongChoose: 'Richtig wäre …',
     aiOpenPattern: 'Fehlerbild öffnen',
     aiWatchFrames: 'Bilder je Prüfung',
     aiWatchThresholds: 'Schwellen je Fehlerbild',

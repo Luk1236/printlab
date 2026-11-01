@@ -332,19 +332,31 @@ def _feedback_lines() -> list[dict[str, Any]]:
 
 def _feedback_map() -> dict[str, str]:
     """Letzte Bewertung je Treffer."""
-    latest: dict[str, str] = {}
+    return {finding_id: str(entry.get("verdict")) for finding_id, entry in _feedback_details().items()}
+
+
+def _feedback_details() -> dict[str, dict[str, Any]]:
+    """Letzte Bewertung (mit optionalem richtigem Fehlerbild) je Treffer."""
+    latest: dict[str, dict[str, Any]] = {}
     for entry in _feedback_lines():
         finding_id = str(entry.get("finding_id") or "")
         verdict = str(entry.get("verdict") or "")
-        if finding_id and verdict in ("correct", "wrong"):
-            latest[finding_id] = verdict
+        if not finding_id or verdict not in ("correct", "wrong"):
+            continue
+        actual = entry.get("actual_pattern_id")
+        latest[finding_id] = {
+            "verdict": verdict,
+            "actual": actual if actual in _ALLOWED_IDS else None,
+        }
     return latest
 
 
-def record_feedback(finding_id: str, verdict: str) -> dict[str, Any]:
-    """Einen Treffer als richtig oder falsch bewerten (letzte Bewertung zählt)."""
+def record_feedback(finding_id: str, verdict: str, actual_pattern_id: str | None = None) -> dict[str, Any]:
+    """Einen Treffer bewerten; bei „falsch“ optional das richtige Fehlerbild nennen."""
     if verdict not in ("correct", "wrong"):
         raise ValueError("verdict muss 'correct' oder 'wrong' sein")
+    if actual_pattern_id is not None and actual_pattern_id not in _ALLOWED_IDS:
+        raise ValueError(f"Unbekanntes Fehlerbild: {actual_pattern_id}")
     finding = find_finding(finding_id)
     if finding is None:
         raise KeyError(finding_id)
@@ -352,6 +364,7 @@ def record_feedback(finding_id: str, verdict: str) -> dict[str, Any]:
         "ts": datetime.now(timezone.utc).isoformat(),
         "finding_id": finding_id,
         "verdict": verdict,
+        "actual_pattern_id": actual_pattern_id if verdict == "wrong" else None,
         "pattern_id": finding.get("pattern_id"),
     }
     with _write_lock:
@@ -409,12 +422,78 @@ def find_finding(finding_id: str) -> dict[str, Any] | None:
 def list_findings(limit: int = 50, pattern_id: str | None = None) -> list[dict[str, Any]]:
     with _lock:
         entries = _all()
-        verdicts = _feedback_map()
+        details = _feedback_details()
     if pattern_id:
         entries = [entry for entry in entries if entry.get("pattern_id") == pattern_id]
     for entry in entries:
-        entry["verdict"] = verdicts.get(str(entry.get("id") or ""))
+        detail = details.get(str(entry.get("id") or ""), {})
+        entry["verdict"] = detail.get("verdict")
+        entry["actual_pattern_id"] = detail.get("actual")
     return entries[: max(1, min(limit, MAX_FINDINGS))]
+
+
+def quality_report() -> dict[str, Any]:
+    """Trefferquote, Schwellen-Vorschlag und Verwechslungen aus den Bewertungen.
+
+    Der Schwellen-Vorschlag setzt knapp über der höchsten Sicherheit eines
+    falschen Treffers an; ohne falsche Treffer bleibt er leer (dann ist die
+    aktuelle Schwelle nicht widerlegt).
+    """
+    from collections import Counter
+
+    with _lock:
+        findings = {str(entry.get("id")): entry for entry in _all()}
+        details = _feedback_details()
+    rows: dict[str, dict[str, Any]] = {}
+    wrong_conf: dict[str, list[float]] = {}
+    confusion: Counter[tuple[str, str]] = Counter()
+    for finding_id, detail in details.items():
+        finding = findings.get(finding_id)
+        if finding is None:
+            continue
+        pattern_id = str(finding.get("pattern_id") or "")
+        if not pattern_id:
+            continue
+        row = rows.setdefault(
+            pattern_id,
+            {
+                "pattern_id": pattern_id,
+                "correct": 0,
+                "wrong": 0,
+                "total": 0,
+                "accuracy": 0,
+                "suggested_threshold": None,
+            },
+        )
+        row[detail["verdict"]] += 1
+        if detail["verdict"] == "wrong":
+            wrong_conf.setdefault(pattern_id, []).append(float(finding.get("confidence", 0)))
+            if detail.get("actual"):
+                confusion[(pattern_id, str(detail["actual"]))] += 1
+    for pattern_id, row in rows.items():
+        row["total"] = row["correct"] + row["wrong"]
+        row["accuracy"] = round(row["correct"] * 100 / row["total"]) if row["total"] else 0
+        confidences = wrong_conf.get(pattern_id) or []
+        if confidences:
+            row["suggested_threshold"] = max(0, min(100, round(max(confidences) * 100) + 5))
+    try:
+        from backend.app.services import local_ai_watch
+
+        watch = local_ai_watch.load_config()
+        global_threshold = int(watch.get("min_confidence", 60))
+        thresholds = watch.get("thresholds") or {}
+    except Exception:  # noqa: BLE001 - Qualitätsanzeige darf nicht an der Config scheitern
+        global_threshold, thresholds = 60, {}
+    for pattern_id, row in rows.items():
+        row["current_threshold"] = int(thresholds.get(pattern_id, global_threshold))
+    return {
+        "patterns": sorted(rows.values(), key=lambda row: (-row["total"], row["pattern_id"])),
+        "confusion": [
+            {"predicted": predicted, "actual": actual, "count": count}
+            for (predicted, actual), count in confusion.most_common()
+        ],
+        "feedback": feedback_summary(),
+    }
 
 
 def counts() -> dict[str, int]:

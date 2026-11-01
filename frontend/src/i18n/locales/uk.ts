@@ -8550,6 +8550,13 @@ export default {
     noWriteAccess: "Ви не маєте дозволу змінювати налаштування прогнозу.",
   },
   errorHelp: {
+    aiWatchProgress: 'Лише з прогресу (%)',
+    aiQuality: 'Якість: {{correct}} правильно, {{wrong}} неправильно',
+    aiAccuracyShort: 'Точність',
+    aiThresholdCurrent: 'Поріг',
+    aiApplyThreshold: 'Застосувати',
+    aiConfusion: 'Плутанина',
+    aiWrongChoose: 'Правильно було б …',
     aiOpenPattern: 'Відкрити дефект',
     aiWatchFrames: 'Знімків за перевірку',
     aiWatchThresholds: 'Пороги за дефектами',

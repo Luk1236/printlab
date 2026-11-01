@@ -8110,6 +8110,13 @@ export default {
     noWriteAccess: "У вас нет прав на изменение настроек прогноза.",
   },
   errorHelp: {
+    aiWatchProgress: 'Только с прогресса (%)',
+    aiQuality: 'Качество: {{correct}} верно, {{wrong}} неверно',
+    aiAccuracyShort: 'Точность',
+    aiThresholdCurrent: 'Порог',
+    aiApplyThreshold: 'Применить',
+    aiConfusion: 'Путаница',
+    aiWrongChoose: 'Верно было бы …',
     aiOpenPattern: 'Открыть дефект',
     aiWatchFrames: 'Снимков за проверку',
     aiWatchThresholds: 'Пороги по дефектам',

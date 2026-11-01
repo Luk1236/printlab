@@ -20,7 +20,7 @@ def _isolated(tmp_path, monkeypatch):
 
 def _printer_manager(state="RUNNING"):
     manager = MagicMock()
-    manager.get_all_statuses.return_value = {7: SimpleNamespace(state=state, gcode_file="job.3mf")}
+    manager.get_all_statuses.return_value = {7: SimpleNamespace(state=state, gcode_file="job.3mf", progress=50)}
     manager.is_connected.return_value = True
     client = MagicMock()
     client.pause_print.return_value = True

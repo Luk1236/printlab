@@ -369,6 +369,23 @@ export interface AiScanFinding {
   printer_id: number | null;
   image_name: string | null;
   verdict?: 'correct' | 'wrong' | null;
+  actual_pattern_id?: string | null;
+}
+
+export interface AiQualityRow {
+  pattern_id: string;
+  correct: number;
+  wrong: number;
+  total: number;
+  accuracy: number;
+  suggested_threshold: number | null;
+  current_threshold: number;
+}
+
+export interface AiQuality {
+  patterns: AiQualityRow[];
+  confusion: { predicted: string; actual: string; count: number }[];
+  feedback: { correct: number; wrong: number };
 }
 
 export interface AiScanBatch {
@@ -412,6 +429,7 @@ export interface AiScanResponse {
   counts: Record<string, number>;
   feedback?: { correct: number; wrong: number };
   feedback_by_pattern?: Record<string, { correct: number; wrong: number; total: number; accuracy: number }>;
+  quality?: AiQuality;
   batch?: AiScanBatch;
 }
 
@@ -481,6 +499,7 @@ export interface AiWatchConfig {
   frames: number;
   frame_gap_seconds: number;
   thresholds: Record<string, number>;
+  min_progress_percent: number;
 }
 
 export interface AiWatchPrinter {
@@ -834,10 +853,10 @@ export function createForkApi({ request, apiBase, getAuthToken }: ForkApiDeps) {
     request<{ findings: AiScanFinding[]; counts: Record<string, number> }>(
       `/error-help/ai-scan/findings?limit=${limit}${patternId ? `&pattern_id=${encodeURIComponent(patternId)}` : ''}`
     ),
-  sendAiFeedback: (findingId: string, verdict: 'correct' | 'wrong') =>
-    request<{ findings: AiScanFinding[]; feedback: { correct: number; wrong: number } }>(
+  sendAiFeedback: (findingId: string, verdict: 'correct' | 'wrong', actualPatternId?: string) =>
+    request<{ findings: AiScanFinding[]; feedback: { correct: number; wrong: number }; quality?: AiQuality }>(
       `/error-help/ai-scan/findings/${encodeURIComponent(findingId)}/feedback`,
-      { method: 'POST', body: JSON.stringify({ verdict }) }
+      { method: 'POST', body: JSON.stringify({ verdict, actual_pattern_id: actualPatternId ?? null }) }
     ),
   scanAiCollection: (limit = 10) =>
     request<AiScanBatch>('/error-help/ai-scan/scan-collection', {

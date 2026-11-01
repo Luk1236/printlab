@@ -94,6 +94,7 @@ function mockApi() {
           frames: 2,
           frame_gap_seconds: 2,
           thresholds: {},
+          min_progress_percent: 5,
         },
         state: { started: null, last_run: null, last_error: null },
         printers: [],

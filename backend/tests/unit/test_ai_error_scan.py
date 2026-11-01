@@ -132,6 +132,29 @@ class TestFeedback:
         with pytest.raises(ValueError):
             ai_error_scan.record_feedback(finding["id"], "maybe")
 
+    def test_a_wrong_hit_can_name_the_actual_pattern(self):
+        wrong = ai_error_scan.record(
+            {"pattern_id": "stringing", "confidence": 0.8, "reason": "", "model": "m"}, source="upload"
+        )
+        right = ai_error_scan.record(
+            {"pattern_id": "warping", "confidence": 0.7, "reason": "", "model": "m"}, source="upload"
+        )
+        ai_error_scan.record_feedback(wrong["id"], "wrong", "warping")
+        ai_error_scan.record_feedback(right["id"], "correct")
+        report = ai_error_scan.quality_report()
+        by_id = {row["pattern_id"]: row for row in report["patterns"]}
+        assert by_id["stringing"]["accuracy"] == 0
+        assert by_id["stringing"]["suggested_threshold"] == 85
+        assert by_id["warping"]["accuracy"] == 100 and by_id["warping"]["suggested_threshold"] is None
+        assert report["confusion"] == [{"predicted": "stringing", "actual": "warping", "count": 1}]
+
+    def test_an_unknown_actual_pattern_is_refused(self):
+        finding = ai_error_scan.record(
+            {"pattern_id": "ghosting", "confidence": 0.9, "reason": "", "model": "m"}, source="upload"
+        )
+        with pytest.raises(ValueError):
+            ai_error_scan.record_feedback(finding["id"], "wrong", "warp_drive")
+
 
 class TestHousekeeping:
     """F6/F7/F8: Bewertungen begrenzen, Aufgaben halten, Bilder sparsam lesen."""

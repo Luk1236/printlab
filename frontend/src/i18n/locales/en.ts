@@ -8560,6 +8560,13 @@ export default {
     noWriteAccess: 'You do not have permission to modify forecast settings.',
   },
   errorHelp: {
+    aiWatchProgress: 'Only from progress (%)',
+    aiQuality: 'Quality: {{correct}} correct, {{wrong}} wrong',
+    aiAccuracyShort: 'Accuracy',
+    aiThresholdCurrent: 'Threshold',
+    aiApplyThreshold: 'Apply',
+    aiConfusion: 'Confusions',
+    aiWrongChoose: 'Correct would be …',
     aiOpenPattern: 'Open defect',
     aiWatchFrames: 'Frames per check',
     aiWatchThresholds: 'Thresholds per defect',

@@ -8494,6 +8494,13 @@ export default {
     noWriteAccess: 'Non hai il permesso di modificare le impostazioni di previsione.',
   },
   errorHelp: {
+    aiWatchProgress: 'Solo dal progresso (%)',
+    aiQuality: 'Qualità: {{correct}} corretti, {{wrong}} errati',
+    aiAccuracyShort: 'Precisione',
+    aiThresholdCurrent: 'Soglia',
+    aiApplyThreshold: 'Applica',
+    aiConfusion: 'Confusioni',
+    aiWrongChoose: 'Quello giusto sarebbe …',
     aiOpenPattern: 'Apri difetto',
     aiWatchFrames: 'Immagini per controllo',
     aiWatchThresholds: 'Soglie per difetto',

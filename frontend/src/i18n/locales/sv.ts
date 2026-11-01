@@ -8558,6 +8558,13 @@ errors: {
     noWriteAccess: 'Du har inte behörighet att modifiera prognosinställningar.',
   },
   errorHelp: {
+    aiWatchProgress: 'Först från framsteg (%)',
+    aiQuality: 'Kvalitet: {{correct}} rätt, {{wrong}} fel',
+    aiAccuracyShort: 'Träffsäkerhet',
+    aiThresholdCurrent: 'Tröskel',
+    aiApplyThreshold: 'Använd',
+    aiConfusion: 'Förväxlingar',
+    aiWrongChoose: 'Rätt vore …',
     aiOpenPattern: 'Öppna fel',
     aiWatchFrames: 'Bilder per kontroll',
     aiWatchThresholds: 'Trösklar per fel',

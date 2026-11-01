@@ -8560,6 +8560,13 @@ export default {
     noWriteAccess: 'Je hebt geen machtiging om prognose-instellingen te wijzigen.',
   },
   errorHelp: {
+    aiWatchProgress: 'Pas vanaf voortgang (%)',
+    aiQuality: 'Kwaliteit: {{correct}} juist, {{wrong}} onjuist',
+    aiAccuracyShort: 'Nauwkeurigheid',
+    aiThresholdCurrent: 'Drempel',
+    aiApplyThreshold: 'Toepassen',
+    aiConfusion: 'Verwisselingen',
+    aiWrongChoose: 'Juist zou zijn …',
     aiOpenPattern: 'Fout openen',
     aiWatchFrames: 'Beelden per controle',
     aiWatchThresholds: 'Drempels per fout',

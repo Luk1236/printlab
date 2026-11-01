@@ -84,12 +84,14 @@ async def _ai_payload() -> dict:
         "counts": ai_error_scan.counts(),
         "feedback": ai_error_scan.feedback_summary(),
         "feedback_by_pattern": ai_error_scan.feedback_by_pattern(),
+        "quality": ai_error_scan.quality_report(),
         "batch": ai_error_scan.batch_status(),
     }
 
 
 class FeedbackRequest(BaseModel):
     verdict: Literal["correct", "wrong"]
+    actual_pattern_id: str | None = None
 
 
 class BatchRequest(BaseModel):
@@ -107,6 +109,7 @@ class WatchConfigRequest(BaseModel):
     frames: int | None = Field(default=None, ge=1, le=3)
     frame_gap_seconds: int | None = Field(default=None, ge=1, le=15)
     thresholds: dict[str, int] | None = None
+    min_progress_percent: int | None = Field(default=None, ge=0, le=95)
 
 
 class WatchCheckRequest(BaseModel):
@@ -220,13 +223,16 @@ async def rate_finding(
 ):
     """Rückmeldung zu einem Treffer: richtig oder falsch."""
     try:
-        ai_error_scan.record_feedback(finding_id, payload.verdict)
+        ai_error_scan.record_feedback(finding_id, payload.verdict, payload.actual_pattern_id)
     except KeyError as exc:
         raise HTTPException(404, "Treffer nicht gefunden") from exc
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
     return {
         "findings": ai_error_scan.list_findings(30),
         "feedback": ai_error_scan.feedback_summary(),
         "feedback_by_pattern": ai_error_scan.feedback_by_pattern(),
+        "quality": ai_error_scan.quality_report(),
     }
 
 
