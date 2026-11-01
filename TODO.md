@@ -1,6 +1,6 @@
 # TODO — PrintLab
 
-**Stand:** 31.10.2026, Version 1.20.0 · **Basis:** Bambuddy 1.2.5.7 (AGPL-3.0, Herkunft: `NOTICE`) · **Branch:** `bambu-monitor-port`
+**Stand:** 01.11.2026, Version 1.21.0 · **Basis:** Bambuddy 1.2.5.7 (AGPL-3.0, Herkunft: `NOTICE`) · **Branch:** `bambu-monitor-port`
 
 Was fertig ist, steht mit Datum im `CHANGELOG.md`. Die ausführliche Bewertung (Risiken R1–R16, Verbesserungen, Erweiterungen)
 steht in `docs/ANALYSE-2026-10-28.md`, die Abnahme in `docs/ABNAHME.md`.
@@ -10,7 +10,57 @@ steht in `docs/ANALYSE-2026-10-28.md`, die Abnahme in `docs/ABNAHME.md`.
 PrintLab (Pi 5, nativ, systemd-Benutzerdienst), Fernzugriff über Tailscale, Updates aus der Oberfläche, Sicherung vor dem
 Update mit Rückbau, Überwachung mit Meldung, Angebote mit PDF, Kamera-Einmessung, Zustand des Geräts, Anmeldung vorgeschrieben.
 
-## Zuletzt erledigt (30.10.2026, uncommittet)
+## Zuletzt erledigt (01.11.2026, in v1.21.0)
+
+Runde „Suche, Push und Wartung“:
+
+- **Browser-Meldungen:** `services/web_push.py` erzeugt VAPID-Schlüssel (in `settings`), verschlüsselt nach RFC 8291
+  (aes128gcm, ohne Zusatzpaket) und stellt im Hintergrund zu; `routes/push.py` bietet Schlüssel, Abo, Abmelden,
+  Status und Testversand. Die Karte in **Einstellungen → Benachrichtigungen** schaltet das Abo dieses Browsers;
+  `public/sw.js` zeigt die Meldung und fokussiert beim Klick den passenden Tab. 7 Backend-Tests.
+- **Meldungssprache wirkt:** `services/notification_texts.py` übersetzt die unveränderten Standardvorlagen der fünf
+  häufigsten Druck-Ereignisse nach Deutsch, Spanisch, Französisch, Italienisch, Japanisch und Chinesisch; eigene
+  Formulierungen bleiben unangetastet. 3 Tests. (Bisher nahm die Einstellung „Meldungssprache“ nur den Wert an.)
+- **Globale Suche:** `GET /search` (Drucker, Bibliothek, Archiv, Warteschlange, Rechte wie die Listen) und die
+  Befehlspalette `CommandPalette.tsx` mit Strg+K; Treffer öffnen die Liste mit `?search=…` (Archiv und Dateien).
+  3 Integrationstests, 3 Frontend-Tests.
+- **Reset zurückholen:** `factory_reset.restore` tauscht einen Reset-Ordner gegen den aktuellen Stand
+  (`before-restore-…`); Routen `GET /system/factory-reset/archives` und `POST /system/factory-reset/restore`, Karte
+  mit Bestätigungswort.
+- **Datenbank-Wartung:** `services/db_maintenance.py`, Routen unter `/system/database` und Karte in der Wartung.
+- **gzip für die Oberfläche:** `api/frontend_routes.py` komprimiert große Textdateien mit Cache und `Vary`.
+
+Runde „Auslieferung und Karten-Dialoge“:
+
+- **`main.py` von 11 071 auf 10 961 Zeilen:** Die Auslieferung der Oberfläche (Datei-Mounts, `manifest.json`,
+  `sw.js`, `sw-register.js`, `index.html` und der Router-Catch-all) liegt in `backend/app/api/frontend_routes.py`;
+  `register_frontend(app)` wird an derselben Stelle aufgerufen wie vorher, der Catch-all bleibt zuletzt. Die Grenze
+  im Größenbudget ist von 11 075 auf 11 000 gesenkt.
+- **Gehashte Build-Dateien bleiben im Browser:** `/assets/*` trägt jetzt `Cache-Control: public, max-age=31536000,
+  immutable` — der Inhalts-Hash steht im Dateinamen, ein anderer Inhalt bekommt einen anderen Namen. Bilder, Symbole
+  und Schriften (ohne Hash im Namen) bekommen einen Tag, `index.html` bleibt bei `no-cache, must-revalidate`.
+  Damit entfallen beim zweiten Aufruf über Tailscale die Rückfragen für jeden Baustein. Neuer Test:
+  `backend/tests/integration/test_static_asset_cache_headers.py` (Kopfzeile, 404, Mount der echten App).
+- **`PrinterCard.tsx` von 6 255 auf 5 711 Zeilen:** Firmware- und Bearbeiten-Dialog liegen in
+  `frontend/src/pages/PrinterCardModals.tsx` (569 Zeilen); die Karte importiert sie unverändert. Grenze im
+  Größenbudget von 6 300 auf 5 750 gesenkt. Importe, die nur die Dialoge brauchten, sind mitgewandert.
+- **Werkseinstellungen mit Sicherung:** `backend/app/services/factory_reset.py` sichert Datenbank und Konfiguration
+  in eine ZIP-Datei, verschiebt alle Daten nach `data/reset-<Zeitstempel>/` (nichts wird gelöscht) und legt ein leeres
+  Schema an; ein unterbrochener Lauf wird beim Start vor `init_db` zu Ende geführt. Neue Routen
+  `GET/POST /system/factory-reset` (nur mit eingeschalteter Anmeldung, Bestätigung durch getipptes
+  `ZURÜCKSETZEN`), Karte in **Einrichtung** und **Wartung → System**, 8 Backend- und 4 Frontend-Tests.
+- **Einrichtung an einer Stelle:** neue Seite **/einrichtung** in der Seitenleiste („Einrichtungsassistent“) mit
+  Assistent, Checkliste und Werkseinstellungen; vorher war das nur im Status-Reiter der Wartung zu finden.
+- **Anleitung Punkt für Punkt:** `docs/ERSTEINRICHTUNG.md` führt von der Installation über Anmeldung, Drucker,
+  Material, Meldungen, Sicherung, Updates und Fernzugriff bis zum ersten Druck — je Schritt mit Ziel, Handlung,
+  Erwartung und Abbruchkriterium; dazu der Reset mit Zurückholen.
+- **13 neue Texte in allen 15 Sprachen** (`factoryReset.*`); die Übersetzungsprüfung erkennt jetzt auch
+  Großbuchstaben-Token außerhalb von A–Z (die Bestätigungsphrase `ZURÜCKSETZEN`).
+- **Zwei veraltete TODO-Kommentare entfernt:** „TODO: translate encryption keys“ stand noch in sechs
+  Sprachdateien, obwohl die Schlüssel längst übersetzt sind; der Fortschrittsbalken in `QueuePage.tsx` trägt kein
+  „TODO: integrate with WebSocket“ mehr (die Werte kommen dort schon live aus der Druckerabfrage).
+
+## Erledigt am 30.10.2026 (in v1.19.0 und v1.20.0 veröffentlicht)
 
 Alle Befunde F1–F10 aus `docs/ANALYSE-2026-10-30.md` sind behoben (Plattenwechsel fail-closed bei Temperatur und
 Tür, Aufräumen der Fehlerbilder, Magazin-Änderung ohne Teilwirkung, Einstellungen je Drucker, KI-Haushalt,
@@ -20,7 +70,7 @@ Trainingsset-Export, KI-Hinweis als eigene Meldung, öffentlicher Angebots-Link 
 aus aufbewahrten Schichtbildern, automatische Umverteilung, XRechnung-XML, Nachbestellvorschlag und der
 Einmess-Assistent für den Plattenwechsel. Details und Grenzen im `CHANGELOG.md`.
 
-**Aufräumrunde danach (ebenfalls uncommittet):**
+**Aufräumrunde danach (in v1.19.0 enthalten):**
 
 - `_select` im Druckplaner ist nur noch eine Schleife; die beiden Zweige liegen als `_select_pinned` und
   `_select_for_model` daneben, die `continue` der Auftragsschleife sind `return` geworden.
@@ -63,20 +113,21 @@ dieser Reihenfolge, mit Erwartungen, Abbruchkriterien und Protokoll.
 ## Technisch offen
 
 - [ ] Große Dateien weiter zerlegen; der Test `test_file_size_budget.py` verhindert nur das Wachsen. Stand
-      30.10.2026: `print_scheduler.py` 4 846 Zeilen (Grenze 4 850), `queue_pass.py` 1 032 (Vorgabe 2 600),
-      `PrintersPage.tsx` 1 985 (Grenze 2 000), `PrinterCard.tsx` 6 255 (Grenze 6 300), `PrinterCardParts.tsx`
-      1 134 (Grenze 1 150), `client.ts` 1 009 (Grenze 1 050), `types.ts` 4 754 (Grenze 4 800), `endpoints.ts`
-      4 017 (Grenze 4 050). **Nächste Schnitte:** (1) die beiden Zweige in `queue_pass.py` weiter teilen —
-      `_select_pinned` und `_select_for_model` sind je ~300/200 Zeilen, die Verfügbarkeitsprüfungen lassen sich
-      als eigene Methoden herausziehen. (2) `PrinterCard.tsx` in Karte, AMS-Bereich und Kamera/Steuerung teilen.
-      (3) `endpoints.ts` nach Bereichen (Drucker, Archive, Warteschlange, Verwaltung) mit Spreading wie in
-      `createForkApi`. `main.py` ist praktisch nur noch Verdrahtung und bleibt an der Grenze (11 069/11 075);
-      neue Funktionen gehören in eigene Module bzw. `fork_routers.py`.
+      01.11.2026: `print_scheduler.py` 4 845 Zeilen (Grenze 4 850), `queue_pass.py` 1 032 (Vorgabe 2 600),
+      `PrintersPage.tsx` 1 985 (Grenze 2 000), `PrinterCard.tsx` 5 711 (Grenze 5 750), `PrinterCardModals.tsx`
+      569 (neben der Karte), `PrinterCardParts.tsx` 1 134 (Grenze 1 150), `client.ts` 1 008 (Grenze 1 050),
+      `types.ts` 4 754 (Grenze 4 800), `endpoints.ts` 4 017 (Grenze 4 050), `main.py` 10 970 (Grenze 11 000).
+      **Nächste Schnitte:** (1) die beiden Zweige in `queue_pass.py` weiter teilen — `_select_pinned` und
+      `_select_for_model` sind je ~300/200 Zeilen, die Verfügbarkeitsprüfungen lassen sich als eigene Methoden
+      herausziehen. (2) `PrintersPage.tsx` ist mit 1 985 Zeilen fast an der Grenze: die Listen- und Filterleiste
+      in eine eigene Datei. (3) `types.ts` nach Bereichen (Drucker, Archive, Warteschlange, Verwaltung) mit
+      Wiederausgabe wie in `client.ts`. Neue Routen gehören in `fork_routers.py`, nicht mehr in `main.py`.
 - [ ] Volle E2E-Prüfung MakerWorld → PC-Slicer → Warteschlange. Die inneren Glieder sind abgesichert
       (566 Integrationstests zu MakerWorld, Bibliothek und Warteschlange, alle grün); der Slicer-Upload und der
 druckende Drucker brauchen Gerät und Slicer.
-- [ ] Komplette Unit-Suite in der CI (lokal nach 10 Minuten abgebrochen); `requirements.lock` vor der
-      Docker-/Pi-Umstellung im Bau prüfen.
+- [x] Komplette Backend-Suite in der CI — `ci.yml` fährt `pytest tests/` in vier Shards (`pytest-split`),
+      zusätzlich noch einmal im Docker-Testabbild. `requirements.lock` wird beim Docker-Bau benutzt und ist damit
+      geprüft.
 - [x] Stille `except Exception: pass`-Handler abbauen — erledigt, Budget steht auf 0.
 - [ ] Docker-/ARM-Image auf einem Pi 4/5 starten und prüfen. Das `Dockerfile` ist statisch geprüft und
       installiert jetzt mit `-c requirements.lock`; auf diesem Rechner gibt es kein Docker, deshalb ungetestet.

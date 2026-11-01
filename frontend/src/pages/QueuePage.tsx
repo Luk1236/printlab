@@ -746,7 +746,7 @@ function SortableQueueItem({
             )}
           </div>
 
-          {/* Progress bar for printing items - TODO: integrate with WebSocket */}
+          {/* Progress bar for printing items — the live status comes from the printers query. */}
           {isPrinting && status && (() => {
             // Gate progress/remaining/layer on printer actually running this print.
             // Between dispatch and RUNNING transition (H2D/P1 MQTT lag), status.progress

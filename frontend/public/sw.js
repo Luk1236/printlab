@@ -60,6 +60,45 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Browser-Meldungen (Web Push). Der Server schickt eine verschlüsselte JSON-Nachricht
+// {title, body, url}; ohne Nutzlast bleibt es bei einem allgemeinen Hinweis.
+self.addEventListener('push', (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = {};
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'PrintLab', {
+      body: data.body || '',
+      icon: '/img/android-chrome-192x192.png',
+      badge: '/img/favicon-32x32.png',
+      data: { url: data.url || '/' },
+    }),
+  );
+});
+
+// Klick auf die Meldung: vorhandenen Tab fokussieren und dorthin navigieren, sonst neu öffnen.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || '/';
+  event.waitUntil(
+    (async () => {
+      const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      for (const client of clients) {
+        if ('focus' in client) {
+          if ('navigate' in client) {
+            await client.navigate(url);
+          }
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(url);
+    })(),
+  );
+});
+
 // Fetch event - network-first for API, cache-first for static
 self.addEventListener('fetch', (event) => {
   const { request } = event;

@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -50,6 +50,8 @@ import { RemoteAccessCard } from '../components/RemoteAccessCard';
 import { PiHealthCard } from '../components/PiHealthCard';
 import { SelfTestCard } from '../components/SelfTestCard';
 import { SetupChecklistCard } from '../components/SetupChecklistCard';
+import { FactoryResetCard } from '../components/FactoryResetCard';
+import { DatabaseMaintenanceCard } from '../components/DatabaseMaintenanceCard';
 import { SetupBanner, SetupWizardCard } from '../components/SetupWizardCard';
 import { AlertChannelsCard } from '../components/AlertChannelsCard';
 import { PlateTuningCard } from '../components/PlateTuningCard';
@@ -1109,6 +1111,18 @@ export function MaintenancePage() {
   const activeTab: TabType = requestedTab && TABS.includes(requestedTab) ? requestedTab : 'status';
   const setActiveTab = (tab: TabType) => setSearchParams(tab === 'status' ? {} : { tab }, { replace: true });
 
+  // Sprungmarke aus einem Link (z. B. aus dem Einrichtungsassistenten): nach dem Aufbau des Reiters dorthin rollen.
+  const location = useLocation();
+  useEffect(() => {
+    const anchor = location.hash.replace('#', '');
+    if (!anchor || activeTab !== 'system') return;
+    const timer = window.setTimeout(
+      () => document.getElementById(anchor)?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }),
+      150,
+    );
+    return () => window.clearTimeout(timer);
+  }, [location.hash, activeTab]);
+
   const { data: overview, isLoading } = useQuery({
     queryKey: ['maintenanceOverview'],
     queryFn: api.getMaintenanceOverview,
@@ -1306,6 +1320,8 @@ export function MaintenancePage() {
         <div className="space-y-6">
           <SetupWizardCard />
           <SetupChecklistCard />
+          <DatabaseMaintenanceCard canControl={hasPermission('settings:update')} />
+          <FactoryResetCard canControl={hasPermission('settings:update')} />
           <PiHealthCard />
           <SelfTestCard canRun={hasPermission('settings:update')} />
           <div id="setup-alerts">

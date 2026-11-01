@@ -32,6 +32,7 @@ import { HASensorModal } from '../components/HASensorModal';
 import { LocationHASensorModal } from '../components/LocationHASensorModal';
 import { LocationSensorOptionsModal } from '../components/LocationSensorOptionsModal';
 import { NotificationProviderCard } from '../components/NotificationProviderCard';
+import { PushNotificationsCard } from '../components/PushNotificationsCard';
 import { AddNotificationModal } from '../components/AddNotificationModal';
 import { NotificationTemplateEditor } from '../components/NotificationTemplateEditor';
 import { NotificationLogViewer } from '../components/NotificationLogViewer';
@@ -4132,6 +4133,11 @@ export function SettingsPage() {
       {/* Notifications Tab */}
       {activeTab === 'notifications' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Browser-Meldungen vor den externen Wegen: sie brauchen keinen Anbieter. */}
+          <div className="lg:col-span-2">
+            <PushNotificationsCard />
+          </div>
+
           {/* Left Column: Providers */}
           <div>
             <div className="flex items-center justify-between mb-4">

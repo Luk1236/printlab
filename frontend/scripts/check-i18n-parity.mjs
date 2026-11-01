@@ -116,6 +116,8 @@ function isAlwaysAllowedIdentical(value) {
   if (/^[\s\W_]+$/.test(value)) return true;            // pure punctuation/whitespace
   if (value.length <= 2) return true;                   // single character or 2-char abbrev
   if (/^[A-Z][A-Z0-9_]+$/.test(value)) return true;     // ALL_CAPS_TOKEN
+  // Dasselbe für Großbuchstaben außerhalb von A–Z (z. B. die Bestätigungsphrase „ZURÜCKSETZEN“).
+  if (/^\p{Lu}[\p{Lu}\p{N}_]+$/u.test(value)) return true;
   if (/^v?\d+(\.\d+)+/.test(value)) return true;        // version-like
   if (/^#[0-9a-fA-F]{3,8}$/.test(value)) return true;   // hex color
   if (/^\{\{[^}]+\}\}$/.test(value)) return true;       // pure placeholder
@@ -231,6 +233,7 @@ const FR_COGNATES = [
 
 // Italian cognates.
 const IT_COGNATES = [
+  'Database',  // werkseinstellungen card title — standard Italian term
   '{{ams}} · Slot {{slot}}',  // #2587 runout slot label — "Slot" is the IT term too
   'Bambu Cloud', 'Orca Cloud',  // brand names — same in every locale
   'AMS Filament Backup',  // Bambu Lab product/firmware feature name
@@ -448,6 +451,7 @@ const UK_COGNATES = [
 // are used untranslated by Dutch slicer users. Each entry below was
 // checked individually against the Dutch translation in #2891.
 const NL_COGNATES = [
+  'Database',  // werkseinstellungen card title — standard Dutch term
   'Apps',  // notifications badge for messages from connected apps — same word
   '1 printer', '{{n}} printers',
   '1 week', '(25%, 50%, 75%)', 'Accent', 'AMS Filament Backup',

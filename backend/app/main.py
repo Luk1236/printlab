@@ -14,8 +14,6 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
 
 from fastapi import FastAPI
-from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
 from sqlalchemy import delete, or_, select, text
 
 from backend.app.api.routes import (
@@ -9649,6 +9647,15 @@ async def lifespan(app: FastAPI):
     # below a migration run. See warn_if_running_on_uvloop for what is at stake.
     warn_if_running_on_uvloop()
 
+    # Ein unterbrochener Werkseinstellungs-Lauf wird vor dem Anlegen des Schemas zu Ende geführt, damit der
+    # nächste Start nicht mit halb verschobenen Daten und alter Datenbank beginnt.
+    try:
+        from backend.app.services import factory_reset
+
+        factory_reset.apply_pending(app_settings.base_dir)
+    except OSError as exc:  # pragma: no cover - nur bei fehlenden Dateirechten
+        logging.warning("Werkseinstellungen konnten nicht abgeschlossen werden: %s", exc)
+
     await init_db()
 
     # Fork: Update bestätigen, Warnung bei offener Anmeldung (siehe services/fork_startup.py)
@@ -10949,61 +10956,8 @@ app.include_router(virtual_printers.router, prefix=app_settings.api_prefix)
 app.include_router(spoolbuddy.router, prefix=app_settings.api_prefix)
 
 
-# Serve static files (React build)
-if app_settings.static_dir.exists() and any(app_settings.static_dir.iterdir()):
-    app.mount(
-        "/assets",
-        StaticFiles(directory=app_settings.static_dir / "assets"),
-        name="assets",
-    )
-    if (app_settings.static_dir / "img").exists():
-        app.mount(
-            "/img",
-            StaticFiles(directory=app_settings.static_dir / "img"),
-            name="img",
-        )
-    if (app_settings.static_dir / "icons").exists():
-        app.mount(
-            "/icons",
-            StaticFiles(directory=app_settings.static_dir / "icons"),
-            name="icons",
-        )
-    # Self-hosted Inter woff2 files (#1460). Without this mount /fonts/*.woff2
-    # falls through to the SPA catch-all and returns index.html, which the
-    # browser's font sanitizer rejects ("downloadable font: rejected by
-    # sanitizer").
-    if (app_settings.static_dir / "fonts").exists():
-        app.mount(
-            "/fonts",
-            StaticFiles(directory=app_settings.static_dir / "fonts"),
-            name="fonts",
-        )
-
-
-@app.get("/")
-async def serve_frontend():
-    """Serve the React frontend."""
-    index_file = app_settings.static_dir / "index.html"
-    if index_file.exists():
-        return FileResponse(index_file, headers=_HTML_CACHE_HEADERS)
-    return {
-        "message": "PrintLab API",
-        "docs": "/docs",
-        "frontend": "Build and place React app in /static directory",
-    }
-
-
-# index.html must always be revalidated — Vite emits content-hashed JS/CSS
-# bundles (e.g. `index-JRaF_JhW.js`), so the JS itself is safe to cache
-# forever, but the HTML wrapping it is the only file that knows which hash
-# is current. Without explicit cache-control headers Chromium decides
-# heuristically (typically 10% of the time since Last-Modified) and on
-# long-running kiosks happily serves stale HTML across browser restarts.
-# That stale HTML references an old bundle hash, the old bundle is also
-# in the disk cache, and the user ends up running pre-update JS forever
-# without ever knowing why. ``no-cache`` (revalidate every time, but a
-# 304 is cheap) is the correct setting for an SPA's entry HTML.
-_HTML_CACHE_HEADERS = {"Cache-Control": "no-cache, must-revalidate"}
+# Die Oberfläche (React-Build), die PWA-Dateien und der Catch-all für den Router liegen in einem eigenen Modul.
+from backend.app.api.frontend_routes import register_frontend  # noqa: E402
 
 
 @app.get("/health")
@@ -11012,60 +10966,5 @@ async def health_check():
     return {"status": "healthy"}
 
 
-# GET + HEAD on the three PWA bootstrap routes (#1460). Scanners and a plain
-# `curl -I` use HEAD; FastAPI's @app.get only registers GET, so HEAD answers
-# with 405 Method Not Allowed and shows up as a "broken manifest" red herring
-# in deployment debugging.
-@app.api_route("/manifest.json", methods=["GET", "HEAD"])
-async def serve_manifest():
-    """Serve PWA manifest."""
-    manifest_file = app_settings.static_dir / "manifest.json"
-    if manifest_file.exists():
-        return FileResponse(manifest_file, media_type="application/manifest+json")
-    return {"error": "Manifest not found"}
-
-
-@app.api_route("/sw.js", methods=["GET", "HEAD"])
-async def serve_service_worker():
-    """Serve service worker."""
-    sw_file = app_settings.static_dir / "sw.js"
-    if sw_file.exists():
-        return FileResponse(
-            sw_file,
-            media_type="application/javascript",
-            headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
-        )
-    return {"error": "Service worker not found"}
-
-
-@app.api_route("/sw-register.js", methods=["GET", "HEAD"])
-async def serve_sw_register():
-    """Serve the service-worker registration bootstrap script.
-
-    Served as a real JS file so the strict `script-src 'self'` CSP covers it
-    without needing 'unsafe-inline' or per-build hashes on the inline tag.
-    """
-    reg_file = app_settings.static_dir / "sw-register.js"
-    if reg_file.exists():
-        return FileResponse(reg_file, media_type="application/javascript")
-    return {"error": "sw-register.js not found"}
-
-
-# ── GCode viewer static files ────────────────────────────────────────────────
-
-
-# Catch-all route for React Router (must be last)
-@app.get("/{full_path:path}")
-async def serve_spa(full_path: str):
-    """Serve React app for client-side routing."""
-    # Don't intercept API routes - raise proper 404 so FastAPI can handle redirects
-    if full_path.startswith("api/"):
-        from fastapi import HTTPException
-
-        raise HTTPException(status_code=404, detail="Not found")
-
-    index_file = app_settings.static_dir / "index.html"
-    if index_file.exists():
-        return FileResponse(index_file, headers=_HTML_CACHE_HEADERS)
-
-    return {"error": "Frontend not built"}
+# Muss zuletzt stehen: Der Catch-all in ``register_frontend`` fängt jeden nicht belegten Pfad ab.
+register_frontend(app)

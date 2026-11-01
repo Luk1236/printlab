@@ -112,7 +112,9 @@ class AppSettings(BaseModel):
 
     # Language
     language: str = Field(default="en", description="UI language (en, de, fr, ja, it, pt-BR)")
-    notification_language: str = Field(default="en", description="Language for push notifications (en, de)")
+    notification_language: str = Field(
+        default="en", description="Language for notification texts (en, de, es, fr, it, ja, zh-CN)"
+    )
 
     # Bed cooled notification threshold
     bed_cooled_threshold: float = Field(

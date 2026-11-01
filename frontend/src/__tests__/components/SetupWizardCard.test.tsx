@@ -53,6 +53,17 @@ describe('SetupWizardCard', () => {
     expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
   });
 
+  it('sends the alerts step to the maintenance tab when its card is not on this page', async () => {
+    use({ alerts: false });
+    render(<SetupWizardCard />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Show card' }));
+
+    expect(window.location.pathname).toBe('/maintenance');
+    expect(window.location.search).toBe('?tab=system');
+    expect(window.location.hash).toBe('#setup-alerts');
+  });
+
   it('shows nothing when everything is done', async () => {
     use({});
     const { container } = render(<SetupWizardCard />);

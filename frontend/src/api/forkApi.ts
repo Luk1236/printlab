@@ -69,6 +69,61 @@ export interface AlertChannelsStatus {
   ntfy_host: string;
 }
 
+export interface DatabaseStatus {
+  supported: boolean;
+  dialect: string;
+  path: string | null;
+  size_bytes: number | null;
+}
+
+export interface DatabaseMaintenanceResult {
+  ok: boolean;
+  action: 'check' | 'vacuum';
+  detail: string[];
+  size_bytes: number | null;
+  saved_bytes: number;
+}
+
+export interface PushStatus {
+  subscriptions: number;
+  configured: boolean;
+  last_success_at: string | null;
+}
+
+export interface GlobalSearchHit {
+  kind: 'printer' | 'archive' | 'library' | 'queue';
+  id: number;
+  title: string;
+  subtitle: string;
+}
+
+export interface GlobalSearchResult {
+  query: string;
+  results: GlobalSearchHit[];
+}
+
+export interface FactoryResetPreview {
+  supported: boolean;
+  data_dir: string;
+  items: string[];
+  kept: string[];
+  pending: boolean;
+}
+
+export interface FactoryResetArchive {
+  name: string;
+  modified: string;
+  has_database: boolean;
+  backup: string | null;
+}
+
+export interface FactoryResetResult {
+  ok: boolean;
+  backup: string;
+  moved_to: string | null;
+  message: string;
+}
+
 export interface SetupStatus {
   items: { id: string; level: 'required' | 'recommended' | 'optional'; done: boolean | null }[];
   done: number;
@@ -678,6 +733,39 @@ export function createForkApi({ request, apiBase, getAuthToken }: ForkApiDeps) {
   resetPlateTuning: (printerId: number) =>
     request<{ reset: boolean }>(`/printers/${printerId}/camera/plate-detection/tuning`, { method: 'DELETE' }),
   getSetupStatus: () => request<SetupStatus>('/system/setup-status'),
+  getDatabaseStatus: () => request<DatabaseStatus>('/system/database'),
+  runDatabaseMaintenance: (action: 'check' | 'vacuum') =>
+    request<DatabaseMaintenanceResult>('/system/database/maintenance', {
+      method: 'POST',
+      body: JSON.stringify({ action }),
+    }),
+  getFactoryResetPreview: () => request<FactoryResetPreview>('/system/factory-reset'),
+  searchGlobal: (query: string) => request<GlobalSearchResult>(`/search?q=${encodeURIComponent(query)}`),
+  getPushKey: () => request<{ public_key: string }>('/push/key'),
+  getPushStatus: () => request<PushStatus>('/push/status'),
+  subscribePush: (subscription: PushSubscriptionJSON) =>
+    request<{ ok: boolean }>('/push/subscribe', {
+      method: 'POST',
+      body: JSON.stringify(subscription),
+    }),
+  unsubscribePush: (endpoint: string) =>
+    request<{ ok: boolean }>('/push/unsubscribe', {
+      method: 'POST',
+      body: JSON.stringify({ endpoint }),
+    }),
+  sendTestPush: () => request<{ sent: number; failed: number }>('/push/test', { method: 'POST' }),
+  getFactoryResetArchives: () =>
+    request<{ archives: FactoryResetArchive[] }>('/system/factory-reset/archives'),
+  restoreFactoryReset: (name: string, confirm: string) =>
+    request<{ ok: boolean; restored: string; safety: string; items: number; message: string }>(
+      '/system/factory-reset/restore',
+      { method: 'POST', body: JSON.stringify({ name, confirm }) }
+    ),
+  runFactoryReset: (confirm: string) =>
+    request<FactoryResetResult>('/system/factory-reset', {
+      method: 'POST',
+      body: JSON.stringify({ confirm }),
+    }),
   getAlertChannels: () => request<AlertChannelsStatus>('/system/alerts'),
   saveAlertChannels: (update: Record<string, string>) =>
     request<AlertChannelsStatus>('/system/alerts', { method: 'PUT', body: JSON.stringify(update) }),

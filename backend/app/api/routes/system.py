@@ -11,6 +11,7 @@ from pathlib import Path
 
 import psutil
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -33,6 +34,26 @@ from backend.app.services.printer_manager import printer_manager
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/system", tags=["system"])
+
+
+class FactoryResetRequest(BaseModel):
+    """Bestätigungsphrase — schützt vor einem versehentlichen Klick."""
+
+    confirm: str
+
+
+class FactoryRestoreRequest(BaseModel):
+    """Welcher Reset-Ordner, und die Bestätigung gegen ein Versehen."""
+
+    name: str
+    confirm: str
+
+
+class DatabaseMaintenanceRequest(BaseModel):
+    """``check`` prüft, ``vacuum`` gibt Speicher frei."""
+
+    action: str
+
 
 STORAGE_USAGE_CACHE_SECONDS = 300
 _storage_usage_cache: dict | None = None
@@ -664,6 +685,108 @@ async def get_setup_status(
     from backend.app.services import remote_access, setup_status
 
     return await setup_status.collect(db, settings.base_dir, await remote_access.status())
+
+
+@router.get("/factory-reset")
+async def factory_reset_preview(
+    db: AsyncSession = Depends(get_db),
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.SETTINGS_UPDATE),
+):
+    """Was die Werkseinstellungen entfernen würden (ändert nichts)."""
+    from backend.app.services import factory_reset
+
+    if not await is_auth_enabled(db):
+        raise HTTPException(403, "Werkseinstellungen nur mit eingeschalteter Anmeldung.")
+    return factory_reset.preview(settings.base_dir, settings.database_url)
+
+
+@router.post("/factory-reset")
+async def run_factory_reset(
+    payload: FactoryResetRequest,
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.SETTINGS_UPDATE),
+):
+    """Zurücksetzen: Sicherung anlegen, Daten verschieben, leeres Schema, dann neu einrichten."""
+    from backend.app.core.database import async_session
+    from backend.app.services import factory_reset
+
+    # Auch für den unwahrscheinlichen Fall, dass die Abhängigkeit ohne Anmeldung durchlässt: Ein offener
+    # PrintLab-Zugang darf die Daten nicht löschen können (der nächste Aufruf soll wieder geschützt sein).
+    async with async_session() as session:
+        if not await is_auth_enabled(session):
+            raise HTTPException(403, "Werkseinstellungen nur mit eingeschalteter Anmeldung.")
+
+    if payload.confirm.strip().upper() not in {"ZURÜCKSETZEN", "ZURUCKSETZEN", "RESET"}:
+        raise HTTPException(400, "Zum Bestätigen „ZURÜCKSETZEN“ eingeben.")
+
+    try:
+        return await factory_reset.perform_reset(settings.base_dir, settings.database_url)
+    except factory_reset.FactoryResetError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    except OSError as exc:
+        logger.exception("Werkseinstellungen fehlgeschlagen")
+        raise HTTPException(500, f"Zurücksetzen fehlgeschlagen: {exc}") from exc
+
+
+@router.get("/factory-reset/archives")
+async def factory_reset_archives(
+    db: AsyncSession = Depends(get_db),
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.SETTINGS_UPDATE),
+):
+    """Vorhandene Reset-Ordner, die sich zurückholen lassen."""
+    from backend.app.services import factory_reset
+
+    if not await is_auth_enabled(db):
+        raise HTTPException(403, "Werkseinstellungen nur mit eingeschalteter Anmeldung.")
+    return {"archives": factory_reset.list_archives(settings.base_dir)}
+
+
+@router.post("/factory-reset/restore")
+async def factory_reset_restore(
+    payload: FactoryRestoreRequest,
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.SETTINGS_UPDATE),
+):
+    """Einen Reset rückgängig machen; der aktuelle Stand bleibt als ``before-restore-…`` erhalten."""
+    from backend.app.core.database import async_session
+    from backend.app.services import factory_reset
+
+    async with async_session() as session:
+        if not await is_auth_enabled(session):
+            raise HTTPException(403, "Werkseinstellungen nur mit eingeschalteter Anmeldung.")
+
+    if payload.confirm.strip().upper() not in {"WIEDERHERSTELLEN", "RESTORE"}:
+        raise HTTPException(400, "Zum Bestätigen „WIEDERHERSTELLEN“ eingeben.")
+
+    try:
+        return await factory_reset.restore(settings.base_dir, payload.name)
+    except factory_reset.FactoryResetError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    except OSError as exc:
+        logger.exception("Wiederherstellen fehlgeschlagen")
+        raise HTTPException(500, f"Wiederherstellen fehlgeschlagen: {exc}") from exc
+
+
+@router.get("/database")
+async def database_status(
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.SETTINGS_READ),
+):
+    """Größe und Ort der lokalen Datenbank (ändert nichts)."""
+    from backend.app.services import db_maintenance
+
+    return await db_maintenance.status()
+
+
+@router.post("/database/maintenance")
+async def database_maintenance(
+    payload: DatabaseMaintenanceRequest,
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.SETTINGS_UPDATE),
+):
+    """Datenbank prüfen oder mit VACUUM komprimieren."""
+    from backend.app.services import db_maintenance
+
+    try:
+        return await db_maintenance.run(payload.action)
+    except db_maintenance.DatabaseMaintenanceError as exc:
+        raise HTTPException(409, str(exc)) from exc
 
 
 @router.get("/health", response_model=ScanResult)

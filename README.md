@@ -42,12 +42,17 @@ Filament-/Spulenverwaltung, Benachrichtigungen, Kamera, Virtual Printer, Benutze
   mit Rollen, günstigstem Lieferanten und geschätzten Kosten (eigene Verwaltung oder Spoolman).
 - **Einmess-Assistent Plattenwechsel** – führt durch Referenz-, Aufnahme- und Ablageposition, Türprüfung und
   Probelauf und hält das Protokoll fest; eine begonnene, nicht abgeschlossene Einmessung sperrt den Wechsel.
+- **Browser-Meldungen** – Push direkt im Browser oder auf dem Handy, ohne Telegram/ntfy; verschlüsselt nach
+  RFC 8291, mit VAPID signiert, je Gerät ein- und ausschaltbar.
+- **Befehlspalette** – Strg+K (⌘K) springt zu jeder Seite und durchsucht Drucker, Dateien, Archiv und Warteschlange.
 - **PC-Slicer** – Bambu Studio auf dem PC als Slicer-Dienst, mit Zugriffsschutz.
 - Deutsche Oberfläche, helles und dunkles Prusa-Design, Barrierefreiheit nach WCAG AA.
 
 Die laufende Aufgabenliste steht in [`TODO.md`](TODO.md), die Änderungen je Version in
 [`CHANGELOG.md`](CHANGELOG.md), die Beschreibung der Erweiterungen in
-[`docs/BAMBU-MONITOR-PORT.md`](docs/BAMBU-MONITOR-PORT.md). Wer am Gerät abnimmt, arbeitet
+[`docs/BAMBU-MONITOR-PORT.md`](docs/BAMBU-MONITOR-PORT.md). Wer frisch installiert, folgt
+[`docs/ERSTEINRICHTUNG.md`](docs/ERSTEINRICHTUNG.md) Punkt für Punkt — von der Anmeldung bis zum ersten Druck,
+inklusive Werkseinstellungen. Wer am Gerät abnimmt, arbeitet
 [`docs/ABNAHME-PI.md`](docs/ABNAHME-PI.md) durch: Update, Angebots-Link und Hardware in dieser Reihenfolge.
 
 ## Schnellstart

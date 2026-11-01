@@ -3,6 +3,27 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.21.0 (01.11.2026) — Schnellsuche, Browser-Meldungen, Wartung
+
+- **Meldungssprache wirkt jetzt:** Die eingebauten Texte der fünf häufigsten Druck-Ereignisse (Fertig, Fehler,
+  pausiert, abgebrochen, Fortschritt) gibt es in Deutsch, Englisch, Spanisch, Französisch, Italienisch, Japanisch und
+  Chinesisch; selbst geschriebene Vorlagen bleiben unverändert. Bisher war die Einstellung ohne Wirkung.
+- **Browser-Meldungen (Web Push):** Jedes Gerät schaltet sie in **Einstellungen → Benachrichtigungen** selbst ein;
+  dafür ist kein Meldeweg wie Telegram nötig. Der Server verschlüsselt jede Meldung nach RFC 8291 und signiert den
+  Versand mit VAPID (RFC 8292) — nur mit `cryptography` und `httpx`, ohne `pywebpush` auf dem Pi. Abos liegen in
+  `push_subscriptions`, der Schlüssel in den Einstellungen; ein Abo, das der Browser verwirft (HTTP 404/410), fliegt
+  nach dem fünften Fehlschlag raus. Die neue Karte schickt auf Wunsch eine Testmeldung. Voraussetzung ist HTTPS oder
+  `localhost` auf demselben Gerät — über Tailscale funktioniert es ebenso.
+- **Globale Suche (Strg+K / ⌘K):** Eine Befehlspalette springt zu jeder Seite und durchsucht Drucker, Bibliothek,
+  Archiv und Warteschlange. Die Treffer öffnen die passende Liste bereits mit dem Suchbegriff (`?search=…`).
+  Neue Route `GET /search`; sie prüft dieselben Besitzrechte wie die Listen (eigene statt aller Archive, Papierkorb
+  bleibt draußen) und maskiert `%`/`_` als Literale.
+- **Werkseinstellungen lassen sich zurückholen:** Die Karte listet vorhandene Reset-Ordner und stellt einen davon
+  wieder her; der aktuelle Stand wandert dabei nach `before-restore-…`, wird also ebenfalls nicht gelöscht.
+- **Datenbank-Wartung:** `quick_check` und `VACUUM` als Dienst und Route, mit Karte in **Wartung**.
+- **Oberfläche wird komprimiert:** Der Static-Handler liefert große Textdateien als gzip mit `Vary: Accept-Encoding`
+  und einem Cache; gehashte Build-Dateien bleiben unverändert ein Jahr im Browser.
+
 ## v1.20.0 (31.10.2026) — Sortierte Oberfläche, geübte lokale KI
 
 - **Seitenleiste gegliedert:** Drucken, Material & Kosten, Betrieb und Verwaltung; die eigene Reihenfolge gilt weiter

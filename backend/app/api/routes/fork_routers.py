@@ -20,10 +20,12 @@ from backend.app.api.routes import (
     plate_calibration,
     plate_tuning,
     plate_wizard,
+    push,
     quote,
     quote_queue,
     quote_share,
     reorder,
+    search,
     selftest,
     spaghetti_check,
     timelapse_export,
@@ -62,3 +64,7 @@ def register_fork_routers(app: FastAPI, prefix: str) -> None:
     app.include_router(quote_share.router, prefix=prefix)
     # Einmess-Assistent für den Plattenwechsel (Messwerte, Sperre, Protokoll).
     app.include_router(plate_wizard.router, prefix=prefix)
+    # Globale Suche für die Befehlspalette (Strg+K): Drucker, Bibliothek, Archiv, Warteschlange.
+    app.include_router(search.router, prefix=prefix)
+    # Browser-Meldungen: VAPID-Schlüssel, Abo, Testversand.
+    app.include_router(push.router, prefix=prefix)

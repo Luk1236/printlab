@@ -34,6 +34,9 @@ const ConnectAuthorizePage = lazy(() =>
   import('./pages/ConnectAuthorizePage').then((m) => ({ default: m.ConnectAuthorizePage })),
 );
 const SetupPage = lazy(() => import('./pages/SetupPage').then((m) => ({ default: m.SetupPage })));
+const SetupGuidePage = lazy(() =>
+  import('./pages/SetupGuidePage').then((m) => ({ default: m.SetupGuidePage })),
+);
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage').then((m) => ({ default: m.NotificationsPage })));
 const GCodeViewerPage = lazy(() => import('./pages/GCodeViewerPage').then((m) => ({ default: m.GCodeViewerPage })));
 import { useWebSocket } from './hooks/useWebSocket';
@@ -241,6 +244,14 @@ function App() {
                   <Route path="profiles" element={<ProfilesPage />} />
                   <Route path="finance" element={<PermissionRoute permission="cost_centers:read_own"><FinancePage /></PermissionRoute>} />
                   <Route path="maintenance" element={<MaintenancePage />} />
+                  <Route
+                    path="einrichtung"
+                    element={
+                      <PermissionRoute permission="settings:read">
+                        <SetupGuidePage />
+                      </PermissionRoute>
+                    }
+                  />
                   <Route path="error-help" element={<ErrorHelpPage />} />
                   <Route path="projects" element={<ProjectsPage />} />
                   <Route path="projects/:id" element={<ProjectDetailPage />} />

@@ -1680,7 +1680,12 @@ export function FileManagerPage() {
   }, [isResizing, sidebarWidth]);
 
   // Filter and sort state (persist sort preferences to localStorage)
-  const [searchQuery, setSearchQuery] = useState('');
+  // Treffer der Befehlspalette kommen als ?search=… an und füllen den Dateifilter vor.
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') ?? '');
+  const searchFromUrl = searchParams.get('search');
+  useEffect(() => {
+    if (searchFromUrl !== null) setSearchQuery(searchFromUrl);
+  }, [searchFromUrl]);
   const [filterType, setFilterType] = useState<string>('all');
   const [filterUsername, setFilterUsername] = useState('');
   const [sortField, setSortField] = useState<SortField>(() => {

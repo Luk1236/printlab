@@ -75,6 +75,7 @@ import { invalidateArchiveAndProjectViews } from '../utils/projectQueries';
 import { assignableProjects } from '../utils/projectTree';
 import { verdictSourceKey } from '../utils/verdictSource';
 import { usePageFileDrop } from '../hooks/usePageFileDrop';
+import { useUrlSearchTerm } from '../hooks/useUrlSearchTerm';
 import type { Archive, PrintLogEntry, ProjectListItem } from '../api/client';
 import { Card, CardContent } from '../components/Card';
 import { Button } from '../components/Button';
@@ -2944,6 +2945,8 @@ export function ArchivesPage() {
   const { hasPermission, hasAnyPermission } = useAuth();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState('');
+  // Die Befehlspalette (Strg+K) springt mit ?search=… hierher; der Begriff steht dann schon im Filter.
+  useUrlSearchTerm(setSearch);
   const [filterPrinter, setFilterPrinter] = useState<number | null>(() => {
     const saved = localStorage.getItem('archiveFilterPrinter');
     return saved ? Number(saved) : null;

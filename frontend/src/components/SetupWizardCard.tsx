@@ -11,6 +11,8 @@ import { openSteps } from '../utils/setupSteps';
 
 /** Wohin ein Schritt führt: Seite der App oder Karte auf derselben Seite (Anker). Alles andere passiert am Pi selbst. */
 const ACTIONS: Record<string, { to?: string; anchor?: string }> = {
+  // Solange die Anmeldung fehlt, ist /setup der richtige Ort (Administrator anlegen).
+  auth: { to: '/setup' },
   printer: { to: '/' },
   alerts: { anchor: 'setup-alerts' },
   remote: { anchor: 'setup-remote' },
@@ -35,8 +37,19 @@ export function SetupWizardCard() {
   const action = ACTIONS[current.id];
 
   const go = () => {
-    if (action?.to) navigate(action.to);
-    else if (action?.anchor) document.getElementById(action.anchor)?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+    if (action?.to) {
+      navigate(action.to);
+      return;
+    }
+    if (!action?.anchor) return;
+    const target = document.getElementById(action.anchor);
+    if (target) {
+      target.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    // Auf der Einrichtungsseite stehen die Karten für Meldungen und Fernzugriff nicht; sie liegen im
+    // Wartungs-Reiter. Dorthin springen und den Anker nach dem Aufbau ansteuern.
+    navigate(`/maintenance?tab=system#${action.anchor}`);
   };
 
   return (

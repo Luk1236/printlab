@@ -198,6 +198,17 @@ class NotificationService:
         title = self._render_template(template.title_template, variables)
         body = self._render_template(template.body_template, variables)
 
+        # Unveränderte Standardvorlagen in der eingestellten Meldungssprache ausgeben. Eigene Formulierungen bleiben
+        # unangetastet (siehe notification_texts.localized_default).
+        from backend.app.api.routes.settings import get_setting
+        from backend.app.services.notification_texts import localized_default
+
+        language = await get_setting(db, "notification_language")
+        localized = localized_default(event_type, language or "en", template.title_template, template.body_template)
+        if localized:
+            title = self._render_template(localized[0], variables)
+            body = self._render_template(localized[1], variables)
+
         return title, body
 
     async def send_test_notification(
@@ -1378,6 +1389,11 @@ class NotificationService:
         ``_send_to_providers_with_results``; this wrapper keeps the callers that
         do not need them unchanged.
         """
+        # Browser-Meldungen sind ein eigener Weg: Sie hängen nicht davon ab, ob ein externer Anbieter eingerichtet
+        # ist, und laufen im Hintergrund, damit ein langsamer Push-Dienst den Druckpfad nicht aufhält.
+        from backend.app.services import web_push
+
+        web_push.schedule(title, message)
         await self._send_to_providers_with_results(
             providers,
             title,

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo, Suspense } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Printer, Archive, ListOrdered, BarChart3, Cloud, Settings, Sun, Moon, Monitor, ChevronLeft, ChevronRight, Keyboard, Github, ArrowUpCircle, Wrench, FolderKanban, FolderOpen, X, Menu, Info, Plug, Bug, LogOut, Key, Loader2, Disc3, ShieldAlert, Globe, Bell, Receipt, Megaphone, LifeBuoy, Activity, type LucideIcon } from 'lucide-react';
+import { Printer, Archive, ListOrdered, BarChart3, Cloud, Settings, Sun, Moon, Monitor, ChevronLeft, ChevronRight, Keyboard, Github, ArrowUpCircle, Wrench, FolderKanban, FolderOpen, X, Menu, Info, Plug, Bug, LogOut, Key, Loader2, Disc3, ShieldAlert, Globe, Bell, Receipt, Megaphone, LifeBuoy, Activity, Compass, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/ThemeContext';
 import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
@@ -21,6 +21,7 @@ import { PageLoading } from './PageLoading';
 import { parseUTCDate } from '../utils/date';
 import { Button } from './Button';
 import { BugReportBubble } from './BugReportBubble';
+import { CommandPalette } from './CommandPalette';
 import { AnnouncementsPanel } from './AnnouncementsPanel';
 import { AnnouncementBanner } from './AnnouncementBanner';
 import { useAnnouncements } from '../hooks/useAnnouncements';
@@ -51,6 +52,7 @@ export const defaultNavItems: NavItem[] = [
   { id: 'makerworld', to: '/makerworld', icon: Globe, labelKey: 'nav.makerworld' },
   { id: 'profiles', to: '/profiles', icon: Cloud, labelKey: 'nav.profiles' },
   { id: 'maintenance', to: '/maintenance', icon: Wrench, labelKey: 'nav.maintenance' },
+  { id: 'setup-guide', to: '/einrichtung', icon: Compass, labelKey: 'setupWizard.title' },
   { id: 'error-help', to: '/error-help', icon: LifeBuoy, labelKey: 'nav.errorHelp' },
   { id: 'system', to: '/system', icon: Activity, labelKey: 'nav.systemStatus' },
   { id: 'stats', to: '/stats', icon: BarChart3, labelKey: 'nav.stats' },
@@ -72,7 +74,7 @@ export const defaultNavItems: NavItem[] = [
 const NAV_GROUPS: { id: string; labelKey: string; items: string[] }[] = [
   { id: 'print', labelKey: 'nav.groupPrint', items: ['printers', 'queue', 'archives', 'projects', 'files', 'makerworld'] },
   { id: 'material', labelKey: 'nav.groupMaterial', items: ['inventory', 'finance'] },
-  { id: 'operations', labelKey: 'nav.groupOperations', items: ['maintenance', 'error-help', 'system', 'stats', 'notifications'] },
+  { id: 'operations', labelKey: 'nav.groupOperations', items: ['maintenance', 'setup-guide', 'error-help', 'system', 'stats', 'notifications'] },
   { id: 'admin', labelKey: 'nav.groupAdmin', items: ['settings'] },
 ];
 
@@ -368,6 +370,7 @@ export function Layout() {
       stats: 'stats:read',
       profiles: 'kprofiles:read',
       maintenance: 'maintenance:read',
+      'setup-guide': 'settings:read',
       'error-help': 'printers:read',
       system: 'settings:read',
       projects: 'projects:read',
@@ -1364,6 +1367,8 @@ export function Layout() {
         onOpenChange={setBugReportOpen}
         onLoggingChange={setBugReportLogging}
       />}
+      {/* Am Wurzelknoten wie der Fehlerbericht: eigene Palette über allen Seiten, Strg+K/⌘K öffnet sie. */}
+      <CommandPalette />
     </div>
   );
 }
