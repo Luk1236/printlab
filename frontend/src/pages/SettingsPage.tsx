@@ -20,6 +20,7 @@ import { PreheatFilamentTargetsEditor } from '../components/PreheatFilamentTarge
 import type { APIKey, AppSettings, AppSettingsUpdate, PrinterHASensor, LocationHASensor, LocationHASensorReading, SmartPlug, SmartPlugStatus, NotificationProvider, NotificationTemplate, UpdateStatus, GitHubBackupStatus, CloudAuthStatus, UserCreate, UserUpdate, UserResponse, StorageUsageResponse, CalibrationMode } from '../api/client';
 import { Card, CardContent, CardDensityProvider, CardHeader } from '../components/Card';
 import { SlicerPipelinesPanel } from '../components/SlicerPipelinesPanel';
+import { SlicerConnectionCheck } from '../components/SlicerConnectionCheck';
 import { CameraTokensSection } from './CameraTokensPage';
 import { ConnectedAppsSection } from '../components/ConnectedAppsSection';
 import { StreamOverlayBuilder } from '../components/StreamOverlayBuilder';
@@ -5653,6 +5654,7 @@ export function SettingsPage() {
                       'URL of the slicer-API sidecar container. Leave blank to use the SLICER_API_URL / BAMBU_STUDIO_API_URL env var defaults.',
                     )}
                   </p>
+                  <SlicerConnectionCheck />
                 </div>
               )}
               {(localSettings.use_slicer_api ?? false) && (

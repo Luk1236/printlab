@@ -1,6 +1,6 @@
 # TODO — PrintLab
 
-**Stand:** 01.11.2026, Version 1.21.2 · **Basis:** Bambuddy 1.2.5.7 (AGPL-3.0, Herkunft: `NOTICE`) · **Branch:** `bambu-monitor-port`
+**Stand:** 01.11.2026, Version 1.21.3 · **Basis:** Bambuddy 1.2.5.7 (AGPL-3.0, Herkunft: `NOTICE`) · **Branch:** `bambu-monitor-port`
 
 Was fertig ist, steht mit Datum im `CHANGELOG.md`. Die ausführliche Bewertung (Risiken R1–R16, Verbesserungen, Erweiterungen)
 steht in `docs/ANALYSE-2026-10-28.md`, die Abnahme in `docs/ABNAHME.md`.
@@ -11,6 +11,9 @@ PrintLab (Pi 5, nativ, systemd-Benutzerdienst), Fernzugriff über Tailscale, Upd
 Update mit Rückbau, Überwachung mit Meldung, Angebote mit PDF, Kamera-Einmessung, Zustand des Geräts, Anmeldung vorgeschrieben.
 
 ## Zuletzt erledigt (01.11.2026, in v1.21.0)
+
+**Nachtrag v1.21.3:** Der Verbindungstest sitzt jetzt bei den Slicer-Einstellungen und nennt Adresse, Version oder
+Fehlergrund — dieselbe Abfrage, die die Slice-Maske vor dem Slicen macht.
 
 **Nachtrag v1.21.2:** Drei Meldungen aus dem Betrieb („Slicer-Standardwerte“, „Slicen fehlgeschlagen“, „nur .gcode
 …“) hatten dieselbe Wurzel: Das Sidecar antwortete nicht, die Maske bot das Slicen trotzdem an, und ein 3MF-Projekt

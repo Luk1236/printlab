@@ -3,6 +3,15 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.21.3 (01.11.2026) — Slicer-Verbindung dort prüfen, wo man sie einträgt
+
+- **„Verbindung prüfen“ bei den Slicer-Einstellungen:** Der Knopf fragt `/slicer/status` und zeigt die tatsächlich
+  benutzte Adresse, die Version des Sidecars oder den Grund des Fehlschlags. Geprüft wird die **gespeicherte** Adresse;
+  der Hinweis darunter sagt das. Damit findet man den `localhost`-Fehler auf dem Pi direkt neben dem Eingabefeld,
+  statt erst beim Slicen.
+- **Texte in allen 15 Sprachen**, drei Frontend-Tests für erreichbar, nicht erreichbar (mit Adresse) und nicht
+  eingerichtet.
+
 ## v1.21.2 (01.11.2026) — Slicer sagt, was los ist; 3MF führt zum Slicen
 
 - **Slicer wird vor dem Slicen geprüft:** `GET /slicer/status` fragt das Sidecar. Die Slice-Maske nennt die
