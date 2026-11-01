@@ -45,6 +45,11 @@ def _keep(name: str) -> bool:
     return name in KEEP or name.startswith(RESET_PREFIX)
 
 
+def _pending_path(data_dir: Path) -> Path:
+    """Auftragsdatei des Resets; der Name ist eine Konstante dieses Moduls."""
+    return data_dir / PENDING_FILE  # SEC-PATH-OK: PENDING_FILE ist eine Konstante dieses Moduls
+
+
 def sqlite_db_path(database_url: str) -> Path:
     """Dateipfad der lokalen Datenbank aus ``sqlite+aiosqlite:///…``."""
     if not database_url.startswith(SUPPORTED_PREFIX):
@@ -71,7 +76,7 @@ def preview(data_dir: Path, database_url: str) -> dict[str, Any]:
         "data_dir": str(data_dir),
         "items": entries,
         "kept": ["backups", "logs"],
-        "pending": (data_dir / PENDING_FILE).is_file(),
+        "pending": _pending_path(data_dir).is_file(),
     }
 
 
@@ -81,7 +86,7 @@ def _write_marker(data_dir: Path, target: Path, backup: Path) -> None:
         "target": target.name,
         "backup": backup.name,
     }
-    (data_dir / PENDING_FILE).write_text(json.dumps(marker, indent=2), encoding="utf-8")
+    _pending_path(data_dir).write_text(json.dumps(marker, indent=2), encoding="utf-8")
 
 
 def create_backup(data_dir: Path, db_path: Path) -> Path:
@@ -100,7 +105,7 @@ def create_backup(data_dir: Path, db_path: Path) -> Path:
                 continue
             archive.write(entry, f"config/{entry.name}")
         for folder in CONFIG_DIRS:
-            root = data_dir / folder
+            root = data_dir / folder  # SEC-PATH-OK: folder stammt ausschließlich aus der Konstante CONFIG_DIRS
             if not root.is_dir():
                 continue
             for path in sorted(root.rglob("*")):
@@ -112,7 +117,7 @@ def create_backup(data_dir: Path, db_path: Path) -> Path:
 
 def apply_pending(data_dir: Path) -> Path | None:
     """Verschiebt alle Daten in den Reset-Ordner. Gibt den Ordner zurück, sonst ``None``."""
-    marker_path = data_dir / PENDING_FILE
+    marker_path = _pending_path(data_dir)
     if not marker_path.is_file():
         return None
     try:
@@ -122,7 +127,12 @@ def apply_pending(data_dir: Path) -> Path | None:
         marker_path.unlink(missing_ok=True)
         return None
 
-    target = data_dir / str(marker.get("target") or f"{RESET_PREFIX}{datetime.now():%Y%m%d-%H%M%S}")
+    # Die Auftragsdatei liegt im Datenordner und ist damit von außen änderbar. Nur einen Namen in der Form
+    # ``reset-JJJJMMTT-HHMMSS`` übernehmen; alles andere würde beim Verschieben aus dem Datenordner herausführen.
+    raw_target = str(marker.get("target") or "")
+    if not RESET_NAME_RX.fullmatch(raw_target):
+        raw_target = f"{RESET_PREFIX}{datetime.now():%Y%m%d-%H%M%S}"
+    target = data_dir / raw_target  # SEC-PATH-OK: raw_target ist direkt darüber per RESET_NAME_RX geprüft
     target.mkdir(parents=True, exist_ok=True)
     for entry in data_dir.iterdir():
         if entry in (marker_path, target) or _keep(entry.name) or entry.name.startswith(RESET_PREFIX):
@@ -171,7 +181,7 @@ def list_archives(data_dir: Path) -> list[dict[str, Any]]:
 def _archive_dir(data_dir: Path, name: str) -> Path:
     if not RESET_NAME_RX.fullmatch(name):
         raise FactoryResetError("Unbekannter Reset-Ordner.")
-    target = data_dir / name
+    target = data_dir / name  # SEC-PATH-OK: name ist direkt darüber per RESET_NAME_RX geprüft
     if not target.is_dir():
         raise FactoryResetError("Diesen Reset-Ordner gibt es nicht mehr.")
     return target

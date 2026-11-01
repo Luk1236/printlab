@@ -3,6 +3,16 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.21.1 (01.11.2026) — Pfadprüfung nachgezogen
+
+- **CI wieder grün:** Die Pfadprüfung (`test_no_unsafe_path_joins`) meldete die neuen Stellen in
+  `services/factory_reset.py`. Die Konstanten-Joins sind mit `# SEC-PATH-OK:` und Begründung versehen; der Zielordner
+  aus der Auftragsdatei wird jetzt zusätzlich per `RESET_NAME_RX` geprüft, damit ein manipulierter Eintrag keine
+  Daten aus dem Datenordner heraus verschieben kann (neuer Test).
+- **Pfadprüfung läuft jetzt auch unter Windows:** Der Test las die Quellen ohne Kodierung und brach dort mit cp1252
+  ab; deshalb stand er auf der Windows-Skip-Liste und der Fehler fiel erst in der Linux-CI auf. Er liest jetzt UTF-8
+  und ist von der Skip-Liste gestrichen.
+
 ## v1.21.0 (01.11.2026) — Schnellsuche, Browser-Meldungen, Wartung
 
 - **Meldungssprache wirkt jetzt:** Die eingebauten Texte der fünf häufigsten Druck-Ereignisse (Fertig, Fehler,

@@ -166,7 +166,8 @@ def _enclosing_call_is_safe_join(stack: list[ast.AST]) -> bool:
 
 
 def _scan_file(py_file: Path) -> list[str]:
-    source = py_file.read_text()
+    # Immer UTF-8: der Quelltext ist deutsch, unter Windows wäre cp1252 sonst ein Lesefehler.
+    source = py_file.read_text(encoding="utf-8")
     source_lines = source.splitlines()
     tree = ast.parse(source, filename=str(py_file))
     findings: list[str] = []
@@ -202,7 +203,7 @@ def _scan_source(source: str, tmp_path: Path) -> list[str]:
     """Drop ``source`` into a temp .py file and run ``_scan_file`` against it.
     Returns the findings list."""
     f = tmp_path / "candidate.py"
-    f.write_text(source)
+    f.write_text(source, encoding="utf-8")
     return _scan_file(f)
 
 

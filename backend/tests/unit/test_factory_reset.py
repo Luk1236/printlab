@@ -119,6 +119,24 @@ def test_apply_pending_survives_a_second_start(tmp_path: Path):
     assert (target / "printlab.db.neu").read_bytes().startswith(b"SQLite")
 
 
+def test_apply_pending_refuses_a_target_outside_the_data_dir(tmp_path: Path):
+    """Die Auftragsdatei liegt im Datenordner und ist damit änderbar: ein Pfad nach außen wird abgewiesen."""
+    data = _data_dir(tmp_path)
+    outside = tmp_path / "outside"
+    (data / factory_reset.PENDING_FILE).write_text(
+        json.dumps({"requested_at": "2026-01-01T12:00:00", "target": str(outside), "backup": "x.zip"}),
+        encoding="utf-8",
+    )
+
+    moved = factory_reset.apply_pending(data)
+
+    assert moved is not None
+    assert moved.parent == data
+    assert moved.name.startswith(factory_reset.RESET_PREFIX)
+    assert not outside.exists()
+    assert (moved / "printlab.db").is_file()
+
+
 def test_list_archives_finds_reset_folders_with_their_backup(tmp_path: Path):
     data = _data_dir(tmp_path)
     archive = data / "reset-20260101-120000"
