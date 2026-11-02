@@ -152,3 +152,16 @@ class TestAddress:
 def test_money_rounds_half_up():
     assert einvoice._money("1.005") == Decimal("1.01")
     assert einvoice._money(None) == Decimal("0.00")
+
+
+def test_embed_zugferd_xml_produces_hybrid_pdf():
+    xml = einvoice.build_xml(INVOICE, COMPANY)
+    dummy_pdf = b"%PDF-1.7\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF\n"
+    hybrid = einvoice.embed_zugferd_xml(dummy_pdf, xml)
+    assert hybrid.startswith(b"%PDF-1.7")
+    assert hybrid.endswith(b"%%EOF\n")
+    assert b"/Type /Filespec" in hybrid
+    assert b"/AFRelationship /Alternative" in hybrid
+    assert b"(factur-x.xml)" in hybrid
+    assert b"urn:cen.eu:en16931:2017" in hybrid
+    assert einvoice.zugferd_filename(INVOICE) == "ZUGFeRD-R-2026-0003.pdf"

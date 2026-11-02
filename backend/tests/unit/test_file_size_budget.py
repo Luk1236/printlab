@@ -17,7 +17,7 @@ DEFAULT_LIMIT = 2600
 LIMITS = {
     "backend/app/main.py": 11000,
     "backend/app/services/print_scheduler.py": 4550,
-    "backend/app/services/bambu_mqtt.py": 8500,
+    "backend/app/services/bambu_mqtt.py": 8275,
     "backend/app/core/database.py": 6350,
     "backend/app/api/routes/library.py": 6100,
     "backend/app/api/routes/archives.py": 5550,
@@ -31,7 +31,7 @@ LIMITS = {
     "frontend/src/api/client.ts": 1050,
     "frontend/src/api/types.ts": 4250,
     "frontend/src/api/endpoints.ts": 4050,
-    "frontend/src/pages/SettingsPage.tsx": 7850,
+    "frontend/src/pages/SettingsPage.tsx": 7450,
     "frontend/src/pages/ArchivesPage.tsx": 4925,
     "frontend/src/pages/FileManagerPage.tsx": 4050,
     "frontend/src/pages/QueuePage.tsx": 3091,

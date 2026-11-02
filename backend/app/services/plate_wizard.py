@@ -216,3 +216,80 @@ def blocks_plate_change(printer_id: int) -> str | None:
     if state["started"]:
         return "Einmess-Assistent für den Plattenwechsel ist begonnen, aber nicht abgeschlossen."
     return None
+
+
+def build_motion_sequence(printer_id: int, slot: int = 1, feedrate_mm_min: int = 1800) -> dict[str, Any]:
+    """Erzeugt aus einer vollständig abgeschlossenen Einmessung die deterministische Bewegungsfolge.
+
+    Solange die Einmessung nicht abgeschlossen ist, wird mit ``WizardError`` abgebrochen (Fail-Closed).
+    """
+    state = status(printer_id)
+    if not state["complete"]:
+        raise WizardError("Die Bewegungsfolge kann erst nach vollständig abgeschlossener Einmessung erzeugt werden.")
+    slot_num = max(1, min(int(slot), 20))
+    feed = max(300, min(int(feedrate_mm_min), 12000))
+    steps_data = state["steps"]
+    ref = steps_data["reference"]["position"]
+    pickup = steps_data["pickup"]["position"]
+    drop = steps_data["drop"]["position"]
+    mag = steps_data.get("magazine", {}).get("position")
+    has_sensor = bool(steps_data.get("door", {}).get("sensor"))
+
+    def _g1(pos: dict[str, float], comment: str) -> str:
+        return f"G1 X{pos['x']:.2f} Y{pos['y']:.2f} Z{pos['z']:.2f} F{feed} ; {comment}"
+
+    sequence: list[dict[str, Any]] = [
+        {"step": 1, "action": "verify_bed_cooled", "detail": "Betttemperatur unter Schwellwert prüfen"},
+        {"step": 2, "action": "door_open", "detail": "Tür-Servo öffnen"},
+        {"step": 3, "action": "move_reference", "position": ref, "gcode": _g1(ref, "Referenzpunkt anfahren")},
+        {
+            "step": 4,
+            "action": "move_pickup",
+            "position": pickup,
+            "gcode": _g1(pickup, "Platte auf Druckbett aufnehmen"),
+        },
+        {"step": 5, "action": "move_drop", "position": drop, "gcode": _g1(drop, "Alte Platte ablegen")},
+    ]
+    if mag:
+        sequence.append(
+            {
+                "step": len(sequence) + 1,
+                "action": "move_magazine",
+                "slot": slot_num,
+                "position": mag,
+                "gcode": _g1(mag, f"Neue Platte aus Magazin-Fach {slot_num} aufnehmen"),
+            }
+        )
+    sequence.extend(
+        [
+            {
+                "step": len(sequence) + 1,
+                "action": "return_reference",
+                "position": ref,
+                "gcode": _g1(ref, "Zurück zum sicheren Referenzpunkt"),
+            },
+            {
+                "step": len(sequence) + 2,
+                "action": "door_close",
+                "verify_sensor": has_sensor,
+                "detail": "Tür schließen" + (" und Endschalter prüfen" if has_sensor else ""),
+            },
+        ]
+    )
+    gcode_lines = [
+        f"; PrintLab Plattenwechsel-Bewegungsfolge (Drucker #{printer_id}, Fach {slot_num})",
+        f"; Eingemessen von: {state.get('operator') or '—'} am {state.get('completed_at')}",
+        "G90 ; Absolute Positionierung",
+        *[item["gcode"] for item in sequence if "gcode" in item],
+        "M400 ; Bewegung vollständig abwarten",
+    ]
+    return {
+        "printer_id": int(printer_id),
+        "slot": slot_num,
+        "feedrate_mm_min": feed,
+        "operator": state.get("operator") or "",
+        "completed_at": state.get("completed_at"),
+        "verify_door_sensor": has_sensor,
+        "steps": sequence,
+        "gcode": "\n".join(gcode_lines),
+    }

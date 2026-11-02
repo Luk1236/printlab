@@ -317,6 +317,17 @@ def check_local_ai():
         return WARN, "Lokale KI (Ollama)", "Port 11434 offen, aber /api/tags antwortet nicht"
 
 
+def check_repo_hygiene() -> tuple[str, str, str]:
+    """Prüft auf verwaiste Git-Index-Kopien (z. B. OneDrive) und 0-Byte-Testartefakte im Projektstamm."""
+    git_dir = APP_DIR / ".git"
+    stale_index = [p.name for p in git_dir.glob("index*") if p.name != "index"] if git_dir.is_dir() else []
+    zero_3mf = [p.name for p in APP_DIR.glob("*.3mf") if p.is_file() and p.stat().st_size == 0]
+    issues = [*stale_index, *zero_3mf]
+    if issues:
+        return WARN, "Repo-Hygiene", f"Verwaiste Artefakte gefunden: {', '.join(issues)}"
+    return OK, "Repo-Hygiene", "Keine verwaisten Index-Kopien oder 0-Byte-Testdateien im Projektstamm"
+
+
 CHECKS = [
     check_service,
     check_auth,
@@ -333,6 +344,7 @@ CHECKS = [
     check_einvoice_schema,
     check_gpio_config,
     check_local_ai,
+    check_repo_hygiene,
 ]
 
 
@@ -396,6 +408,12 @@ def run_durchstich() -> list[dict]:
                 quote_share.respond(share["token"], "accepted", "Abnahmetest OK")
                 inv = invoices.create_from_quote(q["id"], company, service_date="2026-11-02")
                 xml = einvoice.build_xml(inv, company)
+                hybrid_pdf = einvoice.embed_zugferd_xml(b"%PDF-1.7\n1 0 obj\n<<>>\nendobj\n%%EOF\n", xml)
+                if b"/AFRelationship /Alternative" not in hybrid_pdf:
+                    steps.append(
+                        {"level": FAIL, "title": "Stufe 3.2 ZUGFeRD-Einbettung", "detail": "factur-x.xml fehlt im PDF"}
+                    )
+                    return steps
                 steps.append(
                     {
                         "level": OK,
@@ -441,8 +459,9 @@ def run_durchstich() -> list[dict]:
             plate_wizard.save_step(printer_id, "dry_run", {"confirmed": True, "note": "Trockenlauf OK"})
             plate_wizard.complete(printer_id, operator="Abnahme-Durchstich")
             unblocked_after = plate_wizard.blocks_plate_change(printer_id)
+            motion = plate_wizard.build_motion_sequence(printer_id, slot=1)
             ok_swap, swap_msg = hw.change_plate("Abnahme-Druck")
-            if blocked_msg and unblocked_after is None and ok_swap:
+            if blocked_msg and unblocked_after is None and ok_swap and "G90" in motion.get("gcode", ""):
                 steps.append(
                     {
                         "level": OK,
@@ -458,6 +477,56 @@ def run_durchstich() -> list[dict]:
                         "detail": f"blocked={blocked_msg!r}, unblocked={unblocked_after!r}, swap={ok_swap}",
                     }
                 )
+
+            # 4. Stufe 4.3: Kamera-Perspektiv-Einmessung & Optische Leerbett-/Bauteilerkennung
+            import cv2
+            import numpy as np
+
+            from backend.app.services import plate_calibration, plate_detection
+
+            orig_cal_dir = plate_calibration.STORE_DIR
+            orig_det_dir = plate_detection._get_calibration_dir
+            try:
+                plate_calibration.STORE_DIR = tmp_dir / "plate_calibration"
+                plate_detection._get_calibration_dir = lambda: tmp_dir / "plate_references"
+
+                plate_calibration.set_points(printer_id, [[0.1, 0.2], [0.9, 0.2], [0.95, 0.9], [0.05, 0.9]])
+                empty_img = np.full((480, 640, 3), 60, dtype=np.uint8)
+                cv2.rectangle(empty_img, (100, 120), (540, 420), (85, 85, 85), 2)
+                _, empty_buf = cv2.imencode(".jpg", empty_img)
+                empty_warped = plate_calibration.warp_bytes(printer_id, empty_buf.tobytes())
+
+                occupied_img = empty_img.copy()
+                cv2.rectangle(occupied_img, (230, 210), (410, 360), (240, 240, 240), -1)
+                _, occ_buf = cv2.imencode(".jpg", occupied_img)
+                occ_warped = plate_calibration.warp_bytes(printer_id, occ_buf.tobytes())
+
+                detector = plate_detection.PlateDetector()
+                cal_ok, _, _ = detector.calibrate(empty_warped or empty_buf.tobytes(), printer_id, label="Abnahme PEI")
+                res_empty = detector.analyze_frame(empty_warped or empty_buf.tobytes(), printer_id)
+                res_occ = detector.analyze_frame(occ_warped or occ_buf.tobytes(), printer_id)
+                if cal_ok and res_empty.is_empty and not res_occ.is_empty:
+                    steps.append(
+                        {
+                            "level": OK,
+                            "title": "Stufe 4.3 Kamera-Einmessung & Leerbett-Erkennung",
+                            "detail": (
+                                f"Perspektiv-Warp OK; Leerbett frei (Diff {res_empty.difference_percent:.1f}%), "
+                                f"Bauteil gesperrt (Diff {res_occ.difference_percent:.1f}%)"
+                            ),
+                        }
+                    )
+                else:
+                    steps.append(
+                        {
+                            "level": FAIL,
+                            "title": "Stufe 4.3 Kamera-Einmessung & Leerbett-Erkennung",
+                            "detail": f"cal={cal_ok}, empty={res_empty.is_empty}, occupied={res_occ.is_empty}",
+                        }
+                    )
+            finally:
+                plate_calibration.STORE_DIR = orig_cal_dir
+                plate_detection._get_calibration_dir = orig_det_dir
         finally:
             quote_history.HISTORY_PATH = orig_history
             quote_share.SHARES_PATH = orig_shares

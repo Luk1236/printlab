@@ -310,3 +310,35 @@ def build_xml(invoice: dict[str, Any], company: dict[str, Any]) -> str:
 def filename(invoice: dict[str, Any]) -> str:
     number = re.sub(r"[^A-Za-z0-9._-]", "_", _text(invoice.get("number")) or "Rechnung")
     return f"XRechnung-{number}.xml"
+
+
+def zugferd_filename(invoice: dict[str, Any]) -> str:
+    number = re.sub(r"[^A-Za-z0-9._-]", "_", _text(invoice.get("number")) or "Rechnung")
+    return f"ZUGFeRD-{number}.pdf"
+
+
+def embed_zugferd_xml(pdf_bytes: bytes, xml_text: str, attachment_name: str = "factur-x.xml") -> bytes:
+    """Bettet das validierte XRechnung-/EN-16931-XML als ZUGFeRD-/Factur-X-Anhang in das PDF ein."""
+    xml_bytes = xml_text.encode("utf-8")
+    eof_marker = b"%%EOF"
+    idx = pdf_bytes.rfind(eof_marker)
+    head = pdf_bytes[:idx].rstrip() if idx != -1 else pdf_bytes.rstrip()
+    safe_name = re.sub(r"[^A-Za-z0-9._-]", "_", attachment_name) or "factur-x.xml"
+    trailer_block = (
+        b"\n% PrintLab ZUGFeRD / Factur-X (EN 16931) Embedded File Stream\n"
+        b"9990 0 obj\n"
+        + f"<< /Type /EmbeddedFile /Subtype /text#2Fxml /Length {len(xml_bytes)} "
+        f"/Params << /Size {len(xml_bytes)} >> >>\n".encode("ascii")
+        + b"stream\n"
+        + xml_bytes
+        + b"\nendstream\nendobj\n"
+        + b"9991 0 obj\n"
+        + (
+            f"<< /Type /Filespec /F ({safe_name}) /UF ({safe_name}) "
+            "/Desc (ZUGFeRD / Factur-X EN 16931 E-Rechnung) "
+            "/AFRelationship /Alternative "
+            "/EF << /F 9990 0 R /UF 9990 0 R >> >>\n"
+        ).encode("ascii")
+        + b"endobj\n%%EOF\n"
+    )
+    return head + trailer_block

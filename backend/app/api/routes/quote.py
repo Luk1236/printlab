@@ -358,6 +358,30 @@ async def download_invoice_einvoice(
     )
 
 
+@router.get("/invoices/{invoice_id}/zugferd.pdf")
+async def download_invoice_zugferd(
+    invoice_id: str,
+    lang: str = Query("de", pattern="^(de|en)$"),
+    _=RequirePermissionIfAuthEnabled(Permission.ARCHIVES_READ),
+):
+    """Hybride ZUGFeRD-/Factur-X-Rechnung (PDF mit eingebettetem EN-16931-XML factur-x.xml) herunterladen."""
+    invoice = invoices.get(invoice_id)
+    if invoice is None:
+        raise HTTPException(404, "Rechnung nicht gefunden.")
+    company = company_profile.read()
+    try:
+        xml = einvoice.build_xml(invoice, company)
+    except einvoice.EInvoiceError as exc:
+        raise HTTPException(422, {"message": "Pflichtangaben fehlen.", "issues": exc.issues}) from exc
+    pdf = quote_pdf.render(invoice, {**company, "_logo_path": company_profile.logo_path()}, lang, kind="invoice")
+    hybrid_pdf = einvoice.embed_zugferd_xml(pdf, xml)
+    return Response(
+        hybrid_pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{einvoice.zugferd_filename(invoice)}"'},
+    )
+
+
 @router.delete("/history/{entry_id}")
 async def delete_quote(
     entry_id: str,

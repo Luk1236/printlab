@@ -30,14 +30,14 @@ export function AutoSetupCard() {
     <Card>
       <CardContent className="space-y-3">
         <div data-testid="auto-setup" className="space-y-3">
-          <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
             <Wand2 className="w-5 h-5 text-bambu-green" />
             {t('autoSetup.title')}
           </h2>
           {open.length > 0 && !result && (
             <>
               <p className="text-xs text-bambu-gray">{t('autoSetup.intro')}</p>
-              <ul className="list-disc pl-5 text-sm text-white space-y-1">
+              <ul className="list-disc pl-5 text-sm text-gray-900 dark:text-white space-y-1">
                 {open.map((item) => (
                   <li key={item.id}>{t(`autoSetup.item.${item.id}`)}</li>
                 ))}
@@ -57,7 +57,7 @@ export function AutoSetupCard() {
               {result.items
                 .filter((item) => item.state !== 'manual')
                 .map((item) => (
-                  <li key={item.id} className="text-sm text-white" data-testid={`auto-setup-${item.id}`}>
+                  <li key={item.id} className="text-sm text-gray-900 dark:text-white" data-testid={`auto-setup-${item.id}`}>
                     {t(`autoSetup.item.${item.id}`)}: {t(`autoSetup.result.${item.state}`)}
                     {item.state === 'needs_user' && item.detail.startsWith('https://') && (
                       <>

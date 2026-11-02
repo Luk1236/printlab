@@ -79,7 +79,7 @@ export function QuickSetupHubCard({
       <CardContent className="space-y-4" data-testid="quick-setup-hub">
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-bambu-dark-tertiary pb-3">
           <div>
-            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <Compass className="w-5 h-5 text-bambu-green shrink-0" />
               Einstellungs-Kompass &amp; P2S-Werkstatt
             </h2>
@@ -111,7 +111,7 @@ export function QuickSetupHubCard({
           <div className="rounded-lg border border-bambu-dark-tertiary bg-bambu-dark p-3.5 flex flex-col justify-between space-y-3">
             <div className="space-y-1">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-semibold text-white flex items-center gap-2">
+                <span className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                   <Printer className="w-4 h-4 text-bambu-green shrink-0" />
                   1. Drucker, LAN &amp; Zugang
                 </span>
@@ -150,7 +150,7 @@ export function QuickSetupHubCard({
           <div className="rounded-lg border border-bambu-dark-tertiary bg-bambu-dark p-3.5 flex flex-col justify-between space-y-3">
             <div className="space-y-1">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-semibold text-white flex items-center gap-2">
+                <span className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                   <Layers className="w-4 h-4 text-bambu-green shrink-0" />
                   2. PC-Slicer &amp; Druckablauf
                 </span>
@@ -185,7 +185,7 @@ export function QuickSetupHubCard({
           <div className="rounded-lg border border-bambu-dark-tertiary bg-bambu-dark p-3.5 flex flex-col justify-between space-y-3">
             <div className="space-y-1">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-semibold text-white flex items-center gap-2">
+                <span className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                   <Cpu className="w-4 h-4 text-bambu-green shrink-0" />
                   3. P2S-Mechanik &amp; Kamera
                 </span>
@@ -214,7 +214,7 @@ export function QuickSetupHubCard({
           <div className="rounded-lg border border-bambu-dark-tertiary bg-bambu-dark p-3.5 flex flex-col justify-between space-y-3">
             <div className="space-y-1">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-semibold text-white flex items-center gap-2">
+                <span className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                   <BellRing className="w-4 h-4 text-bambu-green shrink-0" />
                   4. Ausfall-Meldung &amp; Fernzugriff
                 </span>
@@ -246,7 +246,7 @@ export function QuickSetupHubCard({
           <div className="rounded-lg border border-bambu-dark-tertiary bg-bambu-dark p-3.5 flex flex-col justify-between space-y-3">
             <div className="space-y-1">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-semibold text-white flex items-center gap-2">
+                <span className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                   <Bot className="w-4 h-4 text-bambu-green shrink-0" />
                   5. Lokale KI (Ollama) &amp; Fehlerhilfe
                 </span>
@@ -275,7 +275,7 @@ export function QuickSetupHubCard({
           <div className="rounded-lg border border-bambu-dark-tertiary bg-bambu-dark p-3.5 flex flex-col justify-between space-y-3">
             <div className="space-y-1">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-semibold text-white flex items-center gap-2">
+                <span className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                   <DollarSign className="w-4 h-4 text-bambu-green shrink-0" />
                   6. Angebote, Firma &amp; XRechnung
                 </span>

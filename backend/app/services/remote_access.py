@@ -129,6 +129,7 @@ def _daemon_running() -> bool:
 
 async def status() -> dict[str, Any]:
     """Zustand des Fernzugriffs; wirft nie."""
+    cfg = _read_config()
     info: dict[str, Any] = {
         "supported": supported(),
         "installed": bool(_local_binaries() or _system_cli()),
@@ -139,9 +140,9 @@ async def status() -> dict[str, Any]:
         "ips": [],
         "dns_name": "",
         "serving": False,
-        "enabled": bool(_read_config().get("enabled")),
-        "slicer": bool(_read_config().get("slicer")),
-        "https": bool(_read_config().get("https")),
+        "enabled": bool(cfg.get("enabled")),
+        "slicer": bool(cfg.get("slicer")),
+        "https": bool(cfg.get("https")),
         "https_url": "",
         "error": None,
     }
@@ -173,6 +174,12 @@ async def status() -> dict[str, Any]:
         try:
             _, served = await _ts("serve", "status", timeout=15)
             info["serving"] = "tcp://" in served or "TCP" in served or "|--" in served
+            if not info["serving"] and info["enabled"]:
+                target_port = int(cfg.get("port") or 8000)
+                await share(target_port)
+                if target_port != 8080:
+                    await _ts("serve", "--bg", "--tcp=8080", f"tcp://localhost:{target_port}", timeout=15)
+                info["serving"] = True
         except RemoteAccessError:
             pass
     return info
@@ -363,17 +370,20 @@ async def disable() -> dict[str, Any]:
 async def autostart() -> None:
     """Beim Start von PrintLab: war der Fernzugriff an, Dienst und Freigabe wieder herstellen."""
     config = _read_config()
-    if not config.get("enabled") or not supported() or not _local_binaries():
+    if not config.get("enabled") or not supported() or not (_local_binaries() or _system_cli()):
         return
     try:
         await start_daemon()
         await asyncio.sleep(1)
         current = await status()
         if current["state"] == "connected":
-            await share(int(config.get("port") or 8000))
+            target_port = int(config.get("port") or 8000)
+            await share(target_port)
+            if target_port != 8080:
+                await _ts("serve", "--bg", "--tcp=8080", f"tcp://localhost:{target_port}", timeout=15)
             if config.get("slicer"):
                 await share_slicer()
             if config.get("https"):
-                await share_https(int(config.get("port") or 8000))
+                await share_https(target_port)
     except RemoteAccessError as exc:
         logger.warning("[Fernzugriff] Autostart fehlgeschlagen: %s", exc)

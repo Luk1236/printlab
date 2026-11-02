@@ -28,9 +28,15 @@ def test_gpio_config_check_is_ok():
     assert "konfliktfrei" in detail
 
 
+def test_repo_hygiene_check_is_ok():
+    level, title, _detail = abnahme.check_repo_hygiene()
+    assert level == abnahme.OK
+    assert title == "Repo-Hygiene"
+
+
 def test_durchstich_runs_stage_3_and_4_workflows_cleanly():
     steps = abnahme.run_durchstich()
-    assert len(steps) == 3
+    assert len(steps) == 4
     for step in steps:
         assert step["level"] == abnahme.OK, f"{step['title']} fehlgeschlagen: {step['detail']}"
 

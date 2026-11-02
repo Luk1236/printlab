@@ -86,6 +86,22 @@ def main(argv: list[str] | None = None) -> int:
         _git("tag", "-d", args.tag)
         print(f"Alter Tag {args.tag} lokal gelöscht (--force).")
 
+    if not args.no_push:
+        subprocess.run(["git", "fetch", "origin"], cwd=str(ROOT), capture_output=True, check=False)
+        behind = subprocess.run(
+            ["git", "rev-list", "--count", "HEAD..@{u}"],
+            cwd=str(ROOT),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if behind.returncode == 0 and int(behind.stdout.strip() or "0") > 0:
+            print(
+                "Der Remote-Branch enthält neuere Commits (z. B. vom Build-static-Workflow). "
+                "Erst 'git pull --rebase' ausführen, dann taggen.",
+                file=sys.stderr,
+            )
+            return 1
     message = f"PrintLab {args.tag} — {release_title(args.tag)}"
     _git("tag", args.tag, "-s", "-m", message)
     print(f"Tag {args.tag} signiert angelegt: {message}")

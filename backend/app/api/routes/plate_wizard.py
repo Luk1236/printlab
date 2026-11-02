@@ -135,3 +135,19 @@ async def wizard_report(
         "\n".join(lines) + "\n",
         headers={"Content-Disposition": f'attachment; filename="Einmessprotokoll-{name}.txt"'},
     )
+
+
+@router.get("/{printer_id}/hardware/plate-wizard/sequence")
+async def wizard_motion_sequence(
+    printer_id: int,
+    slot: int = 1,
+    feedrate_mm_min: int = 1800,
+    _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_READ),
+    db: AsyncSession = Depends(get_db),
+):
+    """Erzeugt die kalibrierte Plattenwechsel-Bewegungsfolge aus den abgeschlossenen Einmesswerten."""
+    await _printer(printer_id, db)
+    try:
+        return plate_wizard.build_motion_sequence(printer_id, slot=slot, feedrate_mm_min=feedrate_mm_min)
+    except plate_wizard.WizardError as exc:
+        raise HTTPException(409, str(exc)) from exc

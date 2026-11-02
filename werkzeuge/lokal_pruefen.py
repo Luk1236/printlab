@@ -168,6 +168,11 @@ def main(argv: list[str]) -> int:
     frontend(quick, audit)
     if not quick:
         release_hint()
+    git_dir = ROOT / ".git"
+    stale_idx = [p.name for p in git_dir.glob("index*") if p.name != "index"] if git_dir.is_dir() else []
+    zero_3mf = [p.name for p in ROOT.glob("*.3mf") if p.is_file() and p.stat().st_size == 0]
+    hygiene_issues = [*stale_idx, *zero_3mf]
+    record("Repo: Arbeitsumgebung & Hygiene", OK if not hygiene_issues else FAIL, ", ".join(hygiene_issues))
     failed = [name for name, level, _ in results if level == FAIL]
     skipped = [name for name, level, _ in results if level == SKIP]
     print(

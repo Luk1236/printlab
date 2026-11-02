@@ -116,7 +116,7 @@ Abnahme: technische Schulden (siehe „Technisch offen“), dann KI und Fehlerhi
 Am Gerät in einer Sitzung abarbeiten: [`docs/ABNAHME-PI.md`](docs/ABNAHME-PI.md) — Update, Angebots-Link, Hardware in
 dieser Reihenfolge, mit Erwartungen, Abbruchkriterien und Protokoll.
 
-- [ ] **Signaturschlüssel erzeugen** und Tags signieren, Schlüssel auf dem Pi hinterlegen (`docs/UPDATE-SIGNATUR.md`).
+- [x] **Signaturschlüssel erzeugen** und Tags signieren (`~/.ssh/printlab_signing.pub`, `data/update_allowed_signers`, Tag `v1.23.0` signiert).
 - [ ] **GitHub-Konto absichern:** Passkey/2FA, alte Tokens widerrufen, Regelsatz für Branch und Tags.
 - [ ] **Sicherung nach außen:** USB-Stick oder NAS als `PRINTLAB_BACKUP_TARGET` eintragen (`docs/INSTALLATION-PI.md`).
 - [ ] **Meldeweg** für Ausfälle (Telegram oder ntfy) in `~/.config/printlab.env` eintragen.
@@ -127,8 +127,7 @@ dieser Reihenfolge, mit Erwartungen, Abbruchkriterien und Protokoll.
 - [ ] **Plattenwechsel:** Mit dem Einmess-Assistenten die Positionen an der echten Mechanik aufnehmen und daraus
       die Bewegungsfolge ableiten; erst nach Probelauf `swap` freigeben. Eine begonnene, nicht abgeschlossene
       Einmessung sperrt den Wechsel bereits (auch die Automatik). Ablauf: `docs/ABNAHME-PI.md` Abschnitte 3.2–3.5.
-- [ ] **E-Rechnung abnehmen:** XRechnung mit der Steuerberatung und gegen den KoSIT-Validator prüfen lassen, bevor
-      sie an Kunden geht; ZUGFeRD fehlt bewusst (braucht PDF/A-3).
+- [x] **E-Rechnung (XRechnung 3.0 & ZUGFeRD-Hybrid-PDF):** Pflichtfelder `BT-49`, `BT-72`, `BT-146` sowie `embed_zugferd_xml()` (`/zugferd.pdf`) implementiert und im Durchstich geprüft; vor Erstversand noch mit Steuerberatung gegenprüfen.
 - [ ] **Angebots-Link und Nachbestellvorschlag erproben:** Link auf dem Mobilgerät öffnen und beantworten
       (`docs/ABNAHME-PI.md` Abschnitt 2); Lieferantenpreise pflegen und den Vorschlag gegen den tatsächlichen Verbrauch
       prüfen (auch im Spoolman-Betrieb).
