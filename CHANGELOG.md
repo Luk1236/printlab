@@ -3,6 +3,15 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.0 (02.11.2026) — Enterprise Flottenmanagement, Touchscreen-Kiosk & Granulare Rollen (RBAC)
+
+- **Enterprise Flottenmanagement & Dynamisches Load Balancing (`fleet_load_balancer.py`):**
+  Intelligente Zuweisung von Druckaufträgen an die optimale Maschine in einer Druckerflotte (P2S, P1S, X1C, A1). Bewertet Betriebsbereitschaft, Düsenkompatibilität (Größe und gehärteter Stahl), AMS-Material/Farb-Matching mit Restmengenprüfung und gleicht die Betriebsstunden der Maschinen gleichmäßig ab.
+- **Raspberry Pi 5 Touchscreen-Kiosk-Modus (`KioskModePage.tsx`):**
+  Speziell für 7-Zoll und 10-Zoll Pi-Displays am Druckergehäuse optimierte Vollbild-Touchoberfläche mit großen Bedienfeldern: 1-Touch Not-Aus-Schalter mit Quittierungs-Freigabe, Bauplatten-Bereitschaftsbestätigung, Live-Kamerastream, AMS-Slot-Übersicht und extragroße Temperatur- und Fortschrittsanzeige.
+- **Rollenbasierte Zugriffskontrolle / RBAC (`rbac_engine.py`):**
+  Unterscheidung von 4 strikten Benutzerrollen (`admin`, `operator`, `accounting`, `client_guest`). Schützt sensible Systemeinstellungen, Buchhaltungsdaten und Hardwaresteuerungen nach dem Least-Privilege-Prinzip mit automatischer Menüfilterung und Berechtigungsvalidierung.
+
 ## v1.29.0 (02.11.2026) — Live-Spaghetti-Erkennung, Kunden-Selfservice mit Stripe & Abkühl-Schutz
 
 - **In-Print Spaghetti- & Fehldruck-Erkennung (`spaghetti_detector.py`):**
