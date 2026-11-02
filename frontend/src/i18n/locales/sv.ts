@@ -276,6 +276,13 @@ export default {
     },
   },
   assistant: {
+        autoSetup: 'Automatisk konfiguration och start',
+        warmup: 'Förhandsladda i minnet (RAM)',
+        setupBannerTitle: 'Konfigurera lokal AI-assistent automatiskt',
+        setupBannerText: 'Upptäcker Ollama på denna värd/Pi, väljer den bästa modellen och förhandsladdar den för omedelbara svar.',
+        setupPrinters: 'Hur ställer jag in min Bambu-skrivare (P2S)?',
+        setupSteps: 'Vilka konfigurationssteg saknas fortfarande?',
+        setupSlicer: 'Hur fungerar den inbyggda slicern?',
     keepAliveHint: 'Snabbare svar: håll modellen i minnet — sudo systemctl edit ollama, lägg till [Service] med Environment="OLLAMA_KEEP_ALIVE=-1", sedan sudo systemctl restart ollama.',
     streamAborted: 'Svaret avbröts.',
     title: 'Assistent',

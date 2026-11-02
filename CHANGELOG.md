@@ -3,6 +3,15 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.25.0 (02.11.2026) — KI-Einrichtungs-Assistent & 1-Klick-Autokonfiguration
+
+- **Automatischer KI-Einrichtungs-Assistent (`assistant_autoconfig.py`, `fork_startup.py`):**
+  Lokale Modell-Server (Ollama auf `127.0.0.1:11434` oder Host-PC) werden beim Start und in der Inbetriebnahme automatisch erkannt. Wählt das ressourcenschonendste und schnellste Chat-Modell (z. B. `qwen3.5:4b`, `qwen2.5:3b`, `llama3.2:3b`) sowie optionale Bild-Modelle (`qwen2.5vl:3b`) ohne manuelle Konfiguration aus und heizt das Modell im RAM vor (`keep_alive="30m"`), sodass Antworten sofort und ohne Wartezeit generiert werden.
+- **Inbetriebnahme-Integration (`/einrichtung` SetupGuidePage & `AssistantPanel.tsx`):**
+  Direkte Einbettung des KI-Assistenten in die Einrichtungsseite `/einrichtung` mit prominentem 1-Klick-Erkennungs-Banner, RAM-Vorheiz-Knopf und vorkonfigurierten Schnellstart-Vorschlägen für Drucker-Inbetriebnahme (Bambu Lab P2S LAN-Modus & Entwicklermodus), Slicer-Sidecar und Tailscale-Fernzugriff.
+- **Live-Systemkontext für Setup-Fragen (`assistant_context.py`):**
+  Der System-Prompt enthält jetzt einen strukturierten Snapshot über den aktuellen Einrichtungsstand (verbundene Drucker, Slicer-API-Status, Tailscale-Fernzugriff, Spoolman-Anbindung und Finanzen), damit die KI gezielt bei der Fehlersuche und den nächsten Schritten unterstützt.
+
 ## v1.24.0 (02.11.2026) — Integrierter Slicer (Auto-Start Port 3001/3003) & 10-Bereiche-Ausbau
 
 - **Integrierter PrintLab-Slicer (`builtin_slicer.py`, `pc_slicer.py`, `fork_startup.py`):**

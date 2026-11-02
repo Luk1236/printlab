@@ -276,6 +276,13 @@ export default {
     },
   },
   assistant: {
+        autoSetup: 'Auto-detect & start',
+        warmup: 'Preload into memory (RAM)',
+        setupBannerTitle: 'Auto-configure local AI assistant',
+        setupBannerText: 'Detects Ollama on this host/Pi, selects the best model, and warms it up for instant responses.',
+        setupPrinters: 'How do I set up my Bambu printer (P2S)?',
+        setupSteps: 'Which setup steps are still missing?',
+        setupSlicer: 'How does the built-in slicer work?',
     keepAliveHint: 'Faster answers: keep the model in memory — sudo systemctl edit ollama, add [Service] with Environment="OLLAMA_KEEP_ALIVE=-1", then sudo systemctl restart ollama.',
     streamAborted: 'The answer was cut short.',
     title: 'Assistant',

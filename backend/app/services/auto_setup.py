@@ -22,7 +22,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from backend.app.services import assistant_config, update_guard
+from backend.app.services import assistant_autoconfig, assistant_config, update_guard
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +70,10 @@ async def _assistant_state(d: Deps) -> dict[str, str]:
     if not status.get("reachable"):
         return _item("assistant", "manual", "no_server")
     if not status.get("model_present"):
+        # Ein anderes installiertes Modell übernehmen, statt auf das voreingestellte zu bestehen.
+        alternative = assistant_autoconfig.pick_model([str(m) for m in status.get("models") or []])
+        if alternative:
+            return _item("assistant", "todo", alternative)
         return _item("assistant", "manual", "no_model")
     return _item("assistant", "todo", config["model"])
 
@@ -99,8 +103,12 @@ async def _run_guard(d: Deps) -> dict[str, str]:
 
 
 async def _run_assistant(d: Deps) -> dict[str, str]:
-    assistant_config.write(d.data_dir, {"enabled": True})
-    return _item("assistant", "changed")
+    update: dict[str, Any] = {"enabled": True}
+    item = await _assistant_state(d)
+    if item["detail"] and item["detail"] != assistant_config.read(d.data_dir)["model"]:
+        update["model"] = item["detail"]
+    assistant_config.write(d.data_dir, update)
+    return _item("assistant", "changed", item["detail"])
 
 
 async def _run_remote(d: Deps) -> dict[str, str]:

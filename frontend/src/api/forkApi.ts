@@ -615,6 +615,14 @@ export function createForkApi({ request, apiBase, getAuthToken }: ForkApiDeps) {
   deleteFailureImage: (name: string) =>
     request<{ message: string }>(`/failure-images/${encodeURIComponent(name)}`, { method: 'DELETE' }),
     getAssistantStatus: () => request<AssistantStatus>('/assistant/status'),
+    autoSetupAssistant: () =>
+      request<{ result: Record<string, unknown>; config: AssistantConfig; server: unknown }>('/assistant/auto-setup', {
+        method: 'POST',
+      }),
+    warmupAssistant: () =>
+      request<{ warmed: boolean; model: string; duration_ms: number; error: string | null }>('/assistant/warmup', {
+        method: 'POST',
+      }),
     saveAssistantConfig: (update: Record<string, unknown>) =>
       request<AssistantStatus>('/assistant/config', { method: 'PUT', body: JSON.stringify(update) }),
     assistantChat: (messages: { role: 'user' | 'assistant'; content: string }[], lang: string) =>

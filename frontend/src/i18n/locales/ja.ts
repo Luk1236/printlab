@@ -276,6 +276,13 @@ export default {
     },
   },
   assistant: {
+        autoSetup: '自動検出して開始',
+        warmup: 'メモリに事前ロード (RAM)',
+        setupBannerTitle: 'ローカルAIアシスタントを自動設定',
+        setupBannerText: 'このホスト/Pi上のOllamaを検出し、最適なモデルを選択して即時応答のために事前ロードします。',
+        setupPrinters: 'Bambuプリンター (P2S) の設定方法は？',
+        setupSteps: 'まだ完了していないセットアップ手順は？',
+        setupSlicer: '内蔵スライサーの仕組みは？',
     keepAliveHint: 'より速い回答：モデルをメモリーに常駐させる — sudo systemctl edit ollama で [Service] に Environment="OLLAMA_KEEP_ALIVE=-1" を追記し、sudo systemctl restart ollama。',
     streamAborted: '回答が途切れました。',
     title: 'アシスタント',

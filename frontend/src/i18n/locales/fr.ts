@@ -276,6 +276,13 @@ export default {
     },
   },
   assistant: {
+        autoSetup: 'Configuration automatique & démarrage',
+        warmup: 'Précharger en mémoire (RAM)',
+        setupBannerTitle: 'Configurer automatiquement l\'assistant IA local',
+        setupBannerText: 'Détecte Ollama sur cet hôte/Pi, sélectionne le meilleur modèle et le préchauffe pour des réponses instantanées.',
+        setupPrinters: 'Comment configurer mon imprimante Bambu (P2S) ?',
+        setupSteps: 'Quelles étapes de configuration manquent encore ?',
+        setupSlicer: 'Comment fonctionne le trancheur intégré ?',
     keepAliveHint: 'Réponses plus rapides : charger le modèle en mémoire — sudo systemctl edit ollama, ajouter [Service] avec Environment="OLLAMA_KEEP_ALIVE=-1", puis sudo systemctl restart ollama.',
     streamAborted: 'La réponse a été coupée.',
     title: 'Assistant IA',

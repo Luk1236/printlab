@@ -276,6 +276,13 @@ export default {
     },
   },
   assistant: {
+        autoSetup: '自動偵測並啟動',
+        warmup: '預載到記憶體 (RAM)',
+        setupBannerTitle: '自動配置本機AI助手',
+        setupBannerText: '偵測此主機/Pi上的Ollama，選擇最佳模型並進行預熱以實現即時回應。',
+        setupPrinters: '如何設定我的Bambu印表機 (P2S)？',
+        setupSteps: '還有哪些設定步驟未完成？',
+        setupSlicer: '內建切片機是如何運作的？',
     keepAliveHint: '更快回答：把模型常駐記憶體 — sudo systemctl edit ollama，在 [Service] 下加 Environment="OLLAMA_KEEP_ALIVE=-1"，然後 sudo systemctl restart ollama。',
     streamAborted: '回答被中斷。',
     title: '助理',

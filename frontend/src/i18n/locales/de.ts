@@ -276,6 +276,13 @@ export default {
     },
   },
   assistant: {
+        autoSetup: 'Automatisch erkennen & starten',
+        warmup: 'Im Speicher vorheizen (RAM)',
+        setupBannerTitle: 'Lokalen KI-Assistenten automatisch einrichten',
+        setupBannerText: 'Erkennt Ollama auf diesem Rechner/Pi, wählt das beste Modell und heizt es für sofortige Antworten vor.',
+        setupPrinters: 'Wie richte ich meinen Bambu-Drucker (P2S) ein?',
+        setupSteps: 'Welche Einrichtungsschritte fehlen mir noch?',
+        setupSlicer: 'Wie funktioniert der integrierte Slicer?',
     keepAliveHint: 'Schnellere Antworten: das Modell im Speicher lassen — sudo systemctl edit ollama, dort [Service] mit Environment="OLLAMA_KEEP_ALIVE=-1" ergänzen, dann sudo systemctl restart ollama.',
     streamAborted: 'Die Antwort brach ab.',
     title: 'Assistent',

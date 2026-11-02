@@ -16,6 +16,9 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+# Starke Referenzen auf Hintergrund-Aufgaben, damit sie nicht vorzeitig vom Garbage Collector beendet werden.
+_BACKGROUND_TASKS: set[Any] = set()
+
 
 async def on_startup(base_dir: Path, session_factory: Callable[[], Any]) -> None:
     """Nach ``init_db`` aufrufen. Wirft nie: ein Fehler hier darf den Start nicht verhindern."""
@@ -42,6 +45,20 @@ async def on_startup(base_dir: Path, session_factory: Callable[[], Any]) -> None
                     await slicer_db.commit()
         except Exception as exc:  # noqa: BLE001
             logger.debug("[PrintLab] Integrierter Slicer-Start übersprungen: %s", exc)
+
+    # Lokalen KI-Assistenten automatisch einrichten (Ollama suchen, Modell wählen, vorladen). Läuft im Hintergrund,
+    # damit ein langsamer oder fehlender Modell-Server den Start nicht aufhält.
+    if os.environ.get("PRINTLAB_DISABLE_ASSISTANT_AUTOSETUP", "").strip() not in ("1", "true", "yes"):
+        try:
+            import asyncio
+
+            from backend.app.services.assistant_autoconfig import ensure_on_startup
+
+            task = asyncio.get_running_loop().create_task(ensure_on_startup(base_dir))
+            _BACKGROUND_TASKS.add(task)
+            task.add_done_callback(_BACKGROUND_TASKS.discard)
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("[PrintLab] KI-Auto-Einrichtung nicht geplant: %s", exc)
 
     # Warnen, wenn die Anmeldung aus ist, das Backend aber nicht nur am Loopback lauscht (Docker/systemd binden
     # standardmäßig an 0.0.0.0). Dann wäre die Instanz ungeschützt im Netz steuerbar.

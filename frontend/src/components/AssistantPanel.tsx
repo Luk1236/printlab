@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bot, Send } from 'lucide-react';
+import { Bot, Send, Sparkles, Zap } from 'lucide-react';
 
 import { api } from '../api/client';
 import type { AssistantAction, AssistantStatus } from '../api/client';
@@ -20,13 +20,13 @@ interface Turn {
 type ActionState = 'pending' | 'done' | 'failed' | 'dismissed';
 
 const SUGGESTIONS = ['suggestRunning', 'suggestWaiting', 'suggestError', 'suggestText'] as const;
+const SETUP_SUGGESTIONS = ['setupPrinters', 'setupSteps', 'setupSlicer'] as const;
 
 /**
- * Lokaler KI-Assistent: Fragen zum Betrieb, Fehler erklären, Texte entwerfen. Das Modell läuft auf einem lokalen
- * Modell-Server (Standard: Ollama auf dem Pi). Änderungen schlägt der Assistent nur vor; ausgeführt wird erst nach
- * Bestätigung hier über die normalen Warteschlangen-Funktionen (mit deren Rechteprüfung).
+ * Lokaler KI-Assistent: Fragen zum Betrieb, Fehler erklären, Texte entwerfen und Inbetriebnahme-Hilfe.
+ * Das Modell läuft auf einem lokalen Modell-Server (Standard: Ollama auf dem Pi/PC).
  */
-export function AssistantPanel({ canConfigure }: { canConfigure: boolean }) {
+export function AssistantPanel({ canConfigure, isSetupGuide = false }: { canConfigure: boolean; isSetupGuide?: boolean }) {
   const { t, i18n } = useTranslation();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
@@ -54,6 +54,28 @@ export function AssistantPanel({ canConfigure }: { canConfigure: boolean }) {
     onError: (error: Error) => showToast(error.message, 'error'),
   });
 
+  const autoSetupMutation = useMutation({
+    mutationFn: () => api.autoSetupAssistant(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assistantStatus'] });
+      queryClient.invalidateQueries({ queryKey: ['autoSetup'] });
+      showToast(t('assistant.saved'));
+    },
+    onError: (err: Error) => showToast(err.message, 'error'),
+  });
+
+  const warmupMutation = useMutation({
+    mutationFn: () => api.warmupAssistant(),
+    onSuccess: (res) => {
+      if (res.warmed) {
+        showToast(t('assistant.took', { seconds: (res.duration_ms / 1000).toFixed(1) }));
+      } else {
+        showToast(res.error || t('assistant.serverDown'), 'warning');
+      }
+    },
+    onError: (err: Error) => showToast(err.message, 'error'),
+  });
+
   useEffect(() => {
     if (!pending) return;
     setElapsed(0);
@@ -65,8 +87,6 @@ export function AssistantPanel({ canConfigure }: { canConfigure: boolean }) {
     bottom.current?.scrollIntoView?.({ block: 'end' });
   }, [turns, pending]);
 
-  // Wort-für-Wort: das letzte Drehbuch ist der Live-Turn am Ende der Liste; geprüfte Aktionen kommen erst im
-  // Abschluss-Ereignis (nichts ändert sich ohne Bestätigung).
   const send = (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || pending) return;
@@ -85,7 +105,6 @@ export function AssistantPanel({ canConfigure }: { canConfigure: boolean }) {
       .streamAssistantChat(userTurns, lang, (delta) => {
         live += delta;
         setTurns((prev) => {
-          // Der Live-Turn ist der letzte Eintrag — es sei denn, jemand hat das Gespräch inzwischen geleert.
           if (!prev.length || prev[prev.length - 1].role !== 'assistant') return prev;
           const copy = [...prev];
           copy[copy.length - 1] = { ...copy[copy.length - 1], content: live };
@@ -167,6 +186,30 @@ export function AssistantPanel({ canConfigure }: { canConfigure: boolean }) {
         </div>
         <p className="text-xs text-bambu-gray">{t('assistant.intro')}</p>
 
+        {/* 1-Klick Auto-Einrichtung & Erkennung */}
+        {canConfigure && (!config?.enabled || !server?.reachable || !server?.model_present) && (
+          <div className="rounded-lg border border-bambu-green/40 bg-bambu-green/10 p-3.5 space-y-2" data-testid="assistant-autosetup-banner">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="space-y-0.5">
+                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-bambu-green" />
+                  {t('assistant.setupBannerTitle')}
+                </h3>
+                <p className="text-xs text-bambu-gray">
+                  {t('assistant.setupBannerText')}
+                </p>
+              </div>
+              <Button
+                size="sm"
+                disabled={autoSetupMutation.isPending}
+                onClick={() => autoSetupMutation.mutate()}
+              >
+                {autoSetupMutation.isPending ? t('common.running') : t('assistant.autoSetup')}
+              </Button>
+            </div>
+          </div>
+        )}
+
         {canConfigure && draft && (
           <div className="rounded-lg border border-bambu-dark-tertiary p-3 space-y-3" data-testid="assistant-config">
             <label className="flex items-center gap-2 text-sm text-white">
@@ -221,6 +264,18 @@ export function AssistantPanel({ canConfigure }: { canConfigure: boolean }) {
               >
                 {t('assistant.save')}
               </Button>
+              {server?.reachable && server.model_present && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={warmupMutation.isPending}
+                  onClick={() => warmupMutation.mutate()}
+                  title="Modell in den Arbeitsspeicher laden für sofortige Antworten"
+                >
+                  <Zap className="w-3.5 h-3.5 mr-1 text-bambu-green" />
+                  {warmupMutation.isPending ? t('common.running') : t('assistant.warmup')}
+                </Button>
+              )}
               {server && (
                 <span
                   className={`text-xs ${server.reachable && server.model_present ? 'text-bambu-green' : 'text-amber-700 dark:text-amber-400'}`}
@@ -249,12 +304,14 @@ export function AssistantPanel({ canConfigure }: { canConfigure: boolean }) {
         ) : (
           <>
             {turns.length === 0 && (
-              <div className="flex flex-wrap gap-2" data-testid="assistant-suggestions">
-                {SUGGESTIONS.map((key) => (
-                  <Button key={key} size="sm" variant="secondary" disabled={pending} onClick={() => send(t(`assistant.${key}`))}>
-                    {t(`assistant.${key}`)}
-                  </Button>
-                ))}
+              <div className="space-y-2" data-testid="assistant-suggestions">
+                <div className="flex flex-wrap gap-2">
+                  {(isSetupGuide ? SETUP_SUGGESTIONS : [...SETUP_SUGGESTIONS, ...SUGGESTIONS]).map((key) => (
+                    <Button key={key} size="sm" variant="secondary" disabled={pending} onClick={() => send(t(`assistant.${key}`))}>
+                      {t(`assistant.${key}`)}
+                    </Button>
+                  ))}
+                </div>
               </div>
             )}
             <div className="space-y-3 max-h-[28rem] overflow-y-auto" aria-live="polite">

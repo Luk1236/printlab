@@ -21,7 +21,13 @@ from backend.app.core.auth import RequirePermissionIfAuthEnabled
 from backend.app.core.config import settings
 from backend.app.core.database import get_db
 from backend.app.core.permissions import Permission
-from backend.app.services import assistant_actions, assistant_config, assistant_context, assistant_llm
+from backend.app.services import (
+    assistant_actions,
+    assistant_autoconfig,
+    assistant_config,
+    assistant_context,
+    assistant_llm,
+)
 from backend.app.services.printer_manager import printer_manager
 
 logger = logging.getLogger(__name__)
@@ -54,6 +60,48 @@ async def set_config(payload: dict, _=RequirePermissionIfAuthEnabled(Permission.
     except assistant_config.AssistantConfigError as exc:
         raise HTTPException(400, str(exc)) from exc
     return {"config": config, "server": await assistant_llm.status(config)}
+
+
+@router.post("/auto-setup")
+async def auto_setup(_=RequirePermissionIfAuthEnabled(Permission.SETTINGS_UPDATE)):
+    """Ein Klick: Modell-Server suchen, installiertes Modell wählen, Assistent einschalten und Modell vorladen.
+
+    ``result.state``: ``ready`` (eingerichtet), ``no_model`` (Server läuft, aber kein Chat-Modell installiert) oder
+    ``no_server`` (kein Ollama gefunden). ``hint`` sagt in einem Satz, was der Benutzer tun kann.
+    """
+    result = await assistant_autoconfig.autoconfigure(settings.base_dir)
+    config = assistant_config.read(settings.base_dir)
+    hints = {
+        "ready": f"KI-Assistent ist bereit (Modell {result.get('model')}).",
+        "no_model": "Ollama läuft, aber es ist kein Chat-Modell installiert. Auf dem Pi: ollama pull qwen2.5:3b",
+        "no_server": "Kein Ollama gefunden. Installieren mit: curl -fsSL https://ollama.com/install.sh | sh "
+        "— danach: ollama pull qwen2.5:3b",
+    }
+    if result["state"] == "ready":
+        warmed = await assistant_autoconfig.warmup(config)
+    else:
+        warmed = False
+    return {
+        "result": {
+            "state": result["state"],
+            "model": result.get("model"),
+            "base_url": result.get("base_url"),
+            "models": result.get("models", []),
+            "warmed": warmed,
+            "hint": hints.get(result["state"], ""),
+        },
+        "config": config,
+        "server": await assistant_llm.status(config),
+    }
+
+
+@router.post("/warmup")
+async def warmup(_=RequirePermissionIfAuthEnabled(Permission.QUEUE_READ_ALL)):
+    """Modell in den Speicher laden, damit die nächste Antwort schnell kommt (wirft nie)."""
+    config = assistant_config.read(settings.base_dir)
+    if not config["enabled"] or _lock.locked():
+        return {"warmed": False}
+    return {"warmed": await assistant_autoconfig.warmup(config)}
 
 
 @router.post("/chat")

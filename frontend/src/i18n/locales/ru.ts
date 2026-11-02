@@ -273,6 +273,13 @@ export default {
     },
   },
   assistant: {
+        autoSetup: 'Автонастройка и запуск',
+        warmup: 'Предзагрузить в память (RAM)',
+        setupBannerTitle: 'Автоматически настроить локального ИИ-помощника',
+        setupBannerText: 'Обнаруживает Ollama на этом хосте/Pi, выбирает лучшую модель и прогревает её для мгновенных ответов.',
+        setupPrinters: 'Как настроить принтер Bambu (P2S)?',
+        setupSteps: 'Какие шаги настройки ещё не завершены?',
+        setupSlicer: 'Как работает встроенный слайсер?',
     keepAliveHint: 'Быстрее ответы: держать модель в памяти — sudo systemctl edit ollama, добавить [Service] с Environment="OLLAMA_KEEP_ALIVE=-1", затем sudo systemctl restart ollama.',
     streamAborted: 'Ответ оборвался.',
     title: 'Ассистент',

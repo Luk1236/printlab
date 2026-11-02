@@ -276,6 +276,13 @@ export default {
     },
   },
   assistant: {
+        autoSetup: 'Otomatik algıla ve başlat',
+        warmup: 'Belleğe önceden yükle (RAM)',
+        setupBannerTitle: 'Yerel yapay zeka asistanını otomatik yapılandır',
+        setupBannerText: 'Bu ana makinede/Pi\'de Ollama\'yı algılar, en iyi modeli seçer ve anında yanıtlar için önceden ısıtır.',
+        setupPrinters: 'Bambu yazıcımı (P2S) nasıl kurarım?',
+        setupSteps: 'Hangi kurulum adımları hala eksik?',
+        setupSlicer: 'Dahili dilimleyici nasıl çalışır?',
     keepAliveHint: 'Daha hızlı yanıtlar: modeli bellekte tut — sudo systemctl edit ollama içinde [Service] altına Environment="OLLAMA_KEEP_ALIVE=-1" ekle, sonra sudo systemctl restart ollama.',
     streamAborted: 'Yanıt kesildi.',
     title: 'Asistan',

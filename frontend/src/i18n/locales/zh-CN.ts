@@ -276,6 +276,13 @@ export default {
     },
   },
   assistant: {
+        autoSetup: '自动检测并启动',
+        warmup: '预加载到内存 (RAM)',
+        setupBannerTitle: '自动配置本地AI助手',
+        setupBannerText: '检测此主机/Pi上的Ollama，选择最佳模型并进行预热以实现即时响应。',
+        setupPrinters: '如何设置我的Bambu打印机 (P2S)？',
+        setupSteps: '还有哪些设置步骤未完成？',
+        setupSlicer: '内置切片机是如何工作的？',
     keepAliveHint: '更快回答：把模型常驻内存 — sudo systemctl edit ollama，在 [Service] 下加 Environment="OLLAMA_KEEP_ALIVE=-1"，然后 sudo systemctl restart ollama。',
     streamAborted: '回答被中断。',
     title: '助手',

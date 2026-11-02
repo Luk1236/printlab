@@ -8,6 +8,7 @@ import { api } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { AlertChannelsCard } from '../components/AlertChannelsCard';
+import { AssistantPanel } from '../components/AssistantPanel';
 import { AutoSetupCard } from '../components/AutoSetupCard';
 import { Button } from '../components/Button';
 import { Card, CardContent } from '../components/Card';
@@ -91,6 +92,9 @@ export function SetupGuidePage() {
 
       {/* 1. Automatische Einrichtung, Assistent & Checkliste */}
       <AutoSetupCard />
+      <div id="setup-assistant">
+        <AssistantPanel canConfigure={canControl} isSetupGuide />
+      </div>
       <SetupWizardCard />
       <SetupChecklistCard />
 

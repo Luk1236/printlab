@@ -276,6 +276,13 @@ export default {
     },
   },
   assistant: {
+        autoSetup: 'Automatisch instellen & starten',
+        warmup: 'Vooraf in het geheugen laden (RAM)',
+        setupBannerTitle: 'Lokale AI-assistent automatisch configureren',
+        setupBannerText: 'Detecteert Ollama op deze host/Pi, selecteert het beste model en laadt het vooraf in voor directe antwoorden.',
+        setupPrinters: 'Hoe stel ik mijn Bambu-printer (P2S) in?',
+        setupSteps: 'Welke installatiestappen ontbreken er nog?',
+        setupSlicer: 'Hoe werkt de ingebouwde slicer?',
     keepAliveHint: 'Snellere antwoorden: houd het model in het geheugen — sudo systemctl edit ollama, voeg [Service] met Environment="OLLAMA_KEEP_ALIVE=-1" toe, daarna sudo systemctl restart ollama.',
     streamAborted: 'Het antwoord werd afgebroken.',
     title: 'Assistent',

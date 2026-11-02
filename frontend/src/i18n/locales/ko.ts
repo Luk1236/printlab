@@ -273,6 +273,13 @@ export default {
     },
   },
   assistant: {
+        autoSetup: '자동 감지 및 시작',
+        warmup: '메모리에 미리 로드 (RAM)',
+        setupBannerTitle: '로컬 AI 어시스턴트 자동 구성',
+        setupBannerText: '이 호스트/Pi에서 Ollama를 감지하고 최적의 모델을 선택하여 즉각적인 응답을 위해 미리 로드합니다.',
+        setupPrinters: 'Bambu 프린터 (P2S)를 설정하는 방법은 무엇인가요?',
+        setupSteps: '아직 완료되지 않은 설정 단계는 무엇인가요?',
+        setupSlicer: '내장 슬라이서는 어떻게 작동하나요?',
     keepAliveHint: '더 빠른 응답: 모델을 메모리에 유지 — sudo systemctl edit ollama에서 [Service]에 Environment="OLLAMA_KEEP_ALIVE=-1"를 추가하고 sudo systemctl restart ollama.',
     streamAborted: '응답이 중단되었습니다.',
     title: '어시스턴트',
