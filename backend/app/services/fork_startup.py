@@ -26,6 +26,23 @@ async def on_startup(base_dir: Path, session_factory: Callable[[], Any]) -> None
     except Exception as exc:  # pragma: no cover - darf den Start nie verhindern
         logger.warning("Update-Bestätigung nicht geplant: %s", exc)
 
+    # Integrierten Slicer auf 127.0.0.1:3001 / 3003 starten und Slicer-API standardmäßig einschalten
+    if os.environ.get("PRINTLAB_DISABLE_BUILTIN_SLICER", "").strip() not in ("1", "true", "yes"):
+        try:
+            import asyncio
+
+            from backend.app.api.routes.settings import get_setting, set_setting
+            from backend.app.services.builtin_slicer import ensure_builtin_slicer_running
+
+            await asyncio.to_thread(ensure_builtin_slicer_running)
+            async with session_factory() as slicer_db:
+                cur_use = await get_setting(slicer_db, "use_slicer_api")
+                if cur_use is None:
+                    await set_setting(slicer_db, "use_slicer_api", "true")
+                    await slicer_db.commit()
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("[PrintLab] Integrierter Slicer-Start übersprungen: %s", exc)
+
     # Warnen, wenn die Anmeldung aus ist, das Backend aber nicht nur am Loopback lauscht (Docker/systemd binden
     # standardmäßig an 0.0.0.0). Dann wäre die Instanz ungeschützt im Netz steuerbar.
     try:

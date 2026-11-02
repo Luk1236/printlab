@@ -36,7 +36,7 @@ def test_repo_hygiene_check_is_ok():
 
 def test_durchstich_runs_stage_3_and_4_workflows_cleanly():
     steps = abnahme.run_durchstich()
-    assert len(steps) == 4
+    assert len(steps) == 5
     for step in steps:
         assert step["level"] == abnahme.OK, f"{step['title']} fehlgeschlagen: {step['detail']}"
 

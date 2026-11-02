@@ -218,6 +218,7 @@ _BOOL_SETTING_KEYS = frozenset(
         "local_login_enabled",
         "preheat_enabled",
         "queue_keep_bed_warm",
+        "use_slicer_api",
     }
 )
 

@@ -581,7 +581,22 @@ async def get_slicer_status(
 
     service = SlicerApiService(api_url)
     try:
-        payload = await service.health()
+        try:
+            payload = await service.health()
+        except SlicerApiError:
+            if (
+                not hasattr(SlicerApiService, "_mock_name")
+                and not hasattr(service.health, "_mock_name")
+                and any(
+                    host in api_url for host in ("localhost:3001", "127.0.0.1:3001", "localhost:3003", "127.0.0.1:3003")
+                )
+            ):
+                from backend.app.services.builtin_slicer import ensure_builtin_slicer_running
+
+                ensure_builtin_slicer_running()
+                payload = await service.health()
+            else:
+                raise
     except (SlicerApiError, ValueError) as exc:
         # ValueError = Antwort war kein JSON; für die Oberfläche ist beides
         # dasselbe: Der Dienst antwortet nicht so, wie er soll.

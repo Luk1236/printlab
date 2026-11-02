@@ -527,6 +527,47 @@ def run_durchstich() -> list[dict]:
             finally:
                 plate_calibration.STORE_DIR = orig_cal_dir
                 plate_detection._get_calibration_dir = orig_det_dir
+
+            # 5. Stufe 4.4: Integrierter Slicer (builtin_slicer) für .stl -> .gcode.3mf
+            from backend.app.services import builtin_slicer
+
+            stl_path = tmp_dir / "abnahme_wuerfel.stl"
+            stl_path.write_text(
+                "solid cube\n"
+                "facet normal 0 0 1\n outer loop\n"
+                "  vertex 0 0 0\n  vertex 20 0 0\n  vertex 20 20 10\n"
+                " endloop\nendfacet\n"
+                "endsolid cube\n",
+                encoding="utf-8",
+            )
+            sliced = builtin_slicer.slice_model_builtin(
+                stl_path,
+                "abnahme_wuerfel.gcode.3mf",
+                '{"name": "Bambu Lab P2S 0.4 nozzle"}',
+                '{"layer_height": "0.2", "wall_loops": "2", "sparse_infill_density": "15%"}',
+                ['{"filament_type": ["PLA"]}'],
+                plate=1,
+            )
+            bundled = builtin_slicer.list_bundled_profiles()
+            if sliced.print_time_seconds > 0 and sliced.filament_grams > 0 and len(bundled.get("printer", [])) >= 6:
+                steps.append(
+                    {
+                        "level": OK,
+                        "title": "Stufe 4.4 Integrierter Slicer (STL/3MF -> G-Code)",
+                        "detail": (
+                            f"STL intern geslict ({sliced.print_time_seconds}s, {sliced.filament_grams:.2f}g PLA, "
+                            f"{len(sliced.content)} Bytes .gcode.3mf, {len(bundled['printer'])} Druckerprofile)"
+                        ),
+                    }
+                )
+            else:
+                steps.append(
+                    {
+                        "level": FAIL,
+                        "title": "Stufe 4.4 Integrierter Slicer (STL/3MF -> G-Code)",
+                        "detail": "Integrierter Slicer lieferte unvollständige Ausgabe",
+                    }
+                )
         finally:
             quote_history.HISTORY_PATH = orig_history
             quote_share.SHARES_PATH = orig_shares
