@@ -26,7 +26,7 @@ LIMITS = {
     "backend/app/services/notification_service.py": 3000,
     "frontend/src/pages/PrintersPage.tsx": 1650,
     "frontend/src/pages/PrinterToolbar.tsx": 520,
-    "frontend/src/pages/PrinterCard.tsx": 5750,
+    "frontend/src/pages/PrinterCard.tsx": 5300,
     "frontend/src/pages/PrinterCardParts.tsx": 1150,
     "frontend/src/api/client.ts": 1050,
     "frontend/src/api/types.ts": 4250,

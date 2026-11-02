@@ -3,6 +3,15 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.26.0 (02.11.2026) — 3D-G-Code-Vorschau, OpenAPI/Postman-Export & Modularisierung der Druckerkarte
+
+- **Interaktiver 3D-G-Code- & Layer-Visualisierer (`GCode3DPreview.tsx`):**
+  Neuer interaktiver Canvas-3D-Viewer mit Bambu P2S Druckbett-Simulation (256x256 mm Federstahlplatte), Orbit-Kamera, Schichten-Scrubber, Düsen-Verfahrwegen und Filamentfarb-Umschaltung für geslicte Druckdateien. Direkt integriert auf der Einrichtungs-Seite (`/einrichtung` im Reiter Slicer & Verbindungen).
+- **Automatischer OpenAPI 3.1 & Postman-Collection Export (`werkzeuge/export_api_docs.py`):**
+  Exportiert die vollständige API-Spezifikation nach `docs/openapi.json`, `postman/schemas/printlab.openapi.json`, `postman/PrintLab.postman_collection.json` und `.postman/resources.yaml`. Getestet durch `test_api_docs_export.py`.
+- **Modularisierung der Druckerkarte (`PrinterCard.tsx` -> `PrinterCardModals.tsx`):**
+  Druckbett-Prüfungs-Dialog (`PlateCheckResultModal`) und AMS-Trocknungs-Popover (`AmsDryingPopover`) wurden in eigene wiederverwendbare Komponenten ausgelagert. Senkt die Dateigröße der Druckerkarte von 5.737 Zeilen auf unter 5.200 Zeilen und hält das Dateigrößen-Budget dauerhaft ein.
+
 ## v1.25.0 (02.11.2026) — KI-Einrichtungs-Assistent & 1-Klick-Autokonfiguration
 
 - **Automatischer KI-Einrichtungs-Assistent (`assistant_autoconfig.py`, `fork_startup.py`):**

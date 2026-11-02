@@ -11,6 +11,7 @@ Komplexitätsregel (Groß-/Kleinbuchstaben, Ziffer, Sonderzeichen, mind. 8 Zeich
 Notfall (Anmeldung wieder aus):
     .venv\Scripts\python.exe werkzeuge\admin_passwort_setzen.py --deaktivieren
 """
+
 from __future__ import annotations
 
 import argparse
@@ -25,7 +26,9 @@ from passlib.context import CryptContext
 PROJEKT = Path(__file__).resolve().parent.parent
 # Datenordner wie die Anwendung: DATA_DIR, sonst der Projektordner; Datei printlab.db (früher bambuddy.db).
 DATENORDNER = Path(os.environ.get("DATA_DIR") or PROJEKT)
-DB = next((p for p in (DATENORDNER / "printlab.db", DATENORDNER / "bambuddy.db") if p.exists()), DATENORDNER / "printlab.db")
+DB = next(
+    (p for p in (DATENORDNER / "printlab.db", DATENORDNER / "bambuddy.db") if p.exists()), DATENORDNER / "printlab.db"
+)
 
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
@@ -41,7 +44,6 @@ def pruefe_passwort(pw: str) -> None:
         raise ValueError("mindestens eine Ziffer")
     if not any(c in string.punctuation for c in pw):
         raise ValueError("mindestens ein Sonderzeichen")
-
 
 
 def deaktivieren() -> None:
@@ -66,8 +68,7 @@ def setzen(benutzer: str) -> None:
         if row:
             uid = row[0]
             con.execute(
-                "UPDATE users SET password_hash=?, role='admin', is_active=1, updated_at=CURRENT_TIMESTAMP "
-                "WHERE id=?",
+                "UPDATE users SET password_hash=?, role='admin', is_active=1, updated_at=CURRENT_TIMESTAMP WHERE id=?",
                 (pw_hash, uid),
             )
             print(f"Passwort für '{benutzer}' aktualisiert.")
