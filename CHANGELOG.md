@@ -3,6 +3,17 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.28.0 (02.11.2026) — Agentic Tool-Calling, RAG-Wissensbasis, Verschleiß-Tracker & Webhooks
+
+- **Agentic Tool-Calling Engine für KI-Assistenten (`assistant_tools.py`):**
+  Der KI-Assistent kann strukturierte Aktionen und Funktionsaufrufe vorschlagen und ausführen: Not-Halt anfordern, Telemetriedaten auslesen, Druckbett- und Düsentemperatur setzen, HMS-Fehlerdatenbank durchsuchen, Verschleißstatus abfragen und Sofortkalkulationen erstellen.
+- **RAG-Wissensbasis über Bambu Lab P2S & HMS-Fehlercodes (`hms_knowledge.py`):**
+  Strukturierte Datenbank offizieller Reparatur- und Wartungsanleitungen (z. B. 0300-0100 Nozzle Malfunction, 0500-0300 AMS Overload, 0700-2000 Bed Leveling Fail, Z-Spindelschmierung) mit Schritt-für-Schritt-Anleitungen, benötigten Werkzeugen und Wiki-Referenzen.
+- **Verschleißteil- & Predictive-Maintenance-Tracker (`wear_tracker.py`):**
+  Präzise Erfassung von Druckstunden für Düsen (getrennt nach Messing und gehärtetem Stahl mit Abrasivitäts-Multiplikatoren für CF/Glow-Filamente), PTFE-Schläuche, Z-Gewindespindeln, Führungsstangen und Aktivkohlefilter mit Health-Status (`OK`, `WARN`, `CRITICAL`).
+- **Outbound Webhooks Engine (`outbound_webhooks.py`):**
+  Ereignisverteilung an externe Endpunkte (Discord, Slack, Make, Zapier, Home Assistant) bei Druckstart, Fertigstellung, Fehldruck, Plattenwechsel, Not-Aus und Wartungswarnungen mit kryptografischer HMAC-SHA256-Signaturprüfung (`X-PrintLab-Signature`).
+
 ## v1.27.0 (02.11.2026) — GiroCode (EPC-QR), G-Code-Viewer, Home Assistant MQTT Discovery & CLAHE
 
 - **EPC-QR-Code (GiroCode) für E-Rechnungen & Angebote (`girocode.py`, `einvoice.py`):**

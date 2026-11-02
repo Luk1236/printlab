@@ -3,7 +3,7 @@
   "info": {
     "title": "PrintLab API",
     "description": "Autonome 3D-Drucker-Verwaltung, integrierter Slicer, lokale KI und Abrechnung (Bambu Lab P2S).",
-    "version": "1.27.0"
+    "version": "1.28.0"
   },
   "paths": {
     "/api/v1/auth/setup": {
@@ -61472,7 +61472,7 @@
       "get": {
         "summary": "Serve Manifest",
         "description": "Serve PWA manifest.",
-        "operationId": "serve_manifest_manifest_json_get",
+        "operationId": "serve_manifest_manifest_json_head",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -61487,7 +61487,7 @@
       "head": {
         "summary": "Serve Manifest",
         "description": "Serve PWA manifest.",
-        "operationId": "serve_manifest_manifest_json_get",
+        "operationId": "serve_manifest_manifest_json_head",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -61504,7 +61504,7 @@
       "get": {
         "summary": "Serve Service Worker",
         "description": "Serve service worker.",
-        "operationId": "serve_service_worker_sw_js_get",
+        "operationId": "serve_service_worker_sw_js_head",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -61519,7 +61519,7 @@
       "head": {
         "summary": "Serve Service Worker",
         "description": "Serve service worker.",
-        "operationId": "serve_service_worker_sw_js_get",
+        "operationId": "serve_service_worker_sw_js_head",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -61536,7 +61536,7 @@
       "get": {
         "summary": "Serve Sw Register",
         "description": "Serve the service-worker registration bootstrap script.\n\nServed as a real JS file so the strict `script-src 'self'` CSP covers it\nwithout needing 'unsafe-inline' or per-build hashes on the inline tag.",
-        "operationId": "serve_sw_register_sw_register_js_get",
+        "operationId": "serve_sw_register_sw_register_js_head",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -61551,7 +61551,7 @@
       "head": {
         "summary": "Serve Sw Register",
         "description": "Serve the service-worker registration bootstrap script.\n\nServed as a real JS file so the strict `script-src 'self'` CSP covers it\nwithout needing 'unsafe-inline' or per-build hashes on the inline tag.",
-        "operationId": "serve_sw_register_sw_register_js_get",
+        "operationId": "serve_sw_register_sw_register_js_head",
         "responses": {
           "200": {
             "description": "Successful Response",
