@@ -3,7 +3,7 @@
   "info": {
     "title": "PrintLab API",
     "description": "Autonome 3D-Drucker-Verwaltung, integrierter Slicer, lokale KI und Abrechnung (Bambu Lab P2S).",
-    "version": "1.29.0"
+    "version": "2.0.0"
   },
   "paths": {
     "/api/v1/auth/setup": {
