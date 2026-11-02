@@ -13,19 +13,19 @@ import { isBedSlinger } from '../utils/bedSlinger';
 import { computePopoverPosition, type PopoverPosition } from '../utils/popoverPosition';
 import { openCameraWindow, type CameraViewMode } from '../utils/camera';
 import { resolveDryingPresetKey, type DryingPreset } from '../utils/dryingPresets';
-import { computeStartAfter, type DryingStartMode } from '../lib/scheduledDrying';
+import { type DryingStartMode } from '../lib/scheduledDrying';
 import { isExternalSpoolHidden, setExternalSpoolHidden as persistExternalSpoolHidden } from '../utils/printerCardPrefs';
 import { BED_TEMP_DEFAULTS, CHAMBER_TEMP_DEFAULTS, FAN_SPEED_DEFAULTS, NOZZLE_TEMP_DEFAULTS, buildPresetOptions } from '../utils/temperatureFanPresets';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
-import { Link, Unlink, Signal, Clock, MoreVertical, Trash2, RefreshCw, RotateCw, HardDrive, AlertTriangle, Terminal, Zap, Wrench, ChevronDown, EyeOff, Pencil, ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Layers, Video, Loader2, Square, Pause, Play, X, Fan, Wind, AirVent, Download, ScanSearch, CheckCircle, CheckSquare, XCircle, User, Home, Printer as PrinterIcon, Info, Cable, Flame, Hourglass, Snowflake, Gauge, DoorOpen, DoorClosed, Move, LogIn, LogOut, Stethoscope, ScanEye, LineChart as LineChartIcon, ExternalLink, PictureInPicture2, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Link, Unlink, Signal, Clock, MoreVertical, Trash2, RefreshCw, RotateCw, HardDrive, AlertTriangle, Terminal, Zap, Wrench, ChevronDown, EyeOff, Pencil, ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Layers, Video, Loader2, Square, Pause, Play, X, Fan, Wind, AirVent, Download, ScanSearch, CheckCircle, CheckSquare, User, Home, Printer as PrinterIcon, Info, Cable, Flame, Hourglass, Snowflake, Gauge, DoorOpen, DoorClosed, Move, LogIn, LogOut, Stethoscope, ScanEye, LineChart as LineChartIcon, ExternalLink, PictureInPicture2, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { ConfirmOutcomeDialog } from '../components/ConfirmOutcomeDialog';
 import { SliceModal, type SliceSource } from '../components/SliceModal';
 import { useNavigate } from 'react-router-dom';
 import { api, firmwareApi } from '../api/client';
 import { formatKValue } from '../utils/kValue';
-import { formatDateOnly, formatETA, formatDuration, formatDurationFromHours, parseUTCDate } from '../utils/date';
+import { formatDateOnly, formatETA, formatDuration } from '../utils/date';
 import type { Printer, PrinterStatus, AMSUnit, LinkedSpoolInfo, SpoolAssignment, InventorySpool, SmartPlug } from '../api/client';
 import { Card, CardContent } from '../components/Card';
 import { Button } from '../components/Button';
@@ -61,11 +61,9 @@ import { MAX_CHAMBER_TEMP_C, getPrinterImage, getWifiStrength, filterCompatibleQ
 import { FilamentSlotCircle } from '../components/FilamentSlotCircle';
 import { ConnectionDiagnosticModal } from '../components/ConnectionDiagnostic';
 import { getColorName } from '../utils/colors';
-import { NumberInput } from '../components/NumberInput';
 
 import {
   CARD_BODY_SCALE,
-  DRYING_DELAY_OPTIONS,
   DRYING_POPOVER_ESTIMATED_HEIGHT,
   DRYING_POPOVER_WIDTH,
   DRYING_PRESETS,
@@ -92,11 +90,15 @@ import {
   NozzleSlotHoverCard,
   NozzleTemperatureControlBox,
   ScheduledDryingBanner,
-  ToolbarDropdown,
 } from './PrinterCardParts';
 
 // Firmware- und Bearbeiten-Dialog: eigene Datei gegen die Größe der Karte.
-import { EditPrinterModal, FirmwareUpdateModal } from './PrinterCardModals';
+import {
+  AmsDryingPopover,
+  EditPrinterModal,
+  FirmwareUpdateModal,
+  PlateCheckResultModal,
+} from './PrinterCardModals';
 
 export function PrinterCard({
   printer,
@@ -4914,274 +4916,22 @@ export function PrinterCard({
 
       {/* Plate Check Result Modal */}
       {plateCheckResult && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => closePlateCheckModal()}>
-          <div className="bg-bambu-dark-secondary border border-bambu-dark-tertiary rounded-xl shadow-2xl max-w-lg w-full" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b border-bambu-dark-tertiary">
-              <div className="flex items-center gap-2">
-                {plateCheckResult.needs_calibration ? (
-                  <ScanSearch className="w-[var(--pc-i5,1.25rem)] h-[var(--pc-i5,1.25rem)] text-blue-500" />
-                ) : plateCheckResult.is_empty ? (
-                  <CheckCircle className="w-[var(--pc-i5,1.25rem)] h-[var(--pc-i5,1.25rem)] text-green-500" />
-                ) : (
-                  <XCircle className="w-[var(--pc-i5,1.25rem)] h-[var(--pc-i5,1.25rem)] text-yellow-500" />
-                )}
-                <h2 className="text-lg font-semibold text-white">
-                  Build Plate Check
-                </h2>
-                {plateCheckResult.reference_count !== undefined && plateCheckResult.max_references && (
-                  <span className="text-xs text-bambu-gray bg-bambu-dark-tertiary px-2 py-1 rounded">
-                    {plateCheckResult.reference_count}/{plateCheckResult.max_references} refs
-                  </span>
-                )}
-              </div>
-              <button
-                onClick={() => closePlateCheckModal()}
-                className="p-1 text-bambu-gray hover:text-white rounded transition-colors"
-              >
-                <X className="w-[var(--pc-i5,1.25rem)] h-[var(--pc-i5,1.25rem)]" />
-              </button>
-            </div>
-            <div className="p-4 space-y-4">
-              {plateCheckResult.needs_calibration ? (
-                <>
-                  <div className="p-3 rounded-lg bg-blue-100 dark:bg-blue-500/20 border border-blue-300 dark:border-blue-500/50">
-                    <p className="font-medium text-blue-700 dark:text-blue-400">
-                      {t('printers.plateDetection.calibrationRequired')}
-                    </p>
-                    <p className="text-sm text-bambu-gray mt-1" dangerouslySetInnerHTML={{ __html: t('printers.plateDetection.calibrationInstructions') }} />
-                  </div>
-                  <div className="text-sm text-bambu-gray space-y-2">
-                    <p>{t('printers.plateDetection.calibrationDescription')}</p>
-                    <p dangerouslySetInnerHTML={{ __html: t('printers.plateDetection.calibrationTip') }} />
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className={`p-3 rounded-lg ${plateCheckResult.is_empty ? 'bg-green-100 dark:bg-green-500/20 border border-green-300 dark:border-green-500/50' : 'bg-yellow-100 dark:bg-yellow-500/20 border border-yellow-300 dark:border-yellow-500/50'}`}>
-                    <p className={`font-medium ${plateCheckResult.is_empty ? 'text-green-700 dark:text-green-400' : 'text-yellow-700 dark:text-yellow-400'}`}>
-                      {plateCheckResult.is_empty ? t('printers.plateDetection.plateEmpty') : t('printers.plateDetection.objectsDetected')}
-                    </p>
-                    <p className="text-sm text-bambu-gray mt-1">
-                      {t('printers.plateDetection.confidence')}: {Math.round(plateCheckResult.confidence * 100)}% | {t('printers.plateDetection.difference')}: {plateCheckResult.difference_percent.toFixed(1)}%
-                    </p>
-                  </div>
-                  {plateCheckResult.debug_image_url && (
-                    <div>
-                      <p className="text-sm text-bambu-gray mb-2">{t('printers.plateDetection.analysisPreview')}</p>
-                      <img
-                        src={plateCheckResult.debug_image_url}
-                        alt={t('printers.plateDetection.analysisPreview')}
-                        className="w-full rounded-lg border border-bambu-dark-tertiary"
-                      />
-                      <p className="text-xs text-bambu-gray mt-2">
-                        {t('printers.plateDetection.analysisLegend')}
-                      </p>
-                    </div>
-                  )}
-                  <p className="text-xs text-bambu-gray">
-                    {plateCheckResult.message}
-                  </p>
-                </>
-              )}
-
-              {/* Saved References Grid */}
-              {plateReferences && plateReferences.references.length > 0 && (
-                <div className="mt-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <p className="text-sm font-medium text-white shrink-0">
-                      {t('printers.plateDetection.savedReferences', { count: plateReferences.references.length, max: plateReferences.max_references })}
-                    </p>
-                    <div className="flex-1 h-[2px] bg-bambu-dark-tertiary" />
-                  </div>
-                  <div className="grid grid-cols-5 gap-2">
-                    {plateReferences.references.map((ref) => (
-                      <div key={ref.index} className="relative group">
-                        <img
-                          src={api.getPlateReferenceThumbnailUrl(printer.id, ref.index)}
-                          alt={ref.label || `Reference ${ref.index + 1}`}
-                          className="w-full aspect-video object-cover rounded border border-bambu-dark-tertiary"
-                        />
-                        {/* Delete button */}
-                        <button
-                          onClick={() => handleDeleteRef(ref.index)}
-                          className="absolute top-1 right-1 p-0.5 bg-red-500/80 rounded can-hover:opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
-                          title={t('printers.plateDetection.deleteReference')}
-                        >
-                          <X className="w-[var(--pc-i3,0.75rem)] h-[var(--pc-i3,0.75rem)] text-white" />
-                        </button>
-                        {/* Label */}
-                        {editingRefLabel?.index === ref.index ? (
-                          <input
-                            type="text"
-                            value={editingRefLabel.label}
-                            onChange={(e) => setEditingRefLabel({ ...editingRefLabel, label: e.target.value })}
-                            onBlur={() => handleUpdateRefLabel(ref.index, editingRefLabel.label)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') handleUpdateRefLabel(ref.index, editingRefLabel.label);
-                              if (e.key === 'Escape') setEditingRefLabel(null);
-                            }}
-                            className="w-full mt-1 px-1 py-0.5 text-xs bg-bambu-dark-tertiary border border-bambu-green rounded text-white"
-                            autoFocus
-                            placeholder={t('printers.plateDetection.labelPlaceholder')}
-                          />
-                        ) : (
-                          <p
-                            className="text-xs text-bambu-gray mt-1 truncate cursor-pointer hover:text-white"
-                            onClick={() => setEditingRefLabel({ index: ref.index, label: ref.label })}
-                            title={ref.label ? t('printers.plateDetection.clickToEdit', { label: ref.label }) : t('printers.plateDetection.clickToAddLabel')}
-                          >
-                            {ref.label || <span className="italic opacity-50">{t('printers.noLabel')}</span>}
-                          </p>
-                        )}
-                        {/* Timestamp */}
-                        <p className="text-[length:var(--pc-t10,10px)] text-bambu-gray/60">
-                          {ref.timestamp ? parseUTCDate(ref.timestamp)?.toLocaleDateString() ?? '' : ''}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* ROI Editor */}
-              {!plateCheckResult.needs_calibration && (
-                <div className="mt-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex min-w-0 flex-1 items-center gap-2">
-                      <p className="text-sm font-medium text-white shrink-0">{t('printers.roi.title')}</p>
-                      <div className="flex-1 h-[2px] bg-bambu-dark-tertiary" />
-                    </div>
-                    {!editingRoi ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setEditingRoi(plateCheckResult.roi || { x: 0.15, y: 0.35, w: 0.70, h: 0.55 })}
-                      >
-                        <Pencil className="w-[var(--pc-i3,0.75rem)] h-[var(--pc-i3,0.75rem)] mr-1" />
-                        {t('common.edit')}
-                      </Button>
-                    ) : (
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingRoi(null)}
-                          disabled={isSavingRoi}
-                        >
-                          {t('common.cancel')}
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={handleSaveRoi}
-                          disabled={isSavingRoi}
-                        >
-                          {isSavingRoi ? <Loader2 className="w-[var(--pc-i3,0.75rem)] h-[var(--pc-i3,0.75rem)] animate-spin" /> : t('common.save')}
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                  {editingRoi ? (
-                    <div className="space-y-3 bg-bambu-dark-tertiary/50 p-3 rounded-lg">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-xs text-bambu-gray">{t('printers.roi.xStart')}</label>
-                          <input
-                            type="range"
-                            min="0"
-                            max="0.9"
-                            step="0.01"
-                            value={editingRoi.x}
-                            onChange={(e) => setEditingRoi({ ...editingRoi, x: parseFloat(e.target.value) })}
-                            className="w-full h-1.5 bg-bambu-dark-tertiary rounded-lg cursor-pointer accent-green-500"
-                          />
-                          <span className="text-xs text-bambu-gray">{Math.round(editingRoi.x * 100)}%</span>
-                        </div>
-                        <div>
-                          <label className="text-xs text-bambu-gray">{t('printers.roi.yStart')}</label>
-                          <input
-                            type="range"
-                            min="0"
-                            max="0.9"
-                            step="0.01"
-                            value={editingRoi.y}
-                            onChange={(e) => setEditingRoi({ ...editingRoi, y: parseFloat(e.target.value) })}
-                            className="w-full h-1.5 bg-bambu-dark-tertiary rounded-lg cursor-pointer accent-green-500"
-                          />
-                          <span className="text-xs text-bambu-gray">{Math.round(editingRoi.y * 100)}%</span>
-                        </div>
-                        <div>
-                          <label className="text-xs text-bambu-gray">{t('printers.width')}</label>
-                          <input
-                            type="range"
-                            min="0.1"
-                            max="1"
-                            step="0.01"
-                            value={editingRoi.w}
-                            onChange={(e) => setEditingRoi({ ...editingRoi, w: parseFloat(e.target.value) })}
-                            className="w-full h-1.5 bg-bambu-dark-tertiary rounded-lg cursor-pointer accent-green-500"
-                          />
-                          <span className="text-xs text-bambu-gray">{Math.round(editingRoi.w * 100)}%</span>
-                        </div>
-                        <div>
-                          <label className="text-xs text-bambu-gray">{t('printers.height')}</label>
-                          <input
-                            type="range"
-                            min="0.1"
-                            max="1"
-                            step="0.01"
-                            value={editingRoi.h}
-                            onChange={(e) => setEditingRoi({ ...editingRoi, h: parseFloat(e.target.value) })}
-                            className="w-full h-1.5 bg-bambu-dark-tertiary rounded-lg cursor-pointer accent-green-500"
-                          />
-                          <span className="text-xs text-bambu-gray">{Math.round(editingRoi.h * 100)}%</span>
-                        </div>
-                      </div>
-                      <p className="text-xs text-bambu-gray">
-                        {t('printers.roi.instruction')}
-                      </p>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-bambu-gray">
-                      Current: X={Math.round((plateCheckResult.roi?.x || 0.15) * 100)}%, Y={Math.round((plateCheckResult.roi?.y || 0.35) * 100)}%,
-                      W={Math.round((plateCheckResult.roi?.w || 0.70) * 100)}%, H={Math.round((plateCheckResult.roi?.h || 0.55) * 100)}%
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-            <div className="flex justify-end gap-2 p-4">
-              {plateCheckResult.needs_calibration ? (
-                <>
-                  <Button variant="ghost" onClick={() => closePlateCheckModal()}>
-                    {t('common.cancel')}
-                  </Button>
-                  <Button
-                    onClick={() => handleCalibratePlate()}
-                    disabled={isCalibrating}
-                  >
-                    {isCalibrating ? (
-                      <>
-                        <Loader2 className="w-[var(--pc-i4,1rem)] h-[var(--pc-i4,1rem)] mr-2 animate-spin" />
-                        Calibrating...
-                      </>
-                    ) : (
-                      'Calibrate Empty Plate'
-                    )}
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button variant="ghost" onClick={() => handleCalibratePlate()} disabled={isCalibrating}>
-                    {isCalibrating ? 'Adding...' : `Add Reference (${plateReferences?.references.length || 0}/${plateReferences?.max_references || 5})`}
-                  </Button>
-                  <Button onClick={() => closePlateCheckModal()}>
-                    Close
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
+        <PlateCheckResultModal
+          printer={printer}
+          plateCheckResult={plateCheckResult}
+          plateReferences={plateReferences}
+          closePlateCheckModal={closePlateCheckModal}
+          handleCalibratePlate={handleCalibratePlate}
+          isCalibrating={isCalibrating}
+          handleDeleteRef={handleDeleteRef}
+          editingRefLabel={editingRefLabel}
+          setEditingRefLabel={setEditingRefLabel}
+          handleUpdateRefLabel={handleUpdateRefLabel}
+          editingRoi={editingRoi}
+          setEditingRoi={setEditingRoi}
+          isSavingRoi={isSavingRoi}
+          handleSaveRoi={handleSaveRoi}
+        />
       )}
 
       {/* Power On Confirmation */}
@@ -5447,291 +5197,36 @@ export function PrinterCard({
       )}
 
       {/* AMS Drying Popover — fixed position to avoid overflow/z-index issues */}
-      {dryingPopoverAmsId !== null && dryingPopoverPos && (() => {
-        const maxTemp = dryingPopoverModuleType === 'n3s' ? 85 : 65;
-        const sliderMin = 35;
-        const sliderMax = maxTemp + 10;
-        return (
-          <>
-            {/* Backdrop */}
-            <div
-              className="fixed inset-0 z-[100]"
-              data-testid="drying-popover-backdrop"
-              onMouseDown={() => {
-                // The click that dismisses the native datetime picker lands
-                // here; it must not close the popover. The input is still
-                // focused at mousedown, so remember that and swallow the
-                // matching click.
-                dryingBackdropSkipCloseRef.current =
-                  dryingAtTimeInputRef.current !== null &&
-                  document.activeElement === dryingAtTimeInputRef.current;
-              }}
-              onClick={() => {
-                if (dryingBackdropSkipCloseRef.current) {
-                  dryingBackdropSkipCloseRef.current = false;
-                  return;
-                }
-                setDryingPopoverAmsId(null);
-              }}
-            />
-            {/* An 'above' popover is anchored by its bottom edge (CSS
-                bottom) so late-appearing content grows it upward, staying on
-                screen and glued to the trigger. maxHeight caps to the space
-                on the anchored side; when the viewport is too short the body
-                scrolls and the footer stays pinned. dvh so iOS Safari's
-                bottom toolbar doesn't clip the footer. */}
-            <div
-              className="fixed z-[101] flex flex-col w-[240px] bg-bambu-dark-secondary border border-bambu-dark-tertiary rounded-xl shadow-2xl overflow-hidden"
-              style={{
-                left: dryingPopoverPos.left,
-                ...(dryingPopoverPos.placement === 'above'
-                  ? {
-                      bottom: `calc(100dvh - ${dryingPopoverPos.anchorY}px)`,
-                      maxHeight: `${dryingPopoverPos.anchorY - 8}px`,
-                    }
-                  : {
-                      top: dryingPopoverPos.top,
-                      maxHeight: `calc(100dvh - ${dryingPopoverPos.top}px - 8px)`,
-                    }),
-              }}
-              onClick={e => e.stopPropagation()}
-            >
-              {/* Header */}
-              <div className="shrink-0 flex items-center justify-center gap-2 px-3 py-2.5">
-                <Flame className="w-[var(--pc-i35,0.875rem)] h-[var(--pc-i35,0.875rem)] text-bambu-green" />
-                <span className="text-sm text-white font-medium text-center">{t('printers.drying.start')}</span>
-              </div>
-              <div className="shrink-0 h-px bg-bambu-dark-tertiary" />
-              {/* Body */}
-              <div className="px-3 py-2.5 space-y-2.5 overflow-y-auto min-h-0">
-                {/* Filament type select */}
-                <div>
-                  <label className="text-[length:var(--pc-t10,10px)] text-white/70 font-medium mb-1 block">{t('printers.filaments')}</label>
-                  <ToolbarDropdown
-                    value={dryingFilament}
-                    options={Object.keys(dryingPresets).map(fil => ({ value: fil, label: fil }))}
-                    onChange={fil => {
-                      setDryingFilament(fil);
-                      const preset = dryingPresets[fil];
-                      if (preset) {
-                        const key = dryingPopoverModuleType === 'n3s' ? 'n3s' : 'n3f';
-                        setDryingTemp(preset[key]);
-                        setDryingDuration(dryingPopoverModuleType === 'n3s' ? preset.n3s_hours : preset.n3f_hours);
-                      }
-                    }}
-                    fullWidth
-                  />
-                </div>
-                {/* Temperature */}
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-[length:var(--pc-t10,10px)] text-white/70 font-medium">{t('printers.drying.temperature')}</label>
-                    <div className="flex items-center gap-1">
-                      <NumberInput
-                        min={45}
-                        max={maxTemp}
-                        value={dryingTemp}
-                        onChange={setDryingTemp}
-                        fallback={45}
-                        className="w-12 px-1 py-0.5 bg-bambu-dark border border-bambu-dark-tertiary rounded text-white text-[length:var(--pc-t11,11px)] text-center focus:outline-none focus:border-bambu-green [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      />
-                      <span className="text-[length:var(--pc-t10,10px)] text-bambu-gray">°C</span>
-                    </div>
-                  </div>
-                  <input
-                    type="range"
-                    min={sliderMin}
-                    max={sliderMax}
-                    value={dryingTemp}
-                    onChange={e => setDryingTemp(Math.min(maxTemp, Math.max(45, Number(e.target.value))))}
-                    className="w-full h-1 accent-bambu-green cursor-pointer"
-                  />
-                  <div className="flex justify-between text-[length:var(--pc-t9,9px)] text-bambu-gray/50 mt-0.5">
-                    <span>45°C</span>
-                    <span>{maxTemp}°C</span>
-                  </div>
-                </div>
-                {/* Duration */}
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-[length:var(--pc-t10,10px)] text-white/70 font-medium">{t('printers.drying.duration')}</label>
-                    <div className="flex items-center gap-1">
-                      <NumberInput
-                        min={1}
-                        max={24}
-                        value={dryingDuration}
-                        onChange={setDryingDuration}
-                        fallback={1}
-                        className="w-10 px-1 py-0.5 bg-bambu-dark border border-bambu-dark-tertiary rounded text-white text-[length:var(--pc-t11,11px)] text-center focus:outline-none focus:border-bambu-green [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      />
-                      <span className="text-[length:var(--pc-t10,10px)] text-bambu-gray">{t('printers.drying.hours')}</span>
-                    </div>
-                  </div>
-                  <input
-                    type="range"
-                    min={1}
-                    max={24}
-                    value={dryingDuration}
-                    onChange={e => setDryingDuration(Number(e.target.value))}
-                    className="w-full h-1 accent-bambu-green cursor-pointer"
-                  />
-                  <div className="flex justify-between text-[length:var(--pc-t9,9px)] text-bambu-gray/50 mt-0.5">
-                    <span>1h</span>
-                    <span>24h</span>
-                  </div>
-                </div>
-                {/* Rotate tray — disabled when any tray in THIS AMS has its
-                    filament threaded out into the feed tube. The whole AMS
-                    rotates as one mechanism (all 4 spools turn together), so a
-                    single loaded slot locks the entire unit. Bambu per-tray
-                    `state`: 9 = empty, 10 = spool present but not loaded
-                    (rotation possible), 11 = loaded into tube (rotation impossible).
-                    Catches both mid-print (active feed) AND idle-with-threaded-
-                    filament — the H2D's post-print state leaves filament in the
-                    tube but tray_now resets to 255, which a tray_now-only check
-                    would silently miss. */}
-                {(() => {
-                  const targetAms = dryingPopoverAmsId !== null
-                    ? amsData.find(a => a.id === dryingPopoverAmsId)
-                    : undefined;
-                  const trayLoadedInThisAms = (targetAms?.tray ?? []).some(
-                    tray => tray.state === 11,
-                  );
-                  const rotateChecked = dryingRotateTray && !trayLoadedInThisAms;
-                  return (
-                    <button
-                      type="button"
-                      onClick={() => setDryingRotateTray(enabled => !enabled)}
-                      aria-pressed={rotateChecked}
-                      disabled={trayLoadedInThisAms}
-                      title={trayLoadedInThisAms ? t('printers.drying.rotateUnavailableReason') : undefined}
-                      className={`h-8 w-full rounded-lg border px-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-                        rotateChecked
-                          ? 'bg-bambu-green border-bambu-green text-white'
-                          : 'bg-bambu-dark border-bambu-dark-tertiary text-white hover:bg-bambu-dark-tertiary disabled:hover:bg-bambu-dark'
-                      }`}
-                    >
-                      {t('printers.drying.rotateTray')}
-                    </button>
-                  );
-                })()}
-                {/* Start mode: now / after delay / at time (#2638) */}
-                <div>
-                  <label className="text-[10px] text-white/70 font-medium mb-1 block">{t('printers.drying.startMode')}</label>
-                  <div className="grid grid-cols-3 gap-1">
-                    {(['now', 'delay', 'at_time'] as const).map(mode => (
-                      <button
-                        key={mode}
-                        type="button"
-                        onClick={() => setDryingStartMode(mode)}
-                        className={`py-1 rounded-lg border text-[10px] font-medium transition-colors ${
-                          dryingStartMode === mode
-                            ? 'bg-bambu-green border-bambu-green text-white'
-                            : 'bg-bambu-dark border-bambu-dark-tertiary text-white hover:bg-bambu-dark-tertiary'
-                        }`}
-                      >
-                        {t(mode === 'now' ? 'printers.drying.modeNow' : mode === 'delay' ? 'printers.drying.modeDelay' : 'printers.drying.modeAtTime')}
-                      </button>
-                    ))}
-                  </div>
-                  {dryingStartMode === 'delay' && (
-                    // Inline chips: a dropdown menu would be clipped by
-                    // the popover's scrollable body.
-                    <div className="mt-1.5 grid grid-cols-4 gap-1">
-                      {DRYING_DELAY_OPTIONS.map(min => (
-                        <button
-                          key={min}
-                          type="button"
-                          aria-pressed={dryingDelayMinutes === min}
-                          onClick={() => setDryingDelayMinutes(min)}
-                          className={`py-1 rounded-lg border text-[10px] font-medium transition-colors ${
-                            dryingDelayMinutes === min
-                              ? 'bg-bambu-green border-bambu-green text-white'
-                              : 'bg-bambu-dark border-bambu-dark-tertiary text-white hover:bg-bambu-dark-tertiary'
-                          }`}
-                        >
-                          {formatDurationFromHours(min / 60)}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {dryingStartMode === 'at_time' && (
-                    <input
-                      ref={dryingAtTimeInputRef}
-                      type="datetime-local"
-                      data-testid="drying-start-at"
-                      value={dryingStartAt}
-                      onChange={e => setDryingStartAt(e.target.value)}
-                      className="mt-1.5 w-full px-2 py-1 bg-bambu-dark border border-bambu-dark-tertiary rounded text-white text-[11px] focus:outline-none focus:border-bambu-green [color-scheme:dark]"
-                    />
-                  )}
-                </div>
-              </div>
-              <div className="shrink-0 h-px bg-bambu-dark-tertiary" />
-              {/* Footer */}
-              <div className="shrink-0 px-3 pt-2.5 pb-3">
-                <button
-                  onClick={() => {
-                    if (dryingPopoverAmsId !== null) {
-                      // Clamp rotateTray off when any tray in this AMS is loaded into
-                      // the tube — the rotate UI is disabled there, but the state may
-                      // linger as `true` from a previous AMS, or a print may have
-                      // started while the popover was open. Without this clamp the
-                      // Start payload would carry rotate_tray=true and firmware would
-                      // reject with dry_sf_reason=[3] (ConsumableAtAmsOutlet).
-                      const targetAms = amsData.find(a => a.id === dryingPopoverAmsId);
-                      const trayLoadedInThisAms = (targetAms?.tray ?? []).some(
-                        tray => tray.state === 11,
-                      );
-                      const rotate = dryingRotateTray && !trayLoadedInThisAms;
-                      if (dryingStartMode === 'now') {
-                        startDryingMutation.mutate({
-                          amsId: dryingPopoverAmsId,
-                          temp: dryingTemp,
-                          duration: dryingDuration,
-                          filament: dryingFilament,
-                          rotateTray: rotate,
-                        });
-                      } else {
-                        const startAfter = computeStartAfter(dryingStartMode, dryingDelayMinutes, dryingStartAt);
-                        if (startAfter) {
-                          scheduleDryingMutation.mutate({
-                            amsId: dryingPopoverAmsId,
-                            temp: dryingTemp,
-                            duration: dryingDuration,
-                            filament: dryingFilament,
-                            rotateTray: rotate,
-                            startAfter,
-                          });
-                        }
-                      }
-                    }
-                  }}
-                  disabled={startDryingMutation.isPending || scheduleDryingMutation.isPending || (dryingStartMode === 'at_time' && !dryingStartAt)}
-                  data-testid="drying-start-confirm"
-                  className="w-full py-1.5 bg-bambu-green hover:bg-bambu-green/80 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
-                >
-                  {dryingStartMode === 'now'
-                    ? (startDryingMutation.isPending ? t('printers.drying.startingDrying') : t('printers.drying.start'))
-                    : t('printers.drying.schedule')}
-                </button>
-              </div>
-            </div>
-            {/* Anchor arrow pointing at the flame button; a fixed sibling
-                since the popover clips its own overflow. */}
-            <div
-              className="fixed z-[102] w-2.5 h-2.5 rotate-45 bg-bambu-dark-secondary border-bambu-dark-tertiary pointer-events-none"
-              style={{
-                left: dryingPopoverPos.left + dryingPopoverPos.arrowLeft - 5,
-                top: dryingPopoverPos.anchorY - 5,
-                ...(dryingPopoverPos.placement === 'above'
-                  ? { borderRightWidth: 1, borderBottomWidth: 1 }
-                  : { borderLeftWidth: 1, borderTopWidth: 1 }),
-              }}
-            />
-          </>
-        );
-      })()}
+      {dryingPopoverAmsId !== null && dryingPopoverPos && (
+        <AmsDryingPopover
+          amsData={amsData}
+          dryingPopoverAmsId={dryingPopoverAmsId}
+          dryingPopoverPos={dryingPopoverPos}
+          dryingPopoverModuleType={dryingPopoverModuleType}
+          dryingFilament={dryingFilament}
+          setDryingFilament={setDryingFilament}
+          dryingPresets={dryingPresets}
+          dryingTemp={dryingTemp}
+          setDryingTemp={setDryingTemp}
+          dryingDuration={dryingDuration}
+          setDryingDuration={setDryingDuration}
+          dryingRotateTray={dryingRotateTray}
+          setDryingRotateTray={setDryingRotateTray}
+          dryingStartMode={dryingStartMode}
+          setDryingStartMode={setDryingStartMode}
+          dryingDelayMinutes={dryingDelayMinutes}
+          setDryingDelayMinutes={setDryingDelayMinutes}
+          dryingStartAt={dryingStartAt}
+          setDryingStartAt={setDryingStartAt}
+          dryingBackdropSkipCloseRef={dryingBackdropSkipCloseRef}
+          dryingAtTimeInputRef={dryingAtTimeInputRef}
+          onClose={() => setDryingPopoverAmsId(null)}
+          onStartDrying={params => startDryingMutation.mutate(params)}
+          onScheduleDrying={params => scheduleDryingMutation.mutate(params)}
+          isStarting={startDryingMutation.isPending}
+          isScheduling={scheduleDryingMutation.isPending}
+        />
+      )}
     </Card>
   );
 }

@@ -299,6 +299,18 @@ class PlateDetector:
         roi_frame = frame[y_start : y_start + roi_height, x_start : x_start + roi_width]
         return roi_frame, x_start, y_start, roi_width, roi_height
 
+    def _apply_clahe_enhancement(self, frame: np.ndarray) -> np.ndarray:
+        """Wendet CLAHE (Contrast Limited Adaptive Histogram Equalization) im LAB-Farbraum an."""
+        try:
+            lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
+            l_channel, a_channel, b_channel = cv2.split(lab)
+            clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8))
+            enhanced_l = clahe.apply(l_channel)
+            merged = cv2.merge([enhanced_l, a_channel, b_channel])
+            return cv2.cvtColor(merged, cv2.COLOR_LAB2BGR)
+        except Exception:
+            return frame
+
     def _preprocess_for_comparison(self, frame: np.ndarray) -> np.ndarray:
         """Preprocess a frame for comparison.
 
@@ -306,7 +318,8 @@ class PlateDetector:
         and noise while preserving large objects. Then normalizes brightness
         to reduce lighting sensitivity.
         """
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        enhanced = self._apply_clahe_enhancement(frame)
+        gray = cv2.cvtColor(enhanced, cv2.COLOR_BGR2GRAY)
         # Very heavy blur to smooth texture, keep only large shapes
         blurred = cv2.GaussianBlur(gray, (51, 51), 0)
         # Normalize to 0-255 range to reduce brightness sensitivity

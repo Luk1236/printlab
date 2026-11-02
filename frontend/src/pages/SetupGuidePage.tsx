@@ -1,3 +1,4 @@
+import { GCode3DPreview } from '../components/GCode3DPreview';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
@@ -254,7 +255,7 @@ export function SetupGuidePage() {
       {/* 3. Verbindungen: Slicer, Fernzugriff & Meldungen */}
       {(activeTab === 'connections' || activeTab === 'all') && (
         <div className="space-y-6">
-          <div id="setup-slicer">
+          <div id="setup-slicer" className="space-y-4">
             <Card>
               <CardContent className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -281,6 +282,7 @@ export function SetupGuidePage() {
                 <SlicerConnectionCheck />
               </CardContent>
             </Card>
+            <GCode3DPreview />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

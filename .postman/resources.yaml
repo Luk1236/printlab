@@ -1,0 +1,8 @@
+formatVersion: '1.0'
+localResources:
+  collections:
+    - name: PrintLab API
+      path: postman/PrintLab.postman_collection.json
+  specs:
+    - name: PrintLab OpenAPI
+      path: postman/schemas/printlab.openapi.json

@@ -342,3 +342,10 @@ def embed_zugferd_xml(pdf_bytes: bytes, xml_text: str, attachment_name: str = "f
         + b"endobj\n%%EOF\n"
     )
     return head + trailer_block
+
+
+def girocode_data_uri(invoice: dict[str, Any], company: dict[str, Any]) -> str:
+    """Erzeugt den EPC-GiroCode als Base64-PNG für diese Rechnung."""
+    from backend.app.services.girocode import girocode_for_invoice
+
+    return girocode_for_invoice(invoice, company)

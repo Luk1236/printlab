@@ -615,21 +615,31 @@ def run_all(checks=None) -> list[dict]:
     return results
 
 
+def safe_print(text: str) -> None:
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        print(text.encode("ascii", errors="replace").decode("ascii"))
+
+
 def main(argv: list[str]) -> int:
     if "--signatur-vorbereiten" in argv:
         level, msg = prepare_signature()
-        print(f"[{level:<4}] Update-Signatur — {msg}")
+        safe_print(f"[{level:<4}] Update-Signatur — {msg}")
         return 1 if level == FAIL else 0
-    results = run_all()
-    if "--durchstich" in argv:
-        results.extend(run_durchstich())
+    if "--nur-durchstich" in argv:
+        results = run_durchstich()
+    else:
+        results = run_all()
+        if "--durchstich" in argv:
+            results.extend(run_durchstich())
     if "--json" in argv:
         print(json.dumps(results, ensure_ascii=False, indent=2))
     else:
         for r in results:
-            print(f"[{r['level']:<4}] {r['title']}" + (f" — {r['detail']}" if r["detail"] else ""))
+            safe_print(f"[{r['level']:<4}] {r['title']}" + (f" — {r['detail']}" if r["detail"] else ""))
         counts = {level: sum(1 for r in results if r["level"] == level) for level in (OK, WARN, FAIL, SKIP)}
-        print(
+        safe_print(
             f"\n{counts[OK]} in Ordnung, {counts[WARN]} Hinweise, {counts[FAIL]} Fehler, {counts[SKIP]} nicht prüfbar."
         )
     return 1 if any(r["level"] == FAIL for r in results) else 0

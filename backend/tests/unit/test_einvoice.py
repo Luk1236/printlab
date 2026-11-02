@@ -165,3 +165,8 @@ def test_embed_zugferd_xml_produces_hybrid_pdf():
     assert b"(factur-x.xml)" in hybrid
     assert b"urn:cen.eu:en16931:2017" in hybrid
     assert einvoice.zugferd_filename(INVOICE) == "ZUGFeRD-R-2026-0003.pdf"
+
+
+def test_girocode_data_uri_integration():
+    uri = einvoice.girocode_data_uri(INVOICE, COMPANY)
+    assert uri.startswith("data:image/png;base64,")
