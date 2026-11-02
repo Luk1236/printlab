@@ -37,6 +37,18 @@ git tag v1.13.0 -s -m "PrintLab v1.13.0 — Fehlerhilfe"
 git push origin bambu-monitor-port v1.13.0
 ```
 
+## Rhythmus und Zuständigkeit (festgelegt 02.11.2026)
+
+- **Bündeln:** Neue Funktionen erscheinen gesammelt, höchstens ein Minor-Release pro Woche. Dazwischen gibt es nur
+  Patch-Releases für Fehlerbehebungen, die ein laufender Pi braucht. Vorher gilt: erst am Pi abnehmen, dann das nächste
+  Minor-Release bauen (`docs/ABNAHME-PI.md`).
+- **Wer pusht und tagt:** Wenn mehrere Sitzungen am Branch arbeiten, committet jede nur ihre eigenen Dateien gezielt
+  (kein `git add -A`) und holt vor dem Push `git pull --rebase`. **Version erhöhen, taggen und das Release anlegen
+  macht genau eine Sitzung** (die, die das Release angefordert hat), und nur nach ausdrücklichem OK des Besitzers. Die
+  anderen Sitzungen melden ihre Commits per Nachricht und fassen `config.py`, den Versionsabschnitt im Changelog und
+  die Tags nicht an.
+- **Tag nur nach grüner CI** auf genau dem Commit, der getaggt wird.
+
 ## Verhältnis zum Upstream
 
 - Upstream (`upstream` = maziggy/bambuddy) wird **nicht** gepusht, sondern nur geholt:

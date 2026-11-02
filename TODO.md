@@ -105,6 +105,12 @@ Einmess-Assistent für den Plattenwechsel. Details und Grenzen im `CHANGELOG.md`
   Versionen. Bauen ließ es sich hier nicht (kein Docker auf dem Rechner).
 - Neues Glossar für die Gegenleser: `docs/UEBERSETZUNG-GLOSSAR.md` (Begriffe, Satzvorlagen, Prüfliste).
 
+## Festgelegt (02.11.2026)
+
+Releases werden gebündelt (höchstens ein Minor-Release pro Woche, davor Abnahme am Pi); Version, Tag und Release macht
+genau eine Sitzung nach ausdrücklichem OK und grüner CI (`docs/VERSIONING.md`). Nächste Entwicklungsrichtung nach der
+Abnahme: technische Schulden (siehe „Technisch offen“), dann KI und Fehlerhilfe am Gerät.
+
 ## Offen, nur mit deiner Hand oder echter Hardware
 
 Am Gerät in einer Sitzung abarbeiten: [`docs/ABNAHME-PI.md`](docs/ABNAHME-PI.md) — Update, Angebots-Link, Hardware in
