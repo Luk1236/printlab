@@ -37,7 +37,7 @@ from backend.app.services.slicer_cli import SliceOutput
 
 logger = logging.getLogger(__name__)
 
-BUILTIN_VERSION = "1.23.0-builtin"
+BUILTIN_VERSION = "1.24.0-builtin"
 
 PRINTER_NAMES = [
     "Bambu Lab P2S 0.4 nozzle",

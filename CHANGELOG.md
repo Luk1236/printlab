@@ -3,6 +3,13 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.24.0 (02.11.2026) — Integrierter Slicer (Auto-Start Port 3001/3003) & 10-Bereiche-Ausbau
+
+- **Integrierter PrintLab-Slicer (`builtin_slicer.py`, `pc_slicer.py`, `fork_startup.py`):**
+  Startet beim Start von PrintLab automatisch im Hintergrund auf `127.0.0.1:3001` (Bambu Studio API) und `127.0.0.1:3003` (OrcaSlicer API) und aktiviert `use_slicer_api` standardmäßig. Liefert mitgelieferte Standard-Profile (`BUNDLED_PROFILES`) für Bambu Lab P2S (`0.2`/`0.4`/`0.6` Düse), P1S, X1C, A1, A1 mini und H2D sowie Prozess- (`0.08mm`–`0.24mm`) und Filament-Profile (`PLA`, `PETG`, `ABS`, `ASA`, `TPU`). Unterstützt `/health`, `/profiles/bundled`, `/profiles/resolve`, `/slice/progress/{id}` und `/slice` (inkl. nativem Python-STL/3MF-Slicer als Fallback ohne externes Desktop-Slicer-Programm auf dem Raspberry Pi 5).
+- **ZUGFeRD-Hybrid-PDF, Plattenwechsel-Bewegungsfolge, Kamera-Durchstich & Modul-Aufteilung:**
+  Hybride ZUGFeRD-/Factur-X-PDF-Ausgabe (`embed_zugferd_xml` / `/zugferd.pdf`), G-Code- & Tür-Bewegungsfolge (`build_motion_sequence` / `/plate-wizard/sequence`), Tailscale-Dual-Port (`8000` + `8080 -> 8000`), Stufe 4.3 (Kamera) & Stufe 4.4 (Integrierter Slicer) im Komplett-Durchstich (`werkzeuge/abnahme.py --durchstich`) sowie Auslagerung von `SettingsUserModals.tsx` und `bambu_hms_dispatch.py`.
+
 ## v1.23.0 (02.11.2026) — Auto-Einrichtung, Einstellungs-Kompass, XRechnung 3.0 & Komplett-Abnahme
 
 - **Aufgeräumte Einrichtungs-Zentrale (`/einrichtung`) & Einstellungs-Kompass (`QuickSetupHubCard.tsx`):**
