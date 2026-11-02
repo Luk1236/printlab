@@ -493,6 +493,16 @@ export default {
     httpsDisable: '关闭 HTTPS',
   },
 
+  setupGuide: {
+    tabAssistant: 'AI与快速入门',
+    tabChecklist: '清单与指南针',
+    tabConnections: '切片机与远程访问',
+    tabSystem: '诊断与健康状态',
+    tabAll: '所有部分',
+    subtitle: '循序渐进的初始设置、切片机连接与系统诊断整齐排列。',
+    hwSubMechanics: '打印机机械结构与校准',
+    hwSubRules: '自动化规则与保留',
+  },
   common: {
     plusNMore: '另 {{count}} 个',
     save: '保存',

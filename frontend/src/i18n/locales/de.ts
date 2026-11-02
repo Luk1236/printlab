@@ -493,6 +493,16 @@ export default {
     httpsDisable: 'HTTPS ausschalten',
   },
 
+  setupGuide: {
+    tabAssistant: 'KI & Schnellstart',
+    tabChecklist: 'Checkliste & Kompass',
+    tabConnections: 'Verbindungen & Slicer',
+    tabSystem: 'Diagnose & Zustand',
+    tabAll: 'Alle Bereiche',
+    subtitle: 'Schritt-für-Schritt-Inbetriebnahme, Slicer- & Fernzugriffs-Verbindung sowie Systemprüfung sauber gegliedert.',
+    hwSubMechanics: 'Drucker-Mechanik & Kalibrierung',
+    hwSubRules: 'Automatisierungs-Regeln & Fristen',
+  },
   common: {
     plusNMore: '+{{count}} weitere',
     save: 'Speichern',

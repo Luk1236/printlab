@@ -493,6 +493,16 @@ export default {
     httpsDisable: 'Desactivar HTTPS',
   },
 
+  setupGuide: {
+    tabAssistant: 'IA y puesta en marcha',
+    tabChecklist: 'Lista de verificación y brújula',
+    tabConnections: 'Rebanador y acceso remoto',
+    tabSystem: 'Diagnóstico y estado',
+    tabAll: 'Todas las secciones',
+    subtitle: 'Puesta en marcha paso a paso, conexión con rebanador y diagnóstico ordenados limpiamente.',
+    hwSubMechanics: 'Mecánica y calibración de la impresora',
+    hwSubRules: 'Reglas de automatización y retención',
+  },
   common: {
     plusNMore: '+{{count}} más',
     save: 'Guardar',

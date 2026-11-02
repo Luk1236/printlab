@@ -490,6 +490,16 @@ export default {
     httpsDisable: 'HTTPS 끄기',
   },
 
+  setupGuide: {
+    tabAssistant: 'AI 및 빠른 시작',
+    tabChecklist: '체크리스트 및 나침반',
+    tabConnections: '슬라이서 및 원격 액세스',
+    tabSystem: '진단 및 상태',
+    tabAll: '모든 섹션',
+    subtitle: '단계별 설정, 슬라이서 및 원격 연결, 시스템 진단이 깔끔하게 정리되어 있습니다.',
+    hwSubMechanics: '프린터 기계 및 교정',
+    hwSubRules: '자동화 규칙 및 보존',
+  },
   common: {
     plusNMore: '외 {{count}}개',
     save: '저장',

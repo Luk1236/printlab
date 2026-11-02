@@ -493,6 +493,16 @@ export default {
     httpsDisable: 'Disattiva HTTPS',
   },
 
+  setupGuide: {
+    tabAssistant: 'IA e avvio rapido',
+    tabChecklist: 'Lista di controllo e bussola',
+    tabConnections: 'Slicer e accesso remoto',
+    tabSystem: 'Diagnostica e stato',
+    tabAll: 'Tutte le sezioni',
+    subtitle: 'Messa in servizio passo-passo, connessione slicer e diagnostica di sistema ordinate chiaramente.',
+    hwSubMechanics: 'Meccanica e calibrazione della stampante',
+    hwSubRules: 'Regole di automazione e conservazione',
+  },
   common: {
     plusNMore: '+{{count}} altri',
     save: 'Salva',

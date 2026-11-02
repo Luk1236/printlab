@@ -493,6 +493,16 @@ export default {
     httpsDisable: 'Inaktivera HTTPS',
   },
 
+  setupGuide: {
+    tabAssistant: 'AI & Snabbstart',
+    tabChecklist: 'Checklista & Kompass',
+    tabConnections: 'Slicer & Fjärråtkomst',
+    tabSystem: 'Diagnostik & Tillstånd',
+    tabAll: 'Alla avsnitt',
+    subtitle: 'Steg-för-steg-driftsättning, slicer- och fjärranslutning samt systemdiagnostik snyggt ordnade.',
+    hwSubMechanics: 'Skrivarmekanik & kalibrering',
+    hwSubRules: 'Automatiseringsregler & kvarhållande',
+  },
   common: {
     plusNMore: '+{{count}} till',
     save: 'Spara',

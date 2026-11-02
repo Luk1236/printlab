@@ -493,6 +493,16 @@ export default {
     httpsDisable: 'Вимкнути HTTPS',
   },
 
+  setupGuide: {
+    tabAssistant: 'ШІ та швидкий старт',
+    tabChecklist: 'Чек-лист і компас',
+    tabConnections: 'Слайсер та віддалений доступ',
+    tabSystem: 'Діагностика та стан',
+    tabAll: 'Всі розділи',
+    subtitle: 'Покрокове введення в експлуатацію, підключення слайсера та діагностика системи чітко структуровані.',
+    hwSubMechanics: 'Механіка та калібрування принтера',
+    hwSubRules: 'Правила автоматизації та зберігання',
+  },
   common: {
     plusNMore: 'ще {{count}}',
     save: "Зберегти",

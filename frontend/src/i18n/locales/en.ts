@@ -493,6 +493,16 @@ export default {
     httpsDisable: 'Disable HTTPS',
   },
 
+  setupGuide: {
+    tabAssistant: 'AI & Quickstart',
+    tabChecklist: 'Checklist & Hub',
+    tabConnections: 'Connections & Slicer',
+    tabSystem: 'Diagnostics & Health',
+    tabAll: 'All sections',
+    subtitle: 'Step-by-step commissioning, slicer & remote connection, and system diagnostics cleanly arranged.',
+    hwSubMechanics: 'Printer mechanics & calibration',
+    hwSubRules: 'Automation rules & retention',
+  },
   common: {
     plusNMore: '+{{count}} more',
     save: 'Save',

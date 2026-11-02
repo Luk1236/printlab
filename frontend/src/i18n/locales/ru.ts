@@ -490,6 +490,16 @@ export default {
     httpsDisable: 'Выключить HTTPS',
   },
 
+  setupGuide: {
+    tabAssistant: 'ИИ и быстрый старт',
+    tabChecklist: 'Чек-лист и компас',
+    tabConnections: 'Слайсер и удаленный доступ',
+    tabSystem: 'Диагностика и состояние',
+    tabAll: 'Все разделы',
+    subtitle: 'Пошаговая настройка, подключение слайсера и диагностика системы аккуратно структурированы.',
+    hwSubMechanics: 'Механика и калибровка принтера',
+    hwSubRules: 'Правила автоматизации и хранение',
+  },
   common: {
     plusNMore: 'ещё {{count}}',
     save: "Сохранить",

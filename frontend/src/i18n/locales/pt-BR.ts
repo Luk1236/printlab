@@ -493,6 +493,16 @@ export default {
     httpsDisable: 'Desativar HTTPS',
   },
 
+  setupGuide: {
+    tabAssistant: 'IA e início rápido',
+    tabChecklist: 'Checklist e bússola',
+    tabConnections: 'Fatiador e acesso remoto',
+    tabSystem: 'Diagnóstico e integridade',
+    tabAll: 'Todas as seções',
+    subtitle: 'Comissionamento passo a passo, conexão de fatiador e diagnóstico organizados de forma limpa.',
+    hwSubMechanics: 'Mecânica e calibração da impressora',
+    hwSubRules: 'Regras de automação e retenção',
+  },
   common: {
     plusNMore: '+{{count}} outros',
     save: 'Salvar',

@@ -493,6 +493,16 @@ export default {
     httpsDisable: 'HTTPS\'i kapat',
   },
 
+  setupGuide: {
+    tabAssistant: 'Yapay Zeka ve Hızlı Başlangıç',
+    tabChecklist: 'Kontrol Listesi ve Pusula',
+    tabConnections: 'Dilimleyici ve Uzaktan Erişim',
+    tabSystem: 'Teşhis ve Durum',
+    tabAll: 'Tüm bölümler',
+    subtitle: 'Adım adım devreye alma, dilimleyici bağlantısı ve sistem teşhisi düzenli bir şekilde sunulur.',
+    hwSubMechanics: 'Yazıcı mekaniği ve kalibrasyonu',
+    hwSubRules: 'Otomasyon kuralları ve saklama',
+  },
   common: {
     plusNMore: '+{{count}} tane daha',
     save: 'Kaydet',

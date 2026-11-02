@@ -493,6 +493,16 @@ export default {
     httpsDisable: 'HTTPSを無効にする',
   },
 
+  setupGuide: {
+    tabAssistant: 'AIとクイックスタート',
+    tabChecklist: 'チェックリストとコンパス',
+    tabConnections: 'スライサーとリモートアクセス',
+    tabSystem: '診断と状態',
+    tabAll: 'すべてのセクション',
+    subtitle: 'ステップバイステップの初期設定、スライサー接続およびシステム診断を整理して表示します。',
+    hwSubMechanics: 'プリンターの機構とキャリブレーション',
+    hwSubRules: '自動化ルールと保持',
+  },
   common: {
     plusNMore: '他{{count}}件',
     save: '保存',

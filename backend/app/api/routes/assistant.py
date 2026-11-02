@@ -100,8 +100,16 @@ async def warmup(_=RequirePermissionIfAuthEnabled(Permission.QUEUE_READ_ALL)):
     """Modell in den Speicher laden, damit die nächste Antwort schnell kommt (wirft nie)."""
     config = assistant_config.read(settings.base_dir)
     if not config["enabled"] or _lock.locked():
-        return {"warmed": False}
-    return {"warmed": await assistant_autoconfig.warmup(config)}
+        return {"warmed": False, "model": config.get("model", ""), "duration_ms": 0, "error": None}
+    started = time.monotonic()
+    ok = await assistant_autoconfig.warmup(config)
+    duration_ms = round((time.monotonic() - started) * 1000)
+    return {
+        "warmed": ok,
+        "model": config.get("model", ""),
+        "duration_ms": duration_ms,
+        "error": None if ok else "Modell konnte nicht vorgeladen werden",
+    }
 
 
 @router.post("/chat")

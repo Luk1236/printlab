@@ -493,6 +493,16 @@ export default {
     httpsDisable: '關閉 HTTPS',
   },
 
+  setupGuide: {
+    tabAssistant: 'AI與快速入門',
+    tabChecklist: '清單與指南針',
+    tabConnections: '切片機與遠端存取',
+    tabSystem: '診斷與健康狀態',
+    tabAll: '所有部分',
+    subtitle: '循序漸進的初始設定、切片機連線與系統診斷整齊排列。',
+    hwSubMechanics: '印表機機械結構與校準',
+    hwSubRules: '自動化規則與保留',
+  },
   common: {
     plusNMore: '另 {{count}} 個',
     save: '儲存',

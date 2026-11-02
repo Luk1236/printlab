@@ -52,7 +52,7 @@ import { SelfTestCard } from '../components/SelfTestCard';
 import { SetupChecklistCard } from '../components/SetupChecklistCard';
 import { FactoryResetCard } from '../components/FactoryResetCard';
 import { DatabaseMaintenanceCard } from '../components/DatabaseMaintenanceCard';
-import { SetupBanner, SetupWizardCard } from '../components/SetupWizardCard';
+import { SetupBanner } from '../components/SetupWizardCard';
 import { AlertChannelsCard } from '../components/AlertChannelsCard';
 import { PlateTuningCard } from '../components/PlateTuningCard';
 import { PlateWizardCard } from '../components/PlateWizardCard';
@@ -1110,12 +1110,14 @@ export function MaintenancePage() {
   const requestedTab = searchParams.get('tab') as TabType | null;
   const activeTab: TabType = requestedTab && TABS.includes(requestedTab) ? requestedTab : 'status';
   const setActiveTab = (tab: TabType) => setSearchParams(tab === 'status' ? {} : { tab }, { replace: true });
+  const [hwSubTab, setHwSubTab] = useState<'mechanics' | 'rules' | 'all'>('mechanics');
 
   // Sprungmarke aus einem Link (z. B. aus dem Einrichtungsassistenten): nach dem Aufbau des Reiters dorthin rollen.
   const location = useLocation();
   useEffect(() => {
     const anchor = location.hash.replace('#', '');
     if (!anchor) return;
+    if (['hw-requeue', 'hw-stock'].includes(anchor)) setHwSubTab('rules');
     const timer = window.setTimeout(
       () => document.getElementById(anchor)?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }),
       150,
@@ -1306,29 +1308,82 @@ export function MaintenancePage() {
       {/* Tab content */}
       {activeTab === 'hardware' ? (
         <div className="space-y-6">
-          <div id="hw-programs"><MaintenanceProgramsCard canControl={hasPermission('printers:control')} /></div>
-          <div id="hw-admin"><HardwareAdminCard canControl={hasPermission('printers:control')} /></div>
-          <div id="hw-wizard"><PlateWizardCard canControl={hasPermission('printers:control')} /></div>
-          <div id="hw-tuning"><PlateTuningCard canControl={hasPermission('settings:update')} /></div>
-          <div id="hw-requeue"><AutoRequeueCard canEdit={hasPermission('queue:update_all')} /></div>
-          <div id="hw-stock"><StockReorderCard canEdit={hasPermission('inventory:forecast_write')} /></div>
-          <TimelapseRetentionCard canEdit={hasPermission('archives:update_all')} />
+          {/* Unterteilung für Hardware vs. Automatisierung */}
+          <div className="flex items-center gap-1.5 p-1 bg-bambu-dark-secondary rounded-xl border border-bambu-dark-tertiary">
+            <button
+              onClick={() => setHwSubTab('mechanics')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
+                hwSubTab === 'mechanics'
+                  ? 'bg-bambu-green text-black font-semibold shadow'
+                  : 'text-bambu-gray hover:text-white hover:bg-bambu-dark'
+              }`}
+            >
+              <Wrench className="w-3.5 h-3.5" />
+              <span>{t('setupGuide.hwSubMechanics', 'Drucker-Mechanik & Kalibrierung')}</span>
+            </button>
+            <button
+              onClick={() => setHwSubTab('rules')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
+                hwSubTab === 'rules'
+                  ? 'bg-bambu-green text-black font-semibold shadow'
+                  : 'text-bambu-gray hover:text-white hover:bg-bambu-dark'
+              }`}
+            >
+              <Cog className="w-3.5 h-3.5" />
+              <span>{t('setupGuide.hwSubRules', 'Automatisierungs-Regeln & Fristen')}</span>
+            </button>
+            <button
+              onClick={() => setHwSubTab('all')}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ml-auto ${
+                hwSubTab === 'all'
+                  ? 'bg-bambu-dark-tertiary text-white'
+                  : 'text-bambu-gray hover:text-white'
+              }`}
+              title="Alle Karten anzeigen"
+            >
+              {t('setupGuide.tabAll', 'Alle')}
+            </button>
+          </div>
+
+          {(hwSubTab === 'mechanics' || hwSubTab === 'all') && (
+            <div className="space-y-6">
+              <div id="hw-admin"><HardwareAdminCard canControl={hasPermission('printers:control')} /></div>
+              <div id="hw-wizard"><PlateWizardCard canControl={hasPermission('printers:control')} /></div>
+              <div id="hw-tuning"><PlateTuningCard canControl={hasPermission('settings:update')} /></div>
+              <div id="hw-programs"><MaintenanceProgramsCard canControl={hasPermission('printers:control')} /></div>
+            </div>
+          )}
+
+          {(hwSubTab === 'rules' || hwSubTab === 'all') && (
+            <div className="space-y-6">
+              <div id="hw-requeue"><AutoRequeueCard canEdit={hasPermission('queue:update_all')} /></div>
+              <div id="hw-stock"><StockReorderCard canEdit={hasPermission('inventory:forecast_write')} /></div>
+              <TimelapseRetentionCard canEdit={hasPermission('archives:update_all')} />
+            </div>
+          )}
         </div>
       ) : activeTab === 'assistant' ? (
         <AssistantPanel canConfigure={hasPermission('settings:update')} />
       ) : activeTab === 'system' ? (
         <div className="space-y-6">
-          <SetupWizardCard />
           <SetupChecklistCard />
-          <DatabaseMaintenanceCard canControl={hasPermission('settings:update')} />
-          <FactoryResetCard canControl={hasPermission('settings:update')} />
-          <PiHealthCard />
-          <SelfTestCard canRun={hasPermission('settings:update')} />
-          <div id="setup-alerts">
-            <AlertChannelsCard canControl={hasPermission('settings:update')} />
+          <div id="setup-selftest">
+            <SelfTestCard canRun={hasPermission('settings:update')} />
           </div>
-          <div id="setup-remote">
-            <RemoteAccessCard canControl={hasPermission('settings:update')} />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <PiHealthCard />
+            <DatabaseMaintenanceCard canControl={hasPermission('settings:update')} />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div id="setup-alerts">
+              <AlertChannelsCard canControl={hasPermission('settings:update')} />
+            </div>
+            <div id="setup-remote">
+              <RemoteAccessCard canControl={hasPermission('settings:update')} />
+            </div>
+          </div>
+          <div id="setup-reset">
+            <FactoryResetCard canControl={hasPermission('settings:update')} />
           </div>
         </div>
       ) : activeTab === 'status' ? (

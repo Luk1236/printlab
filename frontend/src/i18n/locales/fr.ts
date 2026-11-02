@@ -493,6 +493,16 @@ export default {
     httpsDisable: 'Désactiver HTTPS',
   },
 
+  setupGuide: {
+    tabAssistant: 'IA & Démarrage',
+    tabChecklist: 'Liste de contrôle & Boussole',
+    tabConnections: 'Trancheur & Accès distant',
+    tabSystem: 'Diagnostics & État',
+    tabAll: 'Toutes les sections',
+    subtitle: 'Mise en service étape par étape, trancheur et accès à distance disposés clairement.',
+    hwSubMechanics: 'Mécanique & étalonnage de l\'imprimante',
+    hwSubRules: 'Règles d\'automatisation & conservation',
+  },
   common: {
     plusNMore: '+{{count}} autres',
     save: 'Enregistrer',

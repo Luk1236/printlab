@@ -493,6 +493,16 @@ export default {
     httpsDisable: 'HTTPS uitschakelen',
   },
 
+  setupGuide: {
+    tabAssistant: 'AI & Snelstart',
+    tabChecklist: 'Checklist & Kompas',
+    tabConnections: 'Slicer & Toegang op afstand',
+    tabSystem: 'Diagnose & Status',
+    tabAll: 'Alle secties',
+    subtitle: 'Stapsgewijze inbedrijfstelling, slicer en externe verbinding overzichtelijk gerangschikt.',
+    hwSubMechanics: 'Printermechanica & kalibratie',
+    hwSubRules: 'Automatiseringsregels & bewaring',
+  },
   common: {
     plusNMore: '+{{count}} meer',
     save: 'Opslaan',
