@@ -2,7 +2,7 @@
 
 Diese Liste arbeitet **eine Sitzung am Gerät** ab, in dieser Reihenfolge:
 
-1. **Update** auf 1.22.0 — erst danach sind die neuen Funktionen da, auf die sich die übrigen Punkte beziehen.
+1. **Update** auf 1.23.0 — erst danach sind die neuen Funktionen da, auf die sich die übrigen Punkte beziehen.
 2. **Slicer und Druckweg** — der Weg Modell → Slice → Druck, samt Meldung, wenn der Slicer fehlt.
 3. **Angebots-Link** — reine Software, kein Risiko für Mechanik oder Druckbetrieb, geht auch vom Schreibtisch und Handy.
 4. **Hardware** — vom Trockenlauf bis zur ersten echten Bewegung, aufsteigend im Risiko.
@@ -35,14 +35,14 @@ abdeckt (E-Rechnung, KI-Fehlerhilfe, Sicherung, HTTPS), steht in [`ABNAHME.md`](
 
 ---
 
-## 1. Update auf 1.22.0 (20 Minuten)
+## 1. Update auf 1.23.0 (20 Minuten)
 
-Ziel: der Pi läuft auf 1.22.0, und du weißt, dass der Weg zurück funktioniert, bevor irgendetwas anderes passiert.
+Ziel: der Pi läuft auf 1.23.0, und du weißt, dass der Weg zurück funktioniert, bevor irgendetwas anderes passiert.
 
 - [ ] **Einstellungen → Aktualisierungen → „Jetzt prüfen“** drücken.
-      Erwartung: „Update verfügbar: v1.22.0“ (oder neuer), darunter „Versionshinweise“.
+      Erwartung: „Update verfügbar: v1.23.0“ (oder neuer), darunter „Versionshinweise“.
 - [ ] **„Update installieren“** drücken. Die Seite lädt nach dem Neustart selbst neu; falls nicht, von Hand neu laden.
-- [ ] Version gegenprüfen: unter **Einstellungen → Aktualisierungen** steht bei „Aktuelle Version“ **1.22.0**
+- [ ] Version gegenprüfen: unter **Einstellungen → Aktualisierungen** steht bei „Aktuelle Version“ **1.23.0**
       (die Oberfläche zeigt die Version nur dort an).
 - [ ] `journalctl --user -u printlab -n 40` — Erwartung: Start ohne Traceback, kein „Application startup failed“.
 - [ ] Automatischen Check wiederholen (`werkzeuge/abnahme.py`): gleiche oder bessere Einstufung als in Schritt 0.
@@ -241,7 +241,7 @@ Automatik aus, Not-Halt bereit halten, Befund notieren.
 | Block | Datum | Wer | Ergebnis (ok / Befund) | Bemerkung |
 |---|---|---|---|---|
 | 0 Vorbereitung | | | | |
-| 1 Update auf 1.22.0 | | | | |
+| 1 Update auf 1.23.0 | | | | |
 | 1b Slicer und Druckweg | | | | |
 | 2 Angebots-Link | | | | |
 | 3.1 Trockenlauf | | | | |

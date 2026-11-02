@@ -1115,7 +1115,7 @@ export function MaintenancePage() {
   const location = useLocation();
   useEffect(() => {
     const anchor = location.hash.replace('#', '');
-    if (!anchor || activeTab !== 'system') return;
+    if (!anchor) return;
     const timer = window.setTimeout(
       () => document.getElementById(anchor)?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }),
       150,
@@ -1306,12 +1306,12 @@ export function MaintenancePage() {
       {/* Tab content */}
       {activeTab === 'hardware' ? (
         <div className="space-y-6">
-          <MaintenanceProgramsCard canControl={hasPermission('printers:control')} />
-          <HardwareAdminCard canControl={hasPermission('printers:control')} />
-          <PlateWizardCard canControl={hasPermission('printers:control')} />
-          <PlateTuningCard canControl={hasPermission('settings:update')} />
-          <AutoRequeueCard canEdit={hasPermission('queue:update_all')} />
-          <StockReorderCard canEdit={hasPermission('inventory:forecast_write')} />
+          <div id="hw-programs"><MaintenanceProgramsCard canControl={hasPermission('printers:control')} /></div>
+          <div id="hw-admin"><HardwareAdminCard canControl={hasPermission('printers:control')} /></div>
+          <div id="hw-wizard"><PlateWizardCard canControl={hasPermission('printers:control')} /></div>
+          <div id="hw-tuning"><PlateTuningCard canControl={hasPermission('settings:update')} /></div>
+          <div id="hw-requeue"><AutoRequeueCard canEdit={hasPermission('queue:update_all')} /></div>
+          <div id="hw-stock"><StockReorderCard canEdit={hasPermission('inventory:forecast_write')} /></div>
           <TimelapseRetentionCard canEdit={hasPermission('archives:update_all')} />
         </div>
       ) : activeTab === 'assistant' ? (

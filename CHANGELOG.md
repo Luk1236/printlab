@@ -3,7 +3,14 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
-## v1.23.0 (in Arbeit) — Auto-Einrichtung
+## v1.23.0 (02.11.2026) — Auto-Einrichtung, Einstellungs-Kompass, XRechnung 3.0 & Komplett-Abnahme
+
+- **Aufgeräumte Einrichtungs-Zentrale (`/einrichtung`) & Einstellungs-Kompass (`QuickSetupHubCard.tsx`):**
+  Alle 6 Hauptbereiche (Drucker/LAN/Zugang, PC-Slicer & Druckablauf, P2S-Mechanik & Kamera, Ausfall-Meldung & Tailscale, Lokale KI Ollama, Angebote/Firma/XRechnung inkl. 1-Klick-Aktivierung in der Seitenleiste) sind auf `/einrichtung` und `/settings` mit Live-Status-Ampeln und Direkt-Buttons gebündelt. Offene Punkte der Einrichtungs-Checkliste (`SetupChecklistCard.tsx`) springen per Klick direkt zur passenden Karte; Ausfall-Meldung, Tailscale-Fernzugriff, Slicer-Prüfung und System-Selbsttest liegen jetzt direkt auf `/einrichtung`. Die Einstellungssuche (`settingsSearch.ts`) findet auch deutsche PrintLab-/P2S-Begriffe seitenübergreifend.
+- **XRechnung 3.0 (EN 16931) Pflichtfelder & Angebots-Schutz:**
+  E-Rechnungen (`einvoice.py`) schreiben jetzt vollständig die elektronischen Endpunkt-Adressen (`cbc:EndpointID` BT-34/BT-49 mit `@schemeID="EM"`), das Lieferdatum (`cac:Delivery/cbc:ActualDeliveryDate` BT-72) sowie den Netto-Einzelpreis (`cac:Price/cbc:PriceAmount` BT-146). Öffentliche Angebots-Links (`quote_share.py`) begrenzen Zugriffe pro IP (Rate-Limit gegen Token-Scanning).
+- **Komplett-Abnahme (`werkzeuge/abnahme.py --durchstich`) & Modul-Aufteilung:**
+  `abnahme.py` prüft neben dem Systemzustand auch XRechnung-3.0-Konformität, GPIO-Pin-Konflikte (`gpio_mechanik.beispiel.json`), lokale Ollama-Modelle sowie im Komplett-Durchstich den gesamten Ablauf von Angebots-Freigabe über Hardware-Trockenlauf/Not-Halt bis zum 5-stufigen Einmess-Assistenten. Außerdem wurden `scheduler/watchdog.py` aus `print_scheduler.py` und `types_library_system.ts` aus `types.ts` ausgelagert und `release_pruefen.py` prüft nun auch `pyproject.toml`.
 
 - **Auto-Einrichtung:** Auf der Seite **Einrichtung** steht über dem Assistenten eine Karte, die zeigt, was PrintLab
   ohne Zugangsdaten selbst einrichten kann, und es mit einem Knopf erledigt: Update-Schutz in die systemd-Unit

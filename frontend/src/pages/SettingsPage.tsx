@@ -1,7 +1,7 @@
 import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Plus, Plug, AlertTriangle, RotateCcw, Bell, Download, RefreshCw, ExternalLink, Globe, Droplets, Thermometer, FileText, Edit2, Pencil, Send, CheckCircle, XCircle, History, Trash2, Zap, TrendingUp, Calendar, DollarSign, Power, PowerOff, Key, Copy, Database, X, Shield, Printer, Cylinder, Wifi, Home, Video, Users, Lock, Unlock, ChevronDown, Save, Mail, Flame, Layers, ListOrdered, Code, Search, Scale, Settings as SettingsIcon, ScanEye, Cog, QrCode, Workflow, UploadCloud, MonitorPlay } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { formatDateOnly } from '../utils/date';
@@ -64,7 +64,8 @@ import { useToast } from '../contexts/ToastContext';
 import { useTheme, type ThemeStyle, type DarkBackground, type LightBackground, type ThemeAccent } from '../contexts/ThemeContext';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Gauge, Link2, Palette } from 'lucide-react';
-import { registerSettingsSearch, getSettingsSearchEntries } from '../lib/settingsSearch';
+import { registerCoreSettingsSearchEntries, getSettingsSearchEntries } from '../lib/settingsSearch';
+import { QuickSetupHubCard } from '../components/QuickSetupHubCard';
 import type { UsersSubTab } from '../lib/settingsSearch';
 import { availableEngines, hasEngineChoice, resolveEngine, type SliceEngineId } from '../lib/sliceEngines';
 import { NumberInput } from '../components/NumberInput';
@@ -76,76 +77,7 @@ type TabType = typeof validTabs[number];
 // Cross-tab search registrations for cards rendered inline in this file.
 // Adding a new settings card? Register it here (or, if the card lives in its
 // own component file, call registerSettingsSearch at that file's module scope).
-registerSettingsSearch({ labelKey: 'settings.general', tab: 'general', keywords: 'language date time format printer model printers cards', anchor: 'card-general' });
-registerSettingsSearch({ labelKey: 'settings.appearance', tab: 'general', keywords: 'theme dark light mode colors', anchor: 'card-appearance' });
-registerSettingsSearch({ labelKey: 'settings.archiveSettings', tab: 'general', keywords: 'archive auto save thumbnails captures', anchor: 'card-archive' });
-registerSettingsSearch({ labelKey: 'settings.camera', tab: 'general', keywords: 'camera external video stream', anchor: 'card-camera' });
-registerSettingsSearch({ labelKey: 'settings.costTracking', tab: 'general', keywords: 'currency filament cost energy kwh price', anchor: 'card-cost' });
-registerSettingsSearch({ labelKey: 'settings.fileManager', tab: 'general', keywords: 'file manager archive mode disk warning storage', anchor: 'card-filemanager' });
-registerSettingsSearch({ labelKey: 'settings.updates', tab: 'general', keywords: 'updates version firmware beta check', anchor: 'card-updates' });
-registerSettingsSearch({ labelKey: 'settings.dataManagement', tab: 'general', keywords: 'data reset clear logs notifications preferences', anchor: 'card-data' });
-registerSettingsSearch({ labelKey: 'settings.smartPlugs', tab: 'plugs', keywords: 'smart plug energy power automation tapo kasa tplink shelly', anchor: 'card-plugs' });
-registerSettingsSearch({ labelKey: 'haSensors.sectionTitle', tab: 'sensors', keywords: 'home assistant sensor printer temperature humidity alert notify block print', anchor: 'card-ha-sensors' });
-registerSettingsSearch({ labelKey: 'locationHaSensors.sectionTitle', tab: 'sensors', keywords: 'home assistant sensor location storage box temperature humidity battery alert notify', anchor: 'card-location-sensors' });
-registerSettingsSearch({ labelKey: 'settings.providers', tab: 'notifications', keywords: 'telegram discord email notification providers webhook', anchor: 'card-providers' });
-registerSettingsSearch({ labelKey: 'settings.messageTemplates', tab: 'notifications', keywords: 'message templates notification text edit', anchor: 'card-templates' });
-registerSettingsSearch({ labelKey: 'settings.defaultPrintOptions', labelFallback: 'Default Print Options', tab: 'queue', keywords: 'print bed leveling flow calibration vibration first layer timelapse', anchor: 'card-print-options' });
-registerSettingsSearch({ labelKey: 'settings.tempFanPresetsTitle', labelFallback: 'Temperature & Fan Presets', tab: 'queue', keywords: 'temperature fan presets nozzle bed chamber quick buttons popover', anchor: 'card-temp-fan-presets' });
-registerSettingsSearch({ labelKey: 'settings.staggeredStart', labelFallback: 'Staggered Start', tab: 'queue', keywords: 'staggered batch delay start queue group', anchor: 'card-staggered' });
-registerSettingsSearch({ labelKey: 'settings.plateClear', labelFallback: 'Plate-Clear Confirmation', tab: 'queue', keywords: 'plate clear confirm auto queue', anchor: 'card-plate' });
-registerSettingsSearch({ labelKey: 'settings.concurrentUploadsTitle', labelFallback: 'Concurrent Uploads', tab: 'queue', keywords: 'concurrent parallel upload transfer ftp queue slow farm simultaneous', anchor: 'card-concurrent-uploads' });
-registerSettingsSearch({ labelKey: 'settings.gcodeInjection', labelFallback: 'G-code Injection', tab: 'queue', keywords: 'gcode injection start end autoprint farmloop swapmod autoclear printflow', anchor: 'card-gcode' });
-registerSettingsSearch({ labelKey: 'settings.slicerCard', labelFallback: 'Slicer', tab: 'queue', keywords: 'slicer orcaslicer bambustudio orca bambu api sidecar url docker preferred', anchor: 'card-slicer' });
-registerSettingsSearch({ labelKey: 'settings.queueDrying', tab: 'queue', keywords: 'drying presets temperature time humidity ams', anchor: 'card-drying' });
-registerSettingsSearch({ labelKey: 'settings.filamentChecks', tab: 'filament', keywords: 'filament check warning runout remaining', anchor: 'card-filamentchecks' });
-registerSettingsSearch({ labelKey: 'settings.printModal', tab: 'filament', keywords: 'print modal custom mapping', anchor: 'card-printmodal' });
-registerSettingsSearch({ labelKey: 'settings.amsDisplayThresholds', tab: 'filament', keywords: 'ams humidity temperature threshold history retention', anchor: 'card-amsthresholds' });
-registerSettingsSearch({ labelKey: 'settings.externalUrl', tab: 'network', keywords: 'external url reverse proxy public notification link', anchor: 'card-externalurl' });
-registerSettingsSearch({ labelKey: 'settings.ftpRetry', tab: 'network', keywords: 'ftp retry upload retries backoff', anchor: 'card-ftpretry' });
-registerSettingsSearch({ labelKey: 'settings.homeAssistant', tab: 'network', keywords: 'home assistant ha hass mqtt integration', anchor: 'card-ha' });
-registerSettingsSearch({ labelKey: 'settings.mqttPublishing', tab: 'network', keywords: 'mqtt publish broker topic', anchor: 'card-mqtt' });
-registerSettingsSearch({ labelKey: 'settings.prometheusMetrics', tab: 'network', keywords: 'prometheus metrics grafana monitoring bearer token', anchor: 'card-prometheus' });
-registerSettingsSearch({ labelKey: 'settings.createNewApiKey', tab: 'apikeys', keywords: 'api key create permission scope', anchor: 'card-createapi' });
-registerSettingsSearch({ labelKey: 'settings.webhookEndpoints', tab: 'apikeys', keywords: 'webhook endpoint post http', anchor: 'card-webhooks' });
-registerSettingsSearch({ labelKey: 'settings.apiBrowser', tab: 'apikeys', keywords: 'api browser endpoint documentation test', anchor: 'card-apibrowser' });
-registerSettingsSearch({ labelKey: 'connectedApps.title', tab: 'apikeys', keywords: 'connected app sign in single sign-on sso oauth login orders', anchor: 'card-connected-apps' });
-registerSettingsSearch({ labelKey: 'cameraTokens.title', tab: 'apikeys', keywords: 'camera token long-lived home assistant frigate kiosk stream', anchor: 'card-camera-tokens' });
-registerSettingsSearch({ labelKey: 'settings.tabs.virtualPrinter', tab: 'virtual-printer', keywords: 'virtual printer proxy archive slicer bambustudio orcaslicer ip bind', anchor: 'card-vp' });
-registerSettingsSearch({ labelKey: 'settings.tabs.spoolbuddy', tab: 'spoolbuddy', keywords: 'spoolbuddy device scale nfc rfid kiosk unregister', anchor: 'card-spoolbuddy' });
-registerSettingsSearch({ labelKey: 'settings.currentUser', tab: 'users', subTab: 'users', keywords: 'current user profile password change', anchor: 'card-currentuser' });
-registerSettingsSearch({ labelKey: 'settings.users', tab: 'users', subTab: 'users', keywords: 'users accounts list', anchor: 'card-users' });
-registerSettingsSearch({ labelKey: 'settings.groups', tab: 'users', subTab: 'users', keywords: 'groups roles permissions administrators operators viewers', anchor: 'card-groups' });
-registerSettingsSearch({ labelKey: 'settings.sessionPolicy.title', labelFallback: 'Session Policy', tab: 'users', subTab: 'users', keywords: 'session timeout expiry logout remember me jwt token lifetime', anchor: 'card-session-policy' });
-registerSettingsSearch({ labelKey: 'settings.email.smtpSettings', labelFallback: 'SMTP Configuration', tab: 'users', subTab: 'email', keywords: 'smtp email send server port password auth starttls ssl', anchor: 'card-smtp' });
-registerSettingsSearch({ labelKey: 'settings.ldap.title', labelFallback: 'LDAP Authentication', tab: 'users', subTab: 'ldap', keywords: 'ldap active directory ad authentication bind dn search base group mapping', anchor: 'card-ldap' });
-registerSettingsSearch({ labelKey: 'settings.tabs.backup', tab: 'backup', keywords: 'backup github restore download cloud sync profiles archives', anchor: 'card-backup' });
-// Sidebar (system pages and external links settings is rendered in the General tab)
-registerSettingsSearch({ labelKey: 'externalLinks.sidebarLayout', labelFallback: 'Sidebar', tab: 'general', keywords: 'sidebar layout links pages hide show external custom navigation url add', anchor: 'card-sidebar-links' });
-// Filament tab — integrations
-registerSettingsSearch({ labelKey: 'settings.filamentTracking', tab: 'filament', keywords: 'spoolman filament tracking inventory sync remote integration', anchor: 'card-spoolman' });
-registerSettingsSearch({ labelKey: 'settings.catalog.spoolCatalog', labelFallback: 'Spool Catalog', tab: 'filament', keywords: 'spool catalog entries brand material reset import export', anchor: 'card-spool-catalog' });
-registerSettingsSearch({ labelKey: 'settings.colorCatalog.title', labelFallback: 'Color Catalog', tab: 'filament', keywords: 'color catalog hex swatch palette sync reset', anchor: 'card-color-catalog' });
-// Failure detection sub-cards
-registerSettingsSearch({ labelKey: 'settings.tabs.failureDetection', labelFallback: 'Failure Detection', tab: 'failure-detection', keywords: 'failure detection ai ml obico spaghetti detect monitoring', anchor: 'card-fd-ml' });
-registerSettingsSearch({ labelKey: 'failureDetection.perPrinterTitle', labelFallback: 'Per-Printer Settings', tab: 'failure-detection', keywords: 'failure detection per printer enable per-printer sensitivity', anchor: 'card-fd-perprinter' });
-registerSettingsSearch({ labelKey: 'failureDetection.statusTitle', labelFallback: 'Detection Status', tab: 'failure-detection', keywords: 'failure detection status running connection', anchor: 'card-fd-status' });
-registerSettingsSearch({ labelKey: 'failureDetection.historyTitle', labelFallback: 'Detection History', tab: 'failure-detection', keywords: 'failure detection history log events', anchor: 'card-fd-history' });
-// Email auth sub-cards (subTab=email)
-registerSettingsSearch({ labelKey: 'settings.email.advancedAuth', labelFallback: 'Advanced Email Authentication', tab: 'users', subTab: 'email', keywords: 'email authentication advanced password reset self-service forgot', anchor: 'card-email-advanced-auth' });
-registerSettingsSearch({ labelKey: 'settings.email.testConnection', labelFallback: 'Test SMTP Connection', tab: 'users', subTab: 'email', keywords: 'email smtp test connection send check', anchor: 'card-email-test' });
-// Two-Factor sub-cards (subTab=twofa)
-registerSettingsSearch({ labelKey: 'settings.twoFa.totpTitle', labelFallback: 'Authenticator App (TOTP)', tab: 'users', subTab: 'twofa', keywords: 'two factor 2fa totp authenticator app google authy otp', anchor: 'card-2fa-totp' });
-registerSettingsSearch({ labelKey: 'settings.twoFa.emailOtpTitle', labelFallback: 'Email One-Time Codes', tab: 'users', subTab: 'twofa', keywords: 'two factor 2fa email otp one time code', anchor: 'card-2fa-emailotp' });
-registerSettingsSearch({ labelKey: 'settings.twoFa.linkedAccounts', labelFallback: 'Linked Accounts', tab: 'users', subTab: 'twofa', keywords: 'two factor 2fa linked accounts sso oidc provider google github', anchor: 'card-2fa-linked' });
-// OIDC / SSO (subTab=oidc)
-registerSettingsSearch({ labelKey: 'settings.oidc.title', labelFallback: 'Single Sign-On (OIDC)', tab: 'users', subTab: 'oidc', keywords: 'sso oidc openid single sign-on pocketid authentik keycloak google okta azure provider', anchor: 'card-oidc' });
-// LDAP server config card (complements existing card-ldap)
-registerSettingsSearch({ labelKey: 'settings.ldap.serverConfig', labelFallback: 'LDAP Server Configuration', tab: 'users', subTab: 'ldap', keywords: 'ldap server url bind dn user search base group filter tls', anchor: 'card-ldap-server' });
-// Backup sub-cards
-registerSettingsSearch({ labelKey: 'backup.githubBackup', labelFallback: 'GitHub Backup', tab: 'backup', keywords: 'github backup cloud remote sync profiles token', anchor: 'card-backup-github' });
-registerSettingsSearch({ labelKey: 'backup.history', labelFallback: 'Backup History', tab: 'backup', keywords: 'backup history log runs github commits', anchor: 'card-backup-history' });
-registerSettingsSearch({ labelKey: 'backup.localBackup', labelFallback: 'Local Backup', tab: 'backup', keywords: 'local backup download zip manual export', anchor: 'card-backup-local' });
-registerSettingsSearch({ labelKey: 'backup.scheduledBackup', labelFallback: 'Scheduled Backups', tab: 'backup', keywords: 'scheduled backup automatic hourly daily weekly retention local path', anchor: 'card-backup-scheduled' });
+registerCoreSettingsSearchEntries();
 
 // Lowest humidity an AMS reports while its own dryer is running, measured on an
 // H2D/AMS 2 Pro that read 10-13% cold and 15-20% throughout every cycle (#2770).
@@ -205,6 +137,7 @@ function describeLocationSensorValue(
 export function SettingsPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { t, i18n } = useTranslation();
   const { showToast } = useToast();
@@ -267,6 +200,30 @@ export function SettingsPage() {
   const initialQueueSub: 'dispatch' | 'pipelines' =
     tabParam === 'queue' && searchParams.get('sub') === 'pipelines' ? 'pipelines' : 'dispatch';
   const [queueSubTab, setQueueSubTab] = useState<'dispatch' | 'pipelines'>(initialQueueSub);
+
+  useEffect(() => {
+    const nextTab = tabParam === 'email'
+      ? 'users'
+      : (tabParam && validTabs.includes(tabParam as TabType) ? (tabParam as TabType) : 'general');
+    setActiveTab(nextTab);
+    if (tabParam === 'email') {
+      setUsersSubTab('email');
+    }
+  }, [tabParam]);
+
+  useEffect(() => {
+    const anchor = location.hash.replace('#', '');
+    if (!anchor) return;
+    const timer = window.setTimeout(() => {
+      const el = document.getElementById(anchor);
+      if (el) {
+        el.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+        el.classList.add('ring-2', 'ring-bambu-green');
+        window.setTimeout(() => el.classList.remove('ring-2', 'ring-bambu-green'), 1500);
+      }
+    }, 100);
+    return () => window.clearTimeout(timer);
+  }, [location.hash, activeTab]);
 
   // Update URL when tab changes
   const handleTabChange = (tab: TabType) => {
@@ -1510,6 +1467,11 @@ export function SettingsPage() {
     : [];
 
   const jumpToSetting = (entry: typeof searchIndex[number]) => {
+    if (entry.route) {
+      setSettingsSearch('');
+      navigate(entry.route);
+      return;
+    }
     handleTabChange(entry.tab as TabType);
     if (entry.subTab) {
       setUsersSubTab(entry.subTab as UsersSubTab);
@@ -1581,7 +1543,7 @@ export function SettingsPage() {
                 >
                   <p className="text-sm text-white">{entry.label}</p>
                   <p className="text-xs text-bambu-gray">
-                    {t(`settings.tabs.${entry.tab === 'virtual-printer' ? 'virtualPrinter' : entry.tab === 'failure-detection' ? 'failureDetection' : entry.tab}`)}
+                    {entry.routeLabel ? entry.routeLabel : t(`settings.tabs.${entry.tab === 'virtual-printer' ? 'virtualPrinter' : entry.tab === 'failure-detection' ? 'failureDetection' : entry.tab}`)}
                     {entry.subTab ? ` › ${t(`settings.tabs.${entry.subTab}`, entry.subTab)}` : ''}
                   </p>
                 </button>
@@ -1777,6 +1739,31 @@ export function SettingsPage() {
         </button>
       </nav>
       <div className="flex-1 min-w-0">
+      {activeTab === 'general' && (
+      <div className="mb-4">
+        <QuickSetupHubCard
+          mode="settings"
+          printersCount={printers?.length}
+          authEnabled={authEnabled}
+          slicerApiEnabled={Boolean(localSettings.use_slicer_api)}
+          billingEnabled={Boolean(localSettings.billing_enabled)}
+          onEnableBilling={() => updateSetting('billing_enabled', true)}
+          onJumpSettingsTab={(tab, anchor) => {
+            handleTabChange(tab as TabType);
+            if (anchor) {
+              window.setTimeout(() => {
+                const el = document.getElementById(anchor);
+                if (el) {
+                  el.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+                  el.classList.add('ring-2', 'ring-bambu-green');
+                  window.setTimeout(() => el.classList.remove('ring-2', 'ring-bambu-green'), 1500);
+                }
+              }, 80);
+            }
+          }}
+        />
+      </div>
+      )}
       {activeTab === 'general' && (
       <>
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
