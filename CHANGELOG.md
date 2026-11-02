@@ -3,6 +3,15 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.29.0 (02.11.2026) — Live-Spaghetti-Erkennung, Kunden-Selfservice mit Stripe & Abkühl-Schutz
+
+- **In-Print Spaghetti- & Fehldruck-Erkennung (`spaghetti_detector.py`):**
+  Echtzeit-Überwachung laufender Druckaufträge über die P2S-Gehäusekamera mittels Kantenchaos-Entropie (Laplace-Varianz & Canny-Ratio). Rolling-Window-Mechanismus verhindert Fehlalarme und empfiehlt nach 3 auffälligen Schichten in Folge den automatischen Druck-Stopp.
+- **Kunden-Selfservice-Portal & Sofortkalkulation (`customer_portal.py`):**
+  Verbindliche Sofort-Preiskalkulation basierend auf Modellvolumen, Materialdichten (PLA, PETG, ABS, ASA, TPU, PLA-CF), Schichthöhe und Infill mit automatischer Mengenstaffel. Beinhaltet Stripe Checkout Session Generierung und sofortige Druckfreigabe nach Zahlungseingang.
+- **Thermische Abkühlüberwachung vor Plattenwechsel (`cooldown_guard.py`):**
+  Sicherheits-Interlock für den Plattenwechsler: Mechanische Fahrten und Plattenauswürfe werden blockiert, solange das Druckbett über 36 °C warm ist. Berechnet die verbleibende Abkühlzeit nach Newtons Abkühlungsgesetz und schützt PEI-Platte und Bauteile vor Verzug und Schäden.
+
 ## v1.28.0 (02.11.2026) — Agentic Tool-Calling, RAG-Wissensbasis, Verschleiß-Tracker & Webhooks
 
 - **Agentic Tool-Calling Engine für KI-Assistenten (`assistant_tools.py`):**

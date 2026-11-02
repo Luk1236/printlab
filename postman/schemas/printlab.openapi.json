@@ -3,7 +3,7 @@
   "info": {
     "title": "PrintLab API",
     "description": "Autonome 3D-Drucker-Verwaltung, integrierter Slicer, lokale KI und Abrechnung (Bambu Lab P2S).",
-    "version": "1.28.0"
+    "version": "1.29.0"
   },
   "paths": {
     "/api/v1/auth/setup": {
@@ -43549,13 +43549,13 @@
       }
     },
     "/api/v1/printers/{printer_id}/camera/stop": {
-      "get": {
+      "post": {
         "tags": [
           "camera"
         ],
         "summary": "Stop Camera Stream",
         "description": "Stop active camera streams for a printer.\n\nCalled by the frontend on viewer unmount (cam-wall tile, embedded viewer,\npopup window). Accepts both GET and POST (POST for sendBeacon compatibility).\n\nReference-count guard: every viewer of a printer subscribes to the same\nfan-out broadcaster, so a force-shutdown triggered by ONE leaving viewer\nused to kill the others' streams (cam-wall tile froze when a user opened\nthen closed the embedded viewer). If any subscriber is still attached,\nskip the force-teardown — the broadcaster's natural grace-shutdown (5 s\nafter subscribers drop to 0) handles cleanup when the leaving viewer's\nHTTP connection actually closes.",
-        "operationId": "stop_camera_stream_api_v1_printers__printer_id__camera_stop_get",
+        "operationId": "stop_camera_stream_api_v1_printers__printer_id__camera_stop_post",
         "security": [
           {
             "HTTPBearer": []
@@ -43609,13 +43609,13 @@
           }
         }
       },
-      "post": {
+      "get": {
         "tags": [
           "camera"
         ],
         "summary": "Stop Camera Stream",
         "description": "Stop active camera streams for a printer.\n\nCalled by the frontend on viewer unmount (cam-wall tile, embedded viewer,\npopup window). Accepts both GET and POST (POST for sendBeacon compatibility).\n\nReference-count guard: every viewer of a printer subscribes to the same\nfan-out broadcaster, so a force-shutdown triggered by ONE leaving viewer\nused to kill the others' streams (cam-wall tile froze when a user opened\nthen closed the embedded viewer). If any subscriber is still attached,\nskip the force-teardown — the broadcaster's natural grace-shutdown (5 s\nafter subscribers drop to 0) handles cleanup when the leaving viewer's\nHTTP connection actually closes.",
-        "operationId": "stop_camera_stream_api_v1_printers__printer_id__camera_stop_get",
+        "operationId": "stop_camera_stream_api_v1_printers__printer_id__camera_stop_post",
         "security": [
           {
             "HTTPBearer": []
