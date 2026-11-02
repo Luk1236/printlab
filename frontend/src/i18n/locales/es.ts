@@ -366,6 +366,25 @@ export default {
     empty: 'Sin resultados',
     hint: '↑↓ elegir · Enter abrir · Esc cerrar',
   },
+  autoSetup: {
+    title: 'Configuración automática',
+    intro: 'PrintLab puede configurar esto por sí solo, sin contraseñas:',
+    run: 'Configurar ahora ({{count}})',
+    running: 'Configurando …',
+    item: {
+      guard: 'Añadir la protección de actualizaciones al servicio (reversión ante errores)',
+      assistant: 'Activar el asistente local (Ollama encontrado)',
+      remote: 'Configurar el acceso remoto (Tailscale)',
+    },
+    result: {
+      changed: 'Hecho',
+      needs_user: 'Te queda un paso:',
+      failed: 'Error — consulta el registro',
+      done: 'Ya configurado',
+    },
+    login: 'Abrir el enlace de inicio de sesión',
+    error: 'La configuración automática ha fallado.',
+  },
   setupWizard: {
     title: 'Asistente de configuración',
     step: 'Paso {{current}} de {{total}}',

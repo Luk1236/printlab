@@ -366,6 +366,25 @@ export default {
     empty: '一致なし',
     hint: '↑↓ 選択 · Enter 開く · Esc 閉じる',
   },
+  autoSetup: {
+    title: '自動セットアップ',
+    intro: 'PrintLabはパスワードなしで次の項目を自動で設定できます:',
+    run: '今すぐ設定 ({{count}})',
+    running: '設定中 …',
+    item: {
+      guard: 'サービスにアップデート保護を追加 (エラー時にロールバック)',
+      assistant: 'ローカルアシスタントを有効化 (Ollamaを検出)',
+      remote: 'リモートアクセスを設定 (Tailscale)',
+    },
+    result: {
+      changed: '完了',
+      needs_user: 'あと1つ操作が必要です:',
+      failed: '失敗 — ログを確認してください',
+      done: '設定済み',
+    },
+    login: 'ログインリンクを開く',
+    error: '自動セットアップに失敗しました。',
+  },
   setupWizard: {
     title: 'セットアップアシスタント',
     step: 'ステップ {{current}} / {{total}}',

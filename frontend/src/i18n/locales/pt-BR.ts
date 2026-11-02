@@ -366,6 +366,25 @@ export default {
     empty: 'Nenhum resultado',
     hint: '↑↓ escolher · Enter abrir · Esc fechar',
   },
+  autoSetup: {
+    title: 'Configuração automática',
+    intro: 'O PrintLab pode configurar isto sozinho, sem senhas:',
+    run: 'Configurar agora ({{count}})',
+    running: 'Configurando …',
+    item: {
+      guard: 'Adicionar a proteção de atualizações ao serviço (reversão em caso de erro)',
+      assistant: 'Ativar o assistente local (Ollama encontrado)',
+      remote: 'Configurar o acesso remoto (Tailscale)',
+    },
+    result: {
+      changed: 'Concluído',
+      needs_user: 'Falta um passo para você:',
+      failed: 'Falhou — veja o registro',
+      done: 'Já configurado',
+    },
+    login: 'Abrir o link de login',
+    error: 'A configuração automática falhou.',
+  },
   setupWizard: {
     title: 'Assistente de configuração',
     step: 'Passo {{current}} de {{total}}',

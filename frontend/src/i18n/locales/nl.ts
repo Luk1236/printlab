@@ -366,6 +366,25 @@ export default {
     empty: 'Geen resultaten',
     hint: '↑↓ kiezen · Enter openen · Esc sluiten',
   },
+  autoSetup: {
+    title: 'Automatische installatie',
+    intro: 'PrintLab kan dit zelf instellen, zonder wachtwoorden:',
+    run: 'Nu instellen ({{count}})',
+    running: 'Bezig met instellen …',
+    item: {
+      guard: 'Updatebescherming aan de service toevoegen (terugdraaien bij fouten)',
+      assistant: 'Lokale assistent inschakelen (Ollama gevonden)',
+      remote: 'Toegang op afstand instellen (Tailscale)',
+    },
+    result: {
+      changed: 'Klaar',
+      needs_user: 'Eén stap blijft voor jou:',
+      failed: 'Mislukt — zie het logboek',
+      done: 'Al ingesteld',
+    },
+    login: 'Aanmeldlink openen',
+    error: 'De automatische installatie is mislukt.',
+  },
   setupWizard: {
     title: 'Installatie-assistent',
     step: 'Stap {{current}} van {{total}}',

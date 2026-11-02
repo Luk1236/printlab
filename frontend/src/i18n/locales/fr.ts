@@ -366,6 +366,25 @@ export default {
     empty: 'Aucun résultat',
     hint: '↑↓ choisir · Entrée ouvrir · Échap fermer',
   },
+  autoSetup: {
+    title: 'Configuration automatique',
+    intro: 'PrintLab peut configurer cela seul, sans mot de passe :',
+    run: 'Configurer maintenant ({{count}})',
+    running: 'Configuration en cours …',
+    item: {
+      guard: 'Ajouter la protection des mises à jour au service (retour arrière en cas d\'erreur)',
+      assistant: 'Activer l\'assistant local (Ollama trouvé)',
+      remote: 'Configurer l\'accès à distance (Tailscale)',
+    },
+    result: {
+      changed: 'Terminé',
+      needs_user: 'Il reste une étape pour vous :',
+      failed: 'Échec — voir le journal',
+      done: 'Déjà configuré',
+    },
+    login: 'Ouvrir le lien de connexion',
+    error: 'La configuration automatique a échoué.',
+  },
   setupWizard: {
     title: 'Assistant de configuration',
     step: 'Étape {{current}} sur {{total}}',

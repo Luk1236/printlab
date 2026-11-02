@@ -131,6 +131,22 @@ export interface SetupStatus {
   required_open: number;
 }
 
+export interface AutoSetupItem {
+  id: 'guard' | 'assistant' | 'remote';
+  state: 'done' | 'todo' | 'changed' | 'needs_user' | 'manual' | 'failed';
+  detail: string;
+}
+
+export interface AutoSetupPlan {
+  items: AutoSetupItem[];
+  todo: number;
+}
+
+export interface AutoSetupResult {
+  items: AutoSetupItem[];
+  changed: number;
+}
+
 export interface UpdateBackup {
   name: string;
   created: string;
@@ -733,6 +749,9 @@ export function createForkApi({ request, apiBase, getAuthToken }: ForkApiDeps) {
   resetPlateTuning: (printerId: number) =>
     request<{ reset: boolean }>(`/printers/${printerId}/camera/plate-detection/tuning`, { method: 'DELETE' }),
   getSetupStatus: () => request<SetupStatus>('/system/setup-status'),
+  getAutoSetup: () => request<AutoSetupPlan>('/system/auto-setup'),
+  runAutoSetup: () =>
+    request<AutoSetupResult>('/system/auto-setup', { method: 'POST', body: JSON.stringify({}) }),
   getDatabaseStatus: () => request<DatabaseStatus>('/system/database'),
   runDatabaseMaintenance: (action: 'check' | 'vacuum') =>
     request<DatabaseMaintenanceResult>('/system/database/maintenance', {

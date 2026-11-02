@@ -366,6 +366,25 @@ export default {
     empty: 'Inga träffar',
     hint: '↑↓ välj · Enter öppna · Esc stäng',
   },
+  autoSetup: {
+    title: 'Automatisk konfiguration',
+    intro: 'PrintLab kan ställa in detta själv, utan lösenord:',
+    run: 'Konfigurera nu ({{count}})',
+    running: 'Konfigurerar …',
+    item: {
+      guard: 'Lägg till uppdateringsskydd i tjänsten (återställning vid fel)',
+      assistant: 'Aktivera den lokala assistenten (Ollama hittades)',
+      remote: 'Ställ in fjärråtkomst (Tailscale)',
+    },
+    result: {
+      changed: 'Klart',
+      needs_user: 'Ett steg återstår för dig:',
+      failed: 'Misslyckades — se loggen',
+      done: 'Redan konfigurerat',
+    },
+    login: 'Öppna inloggningslänken',
+    error: 'Den automatiska konfigurationen misslyckades.',
+  },
   setupWizard: {
     title: 'Installationsguide',
     step: 'Steg {{current}} av {{total}}',

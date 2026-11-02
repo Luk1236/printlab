@@ -366,6 +366,25 @@ export default {
     empty: '沒有符合項目',
     hint: '↑↓ 選擇 · Enter 開啟 · Esc 關閉',
   },
+  autoSetup: {
+    title: '自動設定',
+    intro: 'PrintLab 不需要密碼即可自行完成以下設定:',
+    run: '立即設定 ({{count}})',
+    running: '設定中 …',
+    item: {
+      guard: '為服務加入更新保護 (出錯時還原)',
+      assistant: '啟用本機助理 (已找到 Ollama)',
+      remote: '設定遠端存取 (Tailscale)',
+    },
+    result: {
+      changed: '完成',
+      needs_user: '還剩一個步驟需要你操作:',
+      failed: '失敗 — 請查看記錄',
+      done: '已設定',
+    },
+    login: '開啟登入連結',
+    error: '自動設定失敗。',
+  },
   setupWizard: {
     title: '設定精靈',
     step: '第 {{current}} 步，共 {{total}} 步',

@@ -363,6 +363,25 @@ export default {
     empty: '일치 항목 없음',
     hint: '↑↓ 선택 · Enter 열기 · Esc 닫기',
   },
+  autoSetup: {
+    title: '자동 설정',
+    intro: 'PrintLab이 비밀번호 없이 다음 항목을 스스로 설정할 수 있습니다:',
+    run: '지금 설정 ({{count}})',
+    running: '설정 중 …',
+    item: {
+      guard: '서비스에 업데이트 보호 추가 (오류 시 롤백)',
+      assistant: '로컬 어시스턴트 켜기 (Ollama 발견)',
+      remote: '원격 접속 설정 (Tailscale)',
+    },
+    result: {
+      changed: '완료',
+      needs_user: '직접 해야 할 단계가 하나 남았습니다:',
+      failed: '실패 — 로그를 확인하세요',
+      done: '이미 설정됨',
+    },
+    login: '로그인 링크 열기',
+    error: '자동 설정에 실패했습니다.',
+  },
   setupWizard: {
     title: '설정 도우미',
     step: '{{total}}단계 중 {{current}}단계',

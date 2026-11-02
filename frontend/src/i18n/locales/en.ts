@@ -366,6 +366,25 @@ export default {
     empty: 'No matches',
     hint: '↑↓ select · Enter open · Esc close',
   },
+  autoSetup: {
+    title: 'Automatic setup',
+    intro: 'PrintLab can set these up on its own, no passwords needed:',
+    run: 'Set up now ({{count}})',
+    running: 'Setting up …',
+    item: {
+      guard: 'Add update protection to the service (rollback on errors)',
+      assistant: 'Switch on the local assistant (Ollama found)',
+      remote: 'Set up remote access (Tailscale)',
+    },
+    result: {
+      changed: 'Done',
+      needs_user: 'One step is left for you:',
+      failed: 'Failed — see the log',
+      done: 'Already set up',
+    },
+    login: 'Open the sign-in link',
+    error: 'Automatic setup failed.',
+  },
   setupWizard: {
     title: 'Setup assistant',
     step: 'Step {{current}} of {{total}}',

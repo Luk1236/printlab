@@ -5,6 +5,10 @@ Druck. Sie ergänzt `docs/INSTALLATION-PI.md` (Aufsetzen des Pi) und `docs/ABNAH
 Update). Wer nur etwas nachschlagen will: In der App steht derselbe Ablauf unter **Einrichtung** in der Seitenleiste
 und unter **Wartung → System**.
 
+**Kurzweg:** Auf der Seite **Einrichtung** zeigt die Karte „Automatische Einrichtung“, was PrintLab ohne Passwörter
+selbst erledigen kann (Update-Schutz, lokaler Assistent, Fernzugriff). Ein Knopf, und die Punkte verschwinden aus der
+Liste. Was ein Passwort, einen Zugangscode oder ein Token braucht, bleibt in den Schritten unten.
+
 Jeder Schritt nennt das Ziel, die Handlung und woran man erkennt, dass er wirklich erledigt ist. „Fertig“ heißt
 nicht „Knopf gedrückt“, sondern „das Ergebnis ist sichtbar“.
 

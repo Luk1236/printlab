@@ -11,6 +11,7 @@ from fastapi import FastAPI
 from backend.app.api.routes import (
     assistant,
     auto_requeue,
+    auto_setup,
     customers,
     error_help,
     failure_images,
@@ -43,6 +44,8 @@ def register_fork_routers(app: FastAPI, prefix: str) -> None:
     app.include_router(plate_tuning.router, prefix=prefix)
     app.include_router(assistant.router, prefix=prefix)
     app.include_router(selftest.router, prefix=prefix)
+    # Auto-Einrichtung: erledigt bei der Inbetriebnahme selbst, was ohne Zugangsdaten geht.
+    app.include_router(auto_setup.router, prefix=prefix)
     app.include_router(failure_images.router, prefix=prefix)
     # Angebotskalkulator (Gewerbliches): Stundenlohn, Aufschlag, Energie.
     app.include_router(quote.router, prefix=prefix)

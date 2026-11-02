@@ -366,6 +366,25 @@ export default {
     empty: 'Eşleşme yok',
     hint: '↑↓ seç · Enter aç · Esc kapat',
   },
+  autoSetup: {
+    title: 'Otomatik kurulum',
+    intro: 'PrintLab bunları parola gerektirmeden kendisi kurabilir:',
+    run: 'Şimdi kur ({{count}})',
+    running: 'Kuruluyor …',
+    item: {
+      guard: 'Hizmete güncelleme korumasını ekle (hatada geri alma)',
+      assistant: 'Yerel asistanı aç (Ollama bulundu)',
+      remote: 'Uzaktan erişimi kur (Tailscale)',
+    },
+    result: {
+      changed: 'Tamamlandı',
+      needs_user: 'Senin için bir adım kaldı:',
+      failed: 'Başarısız — günlüğe bak',
+      done: 'Zaten kurulu',
+    },
+    login: 'Giriş bağlantısını aç',
+    error: 'Otomatik kurulum başarısız oldu.',
+  },
   setupWizard: {
     title: 'Kurulum sihirbazı',
     step: 'Adım {{current}} / {{total}}',

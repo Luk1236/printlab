@@ -366,6 +366,25 @@ export default {
     empty: '没有匹配项',
     hint: '↑↓ 选择 · Enter 打开 · Esc 关闭',
   },
+  autoSetup: {
+    title: '自动设置',
+    intro: 'PrintLab 无需密码即可自行完成以下设置:',
+    run: '立即设置 ({{count}})',
+    running: '正在设置 …',
+    item: {
+      guard: '为服务添加更新保护 (出错时回滚)',
+      assistant: '启用本地助手 (已发现 Ollama)',
+      remote: '设置远程访问 (Tailscale)',
+    },
+    result: {
+      changed: '完成',
+      needs_user: '还剩一步需要你操作:',
+      failed: '失败 — 请查看日志',
+      done: '已设置',
+    },
+    login: '打开登录链接',
+    error: '自动设置失败。',
+  },
   setupWizard: {
     title: '设置向导',
     step: '第 {{current}} 步，共 {{total}} 步',

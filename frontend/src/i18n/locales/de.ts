@@ -366,6 +366,25 @@ export default {
     empty: 'Keine Treffer',
     hint: '↑↓ auswählen · Enter öffnen · Esc schließen',
   },
+  autoSetup: {
+    title: 'Automatische Einrichtung',
+    intro: 'PrintLab kann das ohne Passwörter selbst einrichten:',
+    run: 'Jetzt einrichten ({{count}})',
+    running: 'Richte ein …',
+    item: {
+      guard: 'Update-Schutz im Dienst eintragen (Rückbau bei Fehlern)',
+      assistant: 'Lokalen Assistenten einschalten (Ollama gefunden)',
+      remote: 'Fernzugriff einrichten (Tailscale)',
+    },
+    result: {
+      changed: 'Eingerichtet',
+      needs_user: 'Ein Schritt bleibt bei dir:',
+      failed: 'Fehlgeschlagen — siehe Protokoll',
+      done: 'Schon eingerichtet',
+    },
+    login: 'Anmelde-Link öffnen',
+    error: 'Die automatische Einrichtung ist fehlgeschlagen.',
+  },
   setupWizard: {
     title: 'Einrichtungsassistent',
     step: 'Schritt {{current}} von {{total}}',

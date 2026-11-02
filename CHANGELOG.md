@@ -3,6 +3,18 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v1.23.0 (in Arbeit) — Auto-Einrichtung
+
+- **Auto-Einrichtung:** Auf der Seite **Einrichtung** steht über dem Assistenten eine Karte, die zeigt, was PrintLab
+  ohne Zugangsdaten selbst einrichten kann, und es mit einem Knopf erledigt: Update-Schutz in die systemd-Unit
+  eintragen, den lokalen Assistenten einschalten (nur wenn Ollama läuft und das Modell da ist) und den Fernzugriff
+  über Tailscale einrichten (nur mit eingeschalteter Anmeldung; den Anmelde-Link öffnet weiter der Benutzer).
+  Jeder Schritt ist wiederholbar, ein gescheiterter Schritt stoppt die anderen nicht, und die Meldung nennt nur die
+  Fehlerart, nie den Text des Fehlers. Neue Routen `GET/POST /system/auto-setup` (Vorschau ändert nichts; Ausführen
+  braucht die Einstellungsberechtigung und läuft nie doppelt). Bewusst nicht automatisch: Anmeldung (Passwort wählt
+  der Benutzer), Drucker (Zugangscode), Meldewege (Token), Signaturschlüssel (der private Teil gehört nicht auf den Pi).
+  17 Backend- und 4 Frontend-Tests, 13 neue Texte in allen 15 Sprachen (`autoSetup.*`).
+
 ## v1.22.0 (01.11.2026) — Nach dem Slicen direkt drucken; Ausfälle früher sichtbar
 
 - **„Jetzt drucken“ nach dem Slicen:** Die Fertigmeldung trägt jetzt einen Knopf. Er öffnet den normalen Druckdialog

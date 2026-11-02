@@ -3,6 +3,7 @@ import { Compass } from 'lucide-react';
 
 import { useAuth } from '../contexts/AuthContext';
 import { SetupChecklistCard } from '../components/SetupChecklistCard';
+import { AutoSetupCard } from '../components/AutoSetupCard';
 import { SetupWizardCard } from '../components/SetupWizardCard';
 import { FactoryResetCard } from '../components/FactoryResetCard';
 
@@ -21,6 +22,7 @@ export function SetupGuidePage() {
         <Compass className="w-6 h-6 text-bambu-green" />
         <h1 className="text-2xl font-bold text-white">{t('setupWizard.title')}</h1>
       </div>
+      <AutoSetupCard />
       <SetupWizardCard />
       <SetupChecklistCard />
       <FactoryResetCard canControl={hasPermission('settings:update')} />
