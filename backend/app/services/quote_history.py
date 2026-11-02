@@ -142,6 +142,9 @@ def add(payload: dict[str, Any], prefix: str = "A", number_format: str = "{prefi
         "currency": str(payload.get("currency", "EUR")).strip()[:8] or "EUR",
         **amounts,
     }
+    customer_email = str(payload.get("customer_email", "")).strip()[:80]
+    if customer_email:
+        entry["customer_email"] = customer_email
     if items:
         # ``total`` aus der Kalkulation ist der Preis der Druckleistung; die Positionen kommen ohne Aufschlag dazu.
         entry["items"] = items

@@ -77,8 +77,10 @@ class TestBuild:
         assert _text(root, "cbc:InvoiceTypeCode") == "380"
         assert _text(root, "cbc:DocumentCurrencyCode") == "EUR"
         assert _text(root, "cbc:BuyerReference") == "R-2026-0003"
+        assert _text(root, ".//cac:Delivery/cbc:ActualDeliveryDate") == "2026-09-30"
         assert _text(root, ".//cac:AccountingSupplierParty//cbc:Name") == "PrintLab Muster"
         assert _text(root, ".//cac:AccountingCustomerParty//cbc:Name") == "Muster GmbH"
+        assert _text(root, ".//cac:AccountingCustomerParty//cbc:EndpointID") == "rechnung@example.org"
 
     def test_totals_and_vat_are_consistent(self):
         root = _parse(einvoice.build_xml(INVOICE, COMPANY))
@@ -93,8 +95,11 @@ class TestBuild:
         assert len(lines) == 2
         assert _text(lines[0], "cac:Item/cbc:Name") == "Gehäuse PETG"
         assert _text(lines[0], "cbc:LineExtensionAmount") == "100.00"
+        assert _text(lines[0], "cac:Price/cbc:PriceAmount") == "100.00"
         assert _text(lines[1], "cac:Item/cbc:Name") == "Nacharbeit"
         assert _text(lines[1], "cbc:InvoicedQuantity") == "2.00"
+        assert _text(lines[1], "cbc:LineExtensionAmount") == "19.00"
+        assert _text(lines[1], "cac:Price/cbc:PriceAmount") == "9.50"
 
     def test_zero_vat_uses_exempt_category_without_percent(self):
         company = {**COMPANY, "vat_percent": 0, "vat_note": "Kleinunternehmer § 19 UStG"}

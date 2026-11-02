@@ -155,17 +155,22 @@ def _lines(invoice: dict[str, Any], tax_category: str, percent: float) -> list[d
     lines: list[dict[str, Any]] = []
     for index, item in enumerate(items, start=2):
         quantity = _money(item.get("quantity") or 0)
+        qty = quantity if quantity > 0 else Decimal("1.00")
+        unit_price = _money(item.get("unit_price"))
         amount = _money(item.get("amount"))
         if amount <= 0:
-            amount = (quantity * _money(item.get("unit_price"))).quantize(Decimal("0.01"))
+            amount = (qty * unit_price).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         if amount <= 0:
             continue
+        if unit_price <= 0 or (qty * unit_price).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) != amount:
+            unit_price = (amount / qty).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         extras += amount
         lines.append(
             {
                 "id": str(index),
                 "name": _text(item.get("description"), 80) or "Zusatzposition",
-                "quantity": quantity if quantity > 0 else Decimal("1"),
+                "quantity": qty,
+                "unit_price": unit_price,
                 "amount": amount,
             }
         )
@@ -175,9 +180,16 @@ def _lines(invoice: dict[str, Any], tax_category: str, percent: float) -> list[d
         lines = []
     if base > 0 or not lines:
         description = _text(invoice.get("description"), 120) or "Druckleistung"
+        base_amount = base if base > 0 else total
         lines.insert(
             0,
-            {"id": "1", "name": description, "quantity": Decimal("1"), "amount": base if base > 0 else total},
+            {
+                "id": "1",
+                "name": description,
+                "quantity": Decimal("1.00"),
+                "unit_price": base_amount,
+                "amount": base_amount,
+            },
         )
     for line in lines:
         line["tax_category"] = tax_category
@@ -210,7 +222,14 @@ def build_xml(invoice: dict[str, Any], company: dict[str, Any]) -> str:
         _text(company.get("tax_id"), 40),
         _text(company.get("email"), 80),
     )
-    buyer = _party(_text(invoice.get("customer")), buyer_address, "", "", scheme=None)
+    buyer_email = _text(invoice.get("customer_email") or company.get("email"), 80)
+    buyer = _party(_text(invoice.get("customer")), buyer_address, "", buyer_email, scheme="EM")
+    service_date = _text(invoice.get("service_date"))
+    delivery = (
+        f"<cac:Delivery><cbc:ActualDeliveryDate>{escape(service_date)}</cbc:ActualDeliveryDate></cac:Delivery>"
+        if service_date
+        else ""
+    )
     reference = _text(invoice.get("quote_number") or invoice.get("number"))
     note = _text(company.get("vat_note") or invoice.get("description"), 400)
     payment = ""
@@ -250,7 +269,7 @@ def build_xml(invoice: dict[str, Any], company: dict[str, Any]) -> str:
             + (f"<cbc:Percent>{line['percent']:g}</cbc:Percent>" if line["tax_category"] != "E" else "")
             + "<cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme></cac:ClassifiedTaxCategory>"
             "</cac:Item>"
-            f'<cac:Price><cbc:PriceAmount currencyID="{escape(currency)}">{line["amount"]}</cbc:PriceAmount></cac:Price>'
+            f'<cac:Price><cbc:PriceAmount currencyID="{escape(currency)}">{line["unit_price"]}</cbc:PriceAmount></cac:Price>'
             "</cac:InvoiceLine>"
         )
     return (
@@ -269,6 +288,7 @@ def build_xml(invoice: dict[str, Any], company: dict[str, Any]) -> str:
         f"<cbc:BuyerReference>{escape(reference)}</cbc:BuyerReference>"
         f"<cac:AccountingSupplierParty>{seller}</cac:AccountingSupplierParty>"
         f"<cac:AccountingCustomerParty>{buyer}</cac:AccountingCustomerParty>"
+        + delivery
         + payment
         + "<cac:PaymentTerms><cbc:Note>"
         + escape(

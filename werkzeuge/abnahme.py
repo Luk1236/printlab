@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Abnahme-Check für den Raspberry Pi: prüft automatisch alles, was sich ohne Drucker und Hardware prüfen lässt.
 
-Aufruf auf dem Pi (im Ordner ~/printlab):
-  .venv/bin/python werkzeuge/abnahme.py            Ergebnis als Liste
-  .venv/bin/python werkzeuge/abnahme.py --json     für Auswertung durch Programme
+Aufruf auf dem Pi oder PC (im Projektordner):
+  .venv/bin/python werkzeuge/abnahme.py                        Ergebnis als Liste
+  .venv/bin/python werkzeuge/abnahme.py --json                 für Auswertung durch Programme
+  .venv/bin/python werkzeuge/abnahme.py --durchstich           Stufe 3 & 4 Software-/Trockenlauf-Durchstich (isoliert)
+  .venv/bin/python werkzeuge/abnahme.py --signatur-vorbereiten Stufe 4 Update-Signatur prüfen/einrichten
 Rückgabecode: 0 = alles in Ordnung oder nur Hinweise, 1 = mindestens ein Fehler.
 
 Stufen: OK (in Ordnung), WARN (sollte man beheben), FAIL (so nicht sicher/stabil), SKIP (hier nicht prüfbar).
@@ -18,15 +20,17 @@ import socket
 import stat
 import subprocess
 import sys
+import tempfile
 import urllib.error
 import urllib.request
 from pathlib import Path
+from xml.etree import ElementTree
 
 APP_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(APP_DIR))
-sys.path.insert(0, str(Path(__file__).resolve().parent))  # backup_pruefen.py liegt daneben
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # backup_pruefen.py und gpio_mechanik.py liegen daneben
 
-from backend.app.services import pi_health  # noqa: E402
+from backend.app.services import einvoice, pi_health  # noqa: E402
 
 HOME = Path.home()
 DATA_DIR = Path(os.environ.get("DATA_DIR") or APP_DIR / "data")
@@ -235,6 +239,84 @@ def check_git():
     return OK, "git und Git-Ordner vorhanden", ""
 
 
+def check_einvoice_schema():
+    """Prüft die XRechnung-3.0-Erzeugung (EN 16931: BT-49, BT-72, BT-146)."""
+    ns = {
+        "cac": "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2",
+        "cbc": "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2",
+    }
+    company = {
+        "name": "PrintLab Abnahme",
+        "address": "Werkstr. 1\n12345 Musterstadt",
+        "tax_id": "DE123456789",
+        "email": "rechnung@example.org",
+        "vat_percent": 19.0,
+        "vat_note": "",
+        "iban": "DE02120300000000202051",
+    }
+    invoice = {
+        "id": "abn1",
+        "number": "R-2026-0001",
+        "issued": "2026-11-02",
+        "due": "2026-11-16",
+        "service_date": "2026-11-01",
+        "customer": "Kunde GmbH",
+        "customer_address": "Hauptstr. 2\n54321 Ort",
+        "customer_email": "kunde@example.org",
+        "description": "Druckteil",
+        "currency": "EUR",
+        "total": 119.0,
+        "items": [{"description": "Nacharbeit", "quantity": 2, "unit_price": 9.5, "amount": 19.0}],
+        "extras": 19.0,
+    }
+    xml = einvoice.build_xml(invoice, company)
+    root = ElementTree.fromstring(xml)
+    delivery = root.find(".//cac:Delivery/cbc:ActualDeliveryDate", ns)
+    buyer_ep = root.find(".//cac:AccountingCustomerParty//cbc:EndpointID", ns)
+    lines = root.findall("cac:InvoiceLine", ns)
+    if delivery is None or delivery.text != "2026-11-01":
+        return FAIL, "XRechnung 3.0 (EN 16931)", "BT-72 (ActualDeliveryDate) fehlt im XML"
+    if buyer_ep is None or buyer_ep.text != "kunde@example.org":
+        return FAIL, "XRechnung 3.0 (EN 16931)", "BT-49 (Käufer-EndpointID) fehlt im XML"
+    if len(lines) < 2:
+        return FAIL, "XRechnung 3.0 (EN 16931)", "Zusatzposition fehlt im XML"
+    price_el = lines[1].find("cac:Price/cbc:PriceAmount", ns)
+    if price_el is None or price_el.text != "9.50":
+        return FAIL, "XRechnung 3.0 (EN 16931)", "BT-146 (PriceAmount != Einzelpreis) verletzt PEPPOL-EN16931-R120"
+    return OK, "XRechnung 3.0 (EN 16931)", "Pflichtfelder BT-49, BT-72 und BT-146 wohlgeformt"
+
+
+def check_gpio_config():
+    """Prüft die GPIO-Mechanik-Konfiguration auf Pin-Kollisionen und gültige Servo-Winkel."""
+    import gpio_mechanik  # noqa: PLC0415
+
+    cfg_path = DATA_DIR / "gpio_mechanik.json"
+    if not cfg_path.is_file():
+        cfg_path = APP_DIR / "werkzeuge" / "gpio_mechanik.beispiel.json"
+    try:
+        cfg = gpio_mechanik.load_config(cfg_path)
+    except Exception as exc:
+        return FAIL, "GPIO-Mechanik-Konfiguration", str(exc)
+    return (
+        OK,
+        "GPIO-Mechanik-Konfiguration",
+        f"Servo {cfg['zu_grad']:g}°..{cfg['offen_grad']:g}°, {len(cfg['pins'])} Pins konfliktfrei ({cfg_path.name})",
+    )
+
+
+def check_local_ai():
+    """Prüft, ob Ollama lokal auf Port 11434 antwortet."""
+    if not port_open(11434):
+        return SKIP, "Lokale KI (Ollama)", "Port 11434 nicht offen (optional)"
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:11434/api/tags", timeout=3.0) as resp:  # noqa: S310
+            payload = json.loads(resp.read().decode("utf-8"))
+        models = [m.get("name", "") for m in payload.get("models", []) if isinstance(m, dict)]
+        return OK, "Lokale KI (Ollama)", f"{len(models)} Modell(e) geladen: {', '.join(models[:3]) or 'keine'}"
+    except (OSError, ValueError):
+        return WARN, "Lokale KI (Ollama)", "Port 11434 offen, aber /api/tags antwortet nicht"
+
+
 CHECKS = [
     check_service,
     check_auth,
@@ -248,7 +330,168 @@ CHECKS = [
     check_external_backup,
     check_health,
     check_virtual_printer_ports,
+    check_einvoice_schema,
+    check_gpio_config,
+    check_local_ai,
 ]
+
+
+def run_durchstich() -> list[dict]:
+    """Führt den kompletten Software- & Trockenlauf-Durchstich für Stufe 3 und 4 isoliert in einem Temp-Ordner aus."""
+    from backend.app.services import company_profile, invoices, plate_wizard, quote_history, quote_share
+    from backend.app.services.hardware_extension import HardwareExtension
+
+    steps: list[dict] = []
+    with tempfile.TemporaryDirectory(prefix="printlab-abnahme-") as tmp:
+        tmp_dir = Path(tmp)
+        orig_history = quote_history.HISTORY_PATH
+        orig_shares = quote_share.SHARES_PATH
+        orig_invoices = invoices.INVOICES_PATH
+        orig_company = company_profile.COMPANY_PATH
+        orig_wizard = plate_wizard.STORE_DIR
+
+        try:
+            quote_history.HISTORY_PATH = tmp_dir / "quote_history.json"
+            quote_share.SHARES_PATH = tmp_dir / "quote_shares.json"
+            invoices.INVOICES_PATH = tmp_dir / "invoices.json"
+            company_profile.COMPANY_PATH = tmp_dir / "company.json"
+            plate_wizard.STORE_DIR = tmp_dir / "plate_wizard"
+
+            # 1. Stufe 3 Block 2: Angebots-Link, Kundenansicht, Zusage, Rechnung & XRechnung
+            company = company_profile.write(
+                {
+                    "name": "PrintLab Werkstatt",
+                    "address": "Industriestr. 10\n80331 München",
+                    "tax_id": "DE999888777",
+                    "email": "info@printlab.local",
+                    "vat_percent": 19.0,
+                    "payment_days": 14,
+                    "iban": "DE02120300000000202051",
+                }
+            )
+            q = quote_history.add(
+                {
+                    "customer": "Abnahme Kunde GmbH",
+                    "customer_address": "Testweg 4\n10115 Berlin",
+                    "customer_email": "einkauf@kunde.local",
+                    "description": "Halterung P2S",
+                    "currency": "EUR",
+                    "material": 8.0,
+                    "energy": 2.0,
+                    "labor": 20.0,
+                    "subtotal": 30.0,
+                    "markup": 10.0,
+                    "total": 40.0,
+                    "items": [{"description": "Gewindeeinsätze", "quantity": 4, "unit_price": 1.25}],
+                }
+            )
+            share = quote_share.create(q["id"], days=14, quote=q)
+            view = quote_share.public_view(q, company)
+            leaked = [k for k in ("markup", "labor", "material", "energy", "subtotal") if k in view]
+            if leaked:
+                steps.append(
+                    {"level": FAIL, "title": "Stufe 3.2 Angebots-Link", "detail": f"Interna sichtbar: {leaked}"}
+                )
+            else:
+                quote_share.respond(share["token"], "accepted", "Abnahmetest OK")
+                inv = invoices.create_from_quote(q["id"], company, service_date="2026-11-02")
+                xml = einvoice.build_xml(inv, company)
+                steps.append(
+                    {
+                        "level": OK,
+                        "title": "Stufe 3.2 Angebots-Link & XRechnung",
+                        "detail": f"Angebot {q['number']} geteilt, zugesagt, Rechnung {inv['number']} ({len(xml)} Bytes XML)",
+                    }
+                )
+
+            # 2. Stufe 3 Block 3.1: Hardware-Trockenlauf im Simulationsmodus + Not-Halt
+            hw = HardwareExtension(config_path=tmp_dir / "hardware.json", magazine_path=tmp_dir / "magazine.json")
+            ok_edit, _ = hw.edit_slots([{"id": 1, "status": "ready", "label": "Abnahme PEI"}])
+            ok_open, _ = hw.open_door()
+            ok_close, _ = hw.close_door()
+            ok_estop, _ = hw.emergency_stop()
+            blocked_during_estop, _ = hw.open_door()
+            hw.reload_config()
+            ok_after_reset, _ = hw.open_door()
+            hw.close_door()
+            if ok_edit and ok_open and ok_close and ok_estop and not blocked_during_estop and ok_after_reset:
+                steps.append(
+                    {
+                        "level": OK,
+                        "title": "Stufe 3.3.1 Hardware-Trockenlauf & Not-Halt",
+                        "detail": "Magazin, Tür-Simulation, Not-Halt-Sperre und Freigabe erfolgreich",
+                    }
+                )
+            else:
+                steps.append(
+                    {
+                        "level": FAIL,
+                        "title": "Stufe 3.3.1 Hardware-Trockenlauf & Not-Halt",
+                        "detail": "Unerwarteter Zustand bei Tür/Not-Halt",
+                    }
+                )
+
+            # 3. Stufe 3 Block 3.2 & 3.3: Einmess-Assistent (plate_wizard) & Sperre prüfen
+            printer_id = 999
+            plate_wizard.save_step(printer_id, "reference", {"x": 0.0, "y": 0.0, "z": 10.0})
+            blocked_msg = plate_wizard.blocks_plate_change(printer_id)
+            plate_wizard.save_step(printer_id, "pickup", {"x": 120.0, "y": 120.0, "z": 5.0})
+            plate_wizard.save_step(printer_id, "drop", {"x": 120.0, "y": 240.0, "z": 15.0})
+            plate_wizard.save_step(printer_id, "door", {"confirmed": True, "sensor": True})
+            plate_wizard.save_step(printer_id, "dry_run", {"confirmed": True, "note": "Trockenlauf OK"})
+            plate_wizard.complete(printer_id, operator="Abnahme-Durchstich")
+            unblocked_after = plate_wizard.blocks_plate_change(printer_id)
+            ok_swap, swap_msg = hw.change_plate("Abnahme-Druck")
+            if blocked_msg and unblocked_after is None and ok_swap:
+                steps.append(
+                    {
+                        "level": OK,
+                        "title": "Stufe 3.3.2–3.4 Einmess-Assistent & Plattenwechsel",
+                        "detail": f"Halbe Einmessung sperrt korrekt; nach 5/5 Schritten frei ({swap_msg})",
+                    }
+                )
+            else:
+                steps.append(
+                    {
+                        "level": FAIL,
+                        "title": "Stufe 3.3.2–3.4 Einmess-Assistent & Plattenwechsel",
+                        "detail": f"blocked={blocked_msg!r}, unblocked={unblocked_after!r}, swap={ok_swap}",
+                    }
+                )
+        finally:
+            quote_history.HISTORY_PATH = orig_history
+            quote_share.SHARES_PATH = orig_shares
+            invoices.INVOICES_PATH = orig_invoices
+            company_profile.COMPANY_PATH = orig_company
+            plate_wizard.STORE_DIR = orig_wizard
+
+    return steps
+
+
+def prepare_signature(root: Path = APP_DIR, data_dir: Path = DATA_DIR) -> tuple[str, str]:
+    """Prüft oder konfiguriert den SSH-Signaturschlüssel für Stufe 4 (docs/UPDATE-SIGNATUR.md)."""
+    pub_path = HOME / ".ssh" / "printlab_signing.pub"
+    if not pub_path.is_file():
+        cmd = f'ssh-keygen -t ed25519 -C "printlab-releases" -f "{HOME / ".ssh" / "printlab_signing"}"'
+        return (
+            WARN,
+            f"Noch kein Signaturschlüssel unter {pub_path}. Einmalig mit Passphrase erzeugen:\n  {cmd}",
+        )
+    pubkey = pub_path.read_text(encoding="utf-8").strip()
+    if not pubkey.startswith("ssh-"):
+        return FAIL, f"Ungültiger öffentlicher Schlüssel in {pub_path}"
+    signer_line = f'printlab namespaces="git" {pubkey}\n'
+    data_dir.mkdir(parents=True, exist_ok=True)
+    signers_file = data_dir / "update_allowed_signers"
+    signers_file.write_text(signer_line, encoding="utf-8")
+    if shutil.which("git") and (root / ".git").exists():
+        subprocess.run(["git", "config", "gpg.format", "ssh"], cwd=str(root), check=False)  # noqa: S603, S607
+        subprocess.run(["git", "config", "user.signingkey", str(pub_path)], cwd=str(root), check=False)  # noqa: S603, S607
+    return (
+        OK,
+        f"Signaturprüfung eingerichtet ({signers_file}). Auf dem Pi eintragen mit:\n"
+        f"  echo '{signer_line.strip()}' > ~/printlab/data/update_allowed_signers",
+    )
 
 
 def run_all(checks=None) -> list[dict]:
@@ -263,7 +506,13 @@ def run_all(checks=None) -> list[dict]:
 
 
 def main(argv: list[str]) -> int:
+    if "--signatur-vorbereiten" in argv:
+        level, msg = prepare_signature()
+        print(f"[{level:<4}] Update-Signatur — {msg}")
+        return 1 if level == FAIL else 0
     results = run_all()
+    if "--durchstich" in argv:
+        results.extend(run_durchstich())
     if "--json" in argv:
         print(json.dumps(results, ensure_ascii=False, indent=2))
     else:

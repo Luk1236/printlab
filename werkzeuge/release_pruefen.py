@@ -70,6 +70,15 @@ def current_version(root: Path = ROOT) -> str | None:
     return match.group(1) if match else None
 
 
+def pyproject_version(root: Path = ROOT) -> str | None:
+    path = root / "pyproject.toml"
+    if not path.is_file():
+        return None
+    text = path.read_text(encoding="utf-8")
+    match = re.search(r'^version\s*=\s*"([^"]+)"', text, re.M)
+    return match.group(1) if match else None
+
+
 def changelog_section(root: Path, version: str) -> str | None:
     text = (root / "CHANGELOG.md").read_text(encoding="utf-8").replace("\r\n", "\n")
     match = re.search(rf"^## v{re.escape(version)}\b[^\n]*\n(.*?)(?=^## v|\Z)", text, re.M | re.S)
@@ -85,6 +94,11 @@ def check(tag: str, root: Path = ROOT) -> list[str]:
     if current_version(root) != version:
         problems.append(
             f"PRINTLAB_VERSION ist {current_version(root)!r}, der Tag verlangt {version!r} (config.py ändern)"
+        )
+    py_ver = pyproject_version(root)
+    if py_ver is not None and py_ver != version:
+        problems.append(
+            f"pyproject.toml hat version = {py_ver!r}, der Tag verlangt {version!r} (pyproject.toml ändern)"
         )
     if changelog_section(root, version) is None:
         problems.append(f"CHANGELOG.md hat keinen Abschnitt '## v{version}'")

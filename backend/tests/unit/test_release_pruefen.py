@@ -134,3 +134,5 @@ def test_the_real_repository_has_a_matching_version_and_changelog():
     assert version and rp.changelog_section(root, version), (
         "CHANGELOG.md braucht einen Abschnitt für die aktuelle Version"
     )
+    if (root / "pyproject.toml").is_file():
+        assert rp.pyproject_version(root) == version, "pyproject.toml muss dieselbe Version wie PRINTLAB_VERSION tragen"

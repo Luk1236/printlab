@@ -8,9 +8,12 @@ from backend.app.services import company_profile, quote_history, quote_share
 
 @pytest.fixture(autouse=True)
 def isolated(tmp_path, monkeypatch):
+    from backend.app.api.routes import quote_share as quote_share_route
+
     monkeypatch.setattr(quote_share, "SHARES_PATH", tmp_path / "quote_shares.json")
     monkeypatch.setattr(quote_history, "HISTORY_PATH", tmp_path / "quote_history.json")
     monkeypatch.setattr(company_profile, "COMPANY_PATH", tmp_path / "company.json")
+    quote_share_route._hits.clear()
     return tmp_path
 
 
@@ -71,3 +74,15 @@ async def test_unknown_link_is_friendly(async_client: AsyncClient):
     page = await async_client.get("/api/v1/quote/shared/does-not-exist")
     assert page.status_code == 200
     assert "funktioniert nicht" in page.text
+
+
+@pytest.mark.asyncio
+async def test_public_page_rate_limit(async_client: AsyncClient, monkeypatch):
+    from backend.app.api.routes import quote_share as quote_share_route
+
+    monkeypatch.setattr(quote_share_route, "RATE_MAX_REQUESTS", 2)
+    assert (await async_client.get("/api/v1/quote/shared/does-not-exist")).status_code == 200
+    assert (await async_client.get("/api/v1/quote/shared/does-not-exist")).status_code == 200
+    blocked = await async_client.get("/api/v1/quote/shared/does-not-exist")
+    assert blocked.status_code == 429
+    assert "Zu viele Aufrufe" in blocked.text

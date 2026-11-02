@@ -9,6 +9,7 @@ Antwort nicht erneut abschickt.
 
 from __future__ import annotations
 
+import time
 from html import escape
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -23,6 +24,27 @@ from backend.app.core.permissions import Permission
 from backend.app.services import company_profile, quote_history, quote_share
 
 router = APIRouter(prefix="/quote", tags=["quote-share"])
+
+RATE_WINDOW_SECONDS = 300.0
+RATE_MAX_REQUESTS = 30
+_hits: dict[str, list[float]] = {}
+
+
+def _allow_client(request: Request | None) -> bool:
+    if request is None:
+        return True
+    host = (request.client.host if request.client else "") or "local"
+    now = time.monotonic()
+    recent = [t for t in _hits.get(host, ()) if now - t < RATE_WINDOW_SECONDS]
+    if len(recent) >= RATE_MAX_REQUESTS:
+        _hits[host] = recent
+        return False
+    recent.append(now)
+    _hits[host] = recent
+    if len(_hits) > 500:
+        for ip in [k for k, ts in _hits.items() if not ts or now - ts[-1] >= RATE_WINDOW_SECONDS]:
+            _hits.pop(ip, None)
+    return True
 
 
 class ShareRequest(BaseModel):
@@ -210,13 +232,19 @@ def _error_page(message: str) -> str:
     )
 
 
-def _no_store(html: str) -> HTMLResponse:
-    return HTMLResponse(html, headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
+def _no_store(html: str, status_code: int = 200) -> HTMLResponse:
+    return HTMLResponse(
+        html,
+        status_code=status_code,
+        headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"},
+    )
 
 
 @router.get("/shared/{token}", response_class=HTMLResponse, include_in_schema=False)
-async def public_quote_page(token: str):
+async def public_quote_page(token: str, request: Request = None):
     """Seite für den Kunden — ohne Anmeldung, ohne Schreibzugriff."""
+    if not _allow_client(request):
+        return _no_store(_error_page("Zu viele Aufrufe in kurzer Zeit. Bitte einen Moment warten."), status_code=429)
     try:
         entry, _answered = quote_share.open_entry(token)
     except quote_share.ShareError as exc:
@@ -230,10 +258,13 @@ async def public_quote_page(token: str):
 @router.post("/shared/{token}", response_class=HTMLResponse, include_in_schema=False)
 async def public_quote_response(
     token: str,
+    request: Request = None,
     decision: str = Form(""),
     note: str = Form(""),
 ):
     """Zusage oder Ablehnung — einmalig; danach zurück auf die Seite mit dem Ergebnis."""
+    if not _allow_client(request):
+        return _no_store(_error_page("Zu viele Aufrufe in kurzer Zeit. Bitte einen Moment warten."), status_code=429)
     try:
         quote_share.respond(token, decision, note)
     except quote_share.ShareError as exc:
