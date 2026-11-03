@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { render } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import type { RenderOptions } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
@@ -76,3 +76,12 @@ export { createTestQueryClient };
  * Helper to wait for async operations.
  */
 export const waitForAsync = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+/**
+ * Öffnet das Menü „Aktionen“ im Seitenkopf (`PageHeader`): Nebenaktionen wie „Link External“ oder „Print labels…“
+ * liegen dort, nicht mehr als einzelne Knöpfe in der Kopfzeile.
+ */
+export async function openPageActions() {
+  const header = await screen.findByTestId('page-header');
+  fireEvent.click(within(header).getByRole('button', { name: /Actions/ }));
+}

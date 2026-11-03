@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { render } from '../utils';
+import { render, openPageActions } from '../utils';
 import { FileManagerPage } from '../../pages/FileManagerPage';
 import { openInSlicer } from '../../utils/slicer';
 import { setAuthToken } from '../../api/client';
@@ -1311,18 +1311,15 @@ describe('FileManagerPage', () => {
     it('shows Generate Thumbnails button', async () => {
       render(<FileManagerPage />);
 
-      await waitFor(() => {
-        expect(screen.getByText('Generate Thumbnails')).toBeInTheDocument();
-      });
+      await openPageActions();
+      expect(await screen.findByText('Generate Thumbnails')).toBeInTheDocument();
     });
 
     it('Generate Thumbnails button has correct title', async () => {
       render(<FileManagerPage />);
 
-      await waitFor(() => {
-        const button = screen.getByTitle('Generate thumbnails for STL and PDF files missing them');
-        expect(button).toBeInTheDocument();
-      });
+      await openPageActions();
+      expect(await screen.findByTitle('Generate thumbnails for STL and PDF files missing them')).toBeInTheDocument();
     });
 
     it('can click Generate Thumbnails button', async () => {
@@ -1341,16 +1338,12 @@ describe('FileManagerPage', () => {
 
       render(<FileManagerPage />);
 
-      await waitFor(() => {
-        expect(screen.getByText('Generate Thumbnails')).toBeInTheDocument();
-      });
+      await openPageActions();
+      await user.click(await screen.findByText('Generate Thumbnails'));
 
-      const button = screen.getByText('Generate Thumbnails');
-      await user.click(button);
-
-      // Button should work without error
+      // Das Menü schließt sich nach dem Klick; die Seite bleibt ohne Fehler stehen.
       await waitFor(() => {
-        expect(screen.getByText('Generate Thumbnails')).toBeInTheDocument();
+        expect(screen.getByTestId('page-header')).toBeInTheDocument();
       });
     });
 

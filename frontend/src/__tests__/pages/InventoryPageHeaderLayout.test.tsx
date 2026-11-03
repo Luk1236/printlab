@@ -15,7 +15,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { render } from '../utils';
+import { render, openPageActions } from '../utils';
 import InventoryPageRouter from '../../pages/InventoryPage';
 import { server } from '../mocks/server';
 
@@ -70,9 +70,19 @@ describe('InventoryPage — header layout', () => {
     // Without this the group is as wide as all its buttons laid end to end,
     // whatever the viewport is.
     expect(group.className).toContain('flex-wrap');
-    // All seven actions (CSV import/export, Locations, Suppliers (#2988),
-    // labels, match presets (PrintLab), add) stay in that one group --
-    // wrapping them is the fix, hiding any of them is not.
-    expect(group.querySelectorAll('button')).toHaveLength(7);
+    // Sichtbar bleiben nur die Hauptaktionen (Presets abgleichen, Spule hinzufügen) und das Menü „Aktionen“.
+    expect(group.querySelectorAll('button')).toHaveLength(3);
+  });
+
+  it('keeps the secondary actions reachable in the Actions menu', async () => {
+    render(<InventoryPageRouter />);
+
+    await openPageActions();
+
+    // CSV-Import/-Export, Lagerorte, Lieferanten (#2988) und Etiketten: nichts davon ist verschwunden,
+    // sie liegen nur nicht mehr als fünf Einzelknöpfe in der Kopfzeile.
+    for (const name of [/Import CSV/, /Export CSV/, /Locations/, /Suppliers/, /Print labels/]) {
+      expect(await screen.findByRole('button', { name })).toBeInTheDocument();
+    }
   });
 });

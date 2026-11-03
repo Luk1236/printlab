@@ -33,6 +33,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { Button } from '../components/Button';
+import { PageHeader } from '../components/PageHeader';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 import { api, type ArchiveSlim } from '../api/client';
@@ -1263,18 +1264,38 @@ export function StatsPage() {
 
   return (
     <div className="p-4 md:p-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-              <BarChart3 className="w-7 h-7 text-bambu-green" />
+      <div className="mb-6">
+        <PageHeader
+          icon={BarChart3}
+          title={
+            <>
               {t('stats.title')}
-            </h1>
-            {isRefetching && <Loader2 className="w-5 h-5 text-bambu-green animate-spin" />}
-          </div>
-          <p className="text-bambu-gray mt-1">{t('stats.subtitle')}</p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
+              {isRefetching && <Loader2 className="w-5 h-5 text-bambu-green animate-spin" />}
+            </>
+          }
+          subtitle={t('stats.subtitle')}
+          more={[
+            {
+              label: t('stats.resetLayout'),
+              icon: <RotateCcw className="w-4 h-4" />,
+              disabled: !hasPermission('settings:update'),
+              title: !hasPermission('settings:update') ? t('stats.noPermissionResetLayout') : undefined,
+              onClick: () => {
+                localStorage.removeItem('bambusy-dashboard-layout-v2');
+                setDashboardKey(prev => prev + 1);
+                showToast(t('stats.layoutReset'));
+              },
+            },
+            {
+              label: t('stats.recalculateCosts'),
+              icon: isRecalculating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calculator className="w-4 h-4" />,
+              disabled: isRecalculating || !hasPermission('archives:update_all'),
+              title: !hasPermission('archives:update_all') ? t('stats.noPermissionRecalculate') : t('stats.recalculateCostsHint'),
+              onClick: handleRecalculateCosts,
+            },
+          ]}
+          actions={
+        <>
           {/* Hidden widgets button - toggles panel in Dashboard */}
           {hiddenCount > 0 && (
             <Button
@@ -1288,34 +1309,6 @@ export function StatsPage() {
               {t('stats.hiddenCount', { count: hiddenCount })}
             </Button>
           )}
-          {/* Reset Layout */}
-          <Button
-            variant="secondary"
-            onClick={() => {
-              localStorage.removeItem('bambusy-dashboard-layout-v2');
-              setDashboardKey(prev => prev + 1);
-              showToast(t('stats.layoutReset'));
-            }}
-            disabled={!hasPermission('settings:update')}
-            title={!hasPermission('settings:update') ? t('stats.noPermissionResetLayout') : undefined}
-          >
-            <RotateCcw className="w-4 h-4" />
-            {t('stats.resetLayout')}
-          </Button>
-          {/* Recalculate Costs */}
-          <Button
-            variant="secondary"
-            onClick={handleRecalculateCosts}
-            disabled={isRecalculating || !hasPermission('archives:update_all')}
-            title={!hasPermission('archives:update_all') ? t('stats.noPermissionRecalculate') : t('stats.recalculateCostsHint')}
-          >
-            {isRecalculating ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Calculator className="w-4 h-4" />
-            )}
-            {t('stats.recalculateCosts')}
-          </Button>
           {/* Export dropdown */}
           <div className="relative">
             <Button
@@ -1497,7 +1490,9 @@ export function StatsPage() {
               </>
             )}
           </div>
-        </div>
+        </>
+          }
+        />
       </div>
 
       <Dashboard

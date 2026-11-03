@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { render } from '../utils';
+import { render, openPageActions } from '../utils';
 import { FileManagerPage } from '../../pages/FileManagerPage';
 import { http, HttpResponse } from 'msw';
 import { server } from '../mocks/server';
@@ -143,9 +143,8 @@ describe('FileManagerPage - External Folders', () => {
     it('shows Link External button', async () => {
       render(<FileManagerPage />);
 
-      await waitFor(() => {
-        expect(screen.getByText('Link External')).toBeInTheDocument();
-      });
+      await openPageActions();
+      expect(await screen.findByText('Link External')).toBeInTheDocument();
     });
 
     it('shows external folder in sidebar', async () => {
@@ -182,9 +181,8 @@ describe('FileManagerPage - External Folders', () => {
       const user = userEvent.setup();
       render(<FileManagerPage />);
 
-      await waitFor(() => {
-        expect(screen.getByText('Link External')).toBeInTheDocument();
-      });
+      await openPageActions();
+      expect(await screen.findByText('Link External')).toBeInTheDocument();
 
       await user.click(screen.getByText('Link External'));
 
@@ -197,9 +195,8 @@ describe('FileManagerPage - External Folders', () => {
       const user = userEvent.setup();
       render(<FileManagerPage />);
 
-      await waitFor(() => {
-        expect(screen.getByText('Link External')).toBeInTheDocument();
-      });
+      await openPageActions();
+      expect(await screen.findByText('Link External')).toBeInTheDocument();
 
       await user.click(screen.getByText('Link External'));
 
@@ -213,9 +210,8 @@ describe('FileManagerPage - External Folders', () => {
       const user = userEvent.setup();
       render(<FileManagerPage />);
 
-      await waitFor(() => {
-        expect(screen.getByText('Link External')).toBeInTheDocument();
-      });
+      await openPageActions();
+      expect(await screen.findByText('Link External')).toBeInTheDocument();
 
       await user.click(screen.getByText('Link External'));
 
@@ -229,9 +225,8 @@ describe('FileManagerPage - External Folders', () => {
       const user = userEvent.setup();
       render(<FileManagerPage />);
 
-      await waitFor(() => {
-        expect(screen.getByText('Link External')).toBeInTheDocument();
-      });
+      await openPageActions();
+      expect(await screen.findByText('Link External')).toBeInTheDocument();
 
       await user.click(screen.getByText('Link External'));
 

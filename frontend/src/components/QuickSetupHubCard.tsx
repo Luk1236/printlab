@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   BellRing,
   Bot,
   CheckCircle2,
+  ChevronDown,
   Compass,
   Cpu,
   DollarSign,
@@ -33,6 +35,18 @@ export interface QuickSetupHubProps {
   onJumpSettingsTab?: (tab: string, anchor?: string) => void;
 }
 
+const OPEN_KEY = 'printlab-quick-hub-open';
+
+/** Auf /settings ist der Kompass zugeklappt (die Seite hat Reiter und Seitenleiste); auf /einrichtung bleibt er offen. */
+function initialOpen(mode: 'setup' | 'settings'): boolean {
+  if (mode !== 'settings') return true;
+  try {
+    return localStorage.getItem(OPEN_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
 function scrollToId(id: string): boolean {
   const el = document.getElementById(id);
   if (!el) return false;
@@ -58,6 +72,17 @@ export function QuickSetupHubCard({
   onJumpSettingsTab,
 }: QuickSetupHubProps) {
   const navigate = useNavigate();
+  const [open, setOpen] = useState(() => initialOpen(mode));
+
+  const toggleOpen = () => {
+    const next = !open;
+    setOpen(next);
+    try {
+      localStorage.setItem(OPEN_KEY, next ? '1' : '0');
+    } catch {
+      // Speicher gesperrt (privates Fenster): der Zustand gilt dann nur bis zum Neuladen.
+    }
+  };
 
   const goSettings = (tab: string, anchor?: string) => {
     if (mode === 'settings' && onJumpSettingsTab) {
@@ -77,7 +102,7 @@ export function QuickSetupHubCard({
   return (
     <Card id="card-setup-hub">
       <CardContent className="space-y-4" data-testid="quick-setup-hub">
-        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-bambu-dark-tertiary pb-3">
+        <div className={`flex flex-wrap items-start justify-between gap-3 ${open ? 'border-b border-bambu-dark-tertiary pb-3' : ''}`}>
           <div>
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <Compass className="w-5 h-5 text-bambu-green shrink-0" />
@@ -88,6 +113,12 @@ export function QuickSetupHubCard({
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            {mode === 'settings' && (
+              <Button size="sm" variant="ghost" onClick={toggleOpen} aria-expanded={open}>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
+                {open ? 'Einklappen' : 'Aufklappen'}
+              </Button>
+            )}
             {mode === 'settings' ? (
               <Button size="sm" variant="secondary" onClick={() => navigate('/einrichtung')}>
                 <Compass className="w-3.5 h-3.5" />
@@ -106,6 +137,7 @@ export function QuickSetupHubCard({
           </div>
         </div>
 
+        {open && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
           {/* 1. Drucker, LAN & Zugangsschutz */}
           <div className="rounded-lg border border-bambu-dark-tertiary bg-bambu-dark p-3.5 flex flex-col justify-between space-y-3">
@@ -310,6 +342,7 @@ export function QuickSetupHubCard({
             </div>
           </div>
         </div>
+        )}
       </CardContent>
     </Card>
   );

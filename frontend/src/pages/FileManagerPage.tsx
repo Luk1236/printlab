@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useMemo, useEffect, lazy, Suspense } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueries, useMutation, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import {
@@ -68,6 +68,7 @@ import type {
   Permission,
 } from '../api/client';
 import { Button } from '../components/Button';
+import { PageHeader } from '../components/PageHeader';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { ContextMenu, type ContextMenuItem } from '../components/ContextMenu';
 import { PrintModal } from '../components/PrintModal';
@@ -2663,127 +2664,107 @@ export function FileManagerPage() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <FolderOpen className="w-7 h-7 text-bambu-green" />
-            {t('fileManager.title')}
-          </h1>
-          <p className="text-bambu-gray mt-1">
-            {t('fileManager.subtitle')}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {/* View mode toggle */}
-          <div className="flex items-center bg-bambu-dark rounded-lg p-1 self-center">
-            <button
-              onClick={() => handleViewModeChange('grid')}
-              className={`p-1.5 rounded transition-colors ${
-                viewMode === 'grid' ? 'bg-bambu-dark-secondary text-white' : 'text-bambu-gray hover:text-white'
-              }`}
-              title={t('fileManager.gridView')}
-            >
-              <LayoutGrid className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => handleViewModeChange('list')}
-              className={`p-1.5 rounded transition-colors ${
-                viewMode === 'list' ? 'bg-bambu-dark-secondary text-white' : 'text-bambu-gray hover:text-white'
-              }`}
-              title={t('fileManager.listView')}
-            >
-              <List className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => handleViewModeChange('columns')}
-              className={`p-1.5 rounded transition-colors ${
-                viewMode === 'columns' ? 'bg-bambu-dark-secondary text-white' : 'text-bambu-gray hover:text-white'
-              }`}
-              title={t('fileManager.columnsView')}
-            >
-              <Columns className="w-4 h-4" />
-            </button>
-          </div>
-          <Button
-            variant="secondary"
-            onClick={() => batchThumbnailMutation.mutate()}
-            disabled={batchThumbnailMutation.isPending || !hasAnyPermission('library:update_own', 'library:update_all')}
-            title={!hasAnyPermission('library:update_own', 'library:update_all') ? t('fileManager.noPermissionGenerateThumbnail') : t('fileManager.generateThumbnailsForMissing')}
-            className="whitespace-nowrap"
-          >
-            {batchThumbnailMutation.isPending ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Image className="w-4 h-4 mr-2" />
-            )}
-            {t('fileManager.generateThumbnails')}
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => setShowExternalFolderModal(true)}
-            disabled={!hasPermission('library:upload')}
-            title={!hasPermission('library:upload') ? t('fileManager.noPermissionCreateFolder') : t('fileManager.linkExternalFolder')}
-            className="whitespace-nowrap"
-          >
-            <FolderSymlink className="w-4 h-4 mr-2" />
-            {t('fileManager.linkExternal')}
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => setShowNewFolderModal(true)}
-            disabled={!hasPermission('library:upload')}
-            title={!hasPermission('library:upload') ? t('fileManager.noPermissionCreateFolder') : undefined}
-            className="whitespace-nowrap"
-          >
-            <FolderPlus className="w-4 h-4 mr-2" />
-            {t('fileManager.newFolder')}
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => setShowTagsModal(true)}
-            title={t('fileManager.tags.manageTitle')}
-            className="whitespace-nowrap"
-          >
-            <TagIcon className="w-4 h-4 mr-2" />
-            {t('fileManager.tags.manage')}
-          </Button>
-          {hasPermission('library:purge') && (
-            <Button
-              variant="secondary"
-              onClick={() => setShowPurgeModal(true)}
-              title={t('libraryPurge.headerTooltip')}
-              className="whitespace-nowrap"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              {t('libraryPurge.headerButton')}
-            </Button>
-          )}
-          {(hasAnyPermission('library:delete_own', 'library:delete_all')) && (
-            <Link
-              to="/files/trash"
-              className="inline-flex items-center px-4 py-2 text-sm rounded whitespace-nowrap bg-bambu-dark-secondary text-bambu-gray hover:text-white hover:bg-bambu-dark transition-colors"
-              title={t('libraryTrash.headerTooltip')}
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              {t('libraryTrash.headerButton')}
-              {typeof trashCount === 'number' && trashCount > 0 && (
-                <span className="ml-1.5 px-1.5 py-0.5 text-xs rounded-full bg-bambu-green/20 text-bambu-green">
-                  {trashCount}
-                </span>
-              )}
-            </Link>
-          )}
-          <Button
-            onClick={() => setShowUploadModal(true)}
-            disabled={!hasPermission('library:upload')}
-            title={!hasPermission('library:upload') ? t('fileManager.noPermissionUpload') : undefined}
-            className="whitespace-nowrap"
-          >
-            <Upload className="w-4 h-4 mr-2" />
-            {t('common.upload')}
-          </Button>
-        </div>
+      {/* Header: Ansicht, neuer Ordner und Hochladen bleiben sichtbar, der Rest liegt im Menü „Aktionen“. */}
+      <div className="mb-6">
+        <PageHeader
+          icon={FolderOpen}
+          title={t('fileManager.title')}
+          subtitle={t('fileManager.subtitle')}
+          actions={
+            <>
+              {/* View mode toggle */}
+              <div className="flex items-center bg-bambu-dark rounded-lg p-1 self-center">
+                <button
+                  onClick={() => handleViewModeChange('grid')}
+                  className={`p-1.5 rounded transition-colors ${
+                    viewMode === 'grid' ? 'bg-bambu-dark-secondary text-white' : 'text-bambu-gray hover:text-white'
+                  }`}
+                  title={t('fileManager.gridView')}
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleViewModeChange('list')}
+                  className={`p-1.5 rounded transition-colors ${
+                    viewMode === 'list' ? 'bg-bambu-dark-secondary text-white' : 'text-bambu-gray hover:text-white'
+                  }`}
+                  title={t('fileManager.listView')}
+                >
+                  <List className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleViewModeChange('columns')}
+                  className={`p-1.5 rounded transition-colors ${
+                    viewMode === 'columns' ? 'bg-bambu-dark-secondary text-white' : 'text-bambu-gray hover:text-white'
+                  }`}
+                  title={t('fileManager.columnsView')}
+                >
+                  <Columns className="w-4 h-4" />
+                </button>
+              </div>
+              <Button
+                variant="secondary"
+                onClick={() => setShowNewFolderModal(true)}
+                disabled={!hasPermission('library:upload')}
+                title={!hasPermission('library:upload') ? t('fileManager.noPermissionCreateFolder') : undefined}
+                className="whitespace-nowrap"
+              >
+                <FolderPlus className="w-4 h-4 mr-2" />
+                {t('fileManager.newFolder')}
+              </Button>
+              <Button
+                onClick={() => setShowUploadModal(true)}
+                disabled={!hasPermission('library:upload')}
+                title={!hasPermission('library:upload') ? t('fileManager.noPermissionUpload') : undefined}
+                className="whitespace-nowrap"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                {t('common.upload')}
+              </Button>
+            </>
+          }
+          more={[
+            {
+              label: t('fileManager.generateThumbnails'),
+              icon: batchThumbnailMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Image className="w-4 h-4" />,
+              disabled: batchThumbnailMutation.isPending || !hasAnyPermission('library:update_own', 'library:update_all'),
+              title: !hasAnyPermission('library:update_own', 'library:update_all') ? t('fileManager.noPermissionGenerateThumbnail') : t('fileManager.generateThumbnailsForMissing'),
+              onClick: () => batchThumbnailMutation.mutate(),
+            },
+            {
+              label: t('fileManager.linkExternal'),
+              icon: <FolderSymlink className="w-4 h-4" />,
+              disabled: !hasPermission('library:upload'),
+              title: !hasPermission('library:upload') ? t('fileManager.noPermissionCreateFolder') : t('fileManager.linkExternalFolder'),
+              onClick: () => setShowExternalFolderModal(true),
+            },
+            {
+              label: t('fileManager.tags.manage'),
+              icon: <TagIcon className="w-4 h-4" />,
+              title: t('fileManager.tags.manageTitle'),
+              onClick: () => setShowTagsModal(true),
+            },
+            ...(hasAnyPermission('library:delete_own', 'library:delete_all')
+              ? [{
+                  label: typeof trashCount === 'number' && trashCount > 0
+                    ? `${t('libraryTrash.headerButton')} (${trashCount})`
+                    : t('libraryTrash.headerButton'),
+                  icon: <Trash2 className="w-4 h-4" />,
+                  divider: true,
+                  title: t('libraryTrash.headerTooltip'),
+                  onClick: () => navigate('/files/trash'),
+                }]
+              : []),
+            ...(hasPermission('library:purge')
+              ? [{
+                  label: t('libraryPurge.headerButton'),
+                  icon: <Trash2 className="w-4 h-4" />,
+                  title: t('libraryPurge.headerTooltip'),
+                  onClick: () => setShowPurgeModal(true),
+                }]
+              : []),
+          ]}
+        />
       </div>
 
       {/* Disk space warning */}

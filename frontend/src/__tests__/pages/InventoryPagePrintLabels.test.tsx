@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { screen, waitFor, fireEvent, within } from '@testing-library/react';
-import { render } from '../utils';
+import { render, openPageActions } from '../utils';
 import InventoryPageRouter from '../../pages/InventoryPage';
 import { http, HttpResponse } from 'msw';
 import { server } from '../mocks/server';
@@ -152,7 +152,8 @@ function setupHandlers(spools: unknown[] = SPOOLS) {
 }
 
 async function openPickerFromToolbar() {
-  fireEvent.click(screen.getByRole('button', { name: /Print labels…/ }));
+  await openPageActions();
+  fireEvent.click(await screen.findByRole('button', { name: /Print labels…/ }));
   return screen.findByTestId('label-template-picker-panel');
 }
 

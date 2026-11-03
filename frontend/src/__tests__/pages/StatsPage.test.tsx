@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
-import { render } from '../utils';
+import { render, openPageActions } from '../utils';
 import { StatsPage } from '../../pages/StatsPage';
 import { http, HttpResponse } from 'msw';
 import { server } from '../mocks/server';
@@ -551,9 +551,8 @@ describe('StatsPage', () => {
     it('has recalculate costs button', async () => {
       render(<StatsPage />);
 
-      await waitFor(() => {
-        expect(screen.getByText('Recalculate Costs')).toBeInTheDocument();
-      });
+      await openPageActions();
+      expect(await screen.findByText('Recalculate Costs')).toBeInTheDocument();
     });
   });
 
