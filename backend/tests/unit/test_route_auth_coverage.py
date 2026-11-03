@@ -103,6 +103,14 @@ _PUBLIC_ROUTES: frozenset[tuple[str, str]] = frozenset(
         # POST records one accept/decline for that quote and refuses a second.
         ("GET", "/api/v1/quote/shared/{token}"),
         ("POST", "/api/v1/quote/shared/{token}"),
+        # Kunden-Selfservice-Portal (v2.0) — bewusst öffentlich wie die freige-
+        # teilten Angebots-Links: keine PII, Kalkulation läuft serverseitig,
+        # Checkout rechnet ausschließlich serverregistrierte Angebote ab
+        # (Quote-Registry) mit URL-Validierung, Stripe-Mindestbetrag und
+        # per-IP-Rate-Limit. Materialliste ist ein statischer Katalog-Read.
+        ("GET", "/api/v1/portal/materials"),
+        ("POST", "/api/v1/portal/quote"),
+        ("POST", "/api/v1/portal/checkout"),
         # Notification snapshot (#3089) — HA, Bark and Slack fetch it with no
         # session. The filename embeds secrets.token_urlsafe(24) and is the
         # credential; the handler serves only names of that exact shape, younger

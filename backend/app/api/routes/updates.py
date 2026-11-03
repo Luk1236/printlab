@@ -998,10 +998,17 @@ async def _perform_update(target_ref: str):
             text = (abort_stderr or b"").decode(errors="replace")
             if op.returncode == 0:
                 logger.warning("Laufende Git-Operation abgebrochen vor dem Update: %s", abort_cmd[0])
-            elif "no rebase in progress" in text or "No merge" in text or "no cherry-pick" in text.lower() or "not in the middle" in text.lower():
+            elif (
+                "no rebase in progress" in text
+                or "No merge" in text
+                or "no cherry-pick" in text.lower()
+                or "not in the middle" in text.lower()
+            ):
                 logger.debug("Kein laufender %s-Zustand: nichts abzubrechen.", abort_cmd[0])
             else:
-                logger.info("Abort-Versuch %s nicht erfolgreich (ignoriert): %s", " ".join(abort_cmd), text.strip()[:200])
+                logger.info(
+                    "Abort-Versuch %s nicht erfolgreich (ignoriert): %s", " ".join(abort_cmd), text.strip()[:200]
+                )
 
         # Hard reset to the target ref (clean update, no merge conflicts).
         # `target_ref` is typically a release tag like `v0.2.4b1` resolved

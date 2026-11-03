@@ -712,7 +712,22 @@ class TestSecretAtRest:
 # ── Konfigurations-Sanity ────────────────────────────────────────────────────
 
 
-def test_version_is_release_version():
-    from backend.app.core.config import APP_VERSION
+def test_version_sources_are_in_sync():
+    """Alle Versionsquellen müssen dieselbe SemVer-Version tragen.
 
-    assert APP_VERSION == "2.0.2"
+    Keine hartcodierte Version: der Release-Ablauf erhöht sie mehrfach (config,
+    pyproject, Changelog) — der Test beweist nur die Parität und das Format,
+    nicht eine einzelne Zahl, die bei jedem Release brechen würde.
+    """
+    import re
+    from pathlib import Path
+
+    from backend.app.core import config as config_module
+
+    assert re.fullmatch(r"\d+\.\d+\.\d+", config_module.APP_VERSION), config_module.APP_VERSION
+
+    repo_root = Path(config_module.__file__).resolve().parents[3]
+    pyproject_text = (repo_root / "pyproject.toml").read_text(encoding="utf-8")
+    py_ver = re.search(r'^version\s*=\s*"([^"]+)"', pyproject_text, re.M)
+    assert py_ver, "pyproject.toml: version nicht gefunden"
+    assert py_ver.group(1) == config_module.APP_VERSION

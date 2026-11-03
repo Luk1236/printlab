@@ -22,6 +22,8 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # Copy backend code
 COPY backend/ ./backend/
 COPY pyproject.toml ./
+# Werkzeuge: release checks (used by test_api_docs_export for API doc export)
+COPY werkzeuge/ ./werkzeuge/
 
 
 # Create necessary directories

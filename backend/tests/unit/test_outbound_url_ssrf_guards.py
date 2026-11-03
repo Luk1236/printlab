@@ -599,6 +599,10 @@ GUARDED_BODY_URLS = {
     ("SmartPlugUpdate", "rest_status_url"),
     ("SmartPlugUpdate", "rest_power_url"),
     ("SmartPlugUpdate", "rest_energy_url"),
+    # Outbound-Webhook: register_webhook prüft die URL bei der Registrierung
+    # (IP-Literale, Zahlenkodierungen, Metadaten-Hosts, Privatnetze) und vor
+    # jeder Zustellung erneut inkl. DNS-Auflösung (outbound_webhooks.deliver_…).
+    ("WebhookCreateRequest", "url"),
 }
 
 # Not a destination PrintLab requests — no guard applies.
@@ -620,6 +624,11 @@ NOT_A_FETCH_TARGET = {
     ("MaintenanceTypeCreate", "wiki_url"),  # documentation link surfaced in the UI/notifications
     ("MaintenanceTypeUpdate", "wiki_url"),
     ("ArchiveUpdate", "external_url"),  # stored source link for the model, never fetched
+    # Stripe-Checkout-Rückleitungen: PrintLab ruft sie nie an — sie werden als
+    # success_url/cancel_url an Stripe übergeben, das den Kunden dorthin leitet.
+    # PrintLab validiert sie als http(s)-URL mit Längenlimit (customer_portal).
+    ("CheckoutRequest", "success_url"),
+    ("CheckoutRequest", "cancel_url"),
 }
 
 # Genuinely unguarded, and deliberately recorded rather than quietly exempted.
