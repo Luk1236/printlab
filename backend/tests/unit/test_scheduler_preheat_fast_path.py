@@ -588,6 +588,13 @@ async def test_preheat_aborts_when_item_cancelled_during_soak(scheduler, item, a
         pm.get_status.return_value = _make_state(bed_temp=60.0, chamber_temp=62.0)
         proceed = await scheduler._preheat_and_soak(db, item, _make_printer("X1C"), archive)
 
+    # Diagnose für den CI-shard-4/4-Ausfall: Zustand beim Abbruch sichtbar
+    # machen (erscheint unter --tb=short/-vv im „Captured stdout“-Abschnitt).
+    print(f"[probe] proceed={proceed} slept_slices={len(slept)} slept_sum={sum(slept):.1f}")
+    print(
+        f"[probe] cancelled={sorted(scheduler._cancelled_dispatches)} inflight={len(scheduler._inflight)} in_inflight={item.id in scheduler._inflight}"
+    )
+
     assert proceed is False
     # Bailed after the first slice rather than sleeping the whole soak.
     assert sum(slept) <= 10.0, f"slept {sum(slept)}s — should abort on the first check"
