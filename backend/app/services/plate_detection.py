@@ -19,9 +19,12 @@ try:
     import numpy as np
 
     OPENCV_AVAILABLE = True
-except ImportError:
+except ImportError as exc:
     OPENCV_AVAILABLE = False
-    logger.info("OpenCV not available - plate detection feature disabled")
+    # Grund sichtbar halten: ein ABI-/Versionskonflikt der Binärpakete sieht aus
+    # wie „nicht installiert", ist aber ein Dependency-Problem, das sich im
+    # Betrieb von einem fehlenden Paket unterscheiden muss.
+    logger.warning("OpenCV nicht verfügbar (%s) — Plattenprüfung deaktiviert", exc)
 
 
 def _get_calibration_dir() -> Path:
