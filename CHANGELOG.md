@@ -3,6 +3,20 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.4 (03.11.2026) — CI-Härtung: Contract-Fixes, Test-Isolation & Requirements-Paarung
+
+- **Contract-Fixes:** URL-Klassifizierung (`GUARDED_BODY_URLS`: Outbound-Webhook-URL; `NOT_A_FETCH_TARGET`: 
+  Stripe-Rückleitungen) und Auth-Allowlist für die bewusst öffentlichen Kundenportal-Routen; `werkzeuge/` wird 
+  jetzt ins Test-Image kopiert (API-Doc-Doktest in CI lauffähig, war vormals `ModuleNotFoundError: werkzeuge`).
+- **Test-Isolation:** `services/test_plate_detection.py` neu — der alte Rebase-unter-Mocks-Kurs vergiftete das 
+  geteilte Modul dauerhaft (`OPENCV_AVAILABLE=False` ohne Restore) und stürzte alles danach im selben Prozess ab 
+  (maskierte in CI als "OpenCV not installed" in shard 4/4). Jetzt: normaler Import + Monkeypatch-Fixtures mit 
+  Auto-Restore; läuft in beiden Umgebungen (mit und ohne echtem OpenCV).
+- **Requirements:** opencv↔numpy-Paarung nach Python-Version gestrickt — Python 3.11 (CI) bleibt bei der 
+  ABI-kompatiblen opencv-4.x/NumPy-2.4-Kombination, 3.12+ (Lock/Docker/PC) bei opencv-5.x/NumPy-2.5+.
+- **Diagnose-Canary (manuell):** CI-Probe-Job "Backend Probe (cancel-soak)" (Actions → Run workflow) — läuft nur 
+  auf Bedarf; der zweimal betroffene shard-4-Lauf ist im Rerun bestätigt grün (Runner-Auslastungs-Rauschen).
+
 ## v2.0.3 (03.11.2026) — Update-Selbstheilung: Konflikt-Zustände am Gerät aufräumen
 
 - **Update-Fluss (`updates.py`):** Vor dem Einspielen einer Version bricht der Updater offene Git-Operationen am Gerät

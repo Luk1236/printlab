@@ -158,7 +158,8 @@ jobs:
   backend-probe-cancel-soak:
     name: Backend Probe (cancel-soak)
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event.pull_request.user.login != github.repository_owner
+    # Nur auf Bedarf (Actions → CI → Run workflow), sonst kein Push-Overhead.
+    if: github.event_name == 'workflow_dispatch'
     needs: backend-lint
     # Diagnose-Job für den deterministischen shard-4/4-Ausfall von
     # test_preheat_aborts_when_item_cancelled_during_soak. Die Stufen laufen
