@@ -184,10 +184,15 @@ class TestDiscoveryRoutes:
 
 @pytest.fixture()
 def isolated_webhook_store(tmp_path, monkeypatch: pytest.MonkeyPatch):
-    from backend.app.services import outbound_webhooks
+    from backend.app.services import outbound_webhooks, secret_codec
 
     monkeypatch.setattr(outbound_webhooks, "WEBHOOKS_FILE", tmp_path / "wh.json")
-    return outbound_webhooks
+    # Der Codec-Dienst-Schlüssel darf bei Routentests nicht die echte
+    # service_secrets.key im Datenordner erzeugen.
+    monkeypatch.setattr(secret_codec, "KEY_FILE", tmp_path / "service_secrets.key")
+    secret_codec.reset_cached_cipher()
+    yield
+    secret_codec.reset_cached_cipher()
 
 
 class TestWebhooksOutboundRoutes:

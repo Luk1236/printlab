@@ -78,6 +78,12 @@ failure_images/
 # MFA encryption key file (#1219) — same protection as .jwt_secret
 .mfa_encryption_key
 
+# Service secret key (secret_codec: HMAC secrets of outbound webhooks) and
+# runtime service files that land in the project root when DATA_DIR is unset
+service_secrets.key
+wear_tracking.json
+outbound_webhooks.json
+
 # SpoolBuddy SSH keys (generated at runtime for remote updates)
 spoolbuddy/ssh/
 
