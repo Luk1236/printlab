@@ -983,6 +983,18 @@ function RecordsWidget({ archives, currency }: { archives: ArchiveSlim[]; curren
   );
 }
 
+/** Widgets, die ihre Zahlen aus den Drucken beziehen. */
+const PRINT_WIDGET_IDS = new Set([
+  'quick-stats',
+  'success-rate',
+  'time-accuracy',
+  'failure-analysis',
+  'print-activity',
+  'records',
+  'printer-stats',
+  'filament-trends',
+]);
+
 export function StatsPage() {
   const { t } = useTranslation();
   const { showToast } = useToast();
@@ -1262,6 +1274,12 @@ export function StatsPage() {
     }] as DashboardWidget[])),
   ];
 
+  // Ohne einen einzigen Druck sagen acht Widgets nur „keine Daten“. Sie weichen einer einzigen Hinweiskarte; die
+  // Widgets, die aus dem Bestand rechnen (Lieferanten, Materialnummern), bleiben.
+  const hasNoPrints = stats?.total_prints === 0;
+  const hasActiveFilter = Boolean(effectiveDateRange.dateFrom || effectiveDateRange.dateTo) || selectedUserId !== null;
+  const visibleWidgets = hasNoPrints ? widgets.filter((w) => !PRINT_WIDGET_IDS.has(w.id)) : widgets;
+
   return (
     <div className="p-4 md:p-8">
       <div className="mb-6">
@@ -1495,9 +1513,21 @@ export function StatsPage() {
         />
       </div>
 
+      {hasNoPrints && (
+        <div
+          data-testid="stats-empty"
+          className="mb-6 rounded-xl border border-bambu-dark-tertiary bg-bambu-dark-secondary p-8 text-center"
+        >
+          <BarChart3 className="w-10 h-10 mx-auto mb-3 text-bambu-gray" />
+          <p className="text-white font-medium">
+            {t(hasActiveFilter ? 'stats.noPrintDataInRange' : 'stats.noPrintData')}
+          </p>
+        </div>
+      )}
+
       <Dashboard
         key={dashboardKey}
-        widgets={widgets}
+        widgets={visibleWidgets}
         storageKey="bambusy-dashboard-layout-v2"
         stackBelow={640}
         hideControls

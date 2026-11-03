@@ -662,4 +662,39 @@ describe('StatsPage', () => {
       expect(screen.queryByText('Name At The Time')).not.toBeInTheDocument();
     });
   });
+
+  describe('without any prints', () => {
+    it('shows one notice instead of the empty print widgets', async () => {
+      server.use(
+        http.get('/api/v1/archives/stats', () =>
+          HttpResponse.json({
+            ...mockStats,
+            total_prints: 0,
+            successful_prints: 0,
+            failed_prints: 0,
+            total_print_time_hours: 0,
+            total_filament_grams: 0,
+            total_cost: 0,
+            prints_by_filament_type: {},
+            prints_by_printer: {},
+            average_time_accuracy: null,
+            time_accuracy_by_printer: null,
+          })
+        )
+      );
+      render(<StatsPage />);
+
+      expect(await screen.findByTestId('stats-empty')).toHaveTextContent('No print data available');
+      expect(screen.queryByText('Total Prints')).not.toBeInTheDocument();
+    });
+
+    it('keeps the full dashboard once there are prints', async () => {
+      render(<StatsPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Total Prints')).toBeInTheDocument();
+      });
+      expect(screen.queryByTestId('stats-empty')).not.toBeInTheDocument();
+    });
+  });
 });
