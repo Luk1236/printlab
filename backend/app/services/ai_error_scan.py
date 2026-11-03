@@ -27,7 +27,7 @@ from typing import Any
 import httpx
 
 from backend.app.core.config import settings
-from backend.app.services import assistant_config, error_patterns
+from backend.app.services import assistant_config, assistant_llm, error_patterns
 from backend.app.utils import failure_images
 
 logger = logging.getLogger(__name__)
@@ -38,6 +38,7 @@ MAX_FINDINGS = 2000
 MAX_FEEDBACK = 4000
 MAX_IMAGE_BYTES = 15 * 1024 * 1024
 MAX_IMAGE_PIXELS = 40_000_000  # ~40 MP; darüber ist es kein Kamerabild mehr
+MIN_VISION_TIMEOUT = 300  # am Pi 5 gemessen: ein neues Bild knapp 3 Minuten, der Kaltstart mehr als 3 Minuten
 _ALLOWED_IDS = {pattern["id"] for pattern in error_patterns.PATTERNS}
 _lock = threading.Lock()
 _write_lock = threading.Lock()
@@ -198,21 +199,25 @@ async def classify(image_bytes: bytes, config: dict[str, Any] | None = None) -> 
     if not model:
         raise AiScanError("Es ist kein Bildmodell eingestellt.")
     base_url = str(config.get("base_url") or "http://127.0.0.1:11434").rstrip("/")
-    timeout = float(max(60, min(600, int(config.get("timeout_seconds") or 180))))
+    timeout = float(max(MIN_VISION_TIMEOUT, min(600, int(config.get("timeout_seconds") or 180))))
     image_b64 = _prepare_image(image_bytes)
-    started = time.monotonic()
-    # Zeitbudget für das ganze Bild: der HTTP-Timeout greift pro Lesevorgang, ein langsam tröpfelnder
-    # Server kann ihn umgehen. So hängt weder die Stapelprüfung noch ein Upload endlos.
-    try:
-        if await _is_ollama(base_url, timeout=min(timeout, 5.0)):
-            content = await asyncio.wait_for(_ollama_vision(base_url, model, image_b64, timeout), timeout=timeout)
-        else:
-            content = await asyncio.wait_for(_openai_vision(base_url, model, image_b64, timeout), timeout=timeout)
-    except asyncio.TimeoutError as exc:
-        raise AiScanError(f"Die Bildanalyse hat das Zeitlimit von {timeout:.0f} s überschritten.") from exc
+    # Der Pi schafft nur eine Antwort zur Zeit: Bild und Chat nacheinander, sonst laufen beide ins Zeitlimit.
+    # Das Zeitbudget beginnt erst danach, die Wartezeit zählt nicht mit.
+    async with assistant_llm.LOCK:
+        started = time.monotonic()
+        # Zeitbudget für das ganze Bild: der HTTP-Timeout greift pro Lesevorgang, ein langsam tröpfelnder
+        # Server kann ihn umgehen. So hängt weder die Stapelprüfung noch ein Upload endlos.
+        try:
+            if await _is_ollama(base_url, timeout=min(timeout, 5.0)):
+                content = await asyncio.wait_for(_ollama_vision(base_url, model, image_b64, timeout), timeout=timeout)
+            else:
+                content = await asyncio.wait_for(_openai_vision(base_url, model, image_b64, timeout), timeout=timeout)
+        except asyncio.TimeoutError as exc:
+            raise AiScanError(f"Die Bildanalyse hat das Zeitlimit von {timeout:.0f} s überschritten.") from exc
+        duration_ms = int((time.monotonic() - started) * 1000)
     result = _parse_reply(content)
     result["model"] = model
-    result["duration_ms"] = int((time.monotonic() - started) * 1000)
+    result["duration_ms"] = duration_ms
     return result
 
 

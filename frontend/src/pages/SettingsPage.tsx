@@ -565,7 +565,7 @@ export function SettingsPage() {
     queryFn: api.getObicoStatus,
     refetchInterval: 15000,
   });
-  const obicoActive = !!(obicoStatus?.is_running && obicoStatus?.enabled);
+  const obicoActive = !!(obicoStatus?.is_running && obicoStatus?.enabled && obicoStatus?.ml_url);
 
   const { data: ffmpegStatus } = useQuery({
     queryKey: ['ffmpeg-status'],

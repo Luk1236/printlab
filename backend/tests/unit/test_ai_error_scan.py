@@ -9,6 +9,46 @@ import pytest
 from backend.app.services import ai_error_scan
 
 
+class TestClassifyLimits:
+    @staticmethod
+    def _image() -> bytes:
+        from io import BytesIO
+
+        from PIL import Image
+
+        buffer = BytesIO()
+        Image.new("RGB", (32, 32)).save(buffer, format="JPEG")
+        return buffer.getvalue()
+
+    async def test_waits_for_a_running_assistant_answer(self):
+        config = {"vision_model": "m", "timeout_seconds": 180}
+        reply = '{"pattern_id": "none", "confidence": 0, "reason": ""}'
+        with (
+            patch.object(ai_error_scan, "_is_ollama", AsyncMock(return_value=True)),
+            patch.object(ai_error_scan, "_ollama_vision", AsyncMock(return_value=reply)) as vision,
+        ):
+            await ai_error_scan.assistant_llm.LOCK.acquire()
+            try:
+                task = asyncio.create_task(ai_error_scan.classify(self._image(), config))
+                await asyncio.sleep(0)
+                await asyncio.sleep(0)
+                vision.assert_not_called()
+            finally:
+                ai_error_scan.assistant_llm.LOCK.release()
+            await task
+        vision.assert_awaited_once()
+
+    async def test_a_short_assistant_limit_does_not_cut_the_image_analysis(self):
+        config = {"vision_model": "m", "timeout_seconds": 60}
+        reply = '{"pattern_id": "none", "confidence": 0, "reason": ""}'
+        with (
+            patch.object(ai_error_scan, "_is_ollama", AsyncMock(return_value=True)),
+            patch.object(ai_error_scan, "_ollama_vision", AsyncMock(return_value=reply)) as vision,
+        ):
+            await ai_error_scan.classify(self._image(), config)
+        assert vision.await_args.args[3] == ai_error_scan.MIN_VISION_TIMEOUT
+
+
 class TestParseReply:
     def test_reads_the_json_even_inside_a_code_fence(self):
         result = ai_error_scan._parse_reply(

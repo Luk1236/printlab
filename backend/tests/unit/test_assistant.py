@@ -149,6 +149,15 @@ class TestActions:
         assert actions.split_reply("Nur Text.") == ("Nur Text.", None)
         assert actions.split_reply("actions: []\n")[0] == ""
 
+    def test_split_reply_finds_the_list_at_the_end_of_a_sentence(self):
+        assert actions.split_reply("Es gibt 1 Drucker. ACTIONS: []") == ("Es gibt 1 Drucker.", "[]")
+        text, raw = actions.split_reply('Mache ich. ACTIONS: [{"type":"set_priority"}]\n')
+        assert text == "Mache ich." and raw == '[{"type":"set_priority"}]'
+
+    def test_split_reply_keeps_ordinary_text_with_the_word(self):
+        reply = "Die Spalte Actions: zeigt mehr. Danach geht es weiter."
+        assert actions.split_reply(reply) == (reply, None)
+
     def test_valid_priority_and_due_actions_get_our_own_labels(self):
         raw = '[{"type":"set_priority","item_id":12,"priority":"urgent"},{"type":"set_due_date","item_id":13,"due_at":"2026-11-05T09:30:00Z"}]'
         accepted, rejected = actions.validate(raw, ITEMS, "de")

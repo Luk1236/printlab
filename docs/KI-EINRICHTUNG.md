@@ -131,6 +131,14 @@ Erkennung des Druckers selbst werden dort nur angezeigt. Feineinstellungen bleib
 Die frühere Leerbett-Prüfung und die Spaghetti-Prüfung gibt es nicht mehr: Die Platte beim Start prüft die
 Platten-Erkennung, den laufenden Druck die KI-Überwachung und die Erkennung des Druckers.
 
+Gemessen am Pi 5 mit einem P2S (Bambu-Platte mit Muster, kein Druck):
+
+| Prüfung | Ergebnis | Folge |
+|---|---|---|
+| Bildmodell | Ein neues Bild knapp 3 Minuten, der Kaltstart über 3 Minuten | Eine Runde mit 2 Bildern dauert rund 6 Minuten, danach folgt erst der eingestellte Abstand. Dauerlast ist nur mit einem passenden Netzteil sinnvoll |
+| Erste-Schicht-Prüfung | Die leere Platte gilt als unauffällig | Sie warnt nur bei einem zu dunklen oder strukturlosen Bild, nicht bei fehlendem Material |
+| Bauteil-Wächter | Rund 6 Unterschied bei unveränderter Szene, die Schwelle steht auf 1 | Er warnt mit der Vorgabe kaum |
+
 ## Fehlersuche
 
 | Meldung | Ursache / Abhilfe |

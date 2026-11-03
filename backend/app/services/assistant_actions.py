@@ -15,7 +15,9 @@ from typing import Any
 
 MAX_ACTIONS = 5
 PRIORITY_LEVELS = {"low": 0, "normal": 1, "urgent": 2}
-_MARKER = re.compile(r"^\s*ACTIONS:\s*(.*)$", re.IGNORECASE | re.MULTILINE | re.DOTALL)
+# Kleine Modelle hängen die Liste auch direkt an den letzten Satz an; mitten im Satz zählt der Marker nur mit einer Liste
+# am Ende, damit normaler Text mit dem Wort „Actions:“ nicht abgeschnitten wird.
+_MARKER = re.compile(r"^\s*ACTIONS:\s*(.*)$|\bACTIONS:\s*(\[.*\])\s*$", re.IGNORECASE | re.MULTILINE | re.DOTALL)
 
 LABELS = {
     "de": {
@@ -38,7 +40,7 @@ def split_reply(text: str) -> tuple[str, str | None]:
     match = _MARKER.search(text)
     if not match:
         return text.strip(), None
-    return text[: match.start()].strip(), match.group(1).strip()
+    return text[: match.start()].strip(), match.group(match.lastindex or 1).strip()
 
 
 def _parse_list(raw: str) -> list[Any]:

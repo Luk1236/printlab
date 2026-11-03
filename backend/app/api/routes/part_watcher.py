@@ -18,7 +18,7 @@ router = APIRouter(prefix="/printers", tags=["part-watcher"])
 
 class PartWatcherUpdate(BaseModel):
     enabled: bool = False
-    threshold: float = Field(default=1.0, ge=0.05, le=20.0)
+    threshold: float | None = Field(default=None, ge=0.05, le=20.0)  # fehlt der Wert, bleibt die gespeicherte Schwelle
     # Auftrags-Regeln: [{key_contains, threshold, enabled}] — erster Treffer gewinnt.
     overrides: list[dict] | None = None
 
