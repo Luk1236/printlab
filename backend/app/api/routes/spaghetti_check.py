@@ -11,7 +11,7 @@ from backend.app.core.auth import RequirePermissionIfAuthEnabled
 from backend.app.core.database import get_db
 from backend.app.core.permissions import Permission
 from backend.app.models.printer import Printer
-from backend.app.services.spaghetti_check import spaghetti_check
+from backend.app.services.spaghetti_check import read_config, write_config
 
 router = APIRouter(prefix="/printers", tags=["spaghetti-check"])
 
@@ -27,7 +27,7 @@ async def get_spaghetti_check(
     printer_id: int,
     _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_READ),
 ):
-    return spaghetti_check.read_config()
+    return read_config()
 
 
 @router.put("/{printer_id}/spaghetti-check")
@@ -42,5 +42,4 @@ async def set_spaghetti_check(
         from fastapi import HTTPException
 
         raise HTTPException(404, "Drucker nicht gefunden.")
-    spaghetti_check.read_config()  # ensure file exists for next reads
-    return spaghetti_check.write_config(data.model_dump())
+    return write_config(data.model_dump())
