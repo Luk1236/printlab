@@ -10,6 +10,8 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from backend.app.core.config import PRINTLAB_VERSION
+
 DISCOVERY_PREFIX = "homeassistant"
 
 
@@ -21,7 +23,7 @@ def build_device_info(printer_id: str, printer_name: str = "Bambu Lab P2S") -> d
         "name": f"PrintLab {printer_name}",
         "model": "Bambu Lab P2S / PrintLab",
         "manufacturer": "PrintLab",
-        "sw_version": "1.27.0",
+        "sw_version": PRINTLAB_VERSION,
     }
 
 

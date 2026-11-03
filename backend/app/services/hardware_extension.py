@@ -404,7 +404,20 @@ class HardwareExtension:
 
     # --- Plattenwechsel ----------------------------------------------------
 
-    def change_plate(self, job_name: str = "") -> tuple[bool, str]:
+    def change_plate(
+        self,
+        job_name: str = "",
+        current_bed_temp: float | None = None,
+        max_safe_bed_temp: float = 36.0,
+        force: bool = False,
+    ) -> tuple[bool, str]:
+        if current_bed_temp is not None and not force:
+            from backend.app.services.cooldown_guard import check_swap_safety
+
+            is_safe, msg, _ = check_swap_safety(current_bed_temp, max_safe_temp=max_safe_bed_temp)
+            if not is_safe:
+                return False, msg
+
         refusal = self._enter()
         if refusal:
             return False, refusal

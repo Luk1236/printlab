@@ -250,6 +250,7 @@ async def check_door_status(
 async def change_plate(
     printer_id: int,
     job: str = Query("", max_length=200, description="Name des fertigen Auftrags (optional)"),
+    force: bool = Query(False, description="Abkühlsperre übergehen"),
     user=Depends(get_current_user_optional),
     _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_CONTROL),
     db: AsyncSession = Depends(get_db),
@@ -262,7 +263,22 @@ async def change_plate(
     blocked = plate_wizard.blocks_plate_change(printer_id)
     if blocked:
         raise HTTPException(409, blocked)
-    ok, message = await asyncio.to_thread(get_hardware(printer_id).change_plate, job)
+
+    # Cooldown Guard: Prüfen, ob Druckbett <= 36 °C
+    client = printer_manager.get_client(printer_id)
+    bed_temp = None
+    if client and client.state:
+        bed_temp = getattr(client.state, "bed_temp", None)
+        if bed_temp is None and hasattr(client.state, "temperatures") and isinstance(client.state.temperatures, dict):
+            bed_temp = client.state.temperatures.get("bed") or client.state.temperatures.get("bed_temp")
+
+    ok, message = await asyncio.to_thread(
+        get_hardware(printer_id).change_plate,
+        job,
+        float(bed_temp) if bed_temp is not None else None,
+        36.0,
+        force,
+    )
     _audit("plate_change", ok, message, printer_id, user, {"job": job})
     if not ok:
         raise HTTPException(400, message)

@@ -39,6 +39,7 @@ const SetupGuidePage = lazy(() =>
 );
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage').then((m) => ({ default: m.NotificationsPage })));
 const GCodeViewerPage = lazy(() => import('./pages/GCodeViewerPage').then((m) => ({ default: m.GCodeViewerPage })));
+const KioskModePage = lazy(() => import('./pages/KioskModePage').then((m) => ({ default: m.KioskModePage })));
 import { useWebSocket } from './hooks/useWebSocket';
 import { usePrintProgressTitle } from './hooks/usePrintProgressTitle';
 import { useStreamTokenSync } from './hooks/useCameraStreamToken';
@@ -220,6 +221,9 @@ function App() {
                     ?token= kiosk has no session to protect; the page itself sends a
                     tokenless visitor to /login, and the backend gates the feed. */}
                 <Route path="/camwall" element={<CamWallPage />} />
+
+                {/* Pi 5 Touch Kiosk */}
+                <Route path="/kiosk" element={<KioskModePage />} />
 
                 {/* SpoolBuddy kiosk UI */}
                 <Route element={<ProtectedRoute><WebSocketProvider><SpoolBuddyLayout /></WebSocketProvider></ProtectedRoute>}>

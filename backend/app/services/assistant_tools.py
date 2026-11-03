@@ -132,6 +132,46 @@ AVAILABLE_TOOLS: list[dict[str, Any]] = [
 ]
 
 
+def _emergency_stop_all(reason: str) -> dict[str, Any]:
+    """Not-Halt auf allen bereits laufenden Hardware-Instanzen (je Drucker + gemeinsame Altinstanz).
+
+    Wichtig: keine neue ``HardwareExtension`` anlegen — die wäre nicht die Instanz, die die Mechanik steuert,
+    und der Not-Halt liefe ins Leere. Erfolg wird nur gemeldet, wenn mindestens eine Instanz ihn bestätigt.
+    """
+    from backend.app.services import hardware_extension as hwmod
+
+    instances = list(hwmod._per_printer.values())
+    if hwmod._hardware is not None:
+        instances.append(hwmod._hardware)
+    if not instances:
+        instances.append(hwmod.get_hardware())
+
+    confirmed, errors = 0, []
+    for hw in instances:
+        try:
+            ok, msg = hw.emergency_stop()
+        except Exception as exc:  # ein defekter Kanal darf die anderen nicht verhindern
+            ok, msg = False, f"{type(exc).__name__}: {exc}"
+        if ok:
+            confirmed += 1
+        else:
+            errors.append(msg)
+
+    logger.warning("KI-Not-Halt (%s): %d/%d bestätigt", reason, confirmed, len(instances))
+    if confirmed == 0:
+        return {
+            "status": "error",
+            "action": "EMERGENCY_STOP_FAILED",
+            "message": f"Not-Halt NICHT bestätigt ({'; '.join(errors) or 'keine Rückmeldung'}). Sofort Hand-Not-Aus betätigen!",
+        }
+    return {
+        "status": "success",
+        "action": "EMERGENCY_STOP_TRIGGERED",
+        "message": f"Not-Halt ausgelöst ({confirmed}/{len(instances)} Kanäle bestätigt): {reason}",
+        "errors": errors,
+    }
+
+
 def get_tool_definitions() -> list[dict[str, Any]]:
     """Gibt die Liste aller verfügbaren Werkzeugdefinitionen für den LLM-Aufruf zurück."""
     return AVAILABLE_TOOLS
@@ -150,50 +190,23 @@ def execute_tool(tool_name: str, arguments: dict[str, Any] | str) -> dict[str, A
     logger.info("KI-Tool aufgerufen: '%s' mit Argumenten: %s", tool_name, args)
 
     if tool_name == "get_printer_status":
-        from backend.app.services.ha_discovery import build_telemetry_payload
-
-        # Simulierte oder reale Telemetrie abfragen
+        # Noch nicht an printer_manager angebunden: lieber ehrlich "nicht verfügbar" als erfundene Messwerte,
+        # auf die das Modell dann Entscheidungen stützt.
         return {
-            "status": "success",
-            "data": json.loads(
-                build_telemetry_payload(
-                    state="READY",
-                    nozzle_temp=24.5,
-                    bed_temp=22.0,
-                    progress=0,
-                    remaining_minutes=0,
-                )
-            ),
+            "status": "unavailable",
+            "message": "Live-Telemetrie ist für den Assistenten noch nicht angebunden. Bitte Druckerkarte prüfen.",
         }
 
     elif tool_name == "emergency_stop":
-        reason = args.get("reason", "Not-Halt durch KI-Assistent angefordert")
-        try:
-            from backend.app.services.hardware_extension import HardwareExtension
-
-            hw = HardwareExtension()
-            hw.emergency_stop()
-        except Exception as exc:
-            logger.debug("Not-Halt Hardware-Trigger übersprungen: %s", exc)
-        return {
-            "status": "success",
-            "action": "EMERGENCY_STOP_TRIGGERED",
-            "message": f"Hardware-Not-Halt erfolgreich ausgelöst: {reason}",
-        }
+        reason = str(args.get("reason") or "Not-Halt durch KI-Assistent angefordert")
+        return _emergency_stop_all(reason)
 
     elif tool_name == "set_temperatures":
-        bed = args.get("bed_temp")
-        nozzle = args.get("nozzle_temp")
-        applied: dict[str, Any] = {}
-        if bed is not None:
-            applied["target_bed_temp"] = float(min(110.0, max(0.0, float(bed))))
-        if nozzle is not None:
-            applied["target_nozzle_temp"] = float(min(300.0, max(0.0, float(nozzle))))
+        # Bewusst nicht ausgeführt: Heizbefehle brauchen eine Bestätigung durch einen Menschen und eine
+        # MQTT-Anbindung; vorher keine Erfolgsmeldung vortäuschen.
         return {
-            "status": "success",
-            "action": "TEMPERATURES_SET",
-            "settings": applied,
-            "message": "Ziel-Temperaturen wurden an den Drucker übermittelt.",
+            "status": "unavailable",
+            "message": "Temperaturen kann der Assistent nicht setzen. Bitte am Drucker oder in der Druckerkarte einstellen.",
         }
 
     elif tool_name == "search_hms_knowledge":

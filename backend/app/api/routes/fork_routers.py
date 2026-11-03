@@ -12,11 +12,15 @@ from backend.app.api.routes import (
     assistant,
     auto_requeue,
     auto_setup,
+    customer_portal_route,
     customers,
     error_help,
     failure_images,
     first_layer_inspector,
+    fleet,
+    ha_discovery_route,
     hardware,
+    maintenance_wear,
     monthly_report,
     plate_calibration,
     plate_tuning,
@@ -30,6 +34,7 @@ from backend.app.api.routes import (
     selftest,
     spaghetti_check,
     timelapse_export,
+    webhooks_outbound,
 )
 
 
@@ -71,3 +76,10 @@ def register_fork_routers(app: FastAPI, prefix: str) -> None:
     app.include_router(search.router, prefix=prefix)
     # Browser-Meldungen: VAPID-Schlüssel, Abo, Testversand.
     app.include_router(push.router, prefix=prefix)
+
+    # PrintLab v2.0 Enterprise & Infrastructure Erweiterungen
+    app.include_router(fleet.router, prefix=prefix)
+    app.include_router(maintenance_wear.router, prefix=prefix)
+    app.include_router(ha_discovery_route.router, prefix=prefix)
+    app.include_router(customer_portal_route.router, prefix=prefix)
+    app.include_router(webhooks_outbound.router, prefix=prefix)

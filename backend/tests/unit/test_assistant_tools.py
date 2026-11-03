@@ -24,25 +24,44 @@ class TestAssistantTools:
             assert "parameters" in fn
             assert fn["parameters"]["type"] == "object"
 
-    def test_execute_get_printer_status(self):
+    def test_get_printer_status_does_not_invent_values(self):
         res = assistant_tools.execute_tool("get_printer_status", {})
-        assert res["status"] == "success"
-        data = res["data"]
-        assert "state" in data
-        assert "nozzle_temp" in data
-        assert "bed_temp" in data
+        assert res["status"] == "unavailable"
+        assert "data" not in res
 
-    def test_execute_emergency_stop(self):
+    def test_emergency_stop_hits_registered_instance(self, monkeypatch):
+        from backend.app.services import hardware_extension as hwmod
+
+        calls = []
+
+        class FakeHw:
+            def emergency_stop(self):
+                calls.append(1)
+                return True, "gestoppt"
+
+        monkeypatch.setattr(hwmod, "_per_printer", {1: FakeHw()})
+        monkeypatch.setattr(hwmod, "_hardware", None)
         res = assistant_tools.execute_tool("emergency_stop", {"reason": "Kollisionsalarm"})
+        assert calls == [1]
         assert res["status"] == "success"
-        assert res["action"] == "EMERGENCY_STOP_TRIGGERED"
         assert "Kollisionsalarm" in res["message"]
 
-    def test_execute_set_temperatures(self):
-        res = assistant_tools.execute_tool("set_temperatures", {"bed_temp": 65.0, "nozzle_temp": 215.0})
-        assert res["status"] == "success"
-        assert res["settings"]["target_bed_temp"] == 65.0
-        assert res["settings"]["target_nozzle_temp"] == 215.0
+    def test_emergency_stop_reports_failure_honestly(self, monkeypatch):
+        from backend.app.services import hardware_extension as hwmod
+
+        class BrokenHw:
+            def emergency_stop(self):
+                raise OSError("GPIO weg")
+
+        monkeypatch.setattr(hwmod, "_per_printer", {1: BrokenHw()})
+        monkeypatch.setattr(hwmod, "_hardware", None)
+        res = assistant_tools.execute_tool("emergency_stop", {"reason": "Test"})
+        assert res["status"] == "error"
+        assert "NICHT" in res["message"]
+
+    def test_set_temperatures_is_not_faked(self):
+        res = assistant_tools.execute_tool("set_temperatures", {"bed_temp": 65.0})
+        assert res["status"] == "unavailable"
 
     def test_execute_search_hms_knowledge(self):
         res = assistant_tools.execute_tool("search_hms_knowledge", {"query": "0300-0100"})
