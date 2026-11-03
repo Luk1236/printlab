@@ -28,6 +28,7 @@ from pathlib import Path
 from typing import Any
 
 from backend.app.core.config import settings
+from backend.app.services.cooldown_guard import check_swap_safety
 
 logger = logging.getLogger(__name__)
 
@@ -412,8 +413,6 @@ class HardwareExtension:
         force: bool = False,
     ) -> tuple[bool, str]:
         if current_bed_temp is not None and not force:
-            from backend.app.services.cooldown_guard import check_swap_safety
-
             is_safe, msg, _ = check_swap_safety(current_bed_temp, max_safe_temp=max_safe_bed_temp)
             if not is_safe:
                 return False, msg

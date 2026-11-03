@@ -11,9 +11,28 @@ von Bambu Lab Druckern (P2S, P1S, X1C, A1) anhand von:
 from __future__ import annotations
 
 import logging
+import math
 from typing import Any
 
 logger = logging.getLogger(__name__)
+
+# Ab diesem Fitness-Score gilt ein Drucker als sofort startbereit. Eine
+# Konstante statt doppelter 60.0-Magie in Routen und Dispatcher.
+MIN_DISPATCH_SCORE = 60.0
+
+
+def _as_float(value: Any, fallback: float) -> float:
+    """Robustes float-Parsing: ungültige oder nicht endliche Werte bekommen den Fallback.
+
+    Der Dispatcher wird aus API-Payloads gespeist; ``"abc"`` in
+    ``filament_grams`` darf keinen 500er werfen, sondern fällt auf den
+    dokumentierten Standard zurück.
+    """
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return fallback
+    return parsed if math.isfinite(parsed) else fallback
 
 
 def calculate_printer_fitness(
@@ -41,7 +60,7 @@ def calculate_printer_fitness(
 
     # 2. Bauplatten-Zustand (Leerbett & Abkühlung)
     plate_clear = bool(printer.get("plate_clear", True))
-    bed_temp = float(printer.get("bed_temp", 25.0))
+    bed_temp = _as_float(printer.get("bed_temp"), 25.0)
     if not plate_clear:
         return 0.0, ["Druckbett ist noch mit einem vorherigen Bauteil belegt"]
     if bed_temp > 40.0:
@@ -52,8 +71,8 @@ def calculate_printer_fitness(
         reasons.append("Druckbett ist frei und abgekühlt")
 
     # 3. Düsen-Kompatibilität
-    req_nozzle = float(job.get("nozzle_diameter", 0.4))
-    printer_nozzle = float(printer.get("nozzle_diameter", 0.4))
+    req_nozzle = _as_float(job.get("nozzle_diameter"), 0.4)
+    printer_nozzle = _as_float(printer.get("nozzle_diameter"), 0.4)
     req_hardened = bool(job.get("requires_hardened_nozzle", False))
     is_hardened = bool(printer.get("is_hardened_nozzle", True))
 
@@ -68,14 +87,18 @@ def calculate_printer_fitness(
     # 4. AMS-Material- und Farb-Matching
     req_mat = str(job.get("material", "PLA")).upper()
     req_color = str(job.get("color", "")).lower()
-    req_weight = float(job.get("filament_grams", 30.0))
+    req_weight = _as_float(job.get("filament_grams"), 30.0)
 
     ams_slots = printer.get("ams_slots", [])
+    if not isinstance(ams_slots, list):
+        ams_slots = []
     matched_slot: dict[str, Any] | None = None
 
     for slot in ams_slots:
+        if not isinstance(slot, dict):
+            continue
         slot_mat = str(slot.get("material", "")).upper()
-        slot_remain = float(slot.get("remaining_grams", 100.0))
+        slot_remain = _as_float(slot.get("remaining_grams"), 0.0)
         if slot_mat == req_mat and slot_remain >= req_weight:
             slot_color = str(slot.get("color", "")).lower()
             if not req_color or slot_color == req_color:
@@ -95,7 +118,7 @@ def calculate_printer_fitness(
         reasons.append(f"Kein exakt passendes Filament für {req_mat} im AMS geladen (manueller Wechsel nötig)")
 
     # 5. Betriebsstunden-Balancing (bevorzuge weniger abgenutzte Drucker leicht)
-    total_hours = float(printer.get("total_operating_hours", 100.0))
+    total_hours = _as_float(printer.get("total_operating_hours"), 100.0)
     if total_hours < 200.0:
         score += 10.0
     elif total_hours < 500.0:
@@ -134,7 +157,7 @@ def dispatch_job_to_fleet(
     scored_candidates.sort(key=lambda x: x["fitness_score"], reverse=True)
     best = scored_candidates[0]
 
-    if best["can_start_immediately"]:
+    if best["fitness_score"] >= MIN_DISPATCH_SCORE:
         return {
             "selected_printer_id": best["printer_id"],
             "status": "DISPATCHED",

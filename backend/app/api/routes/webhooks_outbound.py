@@ -19,6 +19,7 @@ from backend.app.services.outbound_webhooks import (
     delete_webhook,
     dispatch_event,
     list_webhooks,
+    mask_webhook,
     register_webhook,
 )
 
@@ -62,9 +63,14 @@ async def create_outbound_webhook(
             format_type=req.format_type,
             description=req.description,
         )
-        return {"success": True, "webhook": hook}
+        # Das HMAC-Geheimnis kommt nie im Klartext in einer Antwort zurück.
+        return {"success": True, "webhook": mask_webhook(hook)}
     except ValueError as exc:
         raise HTTPException(400, str(exc))
+    except RuntimeError as exc:
+        # Persistenz fehlgeschlagen (Dateisystem) — kein Client-Fehler.
+        logger.error("Webhook-Persistenz fehlgeschlagen: %s", exc)
+        raise HTTPException(503, "Webhook konnte nicht gespeichert werden. Bitte System-Meldungen prüfen.")
 
 
 @router.delete("/{webhook_id}")
@@ -93,6 +99,8 @@ async def trigger_test_webhook(
     _=RequirePermissionIfAuthEnabled(Permission.SETTINGS_UPDATE),
 ) -> dict[str, Any]:
     """Sendet ein Test-Ereignis an alle passenden aktiven Webhooks."""
+    if req.event not in ALL_EVENTS:
+        raise HTTPException(400, f"Unbekanntes Ereignis '{req.event}'. Gültig sind: {', '.join(ALL_EVENTS)}")
     test_data = req.data or {"message": "PrintLab Test Webhook Payload", "test": True}
     dispatched = dispatch_event(req.event, test_data)
     return {"success": True, "event": req.event, "dispatched_count": dispatched}

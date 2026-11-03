@@ -27,6 +27,55 @@ from backend.app.utils.threemf_tools import bed_temperature_from_config
 logger = logging.getLogger(__name__)
 
 
+def _emit_lifecycle_hooks(archive: PrintArchive, status: str, failure_reason: str | None) -> None:
+    """Bucht Verschleißstunden und verteilt Abschluss-Webhooks für ein Archiv.
+
+    Wird nach dem DB-Commit aufgerufen. Die Hook-Dienste werden lokal importiert
+    (zyklische Importe beim App-Start vermeiden). Fehler dürfen den Archiv-Vorgang
+    nicht brechen, dürfen aber nicht unsichtbar bleiben: deshalb Warnstufe statt
+    Debug. Ein abgeschlossener Druck mit unbekannter Dauer sendet trotzdem den
+    Webhook — nur die Stundebuchung entfällt sinnvollerweise.
+    """
+    try:
+        from backend.app.services import outbound_webhooks, wear_tracker
+
+        payload: dict[str, object] = {
+            "archive_id": archive.id,
+            "printer_id": archive.printer_id,
+            "print_name": archive.print_name,
+        }
+
+        if status == "failed":
+            payload["reason"] = failure_reason
+            outbound_webhooks.dispatch_event("print.failed", payload)
+            return
+
+        hours = float(archive.print_time_seconds or 0) / 3600.0
+        printer_key = str(archive.printer_id) if archive.printer_id is not None else "default"
+        if hours > 0:
+            wear_tracker.record_print_usage(
+                printer_id=printer_key,
+                print_time_hours=hours,
+                filament_type=archive.filament_type or "PLA",
+            )
+        payload["print_time_seconds"] = archive.print_time_seconds
+        outbound_webhooks.dispatch_event("print.completed", payload)
+    except Exception as exc:
+        logger.warning("Abschluss-Hooks für Archiv %s (Status %s) fehlgeschlagen: %s", archive.id, status, exc)
+
+
+def _should_emit_status_hooks(previous_status: str | None, new_status: str) -> bool:
+    """Hook nur bei echtem Abschluss-Statuswechsel.
+
+    Ein wiederholter Aufruf von ``update_archive_status`` mit demselben Zielstatus
+    (Retry, doppeltes Signal des Druckers) darf Verschleißstunden nicht doppelt
+    buchen und Webhooks nicht doppelt senden.
+    """
+    if new_status not in ("completed", "failed"):
+        return False
+    return previous_status != new_status
+
+
 def _copy_and_fsync(src: Path, dst: Path, chunk_size: int = 1024 * 1024) -> None:
     """Copy src to dst with an explicit chunked read/write and fsync the dst.
 
@@ -1556,42 +1605,12 @@ class ArchiveService:
         await self.db.commit()
         await self.db.refresh(archive)
 
-        if archive.status == "completed" and archive.print_time_seconds:
-            try:
-                from backend.app.services import outbound_webhooks, wear_tracker
-
-                p_hours = (archive.print_time_seconds or 0) / 3600.0
-                p_printer = str(archive.printer_id) if archive.printer_id is not None else "default"
-                wear_tracker.record_print_usage(
-                    printer_id=p_printer,
-                    print_time_hours=p_hours,
-                    filament_type=archive.filament_type or "PLA",
-                )
-                outbound_webhooks.dispatch_event(
-                    "print.completed",
-                    {
-                        "archive_id": archive.id,
-                        "printer_id": archive.printer_id,
-                        "print_name": archive.print_name,
-                        "print_time_seconds": archive.print_time_seconds,
-                    },
-                )
-            except Exception as exc:
-                logger.debug("Post-archive completion hook error: %s", exc)
-        elif archive.status == "failed":
-            try:
-                from backend.app.services import outbound_webhooks
-
-                outbound_webhooks.dispatch_event(
-                    "print.failed",
-                    {
-                        "archive_id": archive.id,
-                        "printer_id": archive.printer_id,
-                        "print_name": archive.print_name,
-                    },
-                )
-            except Exception as exc:
-                logger.debug("Post-archive failure hook error: %s", exc)
+        # Abschluss-Hooks des Neuanlegs: Verschleißbuchung + Webhooks, genau
+        # einmal — für einen frisch angelegten Datensatz konnte noch nie ein
+        # Hook feuern. Ein abgeschlossener Druck ohne bekannte Dauer sendet
+        # seinen Webhook trotzdem (die Stundebuchung entfällt bewusst).
+        if archive.status in ("completed", "failed"):
+            _emit_lifecycle_hooks(archive, archive.status, None)
 
         return archive
 
@@ -1618,6 +1637,11 @@ class ArchiveService:
         if not archive:
             return False
 
+        # Hooks nur bei echtem Statuswechsel: ein erneuter "completed"-Aufruf
+        # (Retry, doppeltes Druckersignal) soll Verschleißstunden nicht doppelt
+        # buchen und Webhooks nicht doppelt senden. Reihenfolge wichtig: der
+        # vorherige Status wird vor der Zuweisung gelesen.
+        previous_status = archive.status
         archive.status = status
         if completed_at:
             archive.completed_at = completed_at
@@ -1626,44 +1650,8 @@ class ArchiveService:
 
         await self.db.commit()
 
-        if status == "completed":
-            try:
-                from backend.app.services import outbound_webhooks, wear_tracker
-
-                p_hours = (archive.print_time_seconds or 0) / 3600.0
-                p_printer = str(archive.printer_id) if archive.printer_id is not None else "default"
-                if p_hours > 0:
-                    wear_tracker.record_print_usage(
-                        printer_id=p_printer,
-                        print_time_hours=p_hours,
-                        filament_type=archive.filament_type or "PLA",
-                    )
-                outbound_webhooks.dispatch_event(
-                    "print.completed",
-                    {
-                        "archive_id": archive.id,
-                        "printer_id": archive.printer_id,
-                        "print_name": archive.print_name,
-                        "print_time_seconds": archive.print_time_seconds,
-                    },
-                )
-            except Exception as exc:
-                logger.debug("Status update wear tracking failed: %s", exc)
-        elif status == "failed":
-            try:
-                from backend.app.services import outbound_webhooks
-
-                outbound_webhooks.dispatch_event(
-                    "print.failed",
-                    {
-                        "archive_id": archive.id,
-                        "printer_id": archive.printer_id,
-                        "print_name": archive.print_name,
-                        "reason": failure_reason,
-                    },
-                )
-            except Exception as exc:
-                logger.debug("Status update webhook failure dispatch error: %s", exc)
+        if _should_emit_status_hooks(previous_status, status):
+            _emit_lifecycle_hooks(archive, status, failure_reason)
 
         return True
 

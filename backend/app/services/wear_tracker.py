@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import threading
 from typing import Any
 
@@ -41,6 +42,11 @@ ABRASIVE_MULTIPLIERS = {
     "WOOD": 2.0,
 }
 
+# Faktor für explizit als abrasiv gekennzeichnete Drucke ohne bekanntes Material:
+# konservativ zwischen WOOD (2.0) und CF-Staubschutz, aber nicht max(aller) —
+# ein PLA-Druck mit Abrasiv-Hinweis ist kein PLA-CF-Druck.
+DEFAULT_ABRASIVE_MULTIPLIER = 3.0
+
 
 def _read_data() -> dict[str, Any]:
     if not WEAR_FILE.is_file():
@@ -62,90 +68,29 @@ def _write_data(data: dict[str, Any]) -> None:
         logger.error("Fehler beim Speichern von wear_tracking.json: %s", exc)
 
 
-def get_printer_wear(printer_id: str = "default") -> dict[str, float]:
-    """Liefert die akkumulierten Betriebsstunden der Komponenten für den Drucker."""
-    with _lock:
-        data = _read_data()
-        printer_data = data.get(printer_id, {})
-        return {
-            "nozzle_hours": float(printer_data.get("nozzle_hours", 0.0)),
-            "ptfe_hours": float(printer_data.get("ptfe_hours", 0.0)),
-            "z_spindle_hours": float(printer_data.get("z_spindle_hours", 0.0)),
-            "steel_rods_hours": float(printer_data.get("steel_rods_hours", 0.0)),
-            "carbon_filter_hours": float(printer_data.get("carbon_filter_hours", 0.0)),
-            "nozzle_type": printer_data.get("nozzle_type", "hardened_steel"),
-        }
-
-
-def record_print_usage(
-    printer_id: str = "default",
-    print_time_hours: float = 0.5,
-    filament_type: str = "PLA",
-    is_abrasive: bool = False,
-) -> dict[str, Any]:
-    """Bucht Druckstunden auf die Verschleißkomponenten auf."""
-    hours = max(0.0, float(print_time_hours))
-    fil_upper = filament_type.upper()
-
-    mult = 1.0
-    for pattern, m in ABRASIVE_MULTIPLIERS.items():
-        if pattern in fil_upper or is_abrasive:
-            mult = max(mult, m)
-
-    with _lock:
-        data = _read_data()
-        if printer_id not in data:
-            data[printer_id] = {
-                "nozzle_hours": 0.0,
-                "ptfe_hours": 0.0,
-                "z_spindle_hours": 0.0,
-                "steel_rods_hours": 0.0,
-                "carbon_filter_hours": 0.0,
-                "nozzle_type": "hardened_steel",
-            }
-        p = data[printer_id]
-
-        # Düsenabnutzung mit Abrasiv-Faktor
-        p["nozzle_hours"] = round(p.get("nozzle_hours", 0.0) + (hours * mult), 2)
-        p["ptfe_hours"] = round(p.get("ptfe_hours", 0.0) + hours, 2)
-        p["z_spindle_hours"] = round(p.get("z_spindle_hours", 0.0) + hours, 2)
-        p["steel_rods_hours"] = round(p.get("steel_rods_hours", 0.0) + hours, 2)
-
-        # Aktivkohlefilter nur bei ABS/ASA/PA belasten
-        if any(voc in fil_upper for voc in ("ABS", "ASA", "PA", "NYLON")):
-            p["carbon_filter_hours"] = round(p.get("carbon_filter_hours", 0.0) + hours, 2)
-
-        _write_data(data)
-
-    return get_wear_overview(printer_id)
-
-
-def reset_wear_component(printer_id: str = "default", component_key: str = "nozzle") -> bool:
-    """Setzt den Zähler einer gewarteten oder getauschten Komponente zurück."""
-    with _lock:
-        data = _read_data()
-        if printer_id not in data:
-            return False
-        p = data[printer_id]
-        key_map = {
-            "nozzle": "nozzle_hours",
-            "ptfe": "ptfe_hours",
-            "z_spindle": "z_spindle_hours",
-            "steel_rods": "steel_rods_hours",
-            "carbon_filter": "carbon_filter_hours",
-        }
-        field = key_map.get(component_key)
-        if field and field in p:
-            p[field] = 0.0
-            _write_data(data)
-            return True
-        return False
-
-
 def get_wear_overview(printer_id: str = "default") -> dict[str, Any]:
     """Erzeugt eine detaillierte Übersicht über den Gesundheitszustand aller Verschleißteile."""
-    current = get_printer_wear(printer_id)
-    nozzle_type = current.get("nozzle_type", "hardened_steel")
+    with _lock:
+        return _overview_from_data(_read_data(), printer_id)
+
+
+def _overview_from_data(data: dict[str, Any], printer_id: str = "default") -> dict[str, Any]:
+    """Baut die Gesundheitsübersicht aus einem beladenen Datendict.
+
+    Reine Funktion, damit ``record_print_usage`` Vorher/Nachher-Vergleiche
+    anstellen kann, ohne den Schreib-/Lese-Lock erneut anzufassen
+    (``threading.Lock`` ist nicht reentrant).
+    """
+    printer_data = data.get(printer_id, {})
+    current: dict[str, Any] = {
+        "nozzle_hours": float(printer_data.get("nozzle_hours", 0.0)),
+        "ptfe_hours": float(printer_data.get("ptfe_hours", 0.0)),
+        "z_spindle_hours": float(printer_data.get("z_spindle_hours", 0.0)),
+        "steel_rods_hours": float(printer_data.get("steel_rods_hours", 0.0)),
+        "carbon_filter_hours": float(printer_data.get("carbon_filter_hours", 0.0)),
+        "nozzle_type": printer_data.get("nozzle_type", "hardened_steel"),
+    }
+    nozzle_type = current["nozzle_type"]
     nozzle_limit = LIFESPANS["nozzle_hardened_steel"] if nozzle_type == "hardened_steel" else LIFESPANS["nozzle_brass"]
 
     components = [
@@ -221,4 +166,141 @@ def get_wear_overview(printer_id: str = "default") -> dict[str, Any]:
         "printer_id": printer_id,
         "overall_status": overall_status,
         "components": overview,
+    }
+
+
+def record_print_usage(
+    printer_id: str = "default",
+    print_time_hours: float = 0.5,
+    filament_type: str = "PLA",
+    is_abrasive: bool = False,
+) -> dict[str, Any]:
+    """Bucht Druckstunden auf die Verschleißkomponenten auf.
+
+    Der Düsenverschliss wird über den Abrasivitäts-Multiplikator geführt: passt
+    das Material auf ein bekanntes Muster (PLA-CF, GLOW, …), zählt dessen Faktor;
+    ist der Druck nur pauschal als abrasiv gekennzeichnet, greift
+    ``DEFAULT_ABRASIVE_MULTIPLIER``. Defekte Eingaben (NaN/inf, negative Zeit)
+    werden abgewiesen, statt den Zähler korrumpieren zu können.
+
+    Schiebt die Buchung einen Baustein über eine Schwelle (OK → WARN/CRITICAL),
+    wird zusätzlich das ``maintenance.wear_alert``-Event verteilt — nur bei
+    Statuswechsel, nicht bei jedem Druck.
+    """
+    fil_upper = str(filament_type or "PLA").upper()
+
+    try:
+        hours = float(print_time_hours)
+    except (TypeError, ValueError):
+        hours = 0.0
+    if not math.isfinite(hours) or hours < 0.0:
+        logger.warning("Verschleißbuchung ignoriert unbrauchbare Druckdauer %r.", print_time_hours)
+        hours = 0.0
+
+    mult = 1.0
+    matched = False
+    for pattern, m in ABRASIVE_MULTIPLIERS.items():
+        if pattern in fil_upper:
+            mult = max(mult, m)
+            matched = True
+    if is_abrasive and not matched:
+        mult = max(mult, DEFAULT_ABRASIVE_MULTIPLIER)
+
+    alert_payload: dict[str, Any] | None = None
+    with _lock:
+        data = _read_data()
+        previous_overall = _overview_from_data(data, printer_id)["overall_status"]
+
+        if printer_id not in data:
+            data[printer_id] = {
+                "nozzle_hours": 0.0,
+                "ptfe_hours": 0.0,
+                "z_spindle_hours": 0.0,
+                "steel_rods_hours": 0.0,
+                "carbon_filter_hours": 0.0,
+                "nozzle_type": "hardened_steel",
+            }
+        p = data[printer_id]
+
+        # Düsenabnutzung mit Abrasiv-Faktor
+        p["nozzle_hours"] = round(p.get("nozzle_hours", 0.0) + (hours * mult), 2)
+        p["ptfe_hours"] = round(p.get("ptfe_hours", 0.0) + hours, 2)
+        p["z_spindle_hours"] = round(p.get("z_spindle_hours", 0.0) + hours, 2)
+        p["steel_rods_hours"] = round(p.get("steel_rods_hours", 0.0) + hours, 2)
+
+        # Aktivkohlefilter nur bei ABS/ASA/PA belasten
+        if any(voc in fil_upper for voc in ("ABS", "ASA", "PA", "NYLON")):
+            p["carbon_filter_hours"] = round(p.get("carbon_filter_hours", 0.0) + hours, 2)
+
+        _write_data(data)
+
+        new_overview = _overview_from_data(data, printer_id)
+        if (
+            hours > 0
+            and previous_overall != new_overview["overall_status"]
+            and new_overview["overall_status"] in ("WARN", "CRITICAL")
+        ):
+            alert_payload = {
+                "printer_id": printer_id,
+                "overall_status": new_overview["overall_status"],
+                "reason": "Verschleißgrenze durch Druckbetrieb erreicht",
+                "components": [
+                    {
+                        "id": c["id"],
+                        "name": c["name"],
+                        "status": c["status"],
+                        "used_hours": c["used_hours"],
+                        "remaining_hours": c["remaining_hours"],
+                        "health_percent": c["health_percent"],
+                    }
+                    for c in new_overview["components"]
+                    if c["status"] != "OK"
+                ],
+            }
+
+    if alert_payload is not None:
+        try:
+            from backend.app.services import outbound_webhooks
+
+            outbound_webhooks.dispatch_event("maintenance.wear_alert", alert_payload)
+        except Exception as exc:  # Alarm ist Zusatznutzen; Buchung darf nicht brechen
+            logger.warning("wear_alert-Webhook fehlgeschlagen: %s", exc)
+
+    return get_wear_overview(printer_id)
+
+
+def reset_wear_component(printer_id: str = "default", component_key: str = "nozzle") -> bool:
+    """Setzt den Zähler einer gewarteten oder getauschten Komponente zurück."""
+    with _lock:
+        data = _read_data()
+        if printer_id not in data:
+            return False
+        p = data[printer_id]
+        key_map = {
+            "nozzle": "nozzle_hours",
+            "ptfe": "ptfe_hours",
+            "z_spindle": "z_spindle_hours",
+            "steel_rods": "steel_rods_hours",
+            "carbon_filter": "carbon_filter_hours",
+        }
+        field = key_map.get(component_key)
+        if field and field in p:
+            p[field] = 0.0
+            _write_data(data)
+            return True
+        return False
+
+
+def get_printer_wear(printer_id: str = "default") -> dict[str, Any]:
+    """Liefert die akkumulierten Betriebsstunden der Komponenten für den Drucker."""
+    with _lock:
+        data = _read_data()
+    printer_data = data.get(printer_id, {})
+    return {
+        "nozzle_hours": float(printer_data.get("nozzle_hours", 0.0)),
+        "ptfe_hours": float(printer_data.get("ptfe_hours", 0.0)),
+        "z_spindle_hours": float(printer_data.get("z_spindle_hours", 0.0)),
+        "steel_rods_hours": float(printer_data.get("steel_rods_hours", 0.0)),
+        "carbon_filter_hours": float(printer_data.get("carbon_filter_hours", 0.0)),
+        "nozzle_type": printer_data.get("nozzle_type", "hardened_steel"),
     }

@@ -2,12 +2,19 @@
 
 Ermöglicht Kunden und Auftraggebern die sofortige automatische Preiskalkulation
 anhand von Modellvolumen, Material, Infill und Schichthöhe sowie das Bezahlen
-via Stripe / Kreditkarte oder SEPA mit automatischem Einreihen in den Druckauftrags-Pool.
+via Stripe / Kreditkarte oder SEPA.
+
+Diese Datei hält die reine Berechnungslogik; die checkout-fähige Angebots-
+Registry (abgelaufene/abrechenbare Kalkulationen) liegt in
+``portal_quote_store.py`` als SQLite-Tabelle. Der Zahlbetrag entspringt damit
+ausschließlich serverseitig kalkulierten Daten — nie dem Request.
 """
 
 from __future__ import annotations
 
 import logging
+import math
+import urllib.parse
 import uuid
 from typing import Any
 
@@ -27,6 +34,33 @@ MACHINE_HOURLY_RATE = 7.20  # EUR / Maschinenstunde
 BASE_SETUP_FEE = 3.50  # Rüstpauschale je Druckauftrag
 
 
+def _as_eur_amount(value: Any) -> float:
+    """Robustes €-Parsing für Preisfelder; unbrauchbare Werte lösen ValueError aus."""
+    try:
+        amount = float(value)
+    except (TypeError, ValueError):
+        raise ValueError("Preisdaten (gross_total_eur) sind unbrauchbar.") from None
+    if not math.isfinite(amount) or amount < 0:
+        raise ValueError("Preisdaten (gross_total_eur) sind unbrauchbar.")
+    return amount
+
+
+def validate_redirect_url(url: str, field: str) -> str:
+    """Prüft eine Stripe-Rückleitungs-URL (Schema, Länge, Format)."""
+    clean = (url or "").strip()
+    if not clean:
+        raise ValueError(f"{field} darf nicht leer sein.")
+    if len(clean) > 2000:
+        raise ValueError(f"{field} ist zu lang (max. 2000 Zeichen).")
+    try:
+        parsed = urllib.parse.urlparse(clean)
+    except ValueError:
+        raise ValueError(f"{field} ist keine gültige URL.") from None
+    if parsed.scheme.lower() not in ("http", "https") or not parsed.netloc:
+        raise ValueError(f"{field} muss eine vollständige http(s)-URL sein.")
+    return clean
+
+
 def calculate_instant_quote(
     volume_cm3: float,
     filament_type: str = "PLA",
@@ -34,7 +68,12 @@ def calculate_instant_quote(
     layer_height: float = 0.20,
     quantity: int = 1,
 ) -> dict[str, Any]:
-    """Berechnet ein verbindliches Sofort-Angebot für ein 3D-Modell."""
+    """Berechnet ein verbindliches Sofort-Angebot für ein 3D-Modell.
+
+    Reine Funktion: registriert die Kalkulation nicht selbst — die aufrufende
+    Route entscheidet (über ``portal_quote_store.store_quote``), was checkout-
+    fähig wird.
+    """
     vol = max(0.5, float(volume_cm3))
     qty = max(1, int(quantity))
     infill = max(5, min(100, int(infill_percent)))
@@ -104,15 +143,29 @@ def create_stripe_checkout_session(
     success_url: str = "http://localhost:8000/kalkulation?status=success",
     cancel_url: str = "http://localhost:8000/kalkulation?status=cancelled",
 ) -> dict[str, Any]:
-    """Erzeugt eine Stripe-Checkout-Sitzung für die sofortige Online-Bezahlung."""
+    """Erzeugt eine Stripe-Checkout-Sitzung für die sofortige Online-Bezahlung.
+
+    Der Betrag kommt ausschließlich aus der übergebenen Kalkulation; ungültige
+    Rückleitungen oder unterbetragige Sessions werden mit ValueError abgewiesen.
+    """
+    if not quote:
+        raise ValueError("Es wurde keine Kalkulation übergeben.")
+    success_url = validate_redirect_url(success_url, "success_url")
+    cancel_url = validate_redirect_url(cancel_url, "cancel_url")
+
+    pricing = quote.get("pricing")
+    if not isinstance(pricing, dict):
+        raise ValueError("Die Kalkulation enthält keine Preisdaten.")
+
     session_id = f"cs_test_{uuid.uuid4().hex[:16]}"
-    pricing = quote.get("pricing", {})
-    gross_total = float(pricing.get("gross_total_eur", 25.0))
+    gross_total = _as_eur_amount(pricing.get("gross_total_eur"))
     amount_cents = int(round(gross_total * 100))
+    if amount_cents < 50:
+        raise ValueError("Der Zahlbetrag liegt unter dem Stripe-Mindestbetrag von 0,50 €.")
 
     checkout_url = (
         f"https://checkout.stripe.com/pay/{session_id}?"
-        f"email={customer_email}&amount={amount_cents}&quote={quote.get('quote_id')}"
+        f"email={urllib.parse.quote(customer_email)}&amount={amount_cents}&quote={urllib.parse.quote(str(quote.get('quote_id') or ''))}"
     )
 
     return {
@@ -124,6 +177,8 @@ def create_stripe_checkout_session(
         "checkout_url": checkout_url,
         "payment_status": "unpaid",
         "expires_in_minutes": 60,
+        "success_url": success_url,
+        "cancel_url": cancel_url,
     }
 
 

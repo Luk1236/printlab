@@ -259,6 +259,7 @@ async def test_engine():
         notification,
         notification_template,
         oidc_provider,
+        portal_quote,
         print_log,
         print_queue,
         printer,

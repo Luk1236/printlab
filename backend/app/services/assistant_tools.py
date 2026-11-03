@@ -144,7 +144,17 @@ def _emergency_stop_all(reason: str) -> dict[str, Any]:
     if hwmod._hardware is not None:
         instances.append(hwmod._hardware)
     if not instances:
-        instances.append(hwmod.get_hardware())
+        # Keine Instanz erschaffen: eine frische ``HardwareExtension`` steuert
+        # nichts, was der Anschlag wirklich bewegt — ein „Erfolg" wäre gelogen.
+        logger.warning("KI-Not-Halt (%s): keine Hardware-Kanäle vorhanden", reason)
+        return {
+            "status": "unavailable",
+            "action": "NO_HARDWARE_CHANNELS",
+            "message": (
+                "Kein Hardware-Kanal angesteuert (Mechanik läuft nicht oder ist nicht belegt). "
+                "Sofort am Gerätedisplay Hand-Not-Aus betätigen!"
+            ),
+        }
 
     confirmed, errors = 0, []
     for hw in instances:

@@ -1,6 +1,6 @@
 # TODO — PrintLab
 
-**Stand:** 01.11.2026, Version 1.22.0 · **Basis:** Bambuddy 1.2.5.7 (AGPL-3.0, Herkunft: `NOTICE`) · **Branch:** `bambu-monitor-port`
+**Stand:** 03.11.2026, Version 2.0.1 · **Basis:** Bambuddy 1.2.5.7 (AGPL-3.0, Herkunft: `NOTICE`) · **Branch:** `bambu-monitor-port`
 
 Was fertig ist, steht mit Datum im `CHANGELOG.md`. Die ausführliche Bewertung (Risiken R1–R16, Verbesserungen, Erweiterungen)
 steht in `docs/ANALYSE-2026-10-28.md`, die Abnahme in `docs/ABNAHME.md`.
@@ -9,6 +9,30 @@ steht in `docs/ANALYSE-2026-10-28.md`, die Abnahme in `docs/ABNAHME.md`.
 
 PrintLab (Pi 5, nativ, systemd-Benutzerdienst), Fernzugriff über Tailscale, Updates aus der Oberfläche, Sicherung vor dem
 Update mit Rückbau, Überwachung mit Meldung, Angebote mit PDF, Kamera-Einmessung, Zustand des Geräts, Anmeldung vorgeschrieben.
+
+## Zuletzt erledigt (03.11.2026, Code-Review auf v2.0.1)
+
+**Review-Härtung nach v2.0.1 (13 Bugfixes + Tests, Details im CHANGELOG „Nachtrag (Review, 03.11.2026)“):**
+
+- **Webhooks:** DNS-Prüfung zur Zustellzeit (SSRF-Rebinding), Zahlenkodierung-Hosts abgedichtet, Geheimnisse maskiert in
+  Antworten, Event-Validierung (keine toten Hooks), `follow_redirects=False`, 200–299 = Erfolg, Persistenzfehler → 503,
+  Registry-Deckel 200, Backpressure-Semaphor (32), Backoff-Retry (Netz/5xx/429; 4xx dauerhaft) mit Zustellhistorie pro Hook
+  und Dead-Letter-Deaktivierung nach 5 Fehlern in Folge.
+- **Kundenportal:** Checkout rechnet nur serverseitig registrierte Kalkulationen ab (Quote-Registry, jetzt SQLite-Tabelle
+  `portal_quotes` — überlebt Neustarts), Betrag nie aus dem Request, URL-Validierung (400 vor 404),
+  Stripe-Mindestbetrag, Rate-Limit (20/min Kalkulation, 6/min Checkout, per IP), Positions-Argument-Bug der
+  v1.29-Route behoben (`success_url`/`customer_email`-Vertauscher).
+- **Fleet:** `_gather_fleet_state` liest echte Telemetrie und Wear-Daten statt Platzhalter; Load Balancer toleriert
+  kaputte Payloads; Düsentyp und Betriebsstunden aus `wear_tracker` statt `True`/`120.0`; Dispatch-/Fitness-Body über
+  Pydantic-Modell `DispatchJobRequest` validiert.
+- **Archiv:** Abschluss-Hooks (Verschleiß + Webhook) in einem Helfer, Feuer nur bei echtem Statuswechsel — keine doppelten
+  Stundebuchungen mehr bei wiederholten `update_archive_status`-Aufrufen; Hook-Fehler sichtbar auf Warnstufe.
+- **Wear-Alarm: `maintenance.wear_alert` wird jetzt wirklich gesendet** — bei Übergang OK → WARN/CRITICAL durch
+  Druckbetrieb, genau einmal je Wechsel (Vorher/Nachher-Vergleich ohne Reentrant-Deadlock).
+- **Not-Halt der KI:** meldet ehrlich „kein Hardware-Kanal", statt eine nutzlose Instanz zu erschaffen und Erfolg zu vortäuschen.
+- **Plattenwechsel:** Betttemperatur aus der echten Quelle (`state.temperatures["bed"]`), `DEFAULT_MAX_SWAP_TEMP` statt Magiezahl.
+- **Routen-Integrationstests** für alle fünf Enterprise-Router (Auth-Pfade, 400/404/429-Mapping, Maskierung,
+  Body-Validierung) in `tests/integration/test_fork_routers_api.py`.
 
 ## Zuletzt erledigt (01.11.2026, in v1.21.0)
 

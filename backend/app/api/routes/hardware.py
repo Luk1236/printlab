@@ -264,19 +264,28 @@ async def change_plate(
     if blocked:
         raise HTTPException(409, blocked)
 
-    # Cooldown Guard: Prüfen, ob Druckbett <= 36 °C
+    # Cooldown Guard: Betttemperatur am Live-Zustand lesen. PrinterState speichert
+    # Messwerte im temperatures-Dict (Schlüssel "bed"); die frühere Annahme
+    # state.bed_temp existiert als Attribut nicht. Ein nicht lesbarer Wert bleibt
+    # None — dann darf der manuell ausgelöste Wechsel laufen (kein falsches
+    # Blockieren auf fehlender Information), die automatische Wechsel-Prüfung
+    # mit bekannter Temperatur greift trotzdem voll.
+    from backend.app.services.cooldown_guard import DEFAULT_MAX_SWAP_TEMP
+
     client = printer_manager.get_client(printer_id)
-    bed_temp = None
-    if client and client.state:
-        bed_temp = getattr(client.state, "bed_temp", None)
-        if bed_temp is None and hasattr(client.state, "temperatures") and isinstance(client.state.temperatures, dict):
-            bed_temp = client.state.temperatures.get("bed") or client.state.temperatures.get("bed_temp")
+    state = client.state if client else None
+    temperatures = getattr(state, "temperatures", None)
+    raw_bed_temp = temperatures.get("bed") if isinstance(temperatures, dict) else None
+    try:
+        bed_temp = float(raw_bed_temp) if raw_bed_temp is not None else None
+    except (TypeError, ValueError):
+        bed_temp = None
 
     ok, message = await asyncio.to_thread(
         get_hardware(printer_id).change_plate,
         job,
-        float(bed_temp) if bed_temp is not None else None,
-        36.0,
+        bed_temp,
+        DEFAULT_MAX_SWAP_TEMP,
         force,
     )
     _audit("plate_change", ok, message, printer_id, user, {"job": job})

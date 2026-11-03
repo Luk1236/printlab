@@ -7,12 +7,34 @@ PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
 - **SSRF-Schutz & ThreadPool-Sicherheit für Outbound-Webhooks (`outbound_webhooks.py`):**
   Strikte Validierung aller Ziel-URLs gegen Server-Side Request Forgery (SSRF). Blockiert Cloud-Metadatendienste (AWS/GCP/Azure `169.254.169.254`, `metadata.google.internal`) und unberechtigte Loopback-/Privatnetz-Adressen. Ersetzt unbegrenzte Threads durch einen kontrollierten `ThreadPoolExecutor(max_workers=4)`.
+
+  **Nachtrag (Review, 03.11.2026):**
+  - Zustellungszeit-DNS-Prüfung: vor jedem Versand wird der Host per `socket.getaddrinfo` aufgelöst und jede resultierende Adresse erneut validiert — Domains, die erst während der Zustellung auf private Adressen/Metadaten auflösen (DNS-Rebinding), laufen jetzt in die Sperre.
+  - Zahlenkodierungen abgedichtet: dezimale (`http://2130706433/`) und hexadezimale Hosts (`http://0x7f000001/`) sowie mehrdeutige Teilkodierungen (`127.1`) werden bei der Registrierung abgelehnt.
+  - `httpx` folgt bei Zustellungen nicht mehr Umleitungen (`follow_redirects=False`); nur `200–299` zählt als ausgeliefert (vorher zählte auch 3xx als Erfolg).
+  - Event-Abonnements werden gegen `ALL_EVENTS` validiert (Tippfehler → klare 400 statt still toter Webhooks); `dispatch_event` zählt nur noch tatsächlich passende Hooks.
+  - Geheimnisse gehen keine Klartext-Antwort mehr aus: API/Liste liefert maskiertes `secret` + `secret_configured`; die Zustellung liest intern den unmaskierten Datensatz.
+  - Persistenzfehler werden als `RuntimeError` gemeldet (Route → 503) statt stille Erfolgsmeldung; Registrierungsdeckel (200 Webhooks) und Backpressure-Semaphor (32 gleichzeitige Zustellungen) begrenzen Fan-out und Stau.
+  - **Backoff-Retry & Dead-Letter:** transiente Fehler (Netzwerk, 5xx, 429) werden mit steigender Pause zweimal wiederholt; 4xx gilt als dauerhaft (kein Wiederholer). Jeder Hook führt `failure_streak`, `last_delivery_status/detail/at` in seinem Datensatz; nach 5 Fehlern in Folge schaltet die Engine den Hook still (Dead-Letter: `dead_lettered`, `enabled=false`), der Betreiber sieht es in der Webhook-Verwaltung und kann reaktivieren. Auch SSRF-Blöcke zählen in die Streak.
 - **Thermischer Cooldown-Interlock in Plattenwechsler integriert (`hardware_extension.py`, `hardware.py`):**
   Direkte Kopplung von `cooldown_guard.py` an `HardwareExtension.change_plate()`. Blockiert mechanische Wechselversuche bei Druckbett-Temperaturen über 36,0 °C zur Vermeidung von Verzug und PEI-Beschädigungen (mit explizitem `force`-Override für Notfälle).
+
+  **Nachtrag (Review, 03.11.2026):** Die Route liest die Betttemperatur aus der echten Quelle `state.temperatures["bed"]` (das Attribut `state.bed_temp` existiert auf `PrinterState` nicht) und nutzt `DEFAULT_MAX_SWAP_TEMP` statt Magiezahl `36.0`; nicht-lesbare Werte bleiben `None` (manuelles Wechseln blockiert nicht auf fehlender Information).
 - **Automatisches Verschleiß-Tracking bei Druckende (`archive.py`):**
   Erfolgreich beendete Druckaufträge buchen ihre Laufzeit und den Filament-Abrasivitätsfaktor automatisch in `wear_tracker.py` ein und triggern `print.completed` / `print.failed` Webhook-Events.
+
+  **Nachtrag (Review, 03.11.2026):** Die verdoppelten Hook-Blöcke in `archive_print` und `update_archive_status` sind zu `_emit_lifecycle_hooks()` zusammengeführt (DRY); `update_archive_status` feuert nur noch bei echtem Statuswechsel — wiederholte Aufrufe buchen keine Stundendoppelt mehr und senden keine Doppel-Webhooks. Hook-Fehler laufen auf Warnstufe statt unsichtbar im Debug.
 - **FastAPI-Routen für alle Kern-Dienste (`fork_routers.py`):**
   Neue modulare Endpunkte für Flottenmanagement (`/api/v1/fleet`), Verschleißüberwachung (`/api/v1/maintenance/wear`), Home Assistant Discovery (`/api/v1/discovery/homeassistant`), Kunden-Portal (`/api/v1/portal`) und Webhook-Administration (`/api/v1/webhooks/outbound`).
+
+  **Nachtrag (Review, 03.11.2026):** Der Fleet-Zusammenzug (`_gather_fleet_state`) liest jetzt echte Daten: Betttemperatur aus `state.temperatures`, AMS-Trays aus `state.raw_data["ams"]` (dict- und list-Form, leere Slots werden übersprungen, `remain` ist Prozent → Umrechnung mit `ASSUMED_SPOOL_CAPACITY_G`), Düsentyp und Betriebsstunden aus dem Wear-Tracker statt `true`/`120.0`-Platzhaltern, `plate_clear` als ehrliche Heuristik aus dem Druckerstatus. Der Load Balancer toleriert kaputte Payload-Werte (`_as_float` mit Fallback statt 500er), und `POST /fleet/dispatch` + `/fleet/fitness` validieren den Body über das Pydantic-Modell `DispatchJobRequest` statt eines rohen dicts.
+- **Kundenportal härtet sich selbst (Review, 03.11.2026):**
+  - **Quote-Registry in SQLite:** Neue Tabelle `portal_quotes` (Modell `PortalQuote`, Store `services/portal_quote_store.py`). `/portal/quote` speichert jede serverseitig kalkulierte Kalkulation; `/portal/checkout` rechnet ausschließlich registrierte Angebote ab (`404` bei unbekannt/abgelaufen) — der Zahlbetrag kommt nie aus dem Request, und ein Backend-Neustart verliert laufende Stripe-Angebote nicht mehr. TTL 60 Minuten wie die Stripe-Session; abgelaufene Zeilen räumt `purge_expired` ab.
+  - **Rate-Limit** (Muster aus `quote_share.py`): pro IP und Endpunktart — 20 Kalkulationen pro Minute, 6 Checkouts pro Minute, als `429` mit deutscher Meldung.
+  - **URL-Validierung vor der Suche:** ungültige Rückleitungs-URLs antworten `400`, bevor der Angebotszustand geprüft wird (Formatfehler schlagen Nichtfinden); Stripe-Mindestbetrag 0,50 € wird geprüft.
+  - **Positions-Argument-Bug der v1.29-Route behoben:** `success_url` landete fälschlich im Parameter `customer_email`, `cancel_url` ging verloren — Checkout nutzt jetzt Keyword-Argumente.
+- **Verschleiß-Alarm feuert wirklich (Review, 03.11.2026):**
+  Event `maintenance.wear_alert` existierte in `ALL_EVENTS`, aber nichts sendete es. Jetzt: `record_print_usage` vergleicht den Overall-Status vor/nach der Buchung (Deadlock-freie reine Funktion `_overview_from_data`) und verteilt beim Übergang `OK → WARN/CRITICAL` genau einmal das Event mit betroffenen Bauteilen — nicht bei jedem Druck.
 - **Touchscreen-Kiosk Route (`App.tsx`):**
   Einbindung der `/kiosk`-Route in das React-Frontend für Standalone-Touchdisplays am Raspberry Pi 5.
 
