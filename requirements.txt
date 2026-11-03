@@ -159,8 +159,15 @@ starlette>=1.3.1
 aiohttp>=3.14.3
 
 # Plate Detection (optional - enables build plate empty detection)
-opencv-python-headless>=4.8.0
-numpy>=2.5.0  # opencv 5.x ABI (2.4.x-Binärbünde scheitern beim import cv2)
+# Paarung opencv↔numpy versionsabhängig: opencv-5-Räder sind gegen NumPy 2.5+
+# ABI gebaut (NumPy 2.4.x scheitert beim import cv2), NumPy 2.5 benötigt
+# wiederum Python >= 3.12 — Python-3.11-Umgebungen (CI) bleiben deshalb bei
+# der funktionierenden opencv-4.x/NumPy-2.4-Kombination, 3.12+ bei den
+# Versionen aus requirements.lock.
+opencv-python-headless>=4.8.0 ; python_version < "3.12"
+numpy>=1.24.0 ; python_version < "3.12"
+opencv-python-headless>=5.0.0 ; python_version >= "3.12"
+numpy>=2.5.0 ; python_version >= "3.12"
 
 # Development
 pytest>=9.0.3
