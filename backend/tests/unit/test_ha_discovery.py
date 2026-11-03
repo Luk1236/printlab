@@ -2,6 +2,7 @@
 
 import json
 
+from backend.app.core.config import PRINTLAB_VERSION
 from backend.app.services import ha_discovery
 
 
@@ -10,7 +11,7 @@ class TestHADiscovery:
         info = ha_discovery.build_device_info("printer_1", "Bambu Lab P2S")
         assert info["identifiers"] == ["printlab_printer_1"]
         assert "PrintLab" in info["name"]
-        assert info["sw_version"] == "1.27.0"
+        assert info["sw_version"] == PRINTLAB_VERSION
 
     def test_build_discovery_payloads_generates_all_components(self):
         payloads = ha_discovery.build_discovery_payloads("p2s_lab", "P2S Werkstatt")

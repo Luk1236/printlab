@@ -1556,6 +1556,43 @@ class ArchiveService:
         await self.db.commit()
         await self.db.refresh(archive)
 
+        if archive.status == "completed" and archive.print_time_seconds:
+            try:
+                from backend.app.services import outbound_webhooks, wear_tracker
+
+                p_hours = (archive.print_time_seconds or 0) / 3600.0
+                p_printer = str(archive.printer_id) if archive.printer_id is not None else "default"
+                wear_tracker.record_print_usage(
+                    printer_id=p_printer,
+                    print_time_hours=p_hours,
+                    filament_type=archive.filament_type or "PLA",
+                )
+                outbound_webhooks.dispatch_event(
+                    "print.completed",
+                    {
+                        "archive_id": archive.id,
+                        "printer_id": archive.printer_id,
+                        "print_name": archive.print_name,
+                        "print_time_seconds": archive.print_time_seconds,
+                    },
+                )
+            except Exception as exc:
+                logger.debug("Post-archive completion hook error: %s", exc)
+        elif archive.status == "failed":
+            try:
+                from backend.app.services import outbound_webhooks
+
+                outbound_webhooks.dispatch_event(
+                    "print.failed",
+                    {
+                        "archive_id": archive.id,
+                        "printer_id": archive.printer_id,
+                        "print_name": archive.print_name,
+                    },
+                )
+            except Exception as exc:
+                logger.debug("Post-archive failure hook error: %s", exc)
+
         return archive
 
     async def get_archive(self, archive_id: int) -> PrintArchive | None:
@@ -1588,6 +1625,46 @@ class ArchiveService:
             archive.failure_reason = failure_reason
 
         await self.db.commit()
+
+        if status == "completed":
+            try:
+                from backend.app.services import outbound_webhooks, wear_tracker
+
+                p_hours = (archive.print_time_seconds or 0) / 3600.0
+                p_printer = str(archive.printer_id) if archive.printer_id is not None else "default"
+                if p_hours > 0:
+                    wear_tracker.record_print_usage(
+                        printer_id=p_printer,
+                        print_time_hours=p_hours,
+                        filament_type=archive.filament_type or "PLA",
+                    )
+                outbound_webhooks.dispatch_event(
+                    "print.completed",
+                    {
+                        "archive_id": archive.id,
+                        "printer_id": archive.printer_id,
+                        "print_name": archive.print_name,
+                        "print_time_seconds": archive.print_time_seconds,
+                    },
+                )
+            except Exception as exc:
+                logger.debug("Status update wear tracking failed: %s", exc)
+        elif status == "failed":
+            try:
+                from backend.app.services import outbound_webhooks
+
+                outbound_webhooks.dispatch_event(
+                    "print.failed",
+                    {
+                        "archive_id": archive.id,
+                        "printer_id": archive.printer_id,
+                        "print_name": archive.print_name,
+                        "reason": failure_reason,
+                    },
+                )
+            except Exception as exc:
+                logger.debug("Status update webhook failure dispatch error: %s", exc)
+
         return True
 
     async def list_archives(

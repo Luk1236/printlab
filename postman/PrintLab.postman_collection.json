@@ -1,9 +1,9 @@
 {
   "info": {
-    "name": "PrintLab API v2.0.0",
+    "name": "PrintLab API v2.0.1",
     "description": "Autonome 3D-Drucker-Verwaltung, integrierter Slicer, lokale KI und Abrechnung (Bambu Lab P2S).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "version": "2.0.0"
+    "version": "2.0.1"
   },
   "variable": [
     {
@@ -6449,6 +6449,42 @@
         {
           "name": "Stop Camera Stream",
           "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/printers/{printer_id}/camera/stop",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "printers",
+                "{printer_id}",
+                "camera",
+                "stop"
+              ],
+              "variable": [
+                {
+                  "key": "printer_id",
+                  "value": "1",
+                  "description": "Parameter printer_id"
+                }
+              ]
+            },
+            "description": "Stop active camera streams for a printer.\n\nCalled by the frontend on viewer unmount (cam-wall tile, embedded viewer,\npopup window). Accepts both GET and POST (POST for sendBeacon compatibility).\n\nReference-count guard: every viewer of a printer subscribes to the same\nfan-out broadcaster, so a force-shutdown triggered by ONE leaving viewer\nused to kill the others' streams (cam-wall tile froze when a user opened\nthen closed the embedded viewer). If any subscriber is still attached,\nskip the force-teardown — the broadcaster's natural grace-shutdown (5 s\nafter subscribers drop to 0) handles cleanup when the leaving viewer's\nHTTP connection actually closes."
+          },
+          "response": []
+        },
+        {
+          "name": "Stop Camera Stream",
+          "request": {
             "method": "POST",
             "header": [
               {
@@ -6493,42 +6529,6 @@
                 }
               }
             }
-          },
-          "response": []
-        },
-        {
-          "name": "Stop Camera Stream",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/printers/{printer_id}/camera/stop",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "printers",
-                "{printer_id}",
-                "camera",
-                "stop"
-              ],
-              "variable": [
-                {
-                  "key": "printer_id",
-                  "value": "1",
-                  "description": "Parameter printer_id"
-                }
-              ]
-            },
-            "description": "Stop active camera streams for a printer.\n\nCalled by the frontend on viewer unmount (cam-wall tile, embedded viewer,\npopup window). Accepts both GET and POST (POST for sendBeacon compatibility).\n\nReference-count guard: every viewer of a printer subscribes to the same\nfan-out broadcaster, so a force-shutdown triggered by ONE leaving viewer\nused to kill the others' streams (cam-wall tile froze when a user opened\nthen closed the embedded viewer). If any subscriber is still attached,\nskip the force-teardown — the broadcaster's natural grace-shutdown (5 s\nafter subscribers drop to 0) handles cleanup when the leaving viewer's\nHTTP connection actually closes."
           },
           "response": []
         },
@@ -7907,6 +7907,41 @@
               "variable": []
             },
             "description": "Get the current SSDP discovery status."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Homeassistant Discovery",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/discovery/homeassistant/{printer_id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "discovery",
+                "homeassistant",
+                "{printer_id}"
+              ],
+              "variable": [
+                {
+                  "key": "printer_id",
+                  "value": "1",
+                  "description": "Parameter printer_id"
+                }
+              ]
+            },
+            "description": "Erzeugt alle Home Assistant Discovery Konfigurationen für diesen Drucker."
           },
           "response": []
         },
@@ -10571,6 +10606,130 @@
                 }
               }
             }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Fleet",
+      "item": [
+        {
+          "name": "Dispatch Job",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/fleet/dispatch",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "fleet",
+                "dispatch"
+              ],
+              "variable": []
+            },
+            "description": "Ermittelt den am besten geeigneten Drucker für einen Druckauftrag.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Evaluate Printer Fitness",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/fleet/fitness/{printer_id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "fleet",
+                "fitness",
+                "{printer_id}"
+              ],
+              "variable": [
+                {
+                  "key": "printer_id",
+                  "value": "1",
+                  "description": "Parameter printer_id"
+                }
+              ]
+            },
+            "description": "Berechnet den Eignungs-Score eines spezifischen Druckers für einen Auftrag.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Fleet Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/fleet/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "fleet",
+                "status"
+              ],
+              "variable": []
+            },
+            "description": "Liefert die Flottenübersicht mit Bereitschaft und Attributen."
           },
           "response": []
         }
@@ -19164,6 +19323,41 @@
           "response": []
         },
         {
+          "name": "Get Printer Wear Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/maintenance/wear/{printer_id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "maintenance",
+                "wear",
+                "{printer_id}"
+              ],
+              "variable": [
+                {
+                  "key": "printer_id",
+                  "value": "1",
+                  "description": "Parameter printer_id"
+                }
+              ]
+            },
+            "description": "Liefert den detaillierten Verschleißzustand aller Baugruppen."
+          },
+          "response": []
+        },
+        {
           "name": "Perform Maintenance",
           "request": {
             "method": "POST",
@@ -19245,6 +19439,56 @@
               ]
             },
             "description": "Remove a maintenance item (unassign a custom type from a printer)."
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Printer Component",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/maintenance/wear/{printer_id}/reset",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "maintenance",
+                "wear",
+                "{printer_id}",
+                "reset"
+              ],
+              "variable": [
+                {
+                  "key": "printer_id",
+                  "value": "1",
+                  "description": "Parameter printer_id"
+                }
+              ]
+            },
+            "description": "Setzt den Zähler einer gewarteten oder ersetzten Komponente auf 0 zurück.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         },
@@ -22265,6 +22509,123 @@
               ]
             },
             "description": "Einmessprotokoll zum Ablegen: Werte, Prüfungen, wer wann eingemessen hat."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Portal",
+      "item": [
+        {
+          "name": "Create Quote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/portal/quote",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portal",
+                "quote"
+              ],
+              "variable": []
+            },
+            "description": "Berechnet ein Sofort-Angebot mit Kostenaufschlüsselung und Staffelrabatt.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Initiate Checkout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/portal/checkout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portal",
+                "checkout"
+              ],
+              "variable": []
+            },
+            "description": "Erzeugt eine Stripe-Checkout-Session für das Angebot.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Available Materials",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/portal/materials",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "portal",
+                "materials"
+              ],
+              "variable": []
+            },
+            "description": "Liefert die verfügbaren Materialprofile mit Dichten und Grundpreisen."
           },
           "response": []
         }
@@ -36897,6 +37258,188 @@
               ]
             },
             "description": "Stop the current print on a printer.\n\nRequires 'can_control_printer' permission.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "item": [
+        {
+          "name": "Create Outbound Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/webhooks/outbound",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "webhooks",
+                "outbound"
+              ],
+              "variable": []
+            },
+            "description": "Registriert einen neuen ausgehenden Webhook mit SSRF-Validierung.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Webhooks",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/webhooks/outbound",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "webhooks",
+                "outbound"
+              ],
+              "variable": []
+            },
+            "description": "Liefert alle registrierten ausgehenden Webhooks."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Supported Events",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/webhooks/outbound/events",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "webhooks",
+                "outbound",
+                "events"
+              ],
+              "variable": []
+            },
+            "description": "Liefert die Liste aller verfügbaren Webhook-Ereignisse."
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Outbound Webhook",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/webhooks/outbound/{webhook_id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "webhooks",
+                "outbound",
+                "{webhook_id}"
+              ],
+              "variable": [
+                {
+                  "key": "webhook_id",
+                  "value": "1",
+                  "description": "Parameter webhook_id"
+                }
+              ]
+            },
+            "description": "Löscht einen registrierten Webhook anhand seiner ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Trigger Test Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/webhooks/outbound/test",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "webhooks",
+                "outbound",
+                "test"
+              ],
+              "variable": []
+            },
+            "description": "Sendet ein Test-Ereignis an alle passenden aktiven Webhooks.",
             "body": {
               "mode": "raw",
               "raw": "{}",

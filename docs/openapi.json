@@ -3,7 +3,7 @@
   "info": {
     "title": "PrintLab API",
     "description": "Autonome 3D-Drucker-Verwaltung, integrierter Slicer, lokale KI und Abrechnung (Bambu Lab P2S).",
-    "version": "2.0.0"
+    "version": "2.0.1"
   },
   "paths": {
     "/api/v1/auth/setup": {
@@ -37248,6 +37248,18 @@
             "description": "Name des fertigen Auftrags (optional)"
           },
           {
+            "name": "force",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Abkühlsperre übergehen",
+              "default": false,
+              "title": "Force"
+            },
+            "description": "Abkühlsperre übergehen"
+          },
+          {
             "name": "X-API-Key",
             "in": "header",
             "required": false,
@@ -43428,6 +43440,834 @@
         }
       }
     },
+    "/api/v1/fleet/status": {
+      "get": {
+        "tags": [
+          "fleet"
+        ],
+        "summary": "Get Fleet Status",
+        "description": "Liefert die Flottenübersicht mit Bereitschaft und Attributen.",
+        "operationId": "get_fleet_status_api_v1_fleet_status_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fleet/dispatch": {
+      "post": {
+        "tags": [
+          "fleet"
+        ],
+        "summary": "Dispatch Job",
+        "description": "Ermittelt den am besten geeigneten Drucker für einen Druckauftrag.",
+        "operationId": "dispatch_job_api_v1_fleet_dispatch_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true,
+                "title": "Job"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fleet/fitness/{printer_id}": {
+      "post": {
+        "tags": [
+          "fleet"
+        ],
+        "summary": "Evaluate Printer Fitness",
+        "description": "Berechnet den Eignungs-Score eines spezifischen Druckers für einen Auftrag.",
+        "operationId": "evaluate_printer_fitness_api_v1_fleet_fitness__printer_id__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "printer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Printer Id"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true,
+                "title": "Job"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maintenance/wear/{printer_id}": {
+      "get": {
+        "tags": [
+          "maintenance"
+        ],
+        "summary": "Get Printer Wear Status",
+        "description": "Liefert den detaillierten Verschleißzustand aller Baugruppen.",
+        "operationId": "get_printer_wear_status_api_v1_maintenance_wear__printer_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "printer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Printer Id"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Printer Wear Status Api V1 Maintenance Wear  Printer Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maintenance/wear/{printer_id}/reset": {
+      "post": {
+        "tags": [
+          "maintenance"
+        ],
+        "summary": "Reset Printer Component",
+        "description": "Setzt den Zähler einer gewarteten oder ersetzten Komponente auf 0 zurück.",
+        "operationId": "reset_printer_component_api_v1_maintenance_wear__printer_id__reset_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "printer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Printer Id"
+            }
+          },
+          {
+            "name": "component",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "nozzle, ptfe, z_spindle, steel_rods, oder carbon_filter",
+              "title": "Component"
+            },
+            "description": "nozzle, ptfe, z_spindle, steel_rods, oder carbon_filter"
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Reset Printer Component Api V1 Maintenance Wear  Printer Id  Reset Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/discovery/homeassistant/{printer_id}": {
+      "get": {
+        "tags": [
+          "discovery"
+        ],
+        "summary": "Get Homeassistant Discovery",
+        "description": "Erzeugt alle Home Assistant Discovery Konfigurationen für diesen Drucker.",
+        "operationId": "get_homeassistant_discovery_api_v1_discovery_homeassistant__printer_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "printer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Printer Id"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Homeassistant Discovery Api V1 Discovery Homeassistant  Printer Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/portal/materials": {
+      "get": {
+        "tags": [
+          "portal"
+        ],
+        "summary": "List Available Materials",
+        "description": "Liefert die verfügbaren Materialprofile mit Dichten und Grundpreisen.",
+        "operationId": "list_available_materials_api_v1_portal_materials_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response List Available Materials Api V1 Portal Materials Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/portal/quote": {
+      "post": {
+        "tags": [
+          "portal"
+        ],
+        "summary": "Create Quote",
+        "description": "Berechnet ein Sofort-Angebot mit Kostenaufschlüsselung und Staffelrabatt.",
+        "operationId": "create_quote_api_v1_portal_quote_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Create Quote Api V1 Portal Quote Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/portal/checkout": {
+      "post": {
+        "tags": [
+          "portal"
+        ],
+        "summary": "Initiate Checkout",
+        "description": "Erzeugt eine Stripe-Checkout-Session für das Angebot.",
+        "operationId": "initiate_checkout_api_v1_portal_checkout_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckoutRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Initiate Checkout Api V1 Portal Checkout Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/webhooks/outbound": {
+      "get": {
+        "tags": [
+          "webhooks"
+        ],
+        "summary": "Get All Webhooks",
+        "description": "Liefert alle registrierten ausgehenden Webhooks.",
+        "operationId": "get_all_webhooks_api_v1_webhooks_outbound_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response Get All Webhooks Api V1 Webhooks Outbound Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "webhooks"
+        ],
+        "summary": "Create Outbound Webhook",
+        "description": "Registriert einen neuen ausgehenden Webhook mit SSRF-Validierung.",
+        "operationId": "create_outbound_webhook_api_v1_webhooks_outbound_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebhookCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Create Outbound Webhook Api V1 Webhooks Outbound Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/webhooks/outbound/{webhook_id}": {
+      "delete": {
+        "tags": [
+          "webhooks"
+        ],
+        "summary": "Remove Outbound Webhook",
+        "description": "Löscht einen registrierten Webhook anhand seiner ID.",
+        "operationId": "remove_outbound_webhook_api_v1_webhooks_outbound__webhook_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "webhook_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Webhook Id"
+            }
+          },
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Remove Outbound Webhook Api V1 Webhooks Outbound  Webhook Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/webhooks/outbound/events": {
+      "get": {
+        "tags": [
+          "webhooks"
+        ],
+        "summary": "Get Supported Events",
+        "description": "Liefert die Liste aller verfügbaren Webhook-Ereignisse.",
+        "operationId": "get_supported_events_api_v1_webhooks_outbound_events_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Supported Events Api V1 Webhooks Outbound Events Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/webhooks/outbound/test": {
+      "post": {
+        "tags": [
+          "webhooks"
+        ],
+        "summary": "Trigger Test Webhook",
+        "description": "Sendet ein Test-Ereignis an alle passenden aktiven Webhooks.",
+        "operationId": "trigger_test_webhook_api_v1_webhooks_outbound_test_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WebhookTestRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Trigger Test Webhook Api V1 Webhooks Outbound Test Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/printers/camera/stream-token": {
       "post": {
         "tags": [
@@ -43549,13 +44389,13 @@
       }
     },
     "/api/v1/printers/{printer_id}/camera/stop": {
-      "post": {
+      "get": {
         "tags": [
           "camera"
         ],
         "summary": "Stop Camera Stream",
         "description": "Stop active camera streams for a printer.\n\nCalled by the frontend on viewer unmount (cam-wall tile, embedded viewer,\npopup window). Accepts both GET and POST (POST for sendBeacon compatibility).\n\nReference-count guard: every viewer of a printer subscribes to the same\nfan-out broadcaster, so a force-shutdown triggered by ONE leaving viewer\nused to kill the others' streams (cam-wall tile froze when a user opened\nthen closed the embedded viewer). If any subscriber is still attached,\nskip the force-teardown — the broadcaster's natural grace-shutdown (5 s\nafter subscribers drop to 0) handles cleanup when the leaving viewer's\nHTTP connection actually closes.",
-        "operationId": "stop_camera_stream_api_v1_printers__printer_id__camera_stop_post",
+        "operationId": "stop_camera_stream_api_v1_printers__printer_id__camera_stop_get",
         "security": [
           {
             "HTTPBearer": []
@@ -43609,13 +44449,13 @@
           }
         }
       },
-      "get": {
+      "post": {
         "tags": [
           "camera"
         ],
         "summary": "Stop Camera Stream",
         "description": "Stop active camera streams for a printer.\n\nCalled by the frontend on viewer unmount (cam-wall tile, embedded viewer,\npopup window). Accepts both GET and POST (POST for sendBeacon compatibility).\n\nReference-count guard: every viewer of a printer subscribes to the same\nfan-out broadcaster, so a force-shutdown triggered by ONE leaving viewer\nused to kill the others' streams (cam-wall tile froze when a user opened\nthen closed the embedded viewer). If any subscriber is still attached,\nskip the force-teardown — the broadcaster's natural grace-shutdown (5 s\nafter subscribers drop to 0) handles cleanup when the leaving viewer's\nHTTP connection actually closes.",
-        "operationId": "stop_camera_stream_api_v1_printers__printer_id__camera_stop_post",
+        "operationId": "stop_camera_stream_api_v1_printers__printer_id__camera_stop_get",
         "security": [
           {
             "HTTPBearer": []
@@ -61472,7 +62312,7 @@
       "get": {
         "summary": "Serve Manifest",
         "description": "Serve PWA manifest.",
-        "operationId": "serve_manifest_manifest_json_head",
+        "operationId": "serve_manifest_manifest_json_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -61487,7 +62327,7 @@
       "head": {
         "summary": "Serve Manifest",
         "description": "Serve PWA manifest.",
-        "operationId": "serve_manifest_manifest_json_head",
+        "operationId": "serve_manifest_manifest_json_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -61504,7 +62344,7 @@
       "get": {
         "summary": "Serve Service Worker",
         "description": "Serve service worker.",
-        "operationId": "serve_service_worker_sw_js_head",
+        "operationId": "serve_service_worker_sw_js_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -61519,7 +62359,7 @@
       "head": {
         "summary": "Serve Service Worker",
         "description": "Serve service worker.",
-        "operationId": "serve_service_worker_sw_js_head",
+        "operationId": "serve_service_worker_sw_js_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -61536,7 +62376,7 @@
       "get": {
         "summary": "Serve Sw Register",
         "description": "Serve the service-worker registration bootstrap script.\n\nServed as a real JS file so the strict `script-src 'self'` CSP covers it\nwithout needing 'unsafe-inline' or per-build hashes on the inline tag.",
-        "operationId": "serve_sw_register_sw_register_js_head",
+        "operationId": "serve_sw_register_sw_register_js_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -61551,7 +62391,7 @@
       "head": {
         "summary": "Serve Sw Register",
         "description": "Serve the service-worker registration bootstrap script.\n\nServed as a real JS file so the strict `script-src 'self'` CSP covers it\nwithout needing 'unsafe-inline' or per-build hashes on the inline tag.",
-        "operationId": "serve_sw_register_sw_register_js_head",
+        "operationId": "serve_sw_register_sw_register_js_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -68142,6 +68982,32 @@
         "type": "object",
         "title": "CheckEligibilityRequest",
         "description": "Exactly one of ``source_library_file_id`` / ``source_archive_id`` must\nbe set."
+      },
+      "CheckoutRequest": {
+        "properties": {
+          "quote_id": {
+            "type": "string",
+            "title": "Quote Id",
+            "description": "Angebots-ID aus der Sofortkalkulation"
+          },
+          "success_url": {
+            "type": "string",
+            "title": "Success Url",
+            "description": "Erfolgs-Rückleitungs-URL"
+          },
+          "cancel_url": {
+            "type": "string",
+            "title": "Cancel Url",
+            "description": "Abbruch-Rückleitungs-URL"
+          }
+        },
+        "type": "object",
+        "required": [
+          "quote_id",
+          "success_url",
+          "cancel_url"
+        ],
+        "title": "CheckoutRequest"
       },
       "ClientThumbnailResponse": {
         "properties": {
@@ -86938,6 +87804,51 @@
         "type": "object",
         "title": "QuoteQueueRequest"
       },
+      "QuoteRequest": {
+        "properties": {
+          "volume_cm3": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Volume Cm3",
+            "description": "Nettovolumen des Modells in cm³"
+          },
+          "filament_type": {
+            "type": "string",
+            "title": "Filament Type",
+            "description": "Materialtyp (PLA, PETG, ABS, ASA, TPU, PLA-CF)",
+            "default": "PLA"
+          },
+          "infill_percent": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 5.0,
+            "title": "Infill Percent",
+            "description": "Füllgrad in Prozent (5-100)",
+            "default": 15
+          },
+          "layer_height": {
+            "type": "number",
+            "maximum": 0.4,
+            "minimum": 0.08,
+            "title": "Layer Height",
+            "description": "Schichthöhe in mm",
+            "default": 0.2
+          },
+          "quantity": {
+            "type": "integer",
+            "maximum": 1000.0,
+            "minimum": 1.0,
+            "title": "Quantity",
+            "description": "Auftragsstückzahl",
+            "default": 1
+          }
+        },
+        "type": "object",
+        "required": [
+          "volume_cm3"
+        ],
+        "title": "QuoteRequest"
+      },
       "RESTTestConnectionRequest": {
         "properties": {
           "url": {
@@ -95649,6 +96560,64 @@
         },
         "type": "object",
         "title": "WatchConfigRequest"
+      },
+      "WebhookCreateRequest": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "description": "Ziel-URL des Webhook-Empfängers"
+          },
+          "secret": {
+            "type": "string",
+            "title": "Secret",
+            "description": "Geheimschlüssel für die HMAC-SHA256 Signatur",
+            "default": ""
+          },
+          "events": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Events",
+            "description": "Abonnierte Ereignisse"
+          },
+          "format_type": {
+            "type": "string",
+            "title": "Format Type",
+            "description": "Format: generic, discord oder slack",
+            "default": "generic"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "Optionale Beschreibung des Endpunkts",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "title": "WebhookCreateRequest"
+      },
+      "WebhookTestRequest": {
+        "properties": {
+          "event": {
+            "type": "string",
+            "title": "Event",
+            "description": "Zu testendes Ereignis",
+            "default": "print.started"
+          },
+          "data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Data",
+            "description": "Test-Payload"
+          }
+        },
+        "type": "object",
+        "title": "WebhookTestRequest"
       },
       "WriteTagRequest": {
         "properties": {

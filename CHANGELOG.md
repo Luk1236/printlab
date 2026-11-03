@@ -3,6 +3,19 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.1 (02.11.2026) — Production Hardening, SSRF Protection, Service Wiring & Wear Hooks
+
+- **SSRF-Schutz & ThreadPool-Sicherheit für Outbound-Webhooks (`outbound_webhooks.py`):**
+  Strikte Validierung aller Ziel-URLs gegen Server-Side Request Forgery (SSRF). Blockiert Cloud-Metadatendienste (AWS/GCP/Azure `169.254.169.254`, `metadata.google.internal`) und unberechtigte Loopback-/Privatnetz-Adressen. Ersetzt unbegrenzte Threads durch einen kontrollierten `ThreadPoolExecutor(max_workers=4)`.
+- **Thermischer Cooldown-Interlock in Plattenwechsler integriert (`hardware_extension.py`, `hardware.py`):**
+  Direkte Kopplung von `cooldown_guard.py` an `HardwareExtension.change_plate()`. Blockiert mechanische Wechselversuche bei Druckbett-Temperaturen über 36,0 °C zur Vermeidung von Verzug und PEI-Beschädigungen (mit explizitem `force`-Override für Notfälle).
+- **Automatisches Verschleiß-Tracking bei Druckende (`archive.py`):**
+  Erfolgreich beendete Druckaufträge buchen ihre Laufzeit und den Filament-Abrasivitätsfaktor automatisch in `wear_tracker.py` ein und triggern `print.completed` / `print.failed` Webhook-Events.
+- **FastAPI-Routen für alle Kern-Dienste (`fork_routers.py`):**
+  Neue modulare Endpunkte für Flottenmanagement (`/api/v1/fleet`), Verschleißüberwachung (`/api/v1/maintenance/wear`), Home Assistant Discovery (`/api/v1/discovery/homeassistant`), Kunden-Portal (`/api/v1/portal`) und Webhook-Administration (`/api/v1/webhooks/outbound`).
+- **Touchscreen-Kiosk Route (`App.tsx`):**
+  Einbindung der `/kiosk`-Route in das React-Frontend für Standalone-Touchdisplays am Raspberry Pi 5.
+
 ## v2.0.0 (02.11.2026) — Enterprise Flottenmanagement, Touchscreen-Kiosk & Granulare Rollen (RBAC)
 
 - **Enterprise Flottenmanagement & Dynamisches Load Balancing (`fleet_load_balancer.py`):**
