@@ -3,6 +3,12 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.7 (03.11.2026) — Spaghetti-Prüfung lässt sich wieder einstellen
+
+- **Spaghetti-Prüfung:** Lesen und Speichern der Einstellung endeten mit Fehler 500, weil die Schnittstelle die Funktionen
+  am falschen Objekt aufrief. Zum Prüfen braucht sie weiter die 4-Ecken-Einmessung und eine Leerbett-Referenz; ohne sie
+  überspringt sie den Druck.
+
 ## v2.0.6 (03.11.2026) — Absturz-Bildschirm: Seite lädt wirklich neu
 
 - **Retry lädt die ganze Seite neu:** Der Knopf auf dem Bildschirm „UI Crash“ zeichnete die Seite nur neu. `React.lazy`
