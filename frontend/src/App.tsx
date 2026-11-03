@@ -1,6 +1,7 @@
-import { Component, lazy, Suspense, type ReactNode, type ErrorInfo } from 'react';
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Layout } from './components/Layout';
 import { PageLoading } from './components/PageLoading';
 
@@ -67,40 +68,6 @@ const SpoolBuddyWriteTagPage = lazy(() =>
 const SpoolBuddyInventoryPage = lazy(() =>
   import('./pages/spoolbuddy/SpoolBuddyInventoryPage').then((m) => ({ default: m.SpoolBuddyInventoryPage })),
 );
-class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null; errorInfo: ErrorInfo | null }> {
-  state = { error: null as Error | null, errorInfo: null as ErrorInfo | null };
-
-  static getDerivedStateFromError(error: Error) {
-    return { error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    this.setState({ errorInfo });
-    console.error('React crash:', error, errorInfo);
-  }
-
-  render() {
-    if (this.state.error) {
-      return (
-        <div style={{ padding: 24, color: '#ef4444', backgroundColor: '#18181b', minHeight: '100vh', fontFamily: 'monospace' }}>
-          <h1 style={{ fontSize: 20, marginBottom: 12 }}>UI Crash</h1>
-          <pre style={{ whiteSpace: 'pre-wrap', fontSize: 14 }}>{this.state.error.message}</pre>
-          <pre style={{ whiteSpace: 'pre-wrap', fontSize: 12, color: '#a1a1aa', marginTop: 12 }}>
-            {this.state.error.stack}
-          </pre>
-          <button
-            onClick={() => { this.setState({ error: null, errorInfo: null }); }}
-            style={{ marginTop: 16, padding: '8px 16px', backgroundColor: '#3b82f6', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}
-          >
-            Retry
-          </button>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
