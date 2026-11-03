@@ -3,6 +3,21 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.8 (03.11.2026) — KI- und Kameraprüfungen zusammengeführt und korrigiert
+
+- **Eine Übersicht:** Neue Karte „KI & Kameraprüfungen“ unter Einstellungen → Fehlererkennung mit den Schaltern aller
+  Erkennungen. Obico und die Erkennung des Druckers werden dort nur angezeigt, Feineinstellungen bleiben verlinkt.
+- **Entfernt:** Spaghetti-Prüfung und Leerbett-Prüfung. Die Platte beim Start prüft jetzt nur die Platten-Erkennung, die
+  **nach dem Update ausgeschaltet ist** und bei einem Treffer den Druck anhält. Den laufenden Druck überwachen die
+  KI-Überwachung und die Erkennung des Druckers. Die ungenutzten Module `spaghetti_detector` und `assistant_tools` sind weg.
+- **Assistent:** Eine an den letzten Satz angehängte Aktionsliste bleibt nicht mehr im Antworttext stehen und wird ausgewertet.
+- **Bildanalyse:** Sie wartet auf eine laufende Assistenten-Antwort und hat mindestens 300 Sekunden Zeit. Am Pi 5 dauert ein
+  neues Bild knapp 3 Minuten, der Kaltstart mehr als 3 Minuten. Während einer Bildanalyse antwortet der Assistent mit „bitte warten“.
+- **Bauteil-Wächter:** Umschalten setzt die gespeicherte Schwelle nicht mehr auf 1,0 zurück.
+- **Obico:** Der Punkt am Reiter leuchtet nur noch mit eingetragener Server-Adresse.
+- **Bekannte Grenzen:** Auf einer gemusterten Platte erkennt die Erste-Schicht-Prüfung fehlendes Material nicht, und der
+  Bauteil-Wächter warnt mit der Vorgabe kaum. Das steht jetzt auch an den Schaltern und in `docs/KI-EINRICHTUNG.md`.
+
 ## v2.0.7 (03.11.2026) — Spaghetti-Prüfung lässt sich wieder einstellen
 
 - **Spaghetti-Prüfung:** Lesen und Speichern der Einstellung endeten mit Fehler 500, weil die Schnittstelle die Funktionen
