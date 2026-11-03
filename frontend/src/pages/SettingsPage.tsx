@@ -51,6 +51,7 @@ import { UpdateRestartWatcher } from '../components/UpdateRestartWatcher';
 import { UpdateBackupsCard } from '../components/UpdateBackupsCard';
 import { SpoolBuddySettings } from '../components/SpoolBuddySettings';
 import { GitHubBackupSettings } from '../components/GitHubBackupSettings';
+import { AiChecksCard } from '../components/AiChecksCard';
 import { FailureDetectionSettings } from '../components/FailureDetectionSettings';
 import { EmailSettings } from '../components/EmailSettings';
 import { LDAPSettings } from '../components/LDAPSettings';
@@ -7378,7 +7379,8 @@ export function SettingsPage() {
 
       {/* Backup Tab */}
       {activeTab === 'failure-detection' && (
-        <div id="card-failure-detection">
+        <div id="card-failure-detection" className="space-y-6">
+          <AiChecksCard />
           <FailureDetectionSettings />
         </div>
       )}

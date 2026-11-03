@@ -26,8 +26,8 @@ Filament-/Spulenverwaltung, Benachrichtigungen, Kamera, Virtual Printer, Benutze
   sagt „ohne Endschalter“), bricht ab, wenn die Betttemperatur unbekannt ist, ist abbrechbar und warnt bei
   knappem Magazin. „Nur bei wartendem Auftrag“ ist optional und standardmäßig aus. Einstellungen gelten
   je Drucker.
-- **Optik-Prüfung (nur Warnung)** – Kamera-Einmessung über vier Plattenecken, Leerbett-Prüfung beim
-  Start, Bauteil-Wächter (auch pro Auftrag), Erste-Schicht-Inspektor, Spaghetti-/Abbruch-Erkennung.
+- **Optik-Prüfung (nur Warnung)** – Kamera-Einmessung über vier Plattenecken, Bauteil-Wächter (auch pro
+  Auftrag), Erste-Schicht-Inspektor. Alle Schalter stehen unter Einstellungen → Fehlererkennung.
 - **Schicht-Stopp** – Pause bei einer Zielschicht.
 - **Angebotskalkulator** – Material, Strom, Stundenlohn und Aufschlag; Preisliste je Material;
   Angebot direkt am Warteschlangen-Auftrag; Monatsreport mit CSV-Export. Angebote lassen sich als

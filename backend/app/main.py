@@ -4032,33 +4032,6 @@ async def on_print_start(printer_id: int, data: dict):
     # Notify when the print-start AMS mapping references tray slots without spool assignments.
     await notify_missing_spool_assignments_on_print_start(printer_id, data, logger)
 
-    # Leerbett-Prüfung (Monitor-Port P1): Kamera sagt, ob beim Start Material
-    # auf der Platte liegt. Nur Warnung; Fehlschläge brechen den Start nicht.
-    try:
-        from backend.app.models.printer import Printer
-        from backend.app.services import bed_empty_check
-
-        if bed_empty_check.read_config()["enabled"]:
-            async with async_session() as be_db:
-                result = await be_db.execute(select(Printer).where(Printer.id == printer_id))
-                be_printer = result.scalar_one_or_none()
-                if be_printer is not None:
-                    frame = await _capture_snapshot_for_notification(printer_id, be_printer, logger)
-                    if frame:
-                        outcome = await asyncio.to_thread(bed_empty_check.check, printer_id, frame)
-                        if outcome and outcome.get("warning"):
-                            await notification_service.on_ai_failure_detection(
-                                printer_id,
-                                be_printer.name,
-                                data.get("subtask_name", ""),
-                                0.5,
-                                "bed_empty_check",
-                                be_db,
-                                image_data=frame,
-                            )
-    except Exception as exc:  # noqa: BLE001 - Start-Pfad darf nicht brechen
-        logger.warning("Leerbett-Prüfung fehlgeschlagen: %s", exc)
-
     # MQTT relay - publish print start
     try:
         printer_info = printer_manager.get_printer(printer_id)
@@ -9836,43 +9809,6 @@ async def lifespan(app: FastAPI):
         pw_state = pw_client.state if pw_client else None
         if pw_state is not None:
             pw_key = pw_state.subtask_id or pw_state.gcode_file or ""
-            # Spaghetti-Check: einmalig ab ~75 % der Schichten, nur Warnung.
-            try:
-                from backend.app.services.spaghetti_check import spaghetti_check as spaghetti_service
-
-                if spaghetti_service.needs_frame(printer_id, layer_num, pw_state.total_layers, pw_key):
-                    async with async_session() as sp_db:
-                        result = await sp_db.execute(select(Printer).where(Printer.id == printer_id))
-                        sp_printer = result.scalar_one_or_none()
-                        if sp_printer:
-                            image = await _capture_snapshot_for_notification(
-                                printer_id, sp_printer, logging.getLogger(__name__)
-                            )
-                            image = await calibrate_snapshot(image)
-                            warning = (
-                                spaghetti_service.observe(
-                                    printer_id,
-                                    sp_printer.name,
-                                    layer_num,
-                                    image,
-                                    pw_key,
-                                )
-                                if image is not None
-                                else None
-                            )
-                            if warning:
-                                await notification_service.on_ai_failure_detection(
-                                    printer_id,
-                                    sp_printer.name,
-                                    pw_state.subtask_name or "",
-                                    0.5,
-                                    "spaghetti_check",
-                                    sp_db,
-                                    image_data=image,
-                                )
-            except Exception as exc:  # noqa: BLE001 - Callback darf nicht abbrechen
-                logging.getLogger(__name__).warning("Spaghetti-Check fehlgeschlagen: %s", exc)
-
             if part_watcher_service.needs_frame(printer_id, layer_num, pw_state.total_layers, pw_key):
                 try:
                     from backend.app.models.printer import Printer

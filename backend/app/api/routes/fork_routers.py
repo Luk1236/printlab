@@ -32,7 +32,6 @@ from backend.app.api.routes import (
     reorder,
     search,
     selftest,
-    spaghetti_check,
     timelapse_export,
     webhooks_outbound,
 )
@@ -43,7 +42,6 @@ def register_fork_routers(app: FastAPI, prefix: str) -> None:
     # Kamera-Einmessung (Monitor-Port P1): vier Plattenecken -> Plattenaufsicht.
     app.include_router(plate_calibration.router, prefix=prefix)
     # Spaghetti-/Abbruch-Erkennung (nur Warnung, nach Druckmitte).
-    app.include_router(spaghetti_check.router, prefix=prefix)
     app.include_router(first_layer_inspector.router, prefix=prefix)
     app.include_router(hardware.router, prefix=prefix)
     app.include_router(plate_tuning.router, prefix=prefix)

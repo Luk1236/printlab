@@ -33,7 +33,6 @@ import type {
   BOMItemUpdate,
   BackupCodesResponse,
   BatchThumbnailResponse,
-  BedEmptyCheckStatus,
   BuiltinFilament,
   BulkUploadResult,
   CalibrationResult,
@@ -253,7 +252,6 @@ import type {
   SmartPlugStatus,
   SmartPlugTestResult,
   SmartPlugUpdate,
-  SpaghettiCheckStatus,
   SpoolAssignment,
   SpoolCatalogEntry,
   SpoolFilamentPreset,
@@ -2845,24 +2843,6 @@ export const api = {
     request<HardwareConfig>(`/printers/${printerId}/hardware/config`),
   setHardwareConfig: (printerId: number, payload: Partial<HardwareConfig>) =>
     request<HardwareActionResponse>(`/printers/${printerId}/hardware/config`, {
-      method: 'PUT',
-      body: JSON.stringify(payload),
-    }),
-  getBedEmptyCheck: (printerId: number) =>
-    request<BedEmptyCheckStatus>(`/printers/${printerId}/bed-empty-check`),
-  setBedEmptyCheck: (printerId: number, payload: { enabled: boolean; threshold: number }) =>
-    request<BedEmptyCheckStatus>(`/printers/${printerId}/bed-empty-check`, {
-      method: 'PUT',
-      body: JSON.stringify(payload),
-    }),
-  captureBedReference: (printerId: number) =>
-    request<{ saved: boolean; reference: string }>(`/printers/${printerId}/bed-empty-check/reference`, {
-      method: 'POST',
-    }),
-  getSpaghettiCheck: (printerId: number) =>
-    request<SpaghettiCheckStatus>(`/printers/${printerId}/spaghetti-check`),
-  setSpaghettiCheck: (printerId: number, payload: { enabled: boolean; max_components: number; min_changed_percent: number }) =>
-    request<SpaghettiCheckStatus>(`/printers/${printerId}/spaghetti-check`, {
       method: 'PUT',
       body: JSON.stringify(payload),
     }),

@@ -3578,16 +3578,6 @@ export interface QuoteResponse {
   markup: number;
   total: number;
 }
-export interface BedEmptyCheckStatus {
-  enabled: boolean;
-  threshold: number;
-  has_reference: boolean;
-}
-export interface SpaghettiCheckStatus {
-  enabled: boolean;
-  max_components: number;
-  min_changed_percent: number;
-}
 export interface QuoteHistoryEntry {
   id: string;
   number?: string;

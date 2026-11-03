@@ -122,6 +122,15 @@ Grenzen: Das lokale Modell ist deutlich langsamer als Obicos ML-API; deshalb ist
 Abstand großzügig und die Bestätigung über mehrere Bilder Pflicht. Es startet nie einen
 Druck und bricht keinen ab. Obico bleibt als separate, schnellere Option erhalten.
 
+## 7. Alle Prüfungen an einem Ort
+
+Unter **Einstellungen → Fehlererkennung** zeigt die Karte „KI & Kameraprüfungen“ alle Erkennungen mit ihrem Schalter:
+Assistent, KI-Fehlererkennung, KI-Überwachung, Platten-Erkennung, Erste-Schicht-Prüfung und Bauteil-Wächter. Obico und die
+Erkennung des Druckers selbst werden dort nur angezeigt. Feineinstellungen bleiben an der verlinkten Stelle.
+
+Die frühere Leerbett-Prüfung und die Spaghetti-Prüfung gibt es nicht mehr: Die Platte beim Start prüft die
+Platten-Erkennung, den laufenden Druck die KI-Überwachung und die Erkennung des Druckers.
+
 ## Fehlersuche
 
 | Meldung | Ursache / Abhilfe |

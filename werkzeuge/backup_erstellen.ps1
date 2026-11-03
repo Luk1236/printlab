@@ -44,8 +44,8 @@ foreach ($dir in @($root, (Join-Path $root "data"))) {
 # PrintLab-Konfigurationen und -Verläufe in data/
 foreach ($name in @(
     "audit_log.jsonl", "price_list.json", "quote_history.json",
-    "spaghetti_check.json", "part_watcher.json", "first_layer_inspector.json",
-    "bed_empty_check.json", "layer_alerts.json"
+    "part_watcher.json", "first_layer_inspector.json",
+    "layer_alerts.json"
 )) {
     Copy-Existing (Join-Path $root "data\$name")
 }
