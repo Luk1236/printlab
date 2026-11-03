@@ -978,6 +978,31 @@ async def _perform_update(target_ref: str):
             "error": None,
         }
 
+        # Konflikt-Altlasten vor dem Wechsel aufräumen (#Update-Crash mit
+        # „Unexpected token '<<'"): Ein offener Rebase/Merge/Cherry-Pick/AM —
+        # typisch nach einer händischen Git-Aktion am Gerät — lässt
+        # Konfliktmarker in ausgelieferten Dateien stehen. „reset --hard"
+        # schmeißt allein den Sequencer-Zustand nicht weg, also jede laufende
+        # Operation explizit abbrechen. Best effort: ohne laufende Operation
+        # scheitert der Abbruch harmlos und wird ignoriert.
+        for abort_cmd in (("rebase", "--abort"), ("merge", "--abort"), ("cherry-pick", "--abort"), ("am", "--abort")):
+            op = await asyncio.create_subprocess_exec(
+                git_path,
+                *git_config,
+                *abort_cmd,
+                cwd=str(app_dir),
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            _, abort_stderr = await op.communicate()
+            text = (abort_stderr or b"").decode(errors="replace")
+            if op.returncode == 0:
+                logger.warning("Laufende Git-Operation abgebrochen vor dem Update: %s", abort_cmd[0])
+            elif "no rebase in progress" in text or "No merge" in text or "no cherry-pick" in text.lower() or "not in the middle" in text.lower():
+                logger.debug("Kein laufender %s-Zustand: nichts abzubrechen.", abort_cmd[0])
+            else:
+                logger.info("Abort-Versuch %s nicht erfolgreich (ignoriert): %s", " ".join(abort_cmd), text.strip()[:200])
+
         # Hard reset to the target ref (clean update, no merge conflicts).
         # `target_ref` is typically a release tag like `v0.2.4b1` resolved
         # from the GitHub releases API by `_discover_target_release`. The

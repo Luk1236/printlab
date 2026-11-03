@@ -87,6 +87,22 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Alter Tag {args.tag} lokal gelöscht (--force).")
 
     if not args.no_push:
+        # Ein Tag kann auch nur auf origin existieren (anderer Arbeitsplatz hat
+        # ihn bereits veröffentlicht): vor dem Neuanlegen prüfen — sonst holt
+        # das folgende `git fetch origin` den Verweis zurück und `git tag -s`
+        # scheitert an „already exists".
+        remote_ref = _git("ls-remote", "--tags", "origin", f"refs/tags/{args.tag}").strip()
+        if remote_ref:
+            if not args.force:
+                print(
+                    f"Tag {args.tag} existiert bereits auf origin — nichts geändert (--force zum Ersetzen).",
+                    file=sys.stderr,
+                )
+                return 1
+            _git("push", "origin", f":refs/tags/{args.tag}")
+            print(f"Alter Tag {args.tag} auch auf origin gelöscht (--force).")
+
+    if not args.no_push:
         subprocess.run(["git", "fetch", "origin"], cwd=str(ROOT), capture_output=True, check=False)
         behind = subprocess.run(
             ["git", "rev-list", "--count", "HEAD..@{u}"],
