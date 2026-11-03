@@ -3,6 +3,16 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.6 (03.11.2026) — Absturz-Bildschirm: Seite lädt wirklich neu
+
+- **Retry lädt die ganze Seite neu:** Der Knopf auf dem Bildschirm „UI Crash“ zeichnete die Seite nur neu. `React.lazy`
+  merkt sich einen gescheiterten Import, deshalb lief das immer wieder in denselben Fehler, bis jemand von Hand mit
+  `Strg + F5` neu lud.
+- **Nicht ladbare Seitendatei heilt sich einmal selbst:** Scheitert das Laden einer Seitendatei („error loading
+  dynamically imported module“, etwa während eines Neustarts nach dem Update oder bei einem Aussetzer im Netz), lädt die
+  Seite einmal von selbst neu. Scheitert es innerhalb einer Minute wieder, bleibt der Fehlerbildschirm stehen, damit ein
+  ausgefallener Server keine Endlosschleife auslöst.
+
 ## v2.0.5 (03.11.2026) — Oberfläche aufgeräumt: einheitliche Seitenköpfe, Systemzustand übersetzt
 
 - **Einheitlicher Seitenkopf:** Neue Komponente `PageHeader` (Titel mit Symbol und Untertitel links, Hauptaktionen
