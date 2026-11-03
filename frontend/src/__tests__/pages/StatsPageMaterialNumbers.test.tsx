@@ -129,7 +129,7 @@ describe('StatsPage material-number widget', () => {
       expect(screen.getByText('Statistics')).toBeInTheDocument();
     });
     await waitFor(() => {
-      expect(screen.getByText('Filament Trends')).toBeInTheDocument();
+      expect(screen.getByTestId('stats-empty')).toBeInTheDocument();
     });
 
     expect(screen.queryByText('By Material Number')).toBeNull();
@@ -150,7 +150,7 @@ describe('StatsPage material-number widget', () => {
 
     // The dashboard is fully up on the archive response alone.
     await waitFor(() => {
-      expect(screen.getByText('Filament Trends')).toBeInTheDocument();
+      expect(screen.getByTestId('stats-empty')).toBeInTheDocument();
     });
     expect(screen.queryByText('By Material Number')).toBeNull();
     expect(materialNumberRequests).toHaveLength(0);
@@ -171,7 +171,7 @@ describe('StatsPage material-number widget', () => {
     render(<StatsPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Filament Trends')).toBeInTheDocument();
+      expect(screen.getByTestId('stats-empty')).toBeInTheDocument();
     });
     expect(screen.queryByText('By Material Number')).toBeNull();
 

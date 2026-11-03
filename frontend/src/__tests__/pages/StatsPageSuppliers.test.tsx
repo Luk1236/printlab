@@ -100,7 +100,7 @@ describe('StatsPage supplier widget', () => {
 
     // Wait for the dashboard to be up before asserting on an absence.
     await waitFor(() => {
-      expect(screen.getByText('Filament Trends')).toBeInTheDocument();
+      expect(screen.getByTestId('stats-empty')).toBeInTheDocument();
     });
 
     expect(screen.queryByText('By Supplier')).toBeNull();
@@ -114,7 +114,7 @@ describe('StatsPage supplier widget', () => {
 
     // The dashboard is fully up on the archive response alone.
     await waitFor(() => {
-      expect(screen.getByText('Filament Trends')).toBeInTheDocument();
+      expect(screen.getByTestId('stats-empty')).toBeInTheDocument();
     });
     expect(screen.queryByText('By Supplier')).toBeNull();
     expect(supplierRequests).toHaveLength(0);
@@ -132,7 +132,7 @@ describe('StatsPage supplier widget', () => {
     render(<StatsPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Filament Trends')).toBeInTheDocument();
+      expect(screen.getByTestId('stats-empty')).toBeInTheDocument();
     });
     expect(screen.queryByText('By Supplier')).toBeNull();
 

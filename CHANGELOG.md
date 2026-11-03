@@ -3,6 +3,19 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.5 (03.11.2026) — Oberfläche aufgeräumt: einheitliche Seitenköpfe, Systemzustand übersetzt
+
+- **Einheitlicher Seitenkopf:** Neue Komponente `PageHeader` (Titel mit Symbol und Untertitel links, Hauptaktionen
+  rechts, Nebenaktionen im Menü „Aktionen“) in Filament, Dateimanager, Statistik und Systemzustand. Filament zeigt
+  statt 7 Knöpfen noch 3; CSV-Import/-Export, Lagerorte, Lieferanten und Etiketten liegen im Menü. Im Dateimanager
+  liegen Vorschaubilder, Extern verknüpfen, Tags, Papierkorb und Aufräumen im Menü.
+- **Einstellungs-Kompass eingeklappt:** In den Einstellungen ist die Karte standardmäßig zu und merkt sich die Wahl,
+  die eigentlichen Einstellungen stehen sofort sichtbar. Auf der Seite Einrichtung bleibt sie offen.
+- **Systemzustand übersetzt:** 66 Texte der Seite standen in keiner Sprachdatei, dort erschien immer Englisch. Sie
+  stehen jetzt in allen 15 Sprachen (von Hand übersetzt, nicht muttersprachlich gegengelesen).
+- **Statistik ohne Drucke:** Statt acht leerer Widgets steht eine einzige Hinweiskarte; die Widgets Lieferanten und
+  Materialnummern bleiben, weil sie aus dem Bestand rechnen.
+
 ## v2.0.4 (03.11.2026) — CI-Härtung: Contract-Fixes, Test-Isolation & Requirements-Paarung
 
 - **Contract-Fixes:** URL-Klassifizierung (`GUARDED_BODY_URLS`: Outbound-Webhook-URL; `NOT_A_FETCH_TARGET`: 
