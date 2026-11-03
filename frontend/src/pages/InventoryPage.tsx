@@ -1606,13 +1606,14 @@ function InventoryPage({ spoolmanMode = false, spoolmanModeReady = true }: { spo
             title: spoolmanCsvHint,
             onClick: handleExportCsv,
           },
-          { label: t('locations.manage'), icon: <MapPin className="w-4 h-4" />, divider: true, onClick: () => setLocationsModalOpen(true) },
+          { label: '', divider: true, onClick: () => {} },
+          { label: t('locations.manage'), icon: <MapPin className="w-4 h-4" />, onClick: () => setLocationsModalOpen(true) },
           // Lieferanten (#2988): Stammdaten wie die Lagerorte, in beiden Bestandsmodi.
           { label: t('inventory.suppliers.title'), icon: <Store className="w-4 h-4" />, onClick: () => setSuppliersModalOpen(true) },
+          { label: '', divider: true, onClick: () => {} },
           {
             label: t('inventory.labels.printLabels', 'Print labels…'),
             icon: <Printer className="w-4 h-4" />,
-            divider: true,
             disabled: filteredSpools.length === 0,
             // Markierte Spulen vorauswählen; ohne Markierung alle sichtbaren, damit man im Dialog nach unten verfeinert (#2980).
             onClick: () =>

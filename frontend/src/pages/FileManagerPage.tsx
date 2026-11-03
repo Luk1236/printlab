@@ -2745,12 +2745,11 @@ export function FileManagerPage() {
               onClick: () => setShowTagsModal(true),
             },
             ...(hasAnyPermission('library:delete_own', 'library:delete_all')
-              ? [{
+              ? [{ label: '', divider: true, onClick: () => {} }, {
                   label: typeof trashCount === 'number' && trashCount > 0
                     ? `${t('libraryTrash.headerButton')} (${trashCount})`
                     : t('libraryTrash.headerButton'),
                   icon: <Trash2 className="w-4 h-4" />,
-                  divider: true,
                   title: t('libraryTrash.headerTooltip'),
                   onClick: () => navigate('/files/trash'),
                 }]
