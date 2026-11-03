@@ -1,6 +1,6 @@
 # TODO — PrintLab
 
-**Stand:** 03.11.2026, Version 2.0.1 · **Basis:** Bambuddy 1.2.5.7 (AGPL-3.0, Herkunft: `NOTICE`) · **Branch:** `bambu-monitor-port`
+**Stand:** 03.11.2026, Version 2.0.2 · **Basis:** Bambuddy 1.2.5.7 (AGPL-3.0, Herkunft: `NOTICE`) · **Branch:** `bambu-monitor-port`
 
 Was fertig ist, steht mit Datum im `CHANGELOG.md`. Die ausführliche Bewertung (Risiken R1–R16, Verbesserungen, Erweiterungen)
 steht in `docs/ANALYSE-2026-10-28.md`, die Abnahme in `docs/ABNAHME.md`.
@@ -12,7 +12,7 @@ Update mit Rückbau, Überwachung mit Meldung, Angebote mit PDF, Kamera-Einmessu
 
 ## Zuletzt erledigt (03.11.2026, Code-Review auf v2.0.1)
 
-**Review-Härtung nach v2.0.1 (13 Bugfixes + Tests, Details im CHANGELOG „Nachtrag (Review, 03.11.2026)“):**
+**Review-Härtung nach v2.0.1 → Release v2.0.2 (15 Bugfixes + Tests, Details im CHANGELOG-Abschnitt v2.0.2):**
 
 - **Webhooks:** DNS-Prüfung zur Zustellzeit (SSRF-Rebinding), Zahlenkodierung-Hosts abgedichtet, Geheimnisse maskiert in
   Antworten, Event-Validierung (keine toten Hooks), `follow_redirects=False`, 200–299 = Erfolg, Persistenzfehler → 503,

@@ -47,6 +47,7 @@ from typing import Any
 import httpx
 
 from backend.app.core.config import settings
+from backend.app.services.secret_codec import decrypt_secret, encrypt_secret
 
 logger = logging.getLogger(__name__)
 
@@ -299,7 +300,10 @@ def register_webhook(
         hook = {
             "id": f"wh_{uuid.uuid4().hex[:12]}",
             "url": url.strip(),
-            "secret": secret.strip(),
+            # Geheimnis verschlüsselt persistiert (secret_codec): die Datendatei
+            # enthält nie den Klartext. Bestandsdateien mit Klartext bleiben
+            # nutzbar und werden bei der nächsten Zustellung transparent gelesen.
+            "secret": encrypt_secret(secret.strip()),
             "events": _validate_event_list(events, allow=frozenset(ALL_EVENTS)),
             "format": format_type if format_type in ("generic", "discord", "slack") else "generic",
             "description": description.strip(),
@@ -346,6 +350,20 @@ def build_signature(secret: str, body_bytes: bytes) -> str:
         return ""
     mac = hmac.new(secret.encode("utf-8"), body_bytes, hashlib.sha256)
     return f"sha256={mac.hexdigest()}"
+
+
+def _decrypt_hook_secret(hook: dict[str, Any]) -> str:
+    """Holt das Klartext-HMAC-Geheimnis aus dem Hook-Record.
+
+    Verschlüsselte Werte werden über ``secret_codec`` aufgelöst; Klartext-Werte
+    aus Bestandsdateien passieren unverändert. Ein mit ``enc:`` markierter Wert,
+    dessen Schlüssel fehlt, wirft ValueError — die Zustellung zählt das als
+    Fehlschlag (Dead-Letter-Streak), statt unsigniert weiterzusenden.
+    """
+    stored = hook.get("secret", "") or ""
+    if not stored:
+        return ""
+    return decrypt_secret(stored)
 
 
 def _event_matches(hook: dict[str, Any], event: str) -> bool:
@@ -495,9 +513,9 @@ def deliver_webhook_sync(hook: dict[str, Any], event: str, data: dict[str, Any])
             "X-PrintLab-Delivery": uuid.uuid4().hex,
         }
 
-        secret = hook.get("secret", "")
-        if secret:
-            headers["X-PrintLab-Signature"] = build_signature(secret, body)
+        secret_plain = _decrypt_hook_secret(hook)
+        if secret_plain:
+            headers["X-PrintLab-Signature"] = build_signature(secret_plain, body)
 
         # follow_redirects=False: Zustellungen dürfen vom Empfänger nicht ohne
         # erneute SSRF-Prüfung umgeleitet werden.
@@ -530,6 +548,11 @@ def deliver_webhook_sync(hook: dict[str, Any], event: str, data: dict[str, Any])
             logger.warning("Webhook-Zustellung fehlgeschlagen für %s nach %d Versuch(en): %s", url, attempt + 1, detail)
         _record_delivery_outcome(hook, delivered, detail)
         return delivered
+    except ValueError as exc:  # z. B. Geheimnis unlesbar: kein stilles Unsigned-POSTen
+        detail = str(exc)
+        logger.warning("Webhook-Zustellungsfehler für %s: %s", url, detail)
+        _record_delivery_outcome(hook, False, detail)
+        return False
     except Exception as exc:  # defensive: Buildfehler des Payloads o. Ä. zählen als Fehlschlag
         detail = f"{type(exc).__name__}: {exc}"
         logger.warning("Webhook-Zustellungsfehler für %s: %s", url, detail)

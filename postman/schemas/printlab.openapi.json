@@ -3,7 +3,7 @@
   "info": {
     "title": "PrintLab API",
     "description": "Autonome 3D-Drucker-Verwaltung, integrierter Slicer, lokale KI und Abrechnung (Bambu Lab P2S).",
-    "version": "2.0.1"
+    "version": "2.0.2"
   },
   "paths": {
     "/api/v1/auth/setup": {
@@ -43529,9 +43529,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": true,
-                "title": "Job"
+                "$ref": "#/components/schemas/DispatchJobRequest"
               }
             }
           }
@@ -43603,9 +43601,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": true,
-                "title": "Job"
+                "$ref": "#/components/schemas/DispatchJobRequest"
               }
             }
           }
@@ -43871,7 +43867,7 @@
           "portal"
         ],
         "summary": "Create Quote",
-        "description": "Berechnet ein Sofort-Angebot mit Kostenaufschlüsselung und Staffelrabatt.",
+        "description": "Berechnet ein Sofort-Angebot mit Kostenaufschlüsselung und Staffelrabatt.\n\nDie Kalkulation wird serverseitig in der Quote-Registry (SQLite) gespeichert\nund ist damit checkout-fähig (TTL 60 Minuten). Rate-Limited gegen\nRegistry-Flood.",
         "operationId": "create_quote_api_v1_portal_quote_post",
         "requestBody": {
           "content": {
@@ -43915,7 +43911,7 @@
           "portal"
         ],
         "summary": "Initiate Checkout",
-        "description": "Erzeugt eine Stripe-Checkout-Session für das Angebot.",
+        "description": "Erzeugt eine Stripe-Checkout-Session für eine zuvor kalkulierte Angebots-ID.\n\nDer Zahlbetrag stammt ausschließlich aus der serverseitig gespeicherten\nKalkulation (SQLite-Registry, überlebt einen Backend-Neustart); unbekannte\noder abgelaufene Angebote werden mit 404 abgewiesen und ungültige\nRückleitungs-URLs mit 400.",
         "operationId": "initiate_checkout_api_v1_portal_checkout_post",
         "requestBody": {
           "content": {
@@ -44389,13 +44385,13 @@
       }
     },
     "/api/v1/printers/{printer_id}/camera/stop": {
-      "get": {
+      "post": {
         "tags": [
           "camera"
         ],
         "summary": "Stop Camera Stream",
         "description": "Stop active camera streams for a printer.\n\nCalled by the frontend on viewer unmount (cam-wall tile, embedded viewer,\npopup window). Accepts both GET and POST (POST for sendBeacon compatibility).\n\nReference-count guard: every viewer of a printer subscribes to the same\nfan-out broadcaster, so a force-shutdown triggered by ONE leaving viewer\nused to kill the others' streams (cam-wall tile froze when a user opened\nthen closed the embedded viewer). If any subscriber is still attached,\nskip the force-teardown — the broadcaster's natural grace-shutdown (5 s\nafter subscribers drop to 0) handles cleanup when the leaving viewer's\nHTTP connection actually closes.",
-        "operationId": "stop_camera_stream_api_v1_printers__printer_id__camera_stop_get",
+        "operationId": "stop_camera_stream_api_v1_printers__printer_id__camera_stop_post",
         "security": [
           {
             "HTTPBearer": []
@@ -44449,13 +44445,13 @@
           }
         }
       },
-      "post": {
+      "get": {
         "tags": [
           "camera"
         ],
         "summary": "Stop Camera Stream",
         "description": "Stop active camera streams for a printer.\n\nCalled by the frontend on viewer unmount (cam-wall tile, embedded viewer,\npopup window). Accepts both GET and POST (POST for sendBeacon compatibility).\n\nReference-count guard: every viewer of a printer subscribes to the same\nfan-out broadcaster, so a force-shutdown triggered by ONE leaving viewer\nused to kill the others' streams (cam-wall tile froze when a user opened\nthen closed the embedded viewer). If any subscriber is still attached,\nskip the force-teardown — the broadcaster's natural grace-shutdown (5 s\nafter subscribers drop to 0) handles cleanup when the leaving viewer's\nHTTP connection actually closes.",
-        "operationId": "stop_camera_stream_api_v1_printers__printer_id__camera_stop_get",
+        "operationId": "stop_camera_stream_api_v1_printers__printer_id__camera_stop_post",
         "security": [
           {
             "HTTPBearer": []
@@ -62312,7 +62308,7 @@
       "get": {
         "summary": "Serve Manifest",
         "description": "Serve PWA manifest.",
-        "operationId": "serve_manifest_manifest_json_get",
+        "operationId": "serve_manifest_manifest_json_head",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -62327,7 +62323,7 @@
       "head": {
         "summary": "Serve Manifest",
         "description": "Serve PWA manifest.",
-        "operationId": "serve_manifest_manifest_json_get",
+        "operationId": "serve_manifest_manifest_json_head",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -62344,7 +62340,7 @@
       "get": {
         "summary": "Serve Service Worker",
         "description": "Serve service worker.",
-        "operationId": "serve_service_worker_sw_js_get",
+        "operationId": "serve_service_worker_sw_js_head",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -62359,7 +62355,7 @@
       "head": {
         "summary": "Serve Service Worker",
         "description": "Serve service worker.",
-        "operationId": "serve_service_worker_sw_js_get",
+        "operationId": "serve_service_worker_sw_js_head",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -62376,7 +62372,7 @@
       "get": {
         "summary": "Serve Sw Register",
         "description": "Serve the service-worker registration bootstrap script.\n\nServed as a real JS file so the strict `script-src 'self'` CSP covers it\nwithout needing 'unsafe-inline' or per-build hashes on the inline tag.",
-        "operationId": "serve_sw_register_sw_register_js_get",
+        "operationId": "serve_sw_register_sw_register_js_head",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -62391,7 +62387,7 @@
       "head": {
         "summary": "Serve Sw Register",
         "description": "Serve the service-worker registration bootstrap script.\n\nServed as a real JS file so the strict `script-src 'self'` CSP covers it\nwithout needing 'unsafe-inline' or per-build hashes on the inline tag.",
-        "operationId": "serve_sw_register_sw_register_js_get",
+        "operationId": "serve_sw_register_sw_register_js_head",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -68987,16 +68983,20 @@
         "properties": {
           "quote_id": {
             "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
             "title": "Quote Id",
             "description": "Angebots-ID aus der Sofortkalkulation"
           },
           "success_url": {
             "type": "string",
+            "maxLength": 2000,
             "title": "Success Url",
             "description": "Erfolgs-Rückleitungs-URL"
           },
           "cancel_url": {
             "type": "string",
+            "maxLength": 2000,
             "title": "Cancel Url",
             "description": "Abbruch-Rückleitungs-URL"
           }
@@ -71164,6 +71164,56 @@
         ],
         "title": "DiscoveryStatus",
         "description": "Discovery status response."
+      },
+      "DispatchJobRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Name",
+            "description": "Angezeigter Auftragsname",
+            "default": ""
+          },
+          "material": {
+            "type": "string",
+            "maxLength": 32,
+            "title": "Material",
+            "description": "Gewünschtes Filament (AMS-Kürzel)",
+            "default": "PLA"
+          },
+          "color": {
+            "type": "string",
+            "maxLength": 32,
+            "title": "Color",
+            "description": "Gewünschte Farbe als Hex-Wert",
+            "default": ""
+          },
+          "filament_grams": {
+            "type": "number",
+            "maximum": 20000.0,
+            "minimum": 0.0,
+            "title": "Filament Grams",
+            "description": "Bedarf in Gramm",
+            "default": 30.0
+          },
+          "nozzle_diameter": {
+            "type": "number",
+            "maximum": 1.2,
+            "minimum": 0.15,
+            "title": "Nozzle Diameter",
+            "description": "Benötigte Düse in mm",
+            "default": 0.4
+          },
+          "requires_hardened_nozzle": {
+            "type": "boolean",
+            "title": "Requires Hardened Nozzle",
+            "description": "Abrasives Filament (gehärtete Düse nötig)",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "DispatchJobRequest",
+        "description": "Auftragsdaten für Fitness-/Dispatch-Berechnungen.\n\nEin Pydantic-Modell statt eines rohen dicts: Die Endpunkte sind für echte\nSteuerungsentscheidungen gedacht, und ein manipulierter Payload (\"abc\" in\nfilament_grams) soll nicht erst im Balancer als Fallback landen dürfen."
       },
       "DisplaySettingsRequest": {
         "properties": {
@@ -87808,6 +87858,7 @@
         "properties": {
           "volume_cm3": {
             "type": "number",
+            "maximum": 200000.0,
             "exclusiveMinimum": 0.0,
             "title": "Volume Cm3",
             "description": "Nettovolumen des Modells in cm³"

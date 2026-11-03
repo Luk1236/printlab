@@ -1,9 +1,9 @@
 {
   "info": {
-    "name": "PrintLab API v2.0.1",
+    "name": "PrintLab API v2.0.2",
     "description": "Autonome 3D-Drucker-Verwaltung, integrierter Slicer, lokale KI und Abrechnung (Bambu Lab P2S).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "version": "2.0.1"
+    "version": "2.0.2"
   },
   "variable": [
     {
@@ -6449,42 +6449,6 @@
         {
           "name": "Stop Camera Stream",
           "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/v1/printers/{printer_id}/camera/stop",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "printers",
-                "{printer_id}",
-                "camera",
-                "stop"
-              ],
-              "variable": [
-                {
-                  "key": "printer_id",
-                  "value": "1",
-                  "description": "Parameter printer_id"
-                }
-              ]
-            },
-            "description": "Stop active camera streams for a printer.\n\nCalled by the frontend on viewer unmount (cam-wall tile, embedded viewer,\npopup window). Accepts both GET and POST (POST for sendBeacon compatibility).\n\nReference-count guard: every viewer of a printer subscribes to the same\nfan-out broadcaster, so a force-shutdown triggered by ONE leaving viewer\nused to kill the others' streams (cam-wall tile froze when a user opened\nthen closed the embedded viewer). If any subscriber is still attached,\nskip the force-teardown — the broadcaster's natural grace-shutdown (5 s\nafter subscribers drop to 0) handles cleanup when the leaving viewer's\nHTTP connection actually closes."
-          },
-          "response": []
-        },
-        {
-          "name": "Stop Camera Stream",
-          "request": {
             "method": "POST",
             "header": [
               {
@@ -6529,6 +6493,42 @@
                 }
               }
             }
+          },
+          "response": []
+        },
+        {
+          "name": "Stop Camera Stream",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/printers/{printer_id}/camera/stop",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "printers",
+                "{printer_id}",
+                "camera",
+                "stop"
+              ],
+              "variable": [
+                {
+                  "key": "printer_id",
+                  "value": "1",
+                  "description": "Parameter printer_id"
+                }
+              ]
+            },
+            "description": "Stop active camera streams for a printer.\n\nCalled by the frontend on viewer unmount (cam-wall tile, embedded viewer,\npopup window). Accepts both GET and POST (POST for sendBeacon compatibility).\n\nReference-count guard: every viewer of a printer subscribes to the same\nfan-out broadcaster, so a force-shutdown triggered by ONE leaving viewer\nused to kill the others' streams (cam-wall tile froze when a user opened\nthen closed the embedded viewer). If any subscriber is still attached,\nskip the force-teardown — the broadcaster's natural grace-shutdown (5 s\nafter subscribers drop to 0) handles cleanup when the leaving viewer's\nHTTP connection actually closes."
           },
           "response": []
         },
@@ -22546,7 +22546,7 @@
               ],
               "variable": []
             },
-            "description": "Berechnet ein Sofort-Angebot mit Kostenaufschlüsselung und Staffelrabatt.",
+            "description": "Berechnet ein Sofort-Angebot mit Kostenaufschlüsselung und Staffelrabatt.\n\nDie Kalkulation wird serverseitig in der Quote-Registry (SQLite) gespeichert\nund ist damit checkout-fähig (TTL 60 Minuten). Rate-Limited gegen\nRegistry-Flood.",
             "body": {
               "mode": "raw",
               "raw": "{}",
@@ -22588,7 +22588,7 @@
               ],
               "variable": []
             },
-            "description": "Erzeugt eine Stripe-Checkout-Session für das Angebot.",
+            "description": "Erzeugt eine Stripe-Checkout-Session für eine zuvor kalkulierte Angebots-ID.\n\nDer Zahlbetrag stammt ausschließlich aus der serverseitig gespeicherten\nKalkulation (SQLite-Registry, überlebt einen Backend-Neustart); unbekannte\noder abgelaufene Angebote werden mit 404 abgewiesen und ungültige\nRückleitungs-URLs mit 400.",
             "body": {
               "mode": "raw",
               "raw": "{}",

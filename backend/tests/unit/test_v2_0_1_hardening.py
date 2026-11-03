@@ -18,7 +18,7 @@ from typing import Any
 
 import pytest
 
-from backend.app.services import archive as archive_module, outbound_webhooks, wear_tracker
+from backend.app.services import archive as archive_module, outbound_webhooks, secret_codec, wear_tracker
 from backend.app.services.customer_portal import (
     _as_eur_amount,
     calculate_instant_quote,
@@ -511,6 +511,7 @@ class TestArchiveHookDeduplication:
 def _post_recorder(statuses: list[int]):
     """Fake-httpx-Client, der pro POST den nächsten Status aus der Liste liefert."""
     posts: list[int] = []
+    details: list[dict[str, Any]] = []
 
     class _FakeResponse:
         def __init__(self, code: int) -> None:
@@ -529,8 +530,10 @@ def _post_recorder(statuses: list[int]):
         def post(self, url: str, **kwargs: Any) -> _FakeResponse:
             code = statuses[len(posts)] if len(posts) < len(statuses) else statuses[-1]
             posts.append(code)
+            details.append({"url": url, "headers": kwargs["headers"], "content": kwargs["content"]})
             return _FakeResponse(code)
 
+    _FakeClient.details = details
     return _FakeClient, posts
 
 
@@ -619,10 +622,97 @@ class TestWebhookDeliveryLifecycle:
         assert "SSRF-Block" in stored["last_delivery_detail"]
 
 
+# ── Secret-at-rest (HMAC-Geheimnisse verschlüsselt) ──────────────────────────
+
+
+class TestSecretAtRest:
+    def test_register_stores_only_ciphertext(self, tmp_path, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr(outbound_webhooks, "WEBHOOKS_FILE", tmp_path / "wh.json")
+        monkeypatch.setattr(secret_codec, "KEY_FILE", tmp_path / "key.bin")
+        secret_codec.reset_cached_cipher()
+        try:
+            outbound_webhooks.register_webhook(
+                url="https://discord.com/api/webhooks/1", secret="hushhush", events=["*"]
+            )
+        finally:
+            secret_codec.reset_cached_cipher()
+
+        disk = (tmp_path / "wh.json").read_text(encoding="utf-8")
+        assert "hushhush" not in disk
+        assert "enc:" in disk
+        # Die Schlüsseldatei ist kein Klartextabbild des Geheimnisses:
+        assert "hushhush" not in (tmp_path / "key.bin").read_text(encoding="utf-8")
+
+    def test_delivery_signs_with_decrypted_secret(self, tmp_path, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr(outbound_webhooks, "WEBHOOKS_FILE", tmp_path / "wh.json")
+        monkeypatch.setattr(outbound_webhooks, "_RETRY_DELAYS", ())
+        monkeypatch.delenv("PRINTLAB_ALLOW_LOCAL_WEBHOOKS", raising=False)
+        monkeypatch.setattr(outbound_webhooks.socket, "getaddrinfo", _fake_getaddrinfo(["93.184.216.34"]))
+        FakeClient, posts = _post_recorder([200])
+        monkeypatch.setattr(outbound_webhooks.httpx, "Client", FakeClient)
+        monkeypatch.setattr(secret_codec, "KEY_FILE", tmp_path / "key.bin")
+        secret_codec.reset_cached_cipher()
+        try:
+            hook = outbound_webhooks.register_webhook(
+                url="https://hooks.example.com/h", secret="hushhush", events=["*"]
+            )
+            result = outbound_webhooks.deliver_webhook_sync(hook, "print.completed", {"x": 1})
+        finally:
+            secret_codec.reset_cached_cipher()
+
+        assert posts == [200]
+        assert result is True
+        # Die Signatur wurde mit dem entschlüsselten Klartext-HMAC erzeugt:
+        sent = FakeClient.details[0]
+        expected = outbound_webhooks.build_signature("hushhush", sent["content"])
+        assert sent["headers"]["X-PrintLab-Signature"] == expected
+
+    def test_lost_key_key_fails_loudly_and_counts_streak(self, tmp_path, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr(outbound_webhooks, "WEBHOOKS_FILE", tmp_path / "wh.json")
+        monkeypatch.setattr(outbound_webhooks, "_RETRY_DELAYS", ())
+        monkeypatch.delenv("PRINTLAB_ALLOW_LOCAL_WEBHOOKS", raising=False)
+        monkeypatch.setattr(outbound_webhooks.socket, "getaddrinfo", _fake_getaddrinfo(["93.184.216.34"]))
+        _forbid_network(monkeypatch)
+        monkeypatch.setattr(secret_codec, "KEY_FILE", tmp_path / "key.bin")
+        secret_codec.reset_cached_cipher()
+        try:
+            hook = outbound_webhooks.register_webhook(
+                url="https://hooks.example.com/h", secret="hushhush", events=["*"]
+            )
+        finally:
+            secret_codec.reset_cached_cipher()
+
+        # Schlüssel jetzt "verloren": Datei mit anderem Schlüssel überschreiben.
+        (tmp_path / "key.bin").write_text("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\n", encoding="utf-8")
+        secret_codec.reset_cached_cipher()
+        try:
+            ok = outbound_webhooks.deliver_webhook_sync(hook, "print.completed", {"x": 1})
+        finally:
+            secret_codec.reset_cached_cipher()
+
+        assert ok is False
+        stored = outbound_webhooks.list_webhooks()[0]
+        assert "Schlüssel" in stored["last_delivery_detail"]
+
+    def test_legacy_plaintext_still_readable(self, tmp_path, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr(outbound_webhooks, "WEBHOOKS_FILE", tmp_path / "wh.json")
+        monkeypatch.setattr(secret_codec, "KEY_FILE", tmp_path / "key.bin")
+        legacy = {
+            "id": "wh_legacy",
+            "url": "https://hooks.example.com/legacy",
+            "secret": "old-plain",
+            "events": ["*"],
+            "enabled": True,
+        }
+        (tmp_path / "wh.json").write_text(json.dumps([legacy]), encoding="utf-8")
+        raw = secret_codec.decrypt_secret("old-plain")
+        assert raw == "old-plain"
+
+
 # ── Konfigurations-Sanity ────────────────────────────────────────────────────
 
 
 def test_version_is_release_version():
     from backend.app.core.config import APP_VERSION
 
-    assert APP_VERSION == "2.0.1"
+    assert APP_VERSION == "2.0.2"
