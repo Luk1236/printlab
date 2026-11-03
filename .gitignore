@@ -83,6 +83,7 @@ failure_images/
 service_secrets.key
 wear_tracking.json
 outbound_webhooks.json
+assistant.json
 
 # SpoolBuddy SSH keys (generated at runtime for remote updates)
 spoolbuddy/ssh/

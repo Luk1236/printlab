@@ -3,6 +3,20 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.3 (03.11.2026) — Update-Selbstheilung: Konflikt-Zustände am Gerät aufräumen
+
+- **Update-Fluss (`updates.py`):** Vor dem Einspielen einer Version bricht der Updater offene Git-Operationen am Gerät
+  explizit ab (`rebase`/`merge`/`cherry-pick`/`am --abort`) und macht erst danach den `reset --hard` auf den geprüften,
+  signierten Tag. Hintergrund: ein hängender Rebase (z. B. nach einer händischen Git-Aktion auf dem Pi) hinterließ
+  Konfliktmarker (`<<<<<<< HEAD`) in ausgelieferten Dateien — die Oberfläche stürzte mit `Unexpected token '<<'` ab,
+  weil `reset --hard` allein den Sequencer-Zustand nicht entfernte. Update-Testsuite geprüft (255 grün).
+- **Release-Werkzeug (`werkzeuge/release.py`):** `--force` löscht jetzt auch den Remote-Tag, bevor das `git fetch`
+  den Verweis zurückholt; ein Tag, der nur auf origin existiert, wird erkannt und nur mit `--force` ersetzt.
+  Behebt die „tag already exists"-Falle beim Neutaggen eines Releases.
+- **`.gitignore`:** Laufzeit-Dateien am Projektstamm (`assistant.json` und die vorhandenen `service_secrets.key`,
+  `wear_tracking.json`, `outbound_webhooks.json`) sind ignoriert, damit die Release-Prüfung am PC nicht an
+  Entwickler-Laufzeitdaten hängt.
+
 ## v2.0.2 (03.11.2026) — Code-Review-Härtung: Webhook-Zustell-Lifecycle, Quote-Registry in SQLite & echte Flotten-Daten
 
 Aus einem tiefen Review der v2.0-Erweiterungen (SSRF, Fleet, Portal, Verschleiß-Hooks): 15 Fehler behoben, die
