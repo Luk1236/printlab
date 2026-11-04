@@ -3,6 +3,25 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.10 (04.11.2026) — Aufräumen: Verfügbarkeit ausgelagert, API-Typen geteilt
+
+Reines Aufräumen ohne Funktionsänderung — Technik-Schulden aus `docs/ANALYSE-2026-10-28.md`, damit neue
+Anpassungen wieder Platz haben:
+
+- **Druckplaner schrumpft:** Die Verfügbarkeits- und Wecker-Logik (Modell-Suche mit Filament-Matching,
+  Aufwecken über Smart Plugs, Idle-Prüfung, Prüfung des vorherigen Auftrags, Blockade bei
+  Filament-Knappheit) liegt jetzt als `scheduler/availability.py` (623 Zeilen). `print_scheduler.py`
+  von 4 509 auf 3 928 Zeilen, Budget-Grenze 4 550 → 3 950. Gepatchte Namen greifen weiter über die
+  `_rt()`-Fassade — 1 055 Planer-Tests und die volle Suite (7 084) laufen unverändert grün.
+- **API-Typen geteilt:** `frontend/src/api/types.ts` von 4 221 auf 19 Zeilen reiner Wiederausgabe; die
+  Typen liegen in zehn Bereichsdateien (`types_printer`, `types_archive`, `types_slicer`, `types_queue`,
+  `types_messaging`, `types_spool`, `types_maintenance`, `types_finance`, `types_user`, `types_system`).
+  Importstellen bleiben unverändert; tsc, ESLint und alle 4 411 Oberflächen-Tests grün.
+- **Hausrat:** Die toten `spaghetti_check.json` (Feature seit v2.0.8 gelöscht) ist weg; das Signieren der
+  Release-Tags lässt sich jetzt auch lokal verifizieren (`docs/VERSIONING.md`).
+- **Neue Anleitung:** `docs/GITHUB-ABSICHERUNG.md` führt Schritt für Schritt durch 2FA/Passkey,
+  Token-Inventur, Actions-Berechtigungen und die Branch-/Tag-Regelsätze für das öffentliche Repo.
+
 ## v2.0.9 (04.11.2026) — Barrierefreiheit: Skip-Link, Live-Region und Sprachmarkierung
 
 - **Skip-Link:** Der erste Tab-Druck bietet „Zum Hauptinhalt springen“; der Sprung landet im
