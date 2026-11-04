@@ -160,15 +160,14 @@ dieser Reihenfolge, mit Erwartungen, Abbruchkriterien und Protokoll.
 ## Technisch offen
 
 - [ ] Große Dateien weiter zerlegen; der Test `test_file_size_budget.py` verhindert nur das Wachsen. Stand
-      01.11.2026: `print_scheduler.py` 4 845 Zeilen (Grenze 4 850), `queue_pass.py` 582 (Vorgabe 2 600, Auswahl in
+      04.11.2026: `print_scheduler.py` 3 928 Zeilen (Grenze 3 950; die Verfügbarkeits- und Wecker-Logik liegt als
+      `scheduler/availability.py` Mixin, 623 Zeilen), `queue_pass.py` 582 (Vorgabe 2 600, Auswahl in
       `selection.py`, 483), `PrintersPage.tsx` 1 614 (Grenze 1 650, Leiste in `PrinterToolbar.tsx`, 497),
-      `PrinterCard.tsx` 5 711 (Grenze 5 750), `PrinterCardModals.tsx` 569 (neben der Karte),
-      `PrinterCardParts.tsx` 1 134 (Grenze 1 150), `client.ts` 1 008 (Grenze 1 050), `types.ts` 4 754 (Grenze 4 800),
-      `endpoints.ts` 4 017 (Grenze 4 050), `main.py` 10 970 (Grenze 11 000).
-      **Nächste Schnitte:** (1) `print_scheduler.py` ist mit 4 845 Zeilen an der Grenze: die Verfügbarkeitsprüfungen
-      aus `selection.py` als eigene Methoden herausziehen, bevor dort etwas dazukommt. (2) `types.ts` nach Bereichen
-      (Drucker, Archive, Warteschlange, Verwaltung) mit Wiederausgabe wie in `client.ts`. Neue Routen gehören in
-      `fork_routers.py`, nicht mehr in `main.py`.
+      `PrinterCard.tsx` 5 232 (Grenze 5 300, Dialoge in `PrinterCardModals.tsx`, 1 225, Bausteine in
+      `PrinterCardParts.tsx`, 1 134, Grenze 1 150), `client.ts` 1 016 (Grenze 1 050),
+      `types.ts` 19 Zeilen (Grenze 400; die API-Typen liegen nach Bereichen in `types_*.ts`),
+      `endpoints.ts` 4 005 (Grenze 4 050), `main.py` 10 906 (Grenze 11 000).
+      **Nächster Schnitt:** (1) `main.py`: neue Routen gehören in `fork_routers.py`, nicht mehr in `main.py`.
 - [ ] Volle E2E-Prüfung MakerWorld → PC-Slicer → Warteschlange. Die inneren Glieder sind abgesichert
       (566 Integrationstests zu MakerWorld, Bibliothek und Warteschlange, alle grün); der Slicer-Upload und der
 druckende Drucker brauchen Gerät und Slicer.
