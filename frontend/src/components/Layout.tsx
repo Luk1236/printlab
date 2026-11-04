@@ -640,6 +640,13 @@ export function Layout() {
 
   return (
     <div className="flex min-h-screen">
+      {/* Skip-Link (Tastatur, Screenreader): einmal Tab drücken → Direkt zum Inhalt. */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded-lg focus:bg-orange-600 focus:px-4 focus:py-2 focus:text-white focus:text-sm focus:font-medium focus:shadow-lg"
+      >
+        {t('navigation.skipToContent')}
+      </a>
       {/* Compact Header */}
       {isSidebarCompact && (
         <header className="fixed top-0 left-0 right-0 z-40 h-14 bg-bambu-dark-secondary border-b border-bambu-dark-tertiary flex items-center px-4">
@@ -1062,8 +1069,8 @@ export function Layout() {
         </div>
       </aside>
 
-      {/* Main content */}
-      <main className={`flex-1 bg-bambu-dark overflow-auto transition-all duration-300 ${
+      {/* Main content — Tab-Ziel des Skip-Links */}
+      <main id="main-content" tabIndex={-1} className={`flex-1 bg-bambu-dark overflow-auto transition-all duration-300 ${
         isSidebarCompact ? 'mt-14' : sidebarExpanded ? 'ml-64' : 'ml-16'
       }`}>
         {/* Debug logging indicator */}

@@ -26,6 +26,7 @@ export default {
     notifications: "Сповіщення",
     settings: "Налаштування",
     system: "Система",
+    skipToContent: 'Перейти до основного вмісту',
     collapseSidebar: "Згорнути бічну панель",
     expandSidebar: "Розгорнути бічну панель",
     update: "Оновити",

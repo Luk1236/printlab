@@ -26,6 +26,7 @@ export default {
     notifications: 'Meldingen',
     settings: 'Instellingen',
     system: 'Systeem',
+    skipToContent: 'Naar hoofdinhoud',
     collapseSidebar: 'Zijbalk inklappen',
     expandSidebar: 'Zijbalk uitklappen',
     update: 'Bijwerken',

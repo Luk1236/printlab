@@ -26,6 +26,7 @@ export default {
     notifications: '通知',
     settings: '設定',
     system: '系統',
+    skipToContent: '跳至主要內容',
     collapseSidebar: '收起側邊欄',
     expandSidebar: '展開側邊欄',
     update: '更新',

@@ -26,6 +26,7 @@ export default {
     notifications: 'Bildirimler',
     settings: 'Ayarlar',
     system: 'Sistem',
+    skipToContent: 'Ana içeriğe geç',
     collapseSidebar: 'Kenar çubuğunu daralt',
     expandSidebar: 'Kenar çubuğunu genişlet',
     update: 'Güncelle',

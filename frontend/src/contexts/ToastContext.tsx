@@ -350,6 +350,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           (#2612): the 5rem right offset keeps clearance for the bug bubble. */}
       <div
         data-testid="toast-viewport"
+        // Live-Region statt role="status": role="status" würde die viewport-übergreifende
+        // Suche nach Statusbanner (Announcements, Restart-Hinweis, Slice-Ablauf) mit dem
+        // Toast-Viewport kollidieren lassen; `aria-live` reicht, damit Screenreader neue
+        // Meldungen vorlesen (aria-relevant="additions" verhindert das Vorlesen beim Schließen).
+        aria-live="polite"
+        aria-relevant="additions"
         className={`fixed z-[60] flex flex-col items-end gap-2 ${viewportSuppressed ? 'hidden' : ''}`}
         style={{
           bottom: 'calc(1rem + env(safe-area-inset-bottom))',

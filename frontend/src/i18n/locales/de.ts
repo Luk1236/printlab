@@ -26,6 +26,7 @@ export default {
     notifications: 'Benachrichtigungen',
     settings: 'Einstellungen',
     system: 'System',
+    skipToContent: 'Zum Hauptinhalt springen',
     collapseSidebar: 'Seitenleiste einklappen',
     expandSidebar: 'Seitenleiste ausklappen',
     update: 'Aktualisieren',

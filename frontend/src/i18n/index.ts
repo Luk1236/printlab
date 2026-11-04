@@ -81,6 +81,18 @@ i18n
     },
   });
 
+// <html lang> folgt der aktiven Sprache: Screenreader (NVDA/VoiceOver) wählen
+// die Aussprache/Regeln nach dem Dokument-Dialekt. Ohne Sync liest die
+// Oberfläche EN/JP-Texte mit deutscher Aussprache vor.
+if (typeof document !== 'undefined' && document.documentElement) {
+  document.documentElement.lang = document.documentElement.lang || 'de';
+}
+i18n.on('languageChanged', (lng) => {
+  if (typeof document !== 'undefined' && document.documentElement) {
+    document.documentElement.lang = lng;
+  }
+});
+
 // Sprachwechsel (Auswahl in den Einstellungen, Geräte-Assistent) lädt das
 // passende Bündel nach. Der erste Start wird in main.tsx abgewartet, damit
 // die Oberfläche nicht kurz in der Falschsprache aufblitzt. addResourceBundle

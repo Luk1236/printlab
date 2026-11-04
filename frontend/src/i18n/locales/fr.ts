@@ -26,6 +26,7 @@ export default {
     notifications: 'Notifications',
     settings: 'Paramètres',
     system: 'Système',
+    skipToContent: 'Aller au contenu principal',
     collapseSidebar: 'Réduire la barre latérale',
     expandSidebar: 'Développer la barre latérale',
     update: 'Mise à jour',

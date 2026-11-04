@@ -26,6 +26,7 @@ export default {
     notifications: 'Notiser',
     settings: 'Inställningar',
     system: 'System',
+    skipToContent: 'Hoppa till huvudinnehåll',
     collapseSidebar: 'Minimera sidofältet',
     expandSidebar: 'Maximera sidofältet',
     update: 'Uppdatera',

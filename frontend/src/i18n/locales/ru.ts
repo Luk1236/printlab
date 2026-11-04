@@ -25,6 +25,7 @@ export default {
     notifications: "Уведомления",
     settings: "Настройки",
     system: "Система",
+    skipToContent: 'Перейти к основному содержимому',
     collapseSidebar: "Свернуть боковую панель",
     expandSidebar: "Развернуть боковую панель",
     update: "Обновить",

@@ -26,6 +26,7 @@ export default {
     notifications: '通知',
     settings: '設定',
     system: 'システム',
+    skipToContent: 'メインコンテンツへスキップ',
     collapseSidebar: 'サイドバーを閉じる',
     expandSidebar: 'サイドバーを開く',
     update: 'アップデート',

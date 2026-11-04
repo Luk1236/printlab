@@ -25,6 +25,7 @@ export default {
     notifications: '알림',
     settings: '설정',
     system: '시스템',
+    skipToContent: '본문으로 건너뛰기',
     collapseSidebar: '사이드바 접기',
     expandSidebar: '사이드바 펼치기',
     update: '업데이트',
