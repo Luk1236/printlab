@@ -26,6 +26,12 @@ python werkzeuge/release.py v1.13.0            # prüfen, signiert taggen, pushe
 python werkzeuge/release.py v1.13.0 --check-only   # nur prüfen
 ```
 
+Signatur **prüfen** (lokal): `git config gpg.ssh.allowedSignersFile` zeigt auf eine
+`allowed_signers`-Datei im Format `<Tag-Autor-Mail> namespaces="git" ssh-ed25519 <Schlüssel>`
+(zum Beispiel `%USERPROFILE%\.ssh\printlab_allowed_signers`), dann verifiziert
+`git tag -v v2.0.9` die Unterschrift mit „Good „git" signature". Die Update-Prüfung am Pi
+nutzt dieselbe Regel in `data/update_allowed_signers` (Hauptsache `printlab`).
+
 Der Tag-Push startet den Workflow "Release gate", der das GitHub-Release mit dem Text aus dem
 Changelog anlegt; das Docker-Image baut der Workflow "Release (Docker-Image amd64 + arm64)".
 Ein bereits vorhandener Tag wird nur mit `--force` ersetzt (löscht den lokalen Tag vorher).
