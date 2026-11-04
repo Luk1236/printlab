@@ -3,6 +3,18 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.9 (04.11.2026) — Barrierefreiheit: Skip-Link, Live-Region und Sprachmarkierung
+
+- **Skip-Link:** Der erste Tab-Druck bietet „Zum Hauptinhalt springen“; der Sprung landet im
+  Inhaltsbereich (`#main-content`) und übernimmt dort den Tastaturfokus — Tastatur- und
+  Screenreader-Nutzende überspringen die Seitenleiste. Der Text steht in allen 15 Oberflächensprachen
+  (Paritätsprüfung und Vitest 4411/4411 grün).
+- **Meldungen für Screenreader:** Der Toast-Bereich ist jetzt eine Live-Region („polite“): neue
+  Meldungen werden ohne Tastaturfokus vorgelesen, das Schließen bleibt stumm (kein doppeltes Vorlesen).
+- **Sprachmarkierung:** `<html lang>` folgt der in den Einstellungen gewählten Sprache, damit
+  Screenreader (NVDA/VoiceOver) Aussprache und Satzregeln der gewählten Sprache verwenden — vorher
+  lasen sie z. B. japanische Oberfläche mit deutscher Aussprache vor.
+
 ## v2.0.8 (03.11.2026) — KI- und Kameraprüfungen zusammengeführt und korrigiert
 
 - **Eine Übersicht:** Neue Karte „KI & Kameraprüfungen“ unter Einstellungen → Fehlererkennung mit den Schaltern aller

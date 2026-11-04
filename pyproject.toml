@@ -1,6 +1,6 @@
 [project]
 name = "printlab"
-version = "2.0.8"
+version = "2.0.9"
 description = "PrintLab – Drucker-Verwaltung für Bambu Lab (P2S) mit Plattenwechsler, Optik-Prüfung und Angebotskalkulator"
 requires-python = ">=3.10"
 
