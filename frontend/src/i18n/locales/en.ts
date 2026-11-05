@@ -18,6 +18,7 @@ export default {
     stats: 'Statistics',
     profiles: 'Profiles',
     maintenance: 'Maintenance',
+    assistant: 'AI Assistant',
     errorHelp: 'Troubleshooting',
     projects: 'Projects',
     finance: 'Finance',

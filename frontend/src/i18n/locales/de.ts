@@ -18,6 +18,7 @@ export default {
     stats: 'Statistik',
     profiles: 'Profile',
     maintenance: 'Wartung',
+    assistant: 'KI-Assistent',
     errorHelp: 'Fehlerhilfe',
     projects: 'Projekte',
     finance: 'Finanzen',

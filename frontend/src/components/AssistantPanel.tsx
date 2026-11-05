@@ -26,7 +26,15 @@ const SETUP_SUGGESTIONS = ['setupPrinters', 'setupSteps', 'setupSlicer'] as cons
  * Lokaler KI-Assistent: Fragen zum Betrieb, Fehler erklären, Texte entwerfen und Inbetriebnahme-Hilfe.
  * Das Modell läuft auf einem lokalen Modell-Server (Standard: Ollama auf dem Pi/PC).
  */
-export function AssistantPanel({ canConfigure, isSetupGuide = false }: { canConfigure: boolean; isSetupGuide?: boolean }) {
+export function AssistantPanel({
+  canConfigure,
+  isSetupGuide = false,
+  chatOnly = false,
+}: {
+  canConfigure: boolean;
+  isSetupGuide?: boolean;
+  chatOnly?: boolean;
+}) {
   const { t, i18n } = useTranslation();
   const { showToast } = useToast();
   const queryClient = useQueryClient();
@@ -75,6 +83,13 @@ export function AssistantPanel({ canConfigure, isSetupGuide = false }: { canConf
     },
     onError: (err: Error) => showToast(err.message, 'error'),
   });
+
+  // Automatically enable assistant in chat-only mode without forcing user to go to settings
+  useEffect(() => {
+    if (chatOnly && config && !config.enabled) {
+      saveConfig.mutate({ enabled: true });
+    }
+  }, [chatOnly, config?.enabled]);
 
   useEffect(() => {
     if (!pending) return;
@@ -159,10 +174,26 @@ export function AssistantPanel({ canConfigure, isSetupGuide = false }: { canConf
     <Card>
       <CardContent className="space-y-4" data-testid="assistant-panel">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-            <Bot className="w-5 h-5 text-bambu-green" />
-            {t('assistant.title')}
-          </h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+              <Bot className="w-5 h-5 text-bambu-green" />
+              {t('assistant.title')}
+            </h2>
+            {chatOnly && (
+              <div className="flex items-center gap-1.5 text-xs text-bambu-gray px-2 py-0.5 rounded-full bg-bambu-dark border border-bambu-dark-tertiary">
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    server?.reachable && server.model_present ? 'bg-bambu-green' : 'bg-amber-400'
+                  }`}
+                />
+                <span>
+                  {server?.reachable && server.model_present
+                    ? (config?.model || t('common.ready', 'Bereit'))
+                    : t('assistant.serverChecking', 'Ollama wird gesucht...')}
+                </span>
+              </div>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             {pending && (
               <Button size="sm" variant="ghost" onClick={() => streamControl.current?.abort()}>
@@ -187,7 +218,7 @@ export function AssistantPanel({ canConfigure, isSetupGuide = false }: { canConf
         <p className="text-xs text-bambu-gray">{t('assistant.intro')}</p>
 
         {/* 1-Klick Auto-Einrichtung & Erkennung */}
-        {canConfigure && (!config?.enabled || !server?.reachable || !server?.model_present) && (
+        {!chatOnly && canConfigure && (!config?.enabled || !server?.reachable || !server?.model_present) && (
           <div className="rounded-lg border border-bambu-green/40 bg-bambu-green/10 p-3.5 space-y-2" data-testid="assistant-autosetup-banner">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="space-y-0.5">
@@ -210,7 +241,7 @@ export function AssistantPanel({ canConfigure, isSetupGuide = false }: { canConf
           </div>
         )}
 
-        {canConfigure && draft && (
+        {!chatOnly && canConfigure && draft && (
           <div className="rounded-lg border border-bambu-dark-tertiary p-3 space-y-3" data-testid="assistant-config">
             <label className="flex items-center gap-2 text-sm text-white">
               <input
@@ -297,7 +328,7 @@ export function AssistantPanel({ canConfigure, isSetupGuide = false }: { canConf
           </div>
         )}
 
-        {config && !config.enabled ? (
+        {!chatOnly && config && !config.enabled ? (
           <p className="text-sm text-bambu-gray" data-testid="assistant-disabled">
             {t('assistant.disabled')}
           </p>
@@ -314,7 +345,7 @@ export function AssistantPanel({ canConfigure, isSetupGuide = false }: { canConf
                 </div>
               </div>
             )}
-            <div className="space-y-3 max-h-[28rem] overflow-y-auto" aria-live="polite">
+            <div className={`space-y-3 overflow-y-auto ${chatOnly ? "flex-1 min-h-[380px] max-h-[calc(100vh-320px)]" : "max-h-[28rem]"}`} aria-live="polite">
               {turns.map((turn, index) => (
                 <div key={index} className={turn.role === 'user' ? 'text-right' : ''} data-testid={`turn-${turn.role}`}>
                   <div className="text-[11px] text-bambu-gray mb-0.5">{t(turn.role === 'user' ? 'assistant.roleUser' : 'assistant.roleAssistant')}</div>

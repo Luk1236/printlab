@@ -27,6 +27,7 @@ const PAGES: PageEntry[] = [
   { to: '/projects', labelKey: 'nav.projects' },
   { to: '/inventory', labelKey: 'nav.inventory' },
   { to: '/maintenance', labelKey: 'nav.maintenance' },
+  { to: '/assistant', labelKey: 'nav.assistant' },
   { to: '/settings?tab=setup', labelKey: 'setupWizard.title', permission: 'settings:read' },
   { to: '/error-help', labelKey: 'nav.errorHelp' },
   { to: '/settings?tab=system', labelKey: 'nav.systemStatus', permission: 'settings:read' },

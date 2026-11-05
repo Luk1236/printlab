@@ -17,6 +17,7 @@ const SettingsPage = lazy(() => import('./pages/SettingsPage').then((m) => ({ de
 const FinancePage = lazy(() => import('./pages/FinancePage').then((m) => ({ default: m.FinancePage })));
 const ProfilesPage = lazy(() => import('./pages/ProfilesPage').then((m) => ({ default: m.ProfilesPage })));
 const MaintenancePage = lazy(() => import('./pages/MaintenancePage').then((m) => ({ default: m.MaintenancePage })));
+const AssistantPage = lazy(() => import('./pages/AssistantPage').then((m) => ({ default: m.AssistantPage })));
 const ErrorHelpPage = lazy(() => import('./pages/ErrorHelpPage').then((m) => ({ default: m.ErrorHelpPage })));
 const ProjectsPage = lazy(() => import('./pages/ProjectsPage').then((m) => ({ default: m.ProjectsPage })));
 const ProjectDetailPage = lazy(() => import('./pages/ProjectDetailPage').then((m) => ({ default: m.ProjectDetailPage })));
@@ -215,6 +216,7 @@ function App() {
                   <Route path="profiles" element={<ProfilesPage />} />
                   <Route path="finance" element={<PermissionRoute permission="cost_centers:read_own"><FinancePage /></PermissionRoute>} />
                   <Route path="maintenance" element={<MaintenancePage />} />
+                  <Route path="assistant" element={<AssistantPage />} />
                   <Route path="einrichtung" element={<PermissionRoute permission="settings:read"><Navigate to="/settings?tab=setup" replace /></PermissionRoute>} />
                   <Route path="error-help" element={<ErrorHelpPage />} />
                   <Route path="projects" element={<ProjectsPage />} />

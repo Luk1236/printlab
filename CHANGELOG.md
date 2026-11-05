@@ -3,6 +3,15 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.15 (05.11.2026) — Fester KI-Assistent-Chat in der Seitenleiste & Schnellsuche entfernt
+
+- **Seitenleiste optimiert:**
+  - Die Suchzeile („Schnellsuche... Ctrl K“) oben links in der Seitenleiste wurde entfernt (Tastaturkürzel Ctrl+K bleibt weiterhin aktiv).
+  - Neuer fester Menüpunkt **KI-Assistent** (`/assistant`) unter *Betrieb* direkt in der linken Navigation.
+- **Reine Chat-Oberfläche für den KI-Assistenten (`/assistant`):**
+  - Direkter Chat ohne technische Einstellungsformulare (keine Base-URL, kein Modell-Dropdown, keine Timeout-Felder, keine Auto-Setup-Karten).
+  - Automatisches Aktivieren im Hintergrund, Live-Statusindikator (Bereit / Verbindung prüfen), Willkommens-Karten und Vorschlags-Chips.
+
 ## v2.0.14 (05.11.2026) — Vollständige Integration von Einrichtung & Systemzustand in die Einstellungen, Seitenleiste bereinigt
 
 - **Vollständige Integration in die Einstellungen (`/settings`):**

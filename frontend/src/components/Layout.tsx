@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo, Suspense } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Search, Printer, Archive, ListOrdered, BarChart3, Cloud, Settings, Sun, Moon, Monitor, ChevronLeft, ChevronRight, ChevronDown, Keyboard, Github, ArrowUpCircle, Wrench, FolderKanban, FolderOpen, X, Menu, Info, Plug, Bug, LogOut, Key, Loader2, Disc3, ShieldAlert, Globe, Bell, Receipt, Megaphone, LifeBuoy, Activity, Compass, type LucideIcon } from 'lucide-react';
+import { Search, Printer, Archive, ListOrdered, BarChart3, Cloud, Settings, Sun, Moon, Monitor, ChevronLeft, ChevronRight, ChevronDown, Keyboard, Github, ArrowUpCircle, Wrench, FolderKanban, FolderOpen, X, Menu, Info, Plug, Bug, LogOut, Key, Loader2, Disc3, ShieldAlert, Globe, Bell, Receipt, Megaphone, LifeBuoy, Activity, Compass, Bot, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/ThemeContext';
 import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
@@ -52,6 +52,7 @@ export const defaultNavItems: NavItem[] = [
   { id: 'makerworld', to: '/makerworld', icon: Globe, labelKey: 'nav.makerworld' },
   { id: 'profiles', to: '/profiles', icon: Cloud, labelKey: 'nav.profiles' },
   { id: 'maintenance', to: '/maintenance', icon: Wrench, labelKey: 'nav.maintenance' },
+  { id: 'assistant', to: '/assistant', icon: Bot, labelKey: 'nav.assistant' },
   { id: 'error-help', to: '/error-help', icon: LifeBuoy, labelKey: 'nav.errorHelp' },
   { id: 'stats', to: '/stats', icon: BarChart3, labelKey: 'nav.stats' },
   // Opt-in feature: gated in isHidden() on the billing_enabled setting, so the
@@ -73,7 +74,7 @@ const NAV_GROUPS: { id: string; labelKey: string; defaultLabel: string; items: s
   { id: 'print', labelKey: 'nav.groupPrint', defaultLabel: 'Drucken', items: ['printers', 'queue', 'archives'] },
   { id: 'library', labelKey: 'nav.groupLibrary', defaultLabel: 'Dateien & Modelle', items: ['projects', 'files', 'makerworld', 'profiles'] },
   { id: 'material', labelKey: 'nav.groupMaterial', defaultLabel: 'Material & Kosten', items: ['inventory', 'finance'] },
-  { id: 'operations', labelKey: 'nav.groupOperations', defaultLabel: 'Betrieb', items: ['maintenance', 'stats', 'error-help', 'notifications'] },
+  { id: 'operations', labelKey: 'nav.groupOperations', defaultLabel: 'Betrieb', items: ['maintenance', 'assistant', 'stats', 'error-help', 'notifications'] },
   { id: 'admin', labelKey: 'nav.groupAdmin', defaultLabel: 'Verwaltung', items: ['settings'] },
 ];
 
@@ -402,6 +403,7 @@ export function Layout() {
       stats: 'stats:read',
       profiles: 'kprofiles:read',
       maintenance: 'maintenance:read',
+      assistant: 'printers:read',
       'error-help': 'printers:read',
       projects: 'projects:read',
       inventory: 'inventory:read',
@@ -738,37 +740,6 @@ export function Layout() {
               className={isSidebarCompact || sidebarExpanded ? 'h-9 w-auto max-w-[170px] object-contain' : 'h-8 w-8 object-contain'}
             />
           </button>
-        </div>
-
-        {/* Quick Search Trigger */}
-        <div className="px-2 pt-2 pb-1">
-          {isSidebarCompact || sidebarExpanded ? (
-            <button
-              type="button"
-              onClick={() => window.dispatchEvent(new CustomEvent('open-command-palette'))}
-              className="w-full flex items-center justify-between px-2.5 py-1.5 text-xs text-bambu-gray bg-bambu-dark-tertiary/30 hover:bg-bambu-dark-tertiary/70 hover:text-white rounded-lg border border-bambu-dark-tertiary/50 transition-colors group select-none"
-              title={t('commandPalette.title', { defaultValue: 'Befehlspalette / Suche öffnen' })}
-            >
-              <span className="flex items-center gap-2 truncate">
-                <Search className="w-3.5 h-3.5 text-bambu-gray/70 group-hover:text-white transition-colors flex-shrink-0" />
-                <span className="truncate">{t('commandPalette.searchPlaceholder', { defaultValue: 'Schnellsuche...' })}</span>
-              </span>
-              <kbd className="hidden sm:inline-block text-[10px] bg-bambu-dark/70 px-1.5 py-0.5 rounded border border-bambu-dark-tertiary/70 text-bambu-gray/80 font-mono">
-                Ctrl K
-              </kbd>
-            </button>
-          ) : (
-            <div className="flex justify-center">
-              <button
-                type="button"
-                onClick={() => window.dispatchEvent(new CustomEvent('open-command-palette'))}
-                className="p-2 text-bambu-gray hover:text-white hover:bg-bambu-dark-tertiary/70 rounded-lg transition-colors"
-                title={t('commandPalette.title', { defaultValue: 'Schnellsuche (Ctrl+K)' })}
-              >
-                <Search className="w-4 h-4" />
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Navigation */}
