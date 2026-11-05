@@ -6,6 +6,7 @@ export default {
   },
   nav: {
     groupPrint: 'Utskrift',
+    groupLibrary: 'Filer & Modeller',
     groupMaterial: 'Material och kostnader',
     groupOperations: 'Drift',
     groupAdmin: 'Förvaltning',

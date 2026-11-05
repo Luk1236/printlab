@@ -6,6 +6,7 @@ export default {
   },
   nav: {
     groupPrint: '打印',
+    groupLibrary: '文件与模型',
     groupMaterial: '材料与成本',
     groupOperations: '运行',
     groupAdmin: '管理',

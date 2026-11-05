@@ -5,6 +5,7 @@ export default {
   },
   nav: {
     groupPrint: '인쇄',
+    groupLibrary: '파일 및 모델',
     groupMaterial: '재료 및 비용',
     groupOperations: '운영',
     groupAdmin: '관리',

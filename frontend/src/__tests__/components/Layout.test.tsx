@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, fireEvent } from '@testing-library/react';
 import { render } from '../utils';
 import { Layout } from '../../components/Layout';
 import { getAuthToken, setAuthToken } from '../../api/client';
@@ -882,6 +882,51 @@ describe('Layout', () => {
       );
 
       expect(await screen.findByTestId('confirm-outcome-dialog')).toBeInTheDocument();
+    });
+  });
+
+  describe('collapsible sidebar groups', () => {
+    it('allows collapsing and expanding a navigation group by clicking its header', async () => {
+      render(<Layout />);
+
+      await waitFor(() => {
+        expect(document.querySelector('aside a[href="/maintenance"]')).toBeInTheDocument();
+      });
+
+      const operationsHeader = screen.getByRole('button', { name: /betrieb|operations/i });
+      expect(operationsHeader).toHaveAttribute('aria-expanded', 'true');
+
+      fireEvent.click(operationsHeader);
+
+      await waitFor(() => {
+        expect(operationsHeader).toHaveAttribute('aria-expanded', 'false');
+        expect(document.querySelector('aside a[href="/maintenance"]')).toBeNull();
+      });
+
+      fireEvent.click(operationsHeader);
+
+      await waitFor(() => {
+        expect(operationsHeader).toHaveAttribute('aria-expanded', 'true');
+        expect(document.querySelector('aside a[href="/maintenance"]')).toBeInTheDocument();
+      });
+    });
+
+    it('reads initial collapsed groups from localStorage', async () => {
+      vi.mocked(localStorage.getItem).mockImplementation((key) => {
+        if (key === 'sidebarCollapsedGroups') return JSON.stringify(['operations']);
+        return null;
+      });
+
+      render(<Layout />);
+
+      await waitFor(() => {
+        expect(document.querySelector('aside')).toBeInTheDocument();
+      });
+
+      const operationsHeader = screen.getByRole('button', { name: /betrieb|operations/i });
+      expect(operationsHeader).toHaveAttribute('aria-expanded', 'false');
+      expect(document.querySelector('aside a[href="/maintenance"]')).toBeNull();
+      expect(document.querySelector('aside a[href="/"]')).toBeInTheDocument();
     });
   });
 });

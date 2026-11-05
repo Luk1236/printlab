@@ -6,6 +6,7 @@ export default {
   },
   nav: {
     groupPrint: 'Yazdırma',
+    groupLibrary: 'Dosyalar ve Modeller',
     groupMaterial: 'Malzeme ve maliyet',
     groupOperations: 'İşletim',
     groupAdmin: 'Yönetim',

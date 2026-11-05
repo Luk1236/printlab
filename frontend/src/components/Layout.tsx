@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo, Suspense } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Printer, Archive, ListOrdered, BarChart3, Cloud, Settings, Sun, Moon, Monitor, ChevronLeft, ChevronRight, Keyboard, Github, ArrowUpCircle, Wrench, FolderKanban, FolderOpen, X, Menu, Info, Plug, Bug, LogOut, Key, Loader2, Disc3, ShieldAlert, Globe, Bell, Receipt, Megaphone, LifeBuoy, Activity, Compass, type LucideIcon } from 'lucide-react';
+import { Printer, Archive, ListOrdered, BarChart3, Cloud, Settings, Sun, Moon, Monitor, ChevronLeft, ChevronRight, ChevronDown, Keyboard, Github, ArrowUpCircle, Wrench, FolderKanban, FolderOpen, X, Menu, Info, Plug, Bug, LogOut, Key, Loader2, Disc3, ShieldAlert, Globe, Bell, Receipt, Megaphone, LifeBuoy, Activity, Compass, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/ThemeContext';
 import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
@@ -71,11 +71,12 @@ export const defaultNavItems: NavItem[] = [
 // die vom Benutzer gespeicherte; die Gruppen selbst stehen in fester Folge.
 // Alles, was hier nicht genannt ist (externe Links, spätere Seiten), landet
 // unter „Mehr“, damit keine Seite unsichtbar wird.
-const NAV_GROUPS: { id: string; labelKey: string; items: string[] }[] = [
-  { id: 'print', labelKey: 'nav.groupPrint', items: ['printers', 'queue', 'archives', 'projects', 'files', 'makerworld'] },
-  { id: 'material', labelKey: 'nav.groupMaterial', items: ['inventory', 'finance'] },
-  { id: 'operations', labelKey: 'nav.groupOperations', items: ['maintenance', 'setup-guide', 'error-help', 'system', 'stats', 'notifications'] },
-  { id: 'admin', labelKey: 'nav.groupAdmin', items: ['settings'] },
+const NAV_GROUPS: { id: string; labelKey: string; defaultLabel: string; items: string[] }[] = [
+  { id: 'print', labelKey: 'nav.groupPrint', defaultLabel: 'Drucken', items: ['printers', 'queue', 'archives'] },
+  { id: 'library', labelKey: 'nav.groupLibrary', defaultLabel: 'Dateien & Modelle', items: ['projects', 'files', 'makerworld', 'profiles'] },
+  { id: 'material', labelKey: 'nav.groupMaterial', defaultLabel: 'Material & Kosten', items: ['inventory', 'finance'] },
+  { id: 'operations', labelKey: 'nav.groupOperations', defaultLabel: 'Betrieb', items: ['maintenance', 'stats', 'system', 'error-help', 'setup-guide', 'notifications'] },
+  { id: 'admin', labelKey: 'nav.groupAdmin', defaultLabel: 'Verwaltung', items: ['settings'] },
 ];
 
 // Get default view from localStorage
@@ -134,6 +135,26 @@ export function Layout() {
   const defaultSidebarOrder = useMemo(() => defaultNavItems.map(i => i.id), []);
   const [sidebarOrder, setSidebarOrder] = useState<string[]>(() => getSidebarOrder(defaultNavItems.map(i => i.id)));
   const [hiddenSystemItemIds, setHiddenSystemItemIds] = useState<string[]>(getHiddenSidebarSystemItemIds);
+  const [collapsedGroups, setCollapsedGroups] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem('sidebarCollapsedGroups');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const toggleGroup = useCallback((groupId: string) => {
+    setCollapsedGroups((prev) => {
+      const next = prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId];
+      try {
+        localStorage.setItem('sidebarCollapsedGroups', JSON.stringify(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  }, []);
   const hasRedirected = useRef(false);
   const [dismissedUpdateVersion, setDismissedUpdateVersion] = useState<string | null>(() =>
     sessionStorage.getItem('dismissedUpdateVersion')
@@ -455,30 +476,24 @@ export function Layout() {
     return result;
   })();
 
-  // Überschriften und Einträge in einem Durchlauf; Seiten außerhalb der
-  // Gruppen (externe Links, neue Einträge) kommen unter „Mehr“.
-  const sidebarEntries: Array<
-    { kind: 'header'; id: string; labelKey: string } | { kind: 'item'; id: string }
-  > = (() => {
+  // Gruppen und Einträge; Seiten außerhalb der Gruppen (externe Links,
+  // neue Einträge) kommen unter „Mehr“.
+  const sidebarGroups = useMemo(() => {
     const groups = NAV_GROUPS.map((group) => ({
       ...group,
       ids: orderedSidebarIds.filter((id) => group.items.includes(id)),
     }));
     const known = new Set(NAV_GROUPS.flatMap((group) => group.items));
     const rest = orderedSidebarIds.filter((id) => !known.has(id));
-    if (rest.length > 0) groups.push({ id: 'more', labelKey: 'nav.groupMore', items: [], ids: rest });
-    const entries: Array<{ kind: 'header'; id: string; labelKey: string } | { kind: 'item'; id: string }> = [];
-    for (const group of groups) {
-      if (group.ids.length === 0) continue;
-      entries.push({ kind: 'header', id: group.id, labelKey: group.labelKey });
-      for (const id of group.ids) entries.push({ kind: 'item', id });
+    if (rest.length > 0) {
+      groups.push({ id: 'more', labelKey: 'nav.groupMore', defaultLabel: 'Mehr', items: [], ids: rest });
     }
-    return entries;
-  })();
+    return groups.filter((g) => g.ids.length > 0);
+  }, [orderedSidebarIds]);
 
-  const sidebarItemIds = sidebarEntries
-    .filter((entry): entry is { kind: 'item'; id: string } => entry.kind === 'item')
-    .map((entry) => entry.id);
+  const sidebarItemIds = useMemo(() => {
+    return sidebarGroups.flatMap((g) => g.ids);
+  }, [sidebarGroups]);
 
   // Show update banner if update available and not dismissed for this version.
   // Suppressed when running as a Home Assistant addon — HA Supervisor surfaces
@@ -704,122 +719,156 @@ export function Layout() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-2 overflow-y-auto">
-          <ul className="space-y-2">
-            {sidebarEntries.map((entry) => {
-              if (entry.kind === 'header') {
-                return (isSidebarCompact || sidebarExpanded) ? (
-                  <li
-                    key={`group-${entry.id}`}
-                    className="px-4 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-bambu-gray/80"
-                  >
-                    {t(entry.labelKey)}
-                  </li>
-                ) : (
-                  <li key={`group-${entry.id}`} className="mx-2 my-2 border-t border-bambu-dark-tertiary" aria-hidden="true" />
-                );
-              }
-              const id = entry.id;
-              const isExternal = isExternalSidebarItemId(id);
+        <nav className="flex-1 px-2 py-1.5 overflow-y-auto">
+          <div className="space-y-2">
+            {sidebarGroups.map((group) => {
+              const isCollapsed = (isSidebarCompact || sidebarExpanded) ? collapsedGroups.includes(group.id) : false;
+              const hasActiveChild = group.ids.some((id) => {
+                if (isExternalSidebarItemId(id)) {
+                  return location.pathname === `/external/${id.replace(/^ext-/, '')}`;
+                }
+                const item = navItemsMap.get(id);
+                if (!item) return false;
+                return item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to);
+              });
 
-              if (isExternal) {
-                // Render external link
-                const link = extLinksMap.get(id);
-                if (!link) return null;
-
-                const LinkIcon = link.custom_icon ? null : getIconByName(link.icon);
-                return (
-                  <li key={id}>
-                    {link.open_in_new_tab ? (
-                      <a
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`flex items-center ${isSidebarCompact || sidebarExpanded ? 'gap-3 px-4' : 'justify-center px-2'} py-3 rounded-lg transition-colors group text-bambu-gray-light hover:bg-bambu-dark-tertiary hover:text-white`}
-                        title={!isSidebarCompact && !sidebarExpanded ? link.name : undefined}
-                      >
-                        {link.custom_icon ? (
-                          <img
-                            src={api.getExternalLinkIconUrl(link.id)}
-                            alt=""
-                            className="w-5 h-5 flex-shrink-0"
-                          />
-                        ) : (
-                          LinkIcon && <LinkIcon className="w-5 h-5 flex-shrink-0" />
-                        )}
-                        {(isSidebarCompact || sidebarExpanded) && <span>{link.name}</span>}
-                      </a>
-                    ) : (
-                      <NavLink
-                        to={`/external/${link.id}`}
-                        className={({ isActive }) =>
-                          `flex items-center ${isSidebarCompact || sidebarExpanded ? 'gap-3 px-4' : 'justify-center px-2'} py-3 rounded-lg transition-colors group ${
-                            isActive
-                              ? 'bg-bambu-green text-white'
-                              : 'text-bambu-gray-light hover:bg-bambu-dark-tertiary hover:text-white'
-                          }`
-                        }
-                        title={!isSidebarCompact && !sidebarExpanded ? link.name : undefined}
-                      >
-                        {link.custom_icon ? (
-                          <img
-                            src={api.getExternalLinkIconUrl(link.id)}
-                            alt=""
-                            className="w-5 h-5 flex-shrink-0"
-                          />
-                        ) : (
-                          LinkIcon && <LinkIcon className="w-5 h-5 flex-shrink-0" />
-                        )}
-                        {(isSidebarCompact || sidebarExpanded) && <span>{link.name}</span>}
-                      </NavLink>
-                    )}
-                  </li>
-                );
-              } else {
-                // Render internal nav item
-                const navItem = navItemsMap.get(id);
-                if (!navItem) return null;
-
-                const { to, icon: Icon, labelKey } = navItem;
-                const showQueueBadge = id === 'queue' && pendingQueueCount > 0;
-                const showArchiveBadge = id === 'archives' && pendingUploadsCount > 0;
-                const badgeCount = showQueueBadge ? pendingQueueCount : showArchiveBadge ? pendingUploadsCount : 0;
-                const showBadge = showQueueBadge || showArchiveBadge;
-                const showClearPlateDot = id === 'printers' && needsClearPlate;
-
-                return (
-                  <li key={id}>
-                    <NavLink
-                      to={to}
-                      className={({ isActive }) =>
-                        `flex items-center ${isSidebarCompact || sidebarExpanded ? 'gap-3 px-4' : 'justify-center px-2'} py-3 rounded-lg transition-colors group ${
-                          isActive
-                            ? 'bg-bambu-green text-white'
-                            : 'text-bambu-gray-light hover:bg-bambu-dark-tertiary hover:text-white'
-                        }`
-                      }
-                      title={!isSidebarCompact && !sidebarExpanded ? t(labelKey) : undefined}
+              return (
+                <div key={`group-${group.id}`} className="space-y-0.5">
+                  {isSidebarCompact || sidebarExpanded ? (
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup(group.id)}
+                      className="w-full flex items-center justify-between px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-bambu-gray/80 hover:text-white hover:bg-bambu-dark-tertiary/40 rounded transition-colors group/header select-none"
+                      aria-expanded={!isCollapsed}
+                      title={isCollapsed ? t('nav.expandGroup', { defaultValue: 'Gruppe aufklappen' }) : t('nav.collapseGroup', { defaultValue: 'Gruppe einklappen' })}
                     >
-                      <div className="relative">
-                        <Icon className="w-5 h-5 flex-shrink-0" />
-                        {showClearPlateDot && (
-                          <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-yellow-500 rounded-full border-2 border-bambu-dark-secondary" />
+                      <span className="flex items-center gap-1.5 truncate">
+                        <span>{t(group.labelKey, { defaultValue: group.defaultLabel })}</span>
+                        {isCollapsed && hasActiveChild && (
+                          <span
+                            className="w-1.5 h-1.5 rounded-full bg-bambu-green flex-shrink-0"
+                            title={t('nav.activeItemInGroup', { defaultValue: 'Aktive Seite in dieser Gruppe' })}
+                          />
                         )}
-                        {showBadge && (
-                          <span className={`absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-bold rounded-full ${
-                            showArchiveBadge ? 'bg-blue-500 text-white' : 'bg-yellow-500 text-black'
-                          }`}>
-                            {badgeCount > 99 ? '99+' : badgeCount}
-                          </span>
-                        )}
-                      </div>
-                      {(isSidebarCompact || sidebarExpanded) && <span>{t(labelKey)}</span>}
-                    </NavLink>
-                  </li>
-                );
-              }
+                      </span>
+                      <ChevronDown
+                        className={`w-3.5 h-3.5 text-bambu-gray/60 group-hover/header:text-white transition-transform duration-200 flex-shrink-0 ${
+                          isCollapsed ? '-rotate-90' : 'rotate-0'
+                        }`}
+                      />
+                    </button>
+                  ) : (
+                    <div className="mx-2 my-2 border-t border-bambu-dark-tertiary" aria-hidden="true" />
+                  )}
+
+                  {!isCollapsed && (
+                    <ul className="space-y-0.5">
+                      {group.ids.map((id) => {
+                        const isExternal = isExternalSidebarItemId(id);
+
+                        if (isExternal) {
+                          // Render external link
+                          const link = extLinksMap.get(id);
+                          if (!link) return null;
+
+                          const LinkIcon = link.custom_icon ? null : getIconByName(link.icon);
+                          return (
+                            <li key={id}>
+                              {link.open_in_new_tab ? (
+                                <a
+                                  href={link.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={`flex items-center ${isSidebarCompact || sidebarExpanded ? 'gap-2.5 px-3' : 'justify-center px-2'} py-2 rounded-lg transition-colors group text-bambu-gray-light hover:bg-bambu-dark-tertiary hover:text-white text-sm font-medium`}
+                                  title={!isSidebarCompact && !sidebarExpanded ? link.name : undefined}
+                                >
+                                  {link.custom_icon ? (
+                                    <img
+                                      src={api.getExternalLinkIconUrl(link.id)}
+                                      alt=""
+                                      className="w-5 h-5 flex-shrink-0"
+                                    />
+                                  ) : (
+                                    LinkIcon && <LinkIcon className="w-5 h-5 flex-shrink-0" />
+                                  )}
+                                  {(isSidebarCompact || sidebarExpanded) && <span className="truncate">{link.name}</span>}
+                                </a>
+                              ) : (
+                                <NavLink
+                                  to={`/external/${link.id}`}
+                                  className={({ isActive }) =>
+                                    `flex items-center ${isSidebarCompact || sidebarExpanded ? 'gap-2.5 px-3' : 'justify-center px-2'} py-2 rounded-lg transition-colors group text-sm font-medium ${
+                                      isActive
+                                        ? 'bg-bambu-green text-white font-semibold'
+                                        : 'text-bambu-gray-light hover:bg-bambu-dark-tertiary hover:text-white'
+                                    }`
+                                  }
+                                  title={!isSidebarCompact && !sidebarExpanded ? link.name : undefined}
+                                >
+                                  {link.custom_icon ? (
+                                    <img
+                                      src={api.getExternalLinkIconUrl(link.id)}
+                                      alt=""
+                                      className="w-5 h-5 flex-shrink-0"
+                                    />
+                                  ) : (
+                                    LinkIcon && <LinkIcon className="w-5 h-5 flex-shrink-0" />
+                                  )}
+                                  {(isSidebarCompact || sidebarExpanded) && <span className="truncate">{link.name}</span>}
+                                </NavLink>
+                              )}
+                            </li>
+                          );
+                        } else {
+                          // Render internal nav item
+                          const navItem = navItemsMap.get(id);
+                          if (!navItem) return null;
+
+                          const { to, icon: Icon, labelKey } = navItem;
+                          const showQueueBadge = id === 'queue' && pendingQueueCount > 0;
+                          const showArchiveBadge = id === 'archives' && pendingUploadsCount > 0;
+                          const badgeCount = showQueueBadge ? pendingQueueCount : showArchiveBadge ? pendingUploadsCount : 0;
+                          const showBadge = showQueueBadge || showArchiveBadge;
+                          const showClearPlateDot = id === 'printers' && needsClearPlate;
+
+                          return (
+                            <li key={id}>
+                              <NavLink
+                                to={to}
+                                className={({ isActive }) =>
+                                  `flex items-center ${isSidebarCompact || sidebarExpanded ? 'gap-2.5 px-3' : 'justify-center px-2'} py-2 rounded-lg transition-colors group text-sm font-medium ${
+                                    isActive
+                                      ? 'bg-bambu-green text-white font-semibold'
+                                      : 'text-bambu-gray-light hover:bg-bambu-dark-tertiary hover:text-white'
+                                  }`
+                                }
+                                title={!isSidebarCompact && !sidebarExpanded ? t(labelKey) : undefined}
+                              >
+                                <div className="relative">
+                                  <Icon className="w-5 h-5 flex-shrink-0" />
+                                  {showClearPlateDot && (
+                                    <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-yellow-500 rounded-full border-2 border-bambu-dark-secondary" />
+                                  )}
+                                  {showBadge && (
+                                    <span className={`absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-bold rounded-full ${
+                                      showArchiveBadge ? 'bg-blue-500 text-white' : 'bg-yellow-500 text-black'
+                                    }`}>
+                                      {badgeCount > 99 ? '99+' : badgeCount}
+                                    </span>
+                                  )}
+                                </div>
+                                {(isSidebarCompact || sidebarExpanded) && <span className="truncate">{t(labelKey)}</span>}
+                              </NavLink>
+                            </li>
+                          );
+                        }
+                      })}
+                    </ul>
+                  )}
+                </div>
+              );
             })}
-          </ul>
+          </div>
         </nav>
 
         {/* Collapse toggle - hide on compact sidebar */}

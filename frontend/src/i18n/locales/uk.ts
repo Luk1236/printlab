@@ -6,6 +6,7 @@ export default {
   },
   nav: {
     groupPrint: 'Друк',
+    groupLibrary: 'Файли та моделі',
     groupMaterial: 'Матеріал і витрати',
     groupOperations: 'Експлуатація',
     groupAdmin: 'Адміністрування',

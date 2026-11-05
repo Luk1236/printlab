@@ -6,6 +6,7 @@ export default {
   },
   nav: {
     groupPrint: 'Drucken',
+    groupLibrary: 'Dateien & Modelle',
     groupMaterial: 'Material & Kosten',
     groupOperations: 'Betrieb',
     groupAdmin: 'Verwaltung',

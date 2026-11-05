@@ -6,6 +6,7 @@ export default {
   },
   nav: {
     groupPrint: '印刷',
+    groupLibrary: 'ファイルとモデル',
     groupMaterial: '材料とコスト',
     groupOperations: '運用',
     groupAdmin: '管理',
