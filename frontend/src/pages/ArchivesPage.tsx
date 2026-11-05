@@ -47,8 +47,6 @@ import {
   FolderKanban,
   ChevronLeft,
   ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
   Settings,
   User,
   Play,
@@ -105,128 +103,19 @@ import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 import { formatFileSize } from '../utils/file';
 import { helpLink, HELP_ANCHORS } from '../utils/docsLinks';
+import ArchivePaginationBar from './ArchivePaginationBar';
+import {
+  DEFAULT_LOG_COLUMNS,
+  LOG_COLUMN_LABEL_KEYS,
+  SORTABLE_LOG_COLUMNS,
+  loadLogColumnConfig,
+  loadLogSort,
+  saveLogColumnConfig,
+  saveLogSort,
+  type LogSortState,
+} from './printLogPrefs';
 
 type TFunction = (key: string, options?: Record<string, unknown>) => string;
-
-// ---------------------------------------------------------------------------
-// Print Log column configuration (#2636, reporter @ajbastien)
-//
-// The log view used to hardcode seven columns, which left four populated
-// columns of `print_log_entries` — filament used, cost, energy, energy cost —
-// unreachable in the UI even though the API has always returned them. They are
-// per-run actuals (partial prints scaled to progress, multi-plate archives
-// scoped to the printed plate), so they are exactly what a log is for.
-//
-// Persisted per browser like the Inventory table's config, under its own key.
-// Labels are NOT read back from storage: they are re-derived from `t()` on
-// every render so a stored config from before a language switch doesn't pin
-// the column picker to the old language.
-// ---------------------------------------------------------------------------
-const LOG_COLUMN_CONFIG_KEY = 'printlab-printlog-columns';
-
-/** Column id -> i18n key. Also the authoritative list of valid ids. */
-const LOG_COLUMN_LABEL_KEYS: Record<string, string> = {
-  date: 'archives.log.date',
-  print_name: 'archives.log.printName',
-  printer: 'archives.log.printer',
-  user: 'archives.log.user',
-  status: 'archives.log.status',
-  duration: 'archives.log.duration',
-  completed_at: 'archives.log.completedAt',
-  filament: 'archives.log.filament',
-  filament_used: 'archives.log.filamentUsed',
-  cost: 'archives.log.cost',
-  energy: 'archives.log.energy',
-  energy_cost: 'archives.log.energyCost',
-};
-
-// Defaults reproduce the previous seven columns in the same order, plus the
-// filament amount the issue actually asked for. The rest ship hidden: they are
-// available to anyone who wants them without widening the table for everyone
-// who doesn't.
-const DEFAULT_LOG_COLUMNS: Array<{ id: string; visible: boolean }> = [
-  { id: 'date', visible: true },
-  { id: 'print_name', visible: true },
-  { id: 'printer', visible: true },
-  { id: 'user', visible: true },
-  { id: 'status', visible: true },
-  { id: 'duration', visible: true },
-  { id: 'filament', visible: true },
-  { id: 'filament_used', visible: true },
-  { id: 'completed_at', visible: false },
-  { id: 'cost', visible: false },
-  { id: 'energy', visible: false },
-  { id: 'energy_cost', visible: false },
-];
-
-/** Stored config merged with the defaults: unknown ids (removed columns) are
- *  dropped and ids added by a later PrintLab version are appended with their
- *  default visibility, so an upgrade never silently hides a new column or
- *  crashes on one that no longer exists. */
-function loadLogColumnConfig(): Array<{ id: string; visible: boolean }> {
-  try {
-    const stored = localStorage.getItem(LOG_COLUMN_CONFIG_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored) as Array<{ id: string; visible: boolean }>;
-      const known = new Set(Object.keys(LOG_COLUMN_LABEL_KEYS));
-      const storedIds = new Set(parsed.map((c) => c.id));
-      const valid = parsed
-        .filter((c) => known.has(c.id))
-        .map((c) => ({ id: c.id, visible: !!c.visible }));
-      const added = DEFAULT_LOG_COLUMNS.filter((c) => !storedIds.has(c.id));
-      if (valid.length > 0) return [...valid, ...added];
-    }
-  } catch {
-    // Corrupt or unavailable storage falls back to defaults.
-  }
-  return DEFAULT_LOG_COLUMNS.map((c) => ({ ...c }));
-}
-
-const LOG_SORT_KEY = 'printlab-printlog-sort';
-
-type LogSortState = { column: string; direction: 'asc' | 'desc' };
-
-/** Column ids the backend will order by. Kept in step with
- *  ``_SORTABLE_COLUMNS`` in ``routes/print_log.py`` — an id missing there
- *  comes back as a 400, so a header is only made clickable if it is listed
- *  in both. */
-const SORTABLE_LOG_COLUMNS = new Set(Object.keys(LOG_COLUMN_LABEL_KEYS));
-
-const DEFAULT_LOG_SORT: LogSortState = { column: 'date', direction: 'desc' };
-
-function loadLogSort(): LogSortState {
-  try {
-    const stored = localStorage.getItem(LOG_SORT_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored) as LogSortState;
-      if (SORTABLE_LOG_COLUMNS.has(parsed?.column) && (parsed.direction === 'asc' || parsed.direction === 'desc')) {
-        return parsed;
-      }
-    }
-  } catch {
-    // Fall through to the default.
-  }
-  return { ...DEFAULT_LOG_SORT };
-}
-
-function saveLogSort(state: LogSortState) {
-  try {
-    localStorage.setItem(LOG_SORT_KEY, JSON.stringify(state));
-  } catch {
-    // Private-mode / quota failures shouldn't break the page.
-  }
-}
-
-function saveLogColumnConfig(config: Array<{ id: string; visible: boolean }>) {
-  try {
-    localStorage.setItem(
-      LOG_COLUMN_CONFIG_KEY,
-      JSON.stringify(config.map((c) => ({ id: c.id, visible: c.visible }))),
-    );
-  } catch {
-    // Private-mode / quota failures shouldn't break the page.
-  }
-}
 
 /**
  * Check if an archive represents a sliced/printable file.
@@ -4859,79 +4748,3 @@ export function ArchivesPage() {
   );
 }
 
-/* Pagination bar for archives grid/list views */
-function ArchivePaginationBar({
-  pageIndex, pageSize, totalRows, totalPages, onPageChange, onPageSizeChange, t,
-}: {
-  pageIndex: number;
-  pageSize: number;
-  totalRows: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-  onPageSizeChange: (size: number) => void;
-  t: (key: string) => string;
-}) {
-  const isShowAll = pageSize === -1;
-  if (totalPages <= 1 && !isShowAll) return null;
-  const effectiveSize = isShowAll ? totalRows || 1 : pageSize;
-  return (
-    <div className="flex items-center justify-between pt-2 text-sm">
-      <span className="text-bambu-gray">
-        {isShowAll
-          ? `${totalRows} ${t('archives.prints')}`
-          : <>{t('archives.pagination.showing')} {pageIndex * effectiveSize + 1} {t('archives.pagination.to')}{' '}
-              {Math.min((pageIndex + 1) * effectiveSize, totalRows)}{' '}
-              {t('archives.pagination.of')} {totalRows} {t('archives.prints')}</>
-        }
-      </span>
-      <div className="flex items-center gap-2">
-        <span className="text-bambu-gray">{t('archives.pagination.show')}</span>
-        <select
-          value={pageSize}
-          onChange={(e) => onPageSizeChange(Number(e.target.value))}
-          className="px-2 py-1 bg-bambu-dark-secondary border border-bambu-dark-tertiary rounded text-white text-sm focus:outline-none focus:border-bambu-green"
-        >
-          {[25, 50, 100, 200].map((n) => (
-            <option key={n} value={n}>{n}</option>
-          ))}
-          <option value={-1}>{t('archives.pagination.all')}</option>
-        </select>
-        {!isShowAll && (
-          <>
-            <button
-              onClick={() => onPageChange(0)}
-              disabled={pageIndex === 0}
-              className="p-1.5 rounded text-bambu-gray hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronsLeft className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => onPageChange(Math.max(0, pageIndex - 1))}
-              disabled={pageIndex === 0}
-              className="p-1.5 rounded text-bambu-gray hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <span className="text-bambu-gray px-2 whitespace-nowrap">
-              {t('archives.pagination.page')} {pageIndex + 1} {t('archives.pagination.of')} {totalPages}
-            </span>
-            <button
-              onClick={() => onPageChange(Math.min(totalPages - 1, pageIndex + 1))}
-              disabled={pageIndex >= totalPages - 1}
-              className="p-1.5 rounded text-bambu-gray hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => onPageChange(totalPages - 1)}
-              disabled={pageIndex >= totalPages - 1}
-              className="p-1.5 rounded text-bambu-gray hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronsRight className="w-4 h-4" />
-            </button>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}

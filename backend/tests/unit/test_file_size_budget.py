@@ -32,7 +32,7 @@ LIMITS = {
     "frontend/src/api/types.ts": 400,
     "frontend/src/api/endpoints.ts": 4050,
     "frontend/src/pages/SettingsPage.tsx": 7450,
-    "frontend/src/pages/ArchivesPage.tsx": 4950,
+    "frontend/src/pages/ArchivesPage.tsx": 4760,
     "frontend/src/pages/FileManagerPage.tsx": 4050,
     "frontend/src/pages/QueuePage.tsx": 3091,
     "frontend/src/pages/InventoryPage.tsx": 3267,
