@@ -65,15 +65,36 @@ import { availableLanguages } from '../i18n';
 import { useToast } from '../contexts/ToastContext';
 import { useTheme, type ThemeStyle, type DarkBackground, type LightBackground, type ThemeAccent } from '../contexts/ThemeContext';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Gauge, Link2, Palette } from 'lucide-react';
+import { Gauge, Link2, Palette, ArrowUpCircle } from 'lucide-react';
 import { registerCoreSettingsSearchEntries, getSettingsSearchEntries } from '../lib/settingsSearch';
 import { QuickSetupHubCard } from '../components/QuickSetupHubCard';
 import type { UsersSubTab } from '../lib/settingsSearch';
 import { availableEngines, hasEngineChoice, resolveEngine, type SliceEngineId } from '../lib/sliceEngines';
 import { NumberInput } from '../components/NumberInput';
 import { helpLink, HELP_ANCHORS } from '../utils/docsLinks';
+import { SettingsNavRail } from '../components/settings/SettingsNavRail';
+import { SetupSettingsSection } from '../components/settings/SetupSettingsSection';
+import { SystemSettingsSection } from '../components/settings/SystemSettingsSection';
+import { UpdatesSettingsSection } from '../components/settings/UpdatesSettingsSection';
 
-const validTabs = ['general', 'plugs', 'sensors', 'notifications', 'queue', 'filament', 'network', 'apikeys', 'virtual-printer', 'spoolbuddy', 'failure-detection', 'users', 'backup'] as const;
+const validTabs = [
+  'general',
+  'setup',
+  'system',
+  'updates',
+  'plugs',
+  'sensors',
+  'virtual-printer',
+  'spoolbuddy',
+  'queue',
+  'filament',
+  'failure-detection',
+  'network',
+  'notifications',
+  'apikeys',
+  'users',
+  'backup',
+] as const;
 type TabType = typeof validTabs[number];
 
 // Cross-tab search registrations for cards rendered inline in this file.
@@ -215,6 +236,18 @@ export function SettingsPage() {
 
   useEffect(() => {
     const anchor = location.hash.replace('#', '');
+    if ((anchor === 'card-updates' || anchor === 'updates') && activeTab !== 'updates') {
+      setActiveTab('updates');
+      return;
+    }
+    if ((anchor === 'card-setup-hub' || anchor === 'setup') && activeTab !== 'setup') {
+      setActiveTab('setup');
+      return;
+    }
+    if ((anchor === 'card-system' || anchor === 'system') && activeTab !== 'system') {
+      setActiveTab('system');
+      return;
+    }
     if (!anchor) return;
     const timer = window.setTimeout(() => {
       const el = document.getElementById(anchor);
@@ -1562,210 +1595,65 @@ export function SettingsPage() {
 
       {/* Tab Navigation + content: horizontal tabs on mobile, vertical rail on lg+ */}
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
-      <nav className="flex flex-wrap gap-1 border-b border-bambu-dark-tertiary lg:flex-col lg:flex-nowrap lg:gap-0 lg:border-b-0 lg:border-r lg:w-60 lg:flex-shrink-0 lg:self-start lg:sticky lg:top-4">
-        <button
-          onClick={() => handleTabChange('general')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px lg:border-b-0 lg:border-l-2 lg:-ml-px lg:mb-0 lg:justify-start flex items-center gap-2 ${
-            activeTab === 'general'
-              ? 'text-bambu-green border-bambu-green'
-              : 'text-bambu-gray hover:text-gray-900 dark:hover:text-white border-transparent'
-          }`}
-        >
-          <SettingsIcon className="w-4 h-4 shrink-0" />
-          {t('settings.tabs.general')}
-        </button>
-        <button
-          onClick={() => handleTabChange('plugs')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px lg:border-b-0 lg:border-l-2 lg:-ml-px lg:mb-0 lg:justify-start flex items-center gap-2 ${
-            activeTab === 'plugs'
-              ? 'text-bambu-green border-bambu-green'
-              : 'text-bambu-gray hover:text-gray-900 dark:hover:text-white border-transparent'
-          }`}
-        >
-          <Plug className="w-4 h-4 shrink-0" />
-          {t('settings.tabs.smartPlugs')}
-          {smartPlugs && smartPlugs.length > 0 && (
-            <span className="text-xs bg-bambu-dark-tertiary px-1.5 py-0.5 rounded-full shrink-0">
-              {smartPlugs.length}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => handleTabChange('sensors')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px lg:border-b-0 lg:border-l-2 lg:-ml-px lg:mb-0 lg:justify-start flex items-center gap-2 ${
-            activeTab === 'sensors'
-              ? 'text-bambu-green border-bambu-green'
-              : 'text-bambu-gray hover:text-gray-900 dark:hover:text-white border-transparent'
-          }`}
-        >
-          <Gauge className="w-4 h-4 shrink-0" />
-          {t('settings.tabs.sensors')}
-          {(haSensors?.length ?? 0) + (locationHaSensors?.length ?? 0) > 0 && (
-            <span className="text-xs bg-bambu-dark-tertiary px-1.5 py-0.5 rounded-full shrink-0">
-              {(haSensors?.length ?? 0) + (locationHaSensors?.length ?? 0)}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => handleTabChange('notifications')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px lg:border-b-0 lg:border-l-2 lg:-ml-px lg:mb-0 lg:justify-start flex items-center gap-2 ${
-            activeTab === 'notifications'
-              ? 'text-bambu-green border-bambu-green'
-              : 'text-bambu-gray hover:text-gray-900 dark:hover:text-white border-transparent'
-          }`}
-        >
-          <Bell className="w-4 h-4 shrink-0" />
-          {t('settings.tabs.notifications')}
-          {notificationProviders && notificationProviders.length > 0 && (
-            <span className="text-xs bg-bambu-dark-tertiary px-1.5 py-0.5 rounded-full shrink-0">
-              {notificationProviders.length}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => handleTabChange('queue')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px lg:border-b-0 lg:border-l-2 lg:-ml-px lg:mb-0 lg:justify-start flex items-center gap-2 ${
-            activeTab === 'queue'
-              ? 'text-bambu-green border-bambu-green'
-              : 'text-bambu-gray hover:text-gray-900 dark:hover:text-white border-transparent'
-          }`}
-        >
-          <ListOrdered className="w-4 h-4 shrink-0" />
-          {t('settings.tabs.queue', 'Workflow')}
-        </button>
-        <button
-          onClick={() => handleTabChange('filament')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px lg:border-b-0 lg:border-l-2 lg:-ml-px lg:mb-0 lg:justify-start flex items-center gap-2 ${
-            activeTab === 'filament'
-              ? 'text-bambu-green border-bambu-green'
-              : 'text-bambu-gray hover:text-gray-900 dark:hover:text-white border-transparent'
-          }`}
-        >
-          <Cylinder className="w-4 h-4 shrink-0" />
-          {t('settings.tabs.filament')}
-        </button>
-        <button
-          onClick={() => handleTabChange('network')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px lg:border-b-0 lg:border-l-2 lg:-ml-px lg:mb-0 lg:justify-start flex items-center gap-2 ${
-            activeTab === 'network'
-              ? 'text-bambu-green border-bambu-green'
-              : 'text-bambu-gray hover:text-gray-900 dark:hover:text-white border-transparent'
-          }`}
-        >
-          <Wifi className="w-4 h-4 shrink-0" />
-          {t('settings.tabs.network')}
-          <span className={`w-2 h-2 rounded-full shrink-0 ${mqttStatus?.enabled ? 'bg-green-400' : 'bg-gray-500'}`} />
-        </button>
-        <button
-          onClick={() => handleTabChange('apikeys')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px lg:border-b-0 lg:border-l-2 lg:-ml-px lg:mb-0 lg:justify-start flex items-center gap-2 ${
-            activeTab === 'apikeys'
-              ? 'text-bambu-green border-bambu-green'
-              : 'text-bambu-gray hover:text-gray-900 dark:hover:text-white border-transparent'
-          }`}
-        >
-          <Key className="w-4 h-4 shrink-0" />
-          {t('settings.tabs.apiKeys')}
-          {apiKeys && apiKeys.length > 0 && (
-            <span className="text-xs bg-bambu-dark-tertiary px-1.5 py-0.5 rounded-full shrink-0">
-              {apiKeys.length}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => handleTabChange('virtual-printer')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px lg:border-b-0 lg:border-l-2 lg:-ml-px lg:mb-0 lg:justify-start flex items-center gap-2 ${
-            activeTab === 'virtual-printer'
-              ? 'text-bambu-green border-bambu-green'
-              : 'text-bambu-gray hover:text-gray-900 dark:hover:text-white border-transparent'
-          }`}
-        >
-          <Printer className="w-4 h-4 shrink-0" />
-          {t('settings.tabs.virtualPrinter')}
-          <span className={`w-2 h-2 rounded-full shrink-0 ${virtualPrinterRunning ? 'bg-green-400' : 'bg-gray-500'}`} />
-        </button>
-        <button
-          onClick={() => handleTabChange('spoolbuddy')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px lg:border-b-0 lg:border-l-2 lg:-ml-px lg:mb-0 lg:justify-start flex items-center gap-2 ${
-            activeTab === 'spoolbuddy'
-              ? 'text-bambu-green border-bambu-green'
-              : 'text-bambu-gray hover:text-gray-900 dark:hover:text-white border-transparent'
-          }`}
-        >
-          <Scale className="w-4 h-4 shrink-0" />
-          {t('settings.tabs.spoolbuddy')}
-          {spoolbuddyDeviceCount > 0 && (
-            <span className="text-xs bg-bambu-dark-tertiary px-1.5 py-0.5 rounded-full shrink-0">
-              {spoolbuddyDeviceCount}
-            </span>
-          )}
-          <span className={`w-2 h-2 rounded-full shrink-0 ${spoolbuddyAnyOnline ? 'bg-green-400' : 'bg-gray-500'}`} />
-        </button>
-        <button
-          onClick={() => handleTabChange('failure-detection')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px lg:border-b-0 lg:border-l-2 lg:-ml-px lg:mb-0 lg:justify-start flex items-center gap-2 ${
-            activeTab === 'failure-detection'
-              ? 'text-bambu-green border-bambu-green'
-              : 'text-bambu-gray hover:text-gray-900 dark:hover:text-white border-transparent'
-          }`}
-        >
-          <ScanEye className="w-4 h-4 shrink-0" />
-          {t('settings.tabs.failureDetection')}
-          <span className={`w-2 h-2 rounded-full shrink-0 ${obicoActive ? 'bg-green-400' : 'bg-gray-500'}`} />
-        </button>
-        <button
-          onClick={() => handleTabChange('users')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px lg:border-b-0 lg:border-l-2 lg:-ml-px lg:mb-0 lg:justify-start flex items-center gap-2 ${
-            activeTab === 'users'
-              ? 'text-bambu-green border-bambu-green'
-              : 'text-bambu-gray hover:text-gray-900 dark:hover:text-white border-transparent'
-          }`}
-        >
-          <Users className="w-4 h-4 shrink-0" />
-          {t('settings.tabs.users')}
-          {authEnabled && (
-            <span className="w-2 h-2 rounded-full shrink-0 bg-green-400" />
-          )}
-        </button>
-        <button
-          onClick={() => handleTabChange('backup')}
-          className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px lg:border-b-0 lg:border-l-2 lg:-ml-px lg:mb-0 lg:justify-start flex items-center gap-2 ${
-            activeTab === 'backup'
-              ? 'text-bambu-green border-bambu-green'
-              : 'text-bambu-gray hover:text-gray-900 dark:hover:text-white border-transparent'
-          }`}
-        >
-          <Database className="w-4 h-4 shrink-0" />
-          {t('settings.tabs.backup')}
-          <span className={`w-2 h-2 rounded-full shrink-0 ${(cloudAuthStatus?.is_authenticated && githubBackupStatus?.configured && githubBackupStatus?.enabled) || settings?.local_backup_enabled ? 'bg-green-400' : 'bg-gray-500'}`} />
-        </button>
-      </nav>
+      {/* Categorized Settings Navigation Rail */}
+      <SettingsNavRail
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        smartPlugsCount={smartPlugs?.length ?? 0}
+        sensorsCount={(haSensors?.length ?? 0) + (locationHaSensors?.length ?? 0)}
+        notificationsCount={notificationProviders?.length ?? 0}
+        apiKeysCount={apiKeys?.length ?? 0}
+        spoolbuddyDeviceCount={spoolbuddyDeviceCount}
+        mqttEnabled={Boolean(mqttStatus?.enabled)}
+        virtualPrinterRunning={Boolean(virtualPrinterRunning)}
+        spoolbuddyAnyOnline={Boolean(spoolbuddyAnyOnline)}
+        obicoActive={Boolean(obicoActive)}
+        authEnabled={Boolean(authEnabled)}
+        backupConfigured={Boolean(
+          (cloudAuthStatus?.is_authenticated && githubBackupStatus?.configured && githubBackupStatus?.enabled) ||
+            settings?.local_backup_enabled
+        )}
+        updateAvailable={Boolean(updateCheck?.update_available)}
+      />
+
       <div className="flex-1 min-w-0">
-      {activeTab === 'general' && (
-      <div className="mb-4">
-        <QuickSetupHubCard
-          mode="settings"
-          printersCount={printers?.length}
-          authEnabled={authEnabled}
-          slicerApiEnabled={Boolean(localSettings.use_slicer_api)}
-          billingEnabled={Boolean(localSettings.billing_enabled)}
-          onEnableBilling={() => updateSetting('billing_enabled', true)}
-          onJumpSettingsTab={(tab, anchor) => {
-            handleTabChange(tab as TabType);
-            if (anchor) {
-              window.setTimeout(() => {
-                const el = document.getElementById(anchor);
-                if (el) {
-                  el.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
-                  el.classList.add('ring-2', 'ring-bambu-green');
-                  window.setTimeout(() => el.classList.remove('ring-2', 'ring-bambu-green'), 1500);
-                }
-              }, 80);
-            }
-          }}
-        />
-      </div>
+      {/* Setup & Onboarding Section */}
+      {activeTab === 'setup' && (
+        <div id="card-setup-hub">
+          <SetupSettingsSection
+            printersCount={printers?.length}
+            authEnabled={authEnabled}
+            slicerApiEnabled={Boolean(localSettings.use_slicer_api)}
+            canUpdate={!authEnabled || hasPermission('settings:update')}
+          />
+        </div>
       )}
+
+      {/* System Status & Diagnostics Section */}
+      {activeTab === 'system' && (
+        <div id="card-system">
+          <SystemSettingsSection printers={printers} />
+        </div>
+      )}
+
+      {/* Software Updates & Version Section */}
+      {activeTab === 'updates' && (
+        <div id="card-updates">
+          <UpdatesSettingsSection
+            localSettings={localSettings}
+            updateSetting={updateSetting}
+            versionInfo={versionInfo}
+            updateCheck={updateCheck}
+            refetchUpdateCheck={refetchUpdateCheck}
+            isCheckingUpdate={isCheckingUpdate}
+            updateStatus={updateStatus}
+            refetchUpdateStatus={refetchUpdateStatus}
+            applyUpdateMutation={applyUpdateMutation}
+            setShowReleaseNotes={setShowReleaseNotes}
+          />
+        </div>
+      )}
+
       {activeTab === 'general' && (
       <>
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
@@ -2846,296 +2734,18 @@ export function SettingsPage() {
 
         {/* Third Column - Updates & Sidebar Links */}
         <div className="space-y-3 flex-1 lg:max-w-sm">
-          <Card id="card-updates">
-            <CardHeader>
-              <h2 className="text-lg font-semibold text-white">{t('settings.updates')}</h2>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-xs font-medium text-bambu-gray uppercase tracking-wider">{t('settings.printerFirmware')}</p>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-white">{t('settings.checkPrinterFirmware')}</p>
-                  <p className="text-sm text-bambu-gray">
-                    {t('settings.checkFirmwareDescription')}
-                  </p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={localSettings.check_printer_firmware ?? true}
-                    onChange={(e) => updateSetting('check_printer_firmware', e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-bambu-dark-tertiary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-bambu-green"></div>
-                </label>
-              </div>
-              <div className="border-t border-bambu-dark-tertiary pt-4">
-                <p className="text-xs font-medium text-bambu-gray uppercase tracking-wider mb-4">{t('settings.bambuddySoftware')}</p>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-white">{t('settings.checkForUpdatesLabel')}</p>
-                  <p className="text-sm text-bambu-gray">
-                    {t('settings.autoCheckDescription')}
-                  </p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={localSettings.check_updates}
-                    onChange={(e) => updateSetting('check_updates', e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-bambu-dark-tertiary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-bambu-green"></div>
-                </label>
-              </div>
-              <div className={`flex items-center justify-between ${!localSettings.check_updates ? 'opacity-50' : ''}`}>
-                <div>
-                  <p className="text-white">{t('settings.includeBetaUpdates')}</p>
-                  <p className="text-sm text-bambu-gray">
-                    {t('settings.includeBetaUpdatesDesc')}
-                  </p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={localSettings.include_beta_updates ?? false}
-                    onChange={(e) => updateSetting('include_beta_updates', e.target.checked)}
-                    disabled={!localSettings.check_updates}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-bambu-dark-tertiary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-bambu-green"></div>
-                </label>
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <p className="text-white">{t('settings.currentVersion')}</p>
-                    <p className="text-sm text-bambu-gray">v{versionInfo?.version || '...'}</p>
-                  </div>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => refetchUpdateCheck()}
-                    disabled={isCheckingUpdate}
-                  >
-                    {isCheckingUpdate ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <RefreshCw className="w-4 h-4" />
-                    )}
-                    {t('settings.checkNow')}
-                  </Button>
-                </div>
-
-                {updateCheck?.update_available ? (
-                  <div className="mt-4 p-3 bg-bambu-green/10 border border-bambu-green/30 rounded-lg">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="text-bambu-green font-medium">
-                          Update available: v{updateCheck.latest_version}
-                        </p>
-                        {updateCheck.release_name && updateCheck.release_name !== updateCheck.latest_version && (
-                          <p className="text-sm text-bambu-gray mt-1">{updateCheck.release_name}</p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {updateCheck.release_notes && (
-                          <button
-                            onClick={() => setShowReleaseNotes(true)}
-                            className="text-bambu-gray hover:text-white transition-colors text-sm underline"
-                          >
-                            {t('settings.releaseNotes')}
-                          </button>
-                        )}
-                        {updateCheck.release_url && (
-                          <a
-                            href={updateCheck.release_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-bambu-gray hover:text-white transition-colors"
-                            title={t('settings.viewReleaseOnGitHub')}
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                          </a>
-                        )}
-                      </div>
-                    </div>
-
-                    {updateStatus?.signature_enforced !== undefined && (
-                      <p
-                        className={`mt-3 text-xs ${updateStatus.signature_enforced ? 'text-bambu-green' : 'text-bambu-gray'}`}
-                        data-testid="update-signature-hint"
-                      >
-                        {updateStatus.signature_enforced ? t('settings.updateSignatureOn') : t('settings.updateSignatureOff')}
-                      </p>
-                    )}
-                    <UpdateBackupsCard canRestore={hasPermission('settings:update')} />
-                    {updateStatus?.rolled_back && (
-                      <div className="mt-3 p-2 bg-yellow-500/20 rounded text-sm text-yellow-700 dark:text-yellow-400 flex items-start justify-between gap-3">
-                        <span>
-                          {t('settings.updateRolledBack')}
-                          {updateStatus.rolled_back.reason ? ` (${updateStatus.rolled_back.reason})` : ''}
-                        </span>
-                        <button
-                          type="button"
-                          className="shrink-0 underline"
-                          onClick={() => api.dismissRollbackNotice().then(() => refetchUpdateStatus())}
-                        >
-                          {t('settings.updateRolledBackDismiss')}
-                        </button>
-                      </div>
-                    )}
-                    {updateStatus?.status === 'downloading' || updateStatus?.status === 'installing' ? (
-                      <div className="mt-3">
-                        <div className="flex items-center gap-2 text-sm text-bambu-gray">
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          <span>{updateStatus.message}</span>
-                        </div>
-                        <div className="mt-2 w-full bg-bambu-dark-tertiary rounded-full h-2">
-                          <div
-                            className="bg-bambu-green h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${updateStatus.progress}%` }}
-                          />
-                        </div>
-                      </div>
-                    ) : updateStatus?.status === 'complete' && updateStatus.restarting ? (
-                      <UpdateRestartWatcher currentVersion={updateCheck?.current_version} />
-                    ) : updateStatus?.status === 'complete' ? (
-                      <div className="mt-3 p-2 bg-bambu-green/20 rounded text-sm text-bambu-green">
-                        {updateStatus.message}
-                      </div>
-                    ) : updateStatus?.status === 'error' ? (
-                      <div className="mt-3 p-2 bg-red-100 dark:bg-red-500/20 rounded text-sm text-red-700 dark:text-red-400">
-                        {updateStatus.error || updateStatus.message}
-                      </div>
-                    ) : updateCheck?.is_ha_addon ? (
-                      <div className="mt-3 p-3 bg-bambu-dark-tertiary rounded-lg">
-                        <p className="text-sm text-bambu-gray">
-                          {t('settings.updateViaHomeAssistant')}
-                        </p>
-                      </div>
-                    ) : updateCheck?.is_docker ? (
-                      <div className="mt-3 p-3 bg-bambu-dark-tertiary rounded-lg">
-                        <p className="text-sm text-bambu-gray mb-2">
-                          {t('settings.updateViaDocker')}
-                        </p>
-                        <div className="flex items-start gap-1">
-                          <code className="flex-1 block text-xs bg-bambu-dark p-2 rounded text-bambu-green font-mono break-all select-all">
-                            {composeUpdateCommand}
-                          </code>
-                          <CopyButton
-                            value={composeUpdateCommand}
-                            titleKey="settings.copyUpdateCommand"
-                            copiedTitleKey="printers.copied"
-                            className="ml-0 p-2 rounded hover:bg-bambu-dark text-bambu-gray hover:text-white transition-colors flex-shrink-0"
-                            iconClassName="w-4 h-4"
-                          />
-                        </div>
-                        <label className="block mt-3">
-                          <span className="block text-xs text-bambu-gray mb-1">
-                            {t('settings.composeDirectory')}
-                          </span>
-                          <input
-                            type="text"
-                            value={localSettings?.docker_compose_dir ?? ''}
-                            onChange={(e) => updateSetting('docker_compose_dir', e.target.value)}
-                            placeholder={updateCheck?.compose_dir_detected || '/opt/bambuddy'}
-                            className="w-full px-3 py-2 bg-bambu-dark border border-bambu-dark-tertiary rounded text-sm text-white font-mono placeholder:text-bambu-gray/60 focus:outline-none focus:border-bambu-green"
-                          />
-                          <span className="block text-xs text-bambu-gray mt-1">
-                            {t('settings.composeDirectoryHint')}
-                          </span>
-                        </label>
-                      </div>
-                    ) : updateCheck?.update_method === 'windows_installer' ? (
-                      <div className="mt-3 p-3 bg-bambu-dark-tertiary rounded-lg">
-                        <p className="text-sm text-bambu-gray mb-3">
-                          {t('settings.updateViaWindowsInstaller')}
-                        </p>
-                        <a
-                          href={updateCheck.installer_download_url || updateCheck.release_url || `https://github.com/Luk1236/printlab/releases/tag/v${updateCheck.latest_version}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-bambu-dark disabled:opacity-50 bg-bambu-green hover:bg-bambu-green-light text-white focus:ring-bambu-green px-4 py-2 text-sm gap-2 min-h-[44px] md:min-h-0"
-                        >
-                          <Download className="w-4 h-4" />
-                          {t('settings.downloadWindowsInstaller', { version: updateCheck.latest_version })}
-                        </a>
-                      </div>
-                    ) : (
-                      <Button
-                        className="mt-3"
-                        onClick={() => applyUpdateMutation.mutate()}
-                        disabled={applyUpdateMutation.isPending}
-                      >
-                        {applyUpdateMutation.isPending ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Download className="w-4 h-4" />
-                        )}
-                        {t('settings.installUpdate')}
-                      </Button>
-                    )}
-                  </div>
-                ) : updateCheck?.error ? (
-                  <div className="mt-2 p-2 bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/30 rounded text-sm text-red-700 dark:text-red-400">
-                    {t('settings.failedToCheckUpdates', { error: updateCheck.error })}
-                  </div>
-                ) : updateCheck && !updateCheck.update_available ? (
-                  <p className="mt-2 text-sm text-bambu-gray">
-                    {t('settings.latestVersionRunning')}
-                  </p>
-                ) : null}
-              </div>
-              <div className="border-t border-bambu-dark-tertiary pt-4">
-                <p className="text-xs font-medium text-bambu-gray uppercase tracking-wider mb-4">{t('announcements.title')}</p>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-white">{t('settings.announcementsEnabled')}</p>
-                  <p className="text-sm text-bambu-gray">
-                    {t('settings.announcementsEnabledDesc')}{' '}
-                    <a
-                      href={helpLink(HELP_ANCHORS.announcements)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-bambu-green hover:underline"
-                    >
-                      {t('settings.announcementsLearnMore')}
-                    </a>
-                  </p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={localSettings.announcements_enabled ?? true}
-                    onChange={(e) => updateSetting('announcements_enabled', e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-bambu-dark-tertiary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-bambu-green"></div>
-                </label>
-              </div>
-              <div className={`flex items-center justify-between ${localSettings.announcements_enabled === false ? 'opacity-50' : ''}`}>
-                <div>
-                  <p className="text-white">{t('settings.announcementsAllUsers')}</p>
-                  <p className="text-sm text-bambu-gray">
-                    {t('settings.announcementsAllUsersDesc')}
-                  </p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={localSettings.announcements_all_users ?? false}
-                    onChange={(e) => updateSetting('announcements_all_users', e.target.checked)}
-                    disabled={localSettings.announcements_enabled === false}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-bambu-dark-tertiary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-bambu-green"></div>
-                </label>
-              </div>
-            </CardContent>
-          </Card>
+<UpdatesSettingsSection
+            localSettings={localSettings}
+            updateSetting={updateSetting}
+            versionInfo={versionInfo}
+            updateCheck={updateCheck}
+            refetchUpdateCheck={refetchUpdateCheck}
+            isCheckingUpdate={isCheckingUpdate}
+            updateStatus={updateStatus}
+            refetchUpdateStatus={refetchUpdateStatus}
+            applyUpdateMutation={applyUpdateMutation}
+            setShowReleaseNotes={setShowReleaseNotes}
+          />
 
           {/* Sidebar Links */}
           <ExternalLinksSettings />

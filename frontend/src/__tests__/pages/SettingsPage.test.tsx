@@ -769,6 +769,50 @@ describe('SettingsPage', () => {
         expect(screen.getByText('AMS Display Thresholds')).toBeInTheDocument();
       });
     });
+    it('can switch to Setup tab', async () => {
+      const user = userEvent.setup();
+      render(<SettingsPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Setup & Assistant')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByText('Setup & Assistant'));
+
+      await waitFor(() => {
+        expect(screen.getByText(/Setup assistant/i)).toBeInTheDocument();
+      });
+    });
+
+    it('can switch to System Status tab', async () => {
+      const user = userEvent.setup();
+      render(<SettingsPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText('System Status & Diagnostics')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByText('System Status & Diagnostics'));
+
+      await waitFor(() => {
+        expect(screen.getByText(/System Health/i)).toBeInTheDocument();
+      });
+    });
+
+    it('can switch to Updates tab directly', async () => {
+      const user = userEvent.setup();
+      render(<SettingsPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Updates & Version')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByText('Updates & Version'));
+
+      await waitFor(() => {
+        expect(screen.getAllByText(/Printer Firmware/i).length).toBeGreaterThan(0);
+      });
+    });
 
     // #2770: an AMS reads 15-20% while its own heater runs, so a drying
     // threshold set below that can never be met and auto-drying ends one

@@ -75,8 +75,8 @@ const NAV_GROUPS: { id: string; labelKey: string; defaultLabel: string; items: s
   { id: 'print', labelKey: 'nav.groupPrint', defaultLabel: 'Drucken', items: ['printers', 'queue', 'archives'] },
   { id: 'library', labelKey: 'nav.groupLibrary', defaultLabel: 'Dateien & Modelle', items: ['projects', 'files', 'makerworld', 'profiles'] },
   { id: 'material', labelKey: 'nav.groupMaterial', defaultLabel: 'Material & Kosten', items: ['inventory', 'finance'] },
-  { id: 'operations', labelKey: 'nav.groupOperations', defaultLabel: 'Betrieb', items: ['maintenance', 'stats', 'system', 'error-help', 'setup-guide', 'notifications'] },
-  { id: 'admin', labelKey: 'nav.groupAdmin', defaultLabel: 'Verwaltung', items: ['settings'] },
+  { id: 'operations', labelKey: 'nav.groupOperations', defaultLabel: 'Betrieb', items: ['maintenance', 'stats', 'error-help', 'notifications'] },
+  { id: 'admin', labelKey: 'nav.groupAdmin', defaultLabel: 'Verwaltung', items: ['settings', 'setup-guide', 'system'] },
 ];
 
 // Get default view from localStorage

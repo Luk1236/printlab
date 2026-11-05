@@ -2469,6 +2469,9 @@ export default {
     // Tab names
     tabs: {
       general: 'Allgemein',
+      setup: 'Einrichtung & Assistent',
+      system: 'Systemzustand & Diagnose',
+      updates: 'Updates & Version',
       smartPlugs: 'Smart Plugs',
       sensors: 'Sensoren',
       notifications: 'Benachrichtigungen',
@@ -2488,6 +2491,13 @@ export default {
       twoFa: 'Zwei-Faktor-Auth',
       oidc: 'SSO / OIDC',
       security: 'Sicherheit',
+    },
+    categories: {
+      system: 'System & Allgemein',
+      hardware: 'Geräte & Hardware',
+      workflow: 'Workflow & Druck',
+      network: 'Netzwerk & Schnittstellen',
+      security: 'Sicherheit & Zugriff',
     },
     spoolbuddy: {
       infoTitle: 'PrintLab Spool-Geräte',

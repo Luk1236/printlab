@@ -10,6 +10,9 @@
 
 export type SettingsSearchTab =
   | 'general'
+  | 'setup'
+  | 'system'
+  | 'updates'
   | 'plugs'
   | 'sensors'
   | 'notifications'
@@ -65,8 +68,10 @@ export function registerCoreSettingsSearchEntries(): void {
   registerSettingsSearch({ labelKey: 'settings.camera', tab: 'general', keywords: 'camera external video stream kamera extern', anchor: 'card-camera' });
   registerSettingsSearch({ labelKey: 'settings.costTracking', tab: 'general', keywords: 'currency filament cost energy kwh price billing abrechnung finanzen strompreis währung', anchor: 'card-cost' });
   registerSettingsSearch({ labelKey: 'settings.fileManager', tab: 'general', keywords: 'file manager archive mode disk warning storage dateimanager speicherplatz', anchor: 'card-filemanager' });
-  registerSettingsSearch({ labelKey: 'settings.updates', tab: 'general', keywords: 'updates version firmware beta check aktualisierung', anchor: 'card-updates' });
-  registerSettingsSearch({ labelKey: 'settings.dataManagement', tab: 'general', keywords: 'data reset clear logs notifications preferences datenverwaltung speicher', anchor: 'card-data' });
+  registerSettingsSearch({ labelKey: 'setupWizard.title', labelFallback: 'Setup & Assistant', tab: 'setup', keywords: 'setup wizard assistant checklist selftest slicer erstinstallation assistent kompass einrichtung', anchor: 'card-setup-hub' });
+  registerSettingsSearch({ labelKey: 'nav.systemStatus', labelFallback: 'System Status', tab: 'system', keywords: 'system status health cpu ram memory disk logs diagnose bundle supportprotokoll gesundheit diagnose', anchor: 'card-system' });
+  registerSettingsSearch({ labelKey: 'settings.updates', tab: 'updates', keywords: 'updates version firmware beta check aktualisierung release', anchor: 'card-updates' });
+  registerSettingsSearch({ labelKey: 'settings.dataManagement', tab: 'backup', keywords: 'data reset clear logs notifications preferences datenverwaltung speicher vacuum bereinigung', anchor: 'card-data' });
   registerSettingsSearch({ labelKey: 'settings.smartPlugs', tab: 'plugs', keywords: 'smart plug energy power automation tapo kasa tplink shelly tasmota steckdose strom', anchor: 'card-plugs' });
   registerSettingsSearch({ labelKey: 'haSensors.sectionTitle', tab: 'sensors', keywords: 'home assistant sensor printer temperature humidity alert notify block print', anchor: 'card-ha-sensors' });
   registerSettingsSearch({ labelKey: 'locationHaSensors.sectionTitle', tab: 'sensors', keywords: 'home assistant sensor location storage box temperature humidity battery alert notify', anchor: 'card-location-sensors' });
