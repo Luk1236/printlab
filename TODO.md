@@ -160,18 +160,18 @@ dieser Reihenfolge, mit Erwartungen, Abbruchkriterien und Protokoll.
 ## Technisch offen
 
 - [ ] Große Dateien weiter zerlegen; der Test `test_file_size_budget.py` verhindert nur das Wachsen. Stand
-      05.11.2026: `main.py` 2 282 Zeilen (weit UNTER der 2 600-Fallgrenze — kein Eintrag mehr im Budget-Wächter; die
-      Abflüsse liegen in zwölf Dienstmodulen: timelapse, spool_linkage, history_runtime, background_services,
+      05.11.2026: `main.py` 1 985 Zeilen (weit UNTER der 2 600-Fallgrenze — kein Eintrag mehr im Budget-Wächter; die
+      Abflüsse liegen in dreizehn Dienstmodulen: timelapse, spool_linkage, history_runtime, background_services,
       expected_prints, mqtt_status_flow, print_start_flow, completion_photo_plate, print_complete_flow,
-      mqtt_print_complete, printer_telemetry_flow), `print_scheduler.py` 3 928 Zeilen (Grenze 3 950; die Verfügbarkeits- und Wecker-Logik
+      mqtt_print_complete, printer_telemetry_flow, lifespan_flow), `print_scheduler.py` 3 928 Zeilen (Grenze 3 950; die Verfügbarkeits- und Wecker-Logik
       liegt in `scheduler/availability.py`), `queue_pass.py` 582 (Vorgabe 2 600, Auswahl in `selection.py`, 483),
       `PrintersPage.tsx` 1 614 (Grenze 1 650, Leiste in `PrinterToolbar.tsx`, 497),
       `PrinterCard.tsx` 5 232 (Grenze 5 300, Dialoge in `PrinterCardModals.tsx`, 1 225, Bausteine in
       `PrinterCardParts.tsx`, 1 134, Grenze 1 150), `client.ts` 1 016 (Grenze 1 050),
       `types.ts` 19 Zeilen (Grenze 400; die API-Typen liegen nach Bereichen in `types_*.ts`),
       `endpoints.ts` 4 005 (Grenze 4 050).
-      **Erledigt (Welle 10):** Telemetrie-Nestlinge (`calibrate_snapshot` bis `on_tray_change`) in `printer_telemetry_flow.py` (354 Zeilen) ausgelagert; `main.py` von 2 594 auf 2 282 Zeilen geschrumpft.
-      **Nächster Schnitt:** Restliches `lifespan` (~370 Zeilen) oder Hauptstück `mqtt_print_complete` (1 605 Zeilen).
+      **Erledigt (Welle 11):** Lifespan-Orchestrierung (`setup_cloud_http_clients`, `run_startup_fixups`, `setup_printer_manager_callbacks`, `setup_mqtt_and_connections`, `start_background_services`, `stop_background_services`) in `lifespan_flow.py` (373 Zeilen) ausgelagert; `main.py` von 2 282 auf 1 985 Zeilen geschrumpft (erstmals unter 2 000 Zeilen).
+      **Nächster Schnitt:** Hauptstück `mqtt_print_complete` (1 605 Zeilen) oder Frontend-Dateien (`PrinterCard.tsx`, `endpoints.ts`).
 - [ ] Volle E2E-Prüfung MakerWorld → PC-Slicer → Warteschlange. Die inneren Glieder sind abgesichert
       (566 Integrationstests zu MakerWorld, Bibliothek und Warteschlange, alle grün); der Slicer-Upload und der
 druckende Drucker brauchen Gerät und Slicer.

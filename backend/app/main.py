@@ -196,6 +196,15 @@ from backend.app.services.history_runtime import (  # noqa: F401 — Namensraum 
 )
 from backend.app.services.homeassistant import homeassistant_service
 from backend.app.services.library_trash import library_trash_service
+from backend.app.services.lifespan_flow import (  # noqa: F401 — Namensraum bleibt hier
+    close_cloud_http_clients,
+    run_startup_fixups,
+    setup_cloud_http_clients,
+    setup_mqtt_and_connections,
+    setup_printer_manager_callbacks,
+    start_background_services,
+    stop_background_services,
+)
 from backend.app.services.local_backup import local_backup_service
 from backend.app.services.location_ha_sensor_manager import location_ha_sensor_manager
 from backend.app.services.mqtt_print_complete import (  # noqa: F401 — Namensraum bleibt hier
@@ -1346,334 +1355,28 @@ async def lifespan(app: FastAPI):
     async with async_session() as oidc_db:
         await apply_env_oidc_provider(oidc_db)
 
-    # Close out batches that finished before `completed` was a reachable status
-    # (#342). Without this the Batches tab opens on every batch created since
-    # the feature shipped, all still marked active. Never blocks startup.
-    try:
-        from backend.app.services.print_batch import backfill_batch_statuses
+    # Close out finished batches and fix queue items with invalid status
+    await run_startup_fixups()
 
-        async with async_session() as batch_db:
-            await backfill_batch_statuses(batch_db)
-    except Exception as exc:
-        logging.warning("[BATCH] Startup status backfill failed: %s", exc)
-
-    # Register an app-scoped httpx client for Bambu Cloud services so
-    # per-request BambuCloudService instances reuse the same connection pool
-    # (important for routes like /cloud/filament-info that chain many
-    # get_setting_detail calls). The shared client stores no region/token
-    # state, so the per-request ownership pattern that fixed the region-bleed
-    # bug is preserved.
-    import httpx as _httpx
-
-    from backend.app.services.bambu_cloud import set_shared_http_client
-    from backend.app.services.model_providers.makerworld.service import (
-        set_shared_http_client as set_shared_makerworld_http_client,
-    )
-    from backend.app.services.orca_cloud import (
-        set_shared_http_client as set_shared_orca_http_client,
-    )
-
-    _shared_cloud_http_client = _httpx.AsyncClient(timeout=30.0)
-    set_shared_http_client(_shared_cloud_http_client)
-    # Reuse the same connection pool for MakerWorld — different host, same
-    # keep-alive pool saves a TLS handshake per request.
-    set_shared_makerworld_http_client(_shared_cloud_http_client)
-    # Same for Orca Cloud — without this the per-request OrcaCloudService()
-    # each spun up (and never closed) its own client, leaking sockets.
-    set_shared_orca_http_client(_shared_cloud_http_client)
-
-    # Fix queue items stuck with invalid "aborted" status (should be "cancelled").
-    # This can happen when a print was cancelled mid-print on versions before this fix.
-    try:
-        async with async_session() as db:
-            from backend.app.models.print_queue import PrintQueueItem
-
-            result = await db.execute(select(PrintQueueItem).where(PrintQueueItem.status == "aborted"))
-            aborted_items = result.scalars().all()
-            if aborted_items:
-                for item in aborted_items:
-                    item.status = "cancelled"
-                await db.commit()
-                logging.info("Fixed %d queue item(s) with invalid 'aborted' status → 'cancelled'", len(aborted_items))
-    except Exception as e:
-        logging.warning("Failed to fix aborted queue items: %s", e)
+    # Register an app-scoped httpx client for Bambu Cloud / MakerWorld / Orca
+    await setup_cloud_http_clients()
 
     # Restore debug logging state from previous session
     await init_debug_logging()
 
-    # Set up printer manager callbacks
-    loop = asyncio.get_event_loop()
-    printer_manager.set_event_loop(loop)
-    printer_manager.set_status_change_callback(on_printer_status_change)
-    printer_manager.set_print_start_callback(on_print_start)
-    printer_manager.set_print_complete_callback(on_print_complete)
-    printer_manager.set_print_running_observed_callback(on_print_running_observed)
-    printer_manager.set_finish_photo_moment_callback(on_finish_photo_moment)
-    printer_manager.set_ams_change_callback(on_ams_change)
-    printer_manager.set_fts_inlet_change_callback(on_fts_inlet_change)
+    # Set up printer manager event loop, callbacks, and restore plate clear gate
+    await setup_printer_manager_callbacks()
 
-    # Rehydrate persisted awaiting-plate-clear gate (#961) so prompts survive restarts
-    await printer_manager.load_awaiting_plate_clear_from_db()
+    # Initialize MQTT relay, restore plugs, connect printers and Spoolman
+    await setup_mqtt_and_connections()
 
-    # Register printer telemetry callbacks
-    printer_manager.set_layer_change_callback(on_layer_change)
-    printer_manager.set_print_progress_callback(on_print_progress)
-    printer_manager.set_bed_temp_update_callback(on_bed_temp_update)
-    printer_manager.set_drying_complete_callback(on_drying_complete)
-    printer_manager.set_assignment_verified_callback(on_assignment_verified)
-    printer_manager.set_tray_change_callback(on_tray_change)
-
-    # Initialize MQTT relay from settings
-    async with async_session() as db:
-        from backend.app.api.routes.settings import get_setting
-
-        mqtt_settings = {
-            "mqtt_enabled": (await get_setting(db, "mqtt_enabled") or "false") == "true",
-            "mqtt_broker": await get_setting(db, "mqtt_broker") or "",
-            "mqtt_port": int(await get_setting(db, "mqtt_port") or "1883"),
-            "mqtt_username": await get_setting(db, "mqtt_username") or "",
-            "mqtt_password": await get_setting(db, "mqtt_password") or "",
-            "mqtt_topic_prefix": await get_setting(db, "mqtt_topic_prefix") or "printlab",
-            "mqtt_use_tls": (await get_setting(db, "mqtt_use_tls") or "false") == "true",
-        }
-        await mqtt_relay.configure(mqtt_settings)
-
-        # Restore MQTT smart plug subscriptions
-        if mqtt_settings.get("mqtt_enabled"):
-            from backend.app.models.smart_plug import SmartPlug
-            from backend.app.services.mqtt_smart_plug import subscribe_plug_to_mqtt
-
-            result = await db.execute(select(SmartPlug).where(SmartPlug.plug_type == "mqtt"))
-            mqtt_plugs = result.scalars().all()
-            restored = 0
-            for plug in mqtt_plugs:
-                if subscribe_plug_to_mqtt(mqtt_relay.smart_plug_service, plug):
-                    restored += 1
-            if restored:
-                logging.info("Restored %s MQTT smart plug subscriptions", restored)
-
-    # Connect to all active printers
-    async with async_session() as db:
-        await init_printer_connections(db)
-
-    # Auto-connect to Spoolman if enabled
-    async with async_session() as db:
-        from backend.app.api.routes.settings import get_setting
-
-        spoolman_enabled = await get_setting(db, "spoolman_enabled")
-        spoolman_url = await get_setting(db, "spoolman_url")
-
-        if spoolman_enabled and spoolman_enabled.lower() == "true" and spoolman_url:
-            try:
-                client = await init_spoolman_client(spoolman_url)
-                if await client.health_check():
-                    logging.info("Auto-connected to Spoolman at %s", spoolman_url)
-                    # Ensure the 'tag' extra field exists for RFID/UUID storage
-                    field_ok = await client.ensure_tag_extra_field()
-                    if not field_ok:
-                        logging.error("Spoolman tag extra field registration failed — NFC tag links may not persist")
-                    # Register the BambuStudio slicer-preset fields used by the
-                    # spool-edit / assign flow. Spoolman rejects PATCHes with
-                    # unknown extra keys, so these must exist before any update
-                    # that touches them.
-                    for field_name in ("bambu_slicer_filament", "bambu_slicer_filament_name"):
-                        if not await client.ensure_extra_field(field_name):
-                            logging.warning(
-                                "Spoolman extra field %r registration failed — "
-                                "spool slicer-preset edits will return 502",
-                                field_name,
-                            )
-                else:
-                    logging.warning("Spoolman at %s is not reachable", spoolman_url)
-            except Exception as e:
-                logging.warning("Failed to auto-connect to Spoolman: %s", e)
-
-    # Start the print scheduler
-    spawn_background_task(print_scheduler.run(), name="print-scheduler")
-    from backend.app.services import queue_due_watch
-
-    spawn_background_task(queue_due_watch.run(async_session), name="queue-due-watch")  # PrintLab: Termin-Meldung
-    from backend.app.services import invoice_reminder
-
-    spawn_background_task(invoice_reminder.run(async_session), name="invoice-reminder")  # PrintLab: Zahlungserinnerung
-    from backend.app.services import countermeasures
-
-    spawn_background_task(countermeasures.run(), name="countermeasures")  # PrintLab: Gegenmaßnahmen
-    from backend.app.services import local_ai_watch
-
-    spawn_background_task(local_ai_watch.run(), name="local-ai-watch")  # PrintLab: laufende Bildprüfung
-
-    # Start the smart plug scheduler for time-based on/off
-    smart_plug_manager.start_scheduler()
-
-    # Start the Home Assistant sensor poller (#1148)
-    ha_sensor_manager.start()
-    location_ha_sensor_manager.start()
-
-    # Resume any pending auto-offs that were interrupted by restart
-    await smart_plug_manager.resume_pending_auto_offs()
-
-    # Start the notification digest scheduler
-    notification_service.start_digest_scheduler()
-
-    # Start the Telegram reaction pollers (#3046), one per bot token used by a
-    # provider in reactions/both mode; the notification routes resync them.
-    # Never fatal: a bad provider row or a DB hiccup here costs reactions
-    # until the next provider save, not the whole startup.
-    try:
-        await telegram_reaction_poller.start()
-    except Exception as e:
-        logging.warning("Telegram reaction poller did not start: %s", e)
-
-    # Start the GitHub backup scheduler
-    await github_backup_service.start_scheduler()
-
-    # Start the local backup scheduler
-    await local_backup_service.start_scheduler()
-    await obico_detection_service.start()
-
-    # Start the library trash sweeper (#1008)
-    await library_trash_service.start_scheduler()
-
-    # Start the archive auto-purge sweeper (#1008 follow-up)
-    await archive_purge_service.start_scheduler()
-
-    # Start AMS history recording
-    start_ams_history_recording()
-
-    # Start printer sensor (nozzle / bed / chamber) history recording
-    start_printer_sensor_history_recording()
-
-    # Start printer runtime tracking
-    start_runtime_tracking()
-
-    # Start SpoolBuddy device watchdog
-    start_spoolbuddy_watchdog()
-
-    # Start camera stream orphan cleanup
-    start_camera_cleanup()
-
-    # Start the backstop for MQTT sessions paho has stopped recovering (#2732)
-    start_connection_watchdog()
-
-    # One-shot sweep for timelapse session directories orphaned by a crash
-    # or restart that happened mid-print (in-memory session tracking can't
-    # survive that, and nothing else reaps the leftover frames/output file)
-    try:
-        from backend.app.services.layer_timelapse import cleanup_orphaned_timelapse_sessions
-
-        removed = cleanup_orphaned_timelapse_sessions()
-        if removed:
-            logging.getLogger(__name__).info("Removed %d orphaned timelapse session artifact(s)", removed)
-    except Exception as e:
-        logging.getLogger(__name__).warning("Orphaned timelapse session cleanup failed: %s", e)
-
-    # Start expected-print TTL eviction (prevents memory leak when prints are
-    # registered but on_print_start never fires)
-    start_expected_prints_cleanup()
-
-    # L-2: Start periodic auth cleanup (stale TOTP + expired revoked JTIs)
-    start_auth_cleanup()
-
-    # Maintainer announcements: a signed feed fetched from GitHub every few hours.
-    from backend.app.services import announcements as announcements_service
-
-    announcements_service.start()
-
-    from backend.app.services.printer_media import start_printer_download_cleanup
-
-    start_printer_download_cleanup()
-
-    # Event-loop stall watchdog: dumps all thread stacks to stderr if the loop
-    # freezes (#1486 — silent "container hangs after adding a printer" reports).
-    from backend.app.services.loop_watchdog import start_loop_watchdog
-
-    start_loop_watchdog()
-
-    # Initialize virtual printer manager and sync from DB
-    from backend.app.services.virtual_printer import virtual_printer_manager
-
-    virtual_printer_manager.set_session_factory(async_session)
-    virtual_printer_manager.set_printer_manager(printer_manager)
-    try:
-        await virtual_printer_manager.sync_from_db()
-        logging.info("Virtual printer manager synced from database")
-    except Exception as e:
-        logging.warning("Failed to sync virtual printers: %s", e)
-
-    # Fernzugriff (Tailscale) wieder herstellen, falls er eingeschaltet war
-    from backend.app.services import remote_access as remote_access_service
-
-    asyncio.create_task(remote_access_service.autostart())
+    # Start schedulers, watchdogs, virtual printers and remote access
+    await start_background_services()
 
     yield
 
     # Shutdown
-    remote_access_service.stop_daemon()
-    print_scheduler.stop()
-    smart_plug_manager.stop_scheduler()
-    ha_sensor_manager.stop()
-    location_ha_sensor_manager.stop()
-    notification_service.stop_digest_scheduler()
-    await telegram_reaction_poller.aclose()
-    github_backup_service.stop_scheduler()
-    local_backup_service.stop_scheduler()
-    library_trash_service.stop_scheduler()
-    archive_purge_service.stop_scheduler()
-    obico_detection_service.stop()
-    stop_ams_history_recording()
-    stop_printer_sensor_history_recording()
-    stop_runtime_tracking()
-    stop_spoolbuddy_watchdog()
-    stop_camera_cleanup()
-    stop_connection_watchdog()
-    from backend.app.services.loop_watchdog import stop_loop_watchdog
-
-    stop_loop_watchdog()
-    # Tear down all camera fan-out broadcasters (#1089) so subscribers exit
-    # cleanly rather than waiting on a queue that nothing will ever fill.
-    try:
-        from backend.app.services.camera_fanout import shutdown_all_broadcasters
-
-        await shutdown_all_broadcasters()
-    except Exception as e:
-        logging.warning("Failed to shut down camera broadcasters: %s", e)
-    stop_expected_prints_cleanup()
-    stop_auth_cleanup()
-    from backend.app.services import announcements as announcements_service
-
-    announcements_service.stop()
-    from backend.app.services.printer_media import stop_printer_download_cleanup
-
-    await stop_printer_download_cleanup()
-    printer_manager.disconnect_all()
-    slot_unlink_grace.reset()
-    await close_spoolman_client()
-
-    # Stop all virtual printer services
-    await virtual_printer_manager.stop_all()
-
-    await mqtt_smart_plug_service.disconnect(timeout=2)
-
-    await mqtt_relay.disconnect(timeout=2)
-
-    # Drop the shared Bambu Cloud HTTP client we registered at startup.
-    set_shared_http_client(None)
-    set_shared_makerworld_http_client(None)
-    set_shared_orca_http_client(None)
-    await _shared_cloud_http_client.aclose()
-
-    # Checkpoint WAL (SQLite only) and close all database connections
-    from backend.app.core.db_dialect import is_sqlite
-
-    if is_sqlite():
-        try:
-            async with engine.begin() as conn:
-                await conn.execute(text("PRAGMA wal_checkpoint(TRUNCATE)"))
-            logging.info("WAL checkpoint completed")
-        except Exception as e:
-            logging.warning("WAL checkpoint failed: %s", e)
-    await engine.dispose()
+    await stop_background_services()
 
 
 app = FastAPI(
