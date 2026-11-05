@@ -309,7 +309,6 @@ export function CameraPage() {
           return;
         }
         stallStrikesRef.current = 0;
-        console.log(`Stream issue detected: stalled=${status.stalled}, active=${status.active}, reconnecting...`);
         if (stallCheckIntervalRef.current) {
           clearInterval(stallCheckIntervalRef.current);
           stallCheckIntervalRef.current = null;
@@ -714,7 +713,8 @@ export function CameraPage() {
             onClick={() => setShowDiagnoseModal(true)}
             className="p-1.5 hover:bg-bambu-dark-tertiary rounded"
             title={t('camera.diagnose.button')}
-          >
+            aria-label={t('camera.diagnose.button')}
+            >
             <Stethoscope className="w-4 h-4 text-bambu-gray" />
           </button>
           <button
@@ -820,14 +820,16 @@ export function CameraPage() {
               disabled={zoomLevel <= 1}
               className="p-1.5 hover:bg-white/10 rounded disabled:opacity-30"
               title={t('camera.zoomOut')}
-            >
+              aria-label={t('camera.zoomOut')}
+              >
               <ZoomOut className="w-4 h-4 text-white" />
             </button>
             <button
               onClick={resetZoom}
               className="px-2 py-1 text-sm text-white hover:bg-white/10 rounded min-w-[48px]"
               title={t('camera.resetZoom')}
-            >
+              aria-label={t('camera.resetZoom')}
+              >
               {Math.round(zoomLevel * 100)}%
             </button>
             <button
@@ -835,7 +837,8 @@ export function CameraPage() {
               disabled={zoomLevel >= 4}
               className="p-1.5 hover:bg-white/10 rounded disabled:opacity-30"
               title={t('camera.zoomIn')}
-            >
+              aria-label={t('camera.zoomIn')}
+              >
               <ZoomIn className="w-4 h-4 text-white" />
             </button>
           </div>

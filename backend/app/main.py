@@ -4983,6 +4983,11 @@ async def security_headers_middleware(request, call_next):
     if not _TRUSTED_FRAME_ORIGINS:
         response.headers["X-Frame-Options"] = "SAMEORIGIN"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    # Permissions-Policy (best practices): die Weboberfläche braucht keine der
+    # mächtigen Browser-APIs selbst — Kamerabilder kommen als MJPEG/Blob-Streams
+    # bzw. Snapshots aus dem Netzwerk, nicht über getUserMedia; das Mikrofon und
+    # Geo­lokation haben keinen Anwendungsfall. Voll restriktiv statt offen.
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
     # Content-Security-Policy for the React SPA.
     # Notes:
     #   - 'unsafe-inline' for style-src: React and UI libs inject inline styles at runtime.

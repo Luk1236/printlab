@@ -311,11 +311,6 @@ function ArchiveCard({
    *  the badge names the one the mapping is actually good for. */
   printerMap: Map<number, string>;
 }) {
-  // Debug: log when card is highlighted
-  if (isHighlighted) {
-    console.log('ArchiveCard isHighlighted=true for archive:', archive.id);
-  }
-
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { hasPermission, canModify } = useAuth();
@@ -935,7 +930,8 @@ function ArchiveCard({
                 });
               }}
               title={t('archives.card.previousPlate')}
-            >
+              aria-label={t('archives.card.previousPlate')}
+              >
               <ChevronLeft className="w-4 h-4 text-white" />
             </button>
             {/* Right arrow */}
@@ -949,7 +945,8 @@ function ArchiveCard({
                 });
               }}
               title={t('archives.card.nextPlate')}
-            >
+              aria-label={t('archives.card.nextPlate')}
+              >
               <ChevronRight className="w-4 h-4 text-white" />
             </button>
             {/* Dots indicator */}
@@ -981,7 +978,8 @@ function ArchiveCard({
             setContextMenu({ x: rect.left, y: rect.bottom + 4 });
           }}
           title={t('archives.card.moreOptions')}
-        >
+          aria-label={t('archives.card.moreOptions')}
+          >
           <MoreVertical className="w-5 h-5 text-white" />
         </button>
         {/* Favorite star */}
@@ -1054,7 +1052,8 @@ function ArchiveCard({
             }}
             className="absolute top-2 right-12 px-2 py-1 rounded text-xs bg-purple-500/80 hover:bg-purple-600/90 text-white flex items-center gap-1 transition-colors cursor-pointer"
             title={t('archives.viewOriginalPrint', { id: originalArchiveId })}
-          >
+            aria-label={t('archives.viewOriginalPrint', { id: originalArchiveId })}
+            >
             <Copy className="w-3 h-3" />
             #{duplicateSequence}
           </button>
@@ -1079,7 +1078,8 @@ function ArchiveCard({
               openInSlicerWithToken(archive.id, sourceName, 'source', preferredSlicer);
             }}
             title={t('archives.card.openSource3mf')}
-          >
+            aria-label={t('archives.card.openSource3mf')}
+            >
             <FileCode className="w-4 h-4 text-orange-400" />
           </button>
         )}
@@ -1095,7 +1095,8 @@ function ArchiveCard({
               });
             }}
             title={t('archives.card.downloadF3d')}
-          >
+            aria-label={t('archives.card.downloadF3d')}
+            >
             <Box className="w-4 h-4 text-cyan-400" />
           </button>
         )}
@@ -1107,7 +1108,8 @@ function ArchiveCard({
             openGcodeViewer();
           }}
           title={t('archives.card.preview3d')}
-        >
+          aria-label={t('archives.card.preview3d')}
+          >
           <Layers className="w-4 h-4 text-white" />
         </button>
         {/* Timelapse badge */}
@@ -1119,7 +1121,8 @@ function ArchiveCard({
               setShowTimelapse(true);
             }}
             title={t('archives.card.viewTimelapse')}
-          >
+            aria-label={t('archives.card.viewTimelapse')}
+            >
             <Film className="w-4 h-4 text-bambu-green" />
           </button>
         )}
@@ -2426,7 +2429,8 @@ function ArchiveListRow({
                 }}
                 className="px-1.5 py-0.5 rounded text-[10px] leading-tight bg-purple-500/80 hover:bg-purple-600/90 text-white flex-shrink-0 transition-colors flex items-center gap-1"
                 title={t('archives.viewOriginalPrint', { id: originalArchiveId })}
-              >
+                aria-label={t('archives.viewOriginalPrint', { id: originalArchiveId })}
+                >
                 <Copy className="w-3 h-3" />
                 #{duplicateSequence}
               </button>
@@ -4048,28 +4052,32 @@ export function ArchivesPage() {
           className={`p-2 ${viewMode === 'grid' ? 'bg-bambu-green text-white' : 'bg-bambu-dark text-bambu-gray hover:text-white'}`}
           onClick={() => setViewMode('grid')}
           title={t('archives.gridView')}
-        >
+          aria-label={t('archives.gridView')}
+          >
           <LayoutGrid className="w-4 h-4" />
         </button>
         <button
           className={`p-2 ${viewMode === 'list' ? 'bg-bambu-green text-white' : 'bg-bambu-dark text-bambu-gray hover:text-white'}`}
           onClick={() => setViewMode('list')}
           title={t('archives.listView')}
-        >
+          aria-label={t('archives.listView')}
+          >
           <List className="w-4 h-4" />
         </button>
         <button
           className={`p-2 ${viewMode === 'calendar' ? 'bg-bambu-green text-white' : 'bg-bambu-dark text-bambu-gray hover:text-white'}`}
           onClick={() => setViewMode('calendar')}
           title={t('archives.calendarView')}
-        >
+          aria-label={t('archives.calendarView')}
+          >
           <CalendarDays className="w-4 h-4" />
         </button>
         <button
           className={`p-2 ${viewMode === 'log' ? 'bg-bambu-green text-white' : 'bg-bambu-dark text-bambu-gray hover:text-white'}`}
           onClick={() => setViewMode('log')}
           title={t('archives.logView')}
-        >
+          aria-label={t('archives.logView')}
+          >
           <ClipboardList className="w-4 h-4" />
         </button>
       </div>
@@ -4170,7 +4178,8 @@ export function ArchivesPage() {
                   : 'bg-bambu-dark border-bambu-dark-tertiary text-bambu-gray hover:text-white'
               }`}
               title={t('archives.filterUnconfirmedTitle')}
-            >
+              aria-label={t('archives.filterUnconfirmedTitle')}
+              >
               <ThumbsUp className="w-4 h-4" />
               <span className="text-sm hidden md:inline">{t('archives.filterUnconfirmed')}</span>
             </button>
@@ -4182,7 +4191,8 @@ export function ArchivesPage() {
                   : 'bg-bambu-dark border-bambu-dark-tertiary text-bambu-gray hover:text-white'
               }`}
               title={t('archives.hideDuplicates')}
-            >
+              aria-label={t('archives.hideDuplicates')}
+              >
               <Copy className="w-4 h-4" />
               <span className="text-sm hidden md:inline">{t('archives.hideDuplicates')}</span>
             </button>
@@ -4205,7 +4215,8 @@ export function ArchivesPage() {
                   onClick={() => setShowTagManagement(true)}
                   className="p-2 rounded-lg bg-bambu-dark border border-bambu-dark-tertiary text-bambu-gray hover:text-white hover:border-bambu-green transition-colors"
                   title={t('archives.manageTags')}
-                >
+                  aria-label={t('archives.manageTags')}
+                  >
                   <Settings className="w-4 h-4" />
                 </button>
               </div>
@@ -4474,7 +4485,8 @@ export function ArchivesPage() {
                     onClick={() => setShowLogColumnModal(true)}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-bambu-gray border border-bambu-dark-tertiary rounded-lg hover:bg-bambu-dark-tertiary transition-colors"
                     title={t('inventory.configureColumns')}
-                  >
+                    aria-label={t('inventory.configureColumns')}
+                    >
                     <Columns className="w-4 h-4" />
                     <span className="hidden sm:inline">{t('archives.log.columns')}</span>
                   </button>
@@ -4529,7 +4541,8 @@ export function ArchivesPage() {
                                     isActive ? 'text-bambu-green' : ''
                                   }`}
                                   title={t('archives.log.sortBy', { column: label })}
-                                >
+                                  aria-label={t('archives.log.sortBy', { column: label })}
+                                  >
                                   {label}
                                   {isActive ? (
                                     logSort.direction === 'asc' ? (

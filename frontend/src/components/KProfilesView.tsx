@@ -264,11 +264,9 @@ function KProfileModal({
 
   const saveMutation = useMutation({
     mutationFn: (data: KProfileCreate) => {
-      console.log('[KProfile] Calling API...');
       return api.setKProfile(printerId, data);
     },
-    onSuccess: (result, variables) => {
-      console.log('[KProfile] Save success:', result);
+    onSuccess: (_result, variables) => {
       showToast(t('kProfiles.toast.profileSaved'));
       // Save note if it changed (including clearing it)
       if (onSaveNote && note !== initialNote) {
@@ -305,11 +303,9 @@ function KProfileModal({
 
   const deleteMutation = useMutation({
     mutationFn: (data: KProfileDelete) => {
-      console.log('[KProfile] Deleting profile...');
       return api.deleteKProfile(printerId, data);
     },
-    onSuccess: (result) => {
-      console.log('[KProfile] Delete success:', result);
+    onSuccess: () => {
       showToast(t('kProfiles.toast.profileDeleted'));
       // Show syncing indicator while printer processes the command
       setIsSyncing(true);
@@ -399,7 +395,6 @@ function KProfileModal({
         setting_id: profile?.setting_id,
         slot_id: profile?.slot_id ?? 0,
       };
-      console.log('[KProfile] Saving profile:', payload);
       saveMutation.mutate(payload);
       return;
     }
@@ -420,8 +415,7 @@ function KProfileModal({
       slot_id: 0,
     }));
 
-    console.log(`[KProfile] Saving ${batchPayload.length} profiles in batch:`, batchPayload);
-
+    
     try {
       await api.setKProfilesBatch(printerId, batchPayload);
       showToast(t('kProfiles.toast.profilesSaved', { count: selectedExtruders.length }));
@@ -859,10 +853,8 @@ export function KProfilesView() {
   } = useQuery({
     queryKey: ['kprofiles', selectedPrinter, nozzleDiameter],
     queryFn: async () => {
-      console.log('[KProfiles] Fetching profiles for printer', selectedPrinter, 'nozzle', nozzleDiameter);
-      const result = await api.getKProfiles(selectedPrinter!, nozzleDiameter);
-      console.log('[KProfiles] Received profiles:', result?.profiles?.length || 0, 'profiles');
-      return result;
+            const result = await api.getKProfiles(selectedPrinter!, nozzleDiameter);
+            return result;
     },
     enabled: !!selectedPrinter,
     retry: false,
@@ -1611,8 +1603,7 @@ export function KProfilesView() {
             onSaveNote={handleSaveNote}
             hasPermission={hasPermission}
             onClose={() => {
-              console.log('[KProfiles] Edit modal onClose - refetching profiles...');
-              setEditingProfile(null);
+                            setEditingProfile(null);
               refetchProfiles();  // Refetch after close (handles delete case)
             }}
             onSave={() => {

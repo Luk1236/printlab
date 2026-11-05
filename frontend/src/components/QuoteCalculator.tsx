@@ -211,16 +211,23 @@ export function QuoteCalculator() {
       new Date(),
       extraRows.map((r): [string, number] => [r.label, r.amount]),
     );
-    const win = window.open('', '_blank', 'width=800,height=900');
+    /* Drucken ohne document.write (best practices): das HTML geht als
+       Blob-URL ins Popup — kein synchrones Schreiben in ein fremdes
+       Dokument, kein Deprecation-Hinweis; der Druck startet nach dem
+       Laden. Die Blob-URL wird nach dem Laden wieder freigegeben. */
+    const blob = new Blob([html], { type: 'text/html; charset=utf-8' })
+    const blobUrl = URL.createObjectURL(blob)
+    const win = window.open(blobUrl, '_blank', 'width=800,height=900')
     if (!win) {
-      showToast(t('common.error'));
-      return;
+      URL.revokeObjectURL(blobUrl)
+      showToast(t('common.error'))
+      return
     }
-    win.document.open();
-    win.document.write(html);
-    win.document.close();
-    win.focus();
-    win.print();
+    win.addEventListener('load', () => {
+      win.focus()
+      win.print()
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 30_000)
+    })
   };
 
   const row = (key: string, value: number) => (
