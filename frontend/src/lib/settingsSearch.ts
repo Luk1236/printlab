@@ -127,42 +127,41 @@ export function registerCoreSettingsSearchEntries(): void {
   registerSettingsSearch({ labelKey: 'backup.localBackup', labelFallback: 'Local Backup', tab: 'backup', keywords: 'local backup download zip manual export', anchor: 'card-backup-local' });
   registerSettingsSearch({ labelKey: 'backup.scheduledBackup', labelFallback: 'Scheduled Backups', tab: 'backup', keywords: 'scheduled backup automatic hourly daily weekly retention local path', anchor: 'card-backup-scheduled' });
 
-  // Übergreifende PrintLab- & P2S-Einstellungsbereiche (Einrichtung, Wartung, Finanzen)
+  // Übergreifende PrintLab- & P2S-Einstellungsbereiche (Einrichtung, System, Finanzen)
   registerSettingsSearch({
     labelKey: 'setupWizard.title',
     labelFallback: 'Einrichtungsassistent & Checkliste',
-    tab: 'general',
-    route: '/einrichtung',
-    routeLabel: 'Einrichtung (/einrichtung)',
+    tab: 'setup',
     keywords: 'einrichtung inbetriebnahme checkliste assistent auto setup erstinstallation raspberry pi start',
-    anchor: 'ext-setup-guide',
+    anchor: 'card-setup-hub',
+  });
+  registerSettingsSearch({
+    labelKey: 'nav.systemStatus',
+    labelFallback: 'Systemzustand & Diagnose',
+    tab: 'system',
+    keywords: 'systemzustand system cpu ram disk speicher logs server protokolle diagnose health ressourcen',
+    anchor: 'card-system',
   });
   registerSettingsSearch({
     labelKey: 'alertChannels.title',
     labelFallback: 'Meldung bei Ausfall (Telegram / ntfy)',
-    tab: 'general',
-    route: '/einrichtung#setup-alerts',
-    routeLabel: 'Einrichtung › Meldung bei Ausfall',
+    tab: 'setup',
     keywords: 'ausfall meldeweg telegram botfather ntfy warnung alarm benachrichtigung pi überwachung',
-    anchor: 'ext-setup-alerts',
+    anchor: 'setup-alerts',
   });
   registerSettingsSearch({
     labelKey: 'remoteAccess.title',
     labelFallback: 'Fernzugriff (Tailscale & HTTPS)',
-    tab: 'general',
-    route: '/einrichtung#setup-remote',
-    routeLabel: 'Einrichtung › Fernzugriff (Tailscale)',
+    tab: 'setup',
     keywords: 'fernzugriff tailscale vpn https zertifikat qr code unterwegs mobil handy',
-    anchor: 'ext-setup-remote',
+    anchor: 'setup-remote',
   });
   registerSettingsSearch({
     labelKey: 'selfTest.title',
     labelFallback: 'Systemprüfung & Pi-Gerätezustand',
-    tab: 'general',
-    route: '/einrichtung#setup-selftest',
-    routeLabel: 'Einrichtung › Systemprüfung',
+    tab: 'setup',
     keywords: 'systemprüfung selbsttest selftest pi zustand temperatur unterspannung ssd sd karte prüfung',
-    anchor: 'ext-setup-selftest',
+    anchor: 'setup-selftest',
   });
   registerSettingsSearch({
     labelKey: 'hardwareAdmin.title',
@@ -212,10 +211,8 @@ export function registerCoreSettingsSearchEntries(): void {
   registerSettingsSearch({
     labelKey: 'factoryReset.title',
     labelFallback: 'Werkseinstellungen',
-    tab: 'general',
-    route: '/einrichtung#setup-reset',
-    routeLabel: 'Einrichtung › Werkseinstellungen',
+    tab: 'setup',
     keywords: 'werkseinstellungen zurücksetzen factory reset auslieferungszustand neuinstallation',
-    anchor: 'ext-factory-reset',
+    anchor: 'setup-reset',
   });
 }

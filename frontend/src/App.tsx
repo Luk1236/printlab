@@ -215,14 +215,7 @@ function App() {
                   <Route path="profiles" element={<ProfilesPage />} />
                   <Route path="finance" element={<PermissionRoute permission="cost_centers:read_own"><FinancePage /></PermissionRoute>} />
                   <Route path="maintenance" element={<MaintenancePage />} />
-                  <Route
-                    path="einrichtung"
-                    element={
-                      <PermissionRoute permission="settings:read">
-                        <SetupGuidePage />
-                      </PermissionRoute>
-                    }
-                  />
+                  <Route path="einrichtung" element={<PermissionRoute permission="settings:read"><Navigate to="/settings?tab=setup" replace /></PermissionRoute>} />
                   <Route path="error-help" element={<ErrorHelpPage />} />
                   <Route path="projects" element={<ProjectsPage />} />
                   <Route path="projects/:id" element={<ProjectDetailPage />} />
@@ -235,7 +228,7 @@ function App() {
                   <Route path="groups/:id/edit" element={<PermissionRoute permission="groups:update"><GroupEditPage /></PermissionRoute>} />
                   <Route path="users" element={<Navigate to="/settings?tab=users" replace />} />
                   <Route path="groups" element={<Navigate to="/settings?tab=users" replace />} />
-                  <Route path="system" element={<SystemInfoPage />} />
+                  <Route path="system" element={<PermissionRoute permission="settings:read"><Navigate to="/settings?tab=system" replace /></PermissionRoute>} />
                   <Route path="notifications" element={<NotificationsPage />} />
                   <Route path="gcode-viewer" element={<GCodeViewerPage />} />
                   <Route path="external/:id" element={<ExternalLinkPage />} />

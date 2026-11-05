@@ -8,12 +8,12 @@ import { Button } from './Button';
 import { Card, CardContent } from './Card';
 
 const ITEM_ACTIONS: Record<string, { to?: string; anchor?: string; fallbackTo?: string }> = {
-  auth: { to: '/setup' },
+  auth: { to: '/settings?tab=users' },
   printer: { to: '/' },
-  alerts: { anchor: 'setup-alerts', fallbackTo: '/einrichtung#setup-alerts' },
+  alerts: { anchor: 'setup-alerts', fallbackTo: '/settings?tab=setup#setup-alerts' },
   external_backup: { to: '/settings?tab=backup#card-backup' },
-  remote: { anchor: 'setup-remote', fallbackTo: '/einrichtung#setup-remote' },
-  https: { anchor: 'setup-remote', fallbackTo: '/einrichtung#setup-remote' },
+  remote: { anchor: 'setup-remote', fallbackTo: '/settings?tab=setup#setup-remote' },
+  https: { anchor: 'setup-remote', fallbackTo: '/settings?tab=setup#setup-remote' },
 };
 
 /**

@@ -120,7 +120,7 @@ export function QuickSetupHubCard({
               </Button>
             )}
             {mode === 'settings' ? (
-              <Button size="sm" variant="secondary" onClick={() => navigate('/einrichtung')}>
+              <Button size="sm" variant="secondary" onClick={() => navigate('/settings?tab=setup')}>
                 <Compass className="w-3.5 h-3.5" />
                 Einrichtungsassistent &amp; Checkliste
               </Button>
@@ -259,13 +259,13 @@ export function QuickSetupHubCard({
               </p>
             </div>
             <div className="flex flex-wrap gap-1.5 pt-1">
-              <Button size="sm" onClick={() => goAnchorOrRoute('setup-alerts', '/einrichtung#setup-alerts')}>
+              <Button size="sm" onClick={() => goAnchorOrRoute('setup-alerts', '/settings?tab=setup#setup-alerts')}>
                 Ausfall-Meldungen
               </Button>
-              <Button size="sm" variant="secondary" onClick={() => goAnchorOrRoute('setup-remote', '/einrichtung#setup-remote')}>
+              <Button size="sm" variant="secondary" onClick={() => goAnchorOrRoute('setup-remote', '/settings?tab=setup#setup-remote')}>
                 Tailscale-Fernzugriff
               </Button>
-              <Button size="sm" variant="secondary" onClick={() => goAnchorOrRoute('setup-selftest', '/einrichtung#setup-selftest')}>
+              <Button size="sm" variant="secondary" onClick={() => goAnchorOrRoute('setup-selftest', '/settings?tab=setup#setup-selftest')}>
                 Systemprüfung
               </Button>
               <Button size="sm" variant="secondary" onClick={() => goSettings('backup', 'card-backup')}>

@@ -12,6 +12,10 @@ const reportGlobalProblem = (label: string, detail: unknown) => {
 }
 window.addEventListener('error', (event) => reportGlobalProblem('Unbehandelter Fehler', event.error ?? event.message))
 window.addEventListener('unhandledrejection', (event) => reportGlobalProblem('Unbehandelte Ablehnung', event.reason))
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault();
+  window.location.reload();
+});
 
 const root = createRoot(document.getElementById('root')!)
 

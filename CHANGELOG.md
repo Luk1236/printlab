@@ -3,6 +3,18 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.14 (05.11.2026) — Vollständige Integration von Einrichtung & Systemzustand in die Einstellungen, Seitenleiste bereinigt
+
+- **Vollständige Integration in die Einstellungen (`/settings`):**
+  - **Einrichtungsassistent (`/settings?tab=setup`):** Alle Funktionen und Karten des bisherigen Einrichtungsassistenten (`/einrichtung`) sind vollständig in den Einstellungsbereich gewandert, sauber gegliedert in 4 logische Unterbereiche (*Checkliste & Kompass*, *KI & Schnellstart*, *Verbindungen & Slicer*, *Diagnose & Wartung*) sowie *Alle Bereiche*. Direkte Deep-Links und Anker (`#setup-alerts`, `#setup-remote`, `#setup-selftest`, etc.) schalten automatisch auf den passenden Unterbereich um.
+  - **Systemzustand & Diagnose (`/settings?tab=system`):** Vollständige Übernahme aller System- und Ressourcen-Dashboards des bisherigen `/system`-Endpunkts in die Einstellungen. Aufgeteilt in Unterbereiche für *Hardware & Ressourcen* (CPU, RAM, Speicherplatz mit visuellen Fortschrittsbalken, Uptime, Hostname, Datenbank-Statistiken, verbundene Drucker), *Systemprüfung & Tests* (Live-Systemgesundheit mit Rescan, Drucker-Verbindungsdiagnose für alle konfigurierten Drucker) und *Support & Protokolle* (Debug-Logging mit Live-Laufzeit-Timer, Support-Bundle-Download mit Fortschrittsanzeige, integrierter Live-Logviewer).
+  - **Automatische Weiterleitung:** Frühere Routen `/einrichtung` und `/system` leiten nahtlos auf die entsprechenden Einstellungs-Tabs um.
+- **Bereinigte Seitenleiste (Keine Doppelungen):**
+  - Unter dem Menüpunkt **VERWALTUNG** befindet sich jetzt exklusiv **Einstellungen**, womit alle Verwaltungs- und Systemfunktionen zentral an einem einzigen Ort gebündelt sind.
+  - Veraltete, doppelte Navigationspunkte für Einrichtungsassistent und Systemzustand wurden aus der Haupt-Seitenleiste entfernt.
+- **Frontend Cache-Robustheit:**
+  - Automatisches Neuladen bei veralteten Dynamic-Import-Chunks (`vite:preloadError`), um Client-Fehlermeldungen („error loading dynamically imported module“) nach Version-Updates auf dem Raspberry Pi zu verhindern.
+
 ## v2.0.13 (05.11.2026) — Modulares Einstellungsmenü, Layout-Modernisierung & Schnellsuche
 
 - **Modulares & aufgeräumtes Einstellungsmenü:**

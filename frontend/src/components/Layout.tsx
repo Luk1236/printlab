@@ -52,9 +52,7 @@ export const defaultNavItems: NavItem[] = [
   { id: 'makerworld', to: '/makerworld', icon: Globe, labelKey: 'nav.makerworld' },
   { id: 'profiles', to: '/profiles', icon: Cloud, labelKey: 'nav.profiles' },
   { id: 'maintenance', to: '/maintenance', icon: Wrench, labelKey: 'nav.maintenance' },
-  { id: 'setup-guide', to: '/einrichtung', icon: Compass, labelKey: 'setupWizard.title' },
   { id: 'error-help', to: '/error-help', icon: LifeBuoy, labelKey: 'nav.errorHelp' },
-  { id: 'system', to: '/system', icon: Activity, labelKey: 'nav.systemStatus' },
   { id: 'stats', to: '/stats', icon: BarChart3, labelKey: 'nav.stats' },
   // Opt-in feature: gated in isHidden() on the billing_enabled setting, so the
   // entry stays out of the sidebar entirely until an admin turns billing on.
@@ -76,7 +74,7 @@ const NAV_GROUPS: { id: string; labelKey: string; defaultLabel: string; items: s
   { id: 'library', labelKey: 'nav.groupLibrary', defaultLabel: 'Dateien & Modelle', items: ['projects', 'files', 'makerworld', 'profiles'] },
   { id: 'material', labelKey: 'nav.groupMaterial', defaultLabel: 'Material & Kosten', items: ['inventory', 'finance'] },
   { id: 'operations', labelKey: 'nav.groupOperations', defaultLabel: 'Betrieb', items: ['maintenance', 'stats', 'error-help', 'notifications'] },
-  { id: 'admin', labelKey: 'nav.groupAdmin', defaultLabel: 'Verwaltung', items: ['settings', 'setup-guide', 'system'] },
+  { id: 'admin', labelKey: 'nav.groupAdmin', defaultLabel: 'Verwaltung', items: ['settings'] },
 ];
 
 // Get default view from localStorage
@@ -404,9 +402,7 @@ export function Layout() {
       stats: 'stats:read',
       profiles: 'kprofiles:read',
       maintenance: 'maintenance:read',
-      'setup-guide': 'settings:read',
       'error-help': 'printers:read',
-      system: 'settings:read',
       projects: 'projects:read',
       inventory: 'inventory:read',
       finance: 'cost_centers:read_own',
@@ -1198,7 +1194,7 @@ export function Layout() {
                 </button>
               )}
               <button
-                onClick={() => navigate('/system')}
+                onClick={() => navigate('/settings?tab=system')}
                 className="text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 font-medium underline ml-2"
               >
                 {t('support.manageLogs', { defaultValue: 'Manage' })}
