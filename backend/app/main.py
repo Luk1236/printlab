@@ -87,7 +87,11 @@ from backend.app.core.config import APP_VERSION, settings as app_settings
 from backend.app.core.database import async_session, engine, init_db
 from backend.app.core.tasks import spawn_background_task
 from backend.app.core.websocket import ws_manager
-from backend.app.services import print_dispatch_context, slot_unlink_grace
+from backend.app.services import (  # noqa: F401 — Test-Patch-Ziel (kprofile_drift)
+    kprofile_drift,
+    print_dispatch_context,
+    slot_unlink_grace,
+)
 from backend.app.services.archive import ArchiveService, peek_plate_index_in_3mf  # noqa: F401 — Test-Patch-Ziel
 from backend.app.services.archive_purge import archive_purge_service
 from backend.app.services.background_services import (  # noqa: F401 — Namensraum bleibt hier
