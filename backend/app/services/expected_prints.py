@@ -187,9 +187,7 @@ def _evict_stale_expected_prints() -> None:
             _print_cost_center_ids.pop(archive_id, None)
             _print_plate_ids.pop(archive_id, None)
 
-    logger.info(
-        "Evicted %d stale expected-print entries (TTL=%ds)", len(stale_keys), _EXPECTED_PRINT_TTL_SECONDS
-    )
+    logger.info("Evicted %d stale expected-print entries (TTL=%ds)", len(stale_keys), _EXPECTED_PRINT_TTL_SECONDS)
 
 
 async def _expected_prints_cleanup_loop() -> None:

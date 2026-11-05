@@ -163,7 +163,8 @@ async def _list_timelapse_videos(printer) -> tuple[list[dict], str | None]:
                 video_files = [
                     f
                     for f in found_files
-                    if not f.get("is_directory") and f.get("name", "").lower().endswith(_rt()._TIMELAPSE_VIDEO_EXTENSIONS)
+                    if not f.get("is_directory")
+                    and f.get("name", "").lower().endswith(_rt()._TIMELAPSE_VIDEO_EXTENSIONS)
                 ]
                 if video_files:
                     return video_files, timelapse_path
@@ -605,13 +606,17 @@ async def _capture_finish_photo_from_timelapse(
             timelapse_relpath = archive.timelapse_path if archive else None
 
         if timelapse_relpath:
-            video_path = _rt().app_settings.base_dir / timelapse_relpath
+            video_path = (
+                _rt().app_settings.base_dir / timelapse_relpath
+            )  # SEC-PATH-OK: timelapse_relpath ist archive.timelapse_path, von ArchiveService.attach_timelapse erzeugt (keinerlei Anfrage-Eingang)
             if video_path.exists() and video_path.stat().st_size > 0:
                 photos_dir = archive_dir / "photos"
                 photos_dir.mkdir(parents=True, exist_ok=True)
                 timestamp = _rt().datetime.now().strftime("%Y%m%d_%H%M%S")
                 filename = f"finish_{timestamp}_{uuid.uuid4().hex[:8]}.jpg"
-                output_path = photos_dir / filename
+                output_path = (
+                    photos_dir / filename
+                )  # SEC-PATH-OK: filename wird in dieser Funktion aus Zeitstempel + UUID gebaut, keine Anfrage-Eingang
                 if await extract_video_last_frame(video_path, output_path):
                     await apply_camera_rotation_to_file(output_path, rotation, logger)
                     logger.info(
