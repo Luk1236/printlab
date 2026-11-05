@@ -23,12 +23,14 @@ describe('makerworld pickers', () => {
 });
 
 describe('proxyCdn', () => {
-  it('routes MakerWorld and Printables CDN hosts through the own thumbnail proxy', () => {
+  it('routes MakerWorld, Printables, and Thingiverse CDN hosts through the own thumbnail proxy', () => {
     expect(proxyCdn('https://makerworld.bblmw.com/a/b.png')).toBe(
       '/api/v1/makerworld/thumbnail?url=https%3A%2F%2Fmakerworld.bblmw.com%2Fa%2Fb.png',
     );
     expect(proxyCdn('https://public-cdn.bblmw.com/x.png')).toContain('/api/v1/makerworld/thumbnail');
     expect(proxyCdn('https://media.printables.com/prints/1/images/test.jpg')).toContain('/api/v1/makerworld/thumbnail');
+    expect(proxyCdn('https://cdn.thingiverse.com/renders/test.jpg')).toContain('/api/v1/makerworld/thumbnail');
+    expect(proxyCdn('https://resize.thingiverse.com/test.jpg')).toContain('/api/v1/makerworld/thumbnail');
   });
 
   it('leaves other hosts and empty values alone', () => {

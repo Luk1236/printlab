@@ -3,6 +3,19 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.17 (05.11.2026) — Thingiverse-Integration & Direkter 3D-Modell-Upload
+
+- **Thingiverse-Integration (`thingiverse.com`):**
+  - Direkte Eingabe von Thingiverse-Modell-URLs (`thingiverse.com/thing:ID`, `thingiverse.com/thing/ID`, Dateilinks und Fragmente) im Modell-Hub.
+  - Abfrage von Modell-Details, Metadaten, Beschreibungen, Bildern und Dateilisten (STL, 3MF, etc.) über die Thingiverse-API mit Fallback-Token-Extraktion.
+  - Direkter und anonymer Download von Modell-Dateien über `cdn.thingiverse.com` ohne Cloud-Konto-Zwang.
+  - Unterstützung von Thingiverse-Bildern (`cdn.thingiverse.com`, `resize.thingiverse.com`) im internen Thumbnail-Proxy unter Einhaltung der CSP.
+  - Plattform-Badge (*Thingiverse*) und direkter Link („Auf Thingiverse öffnen“).
+- **Direkter 3D-Modell-Upload im Modell-Hub:**
+  - Neue Upload-Schaltfläche („Modell hochladen“) direkt im Kopfbereich des Import-Kartenfelds.
+  - Nahtloses Drag & Drop von Modelldateien (`.3mf`, `.stl`, `.step`, `.stp`, `.zip`) direkt auf das Import-Kartenfeld mit visueller Hervorhebung.
+  - Vollständige Integration des `FileUploadModal` inklusive Fortschrittsanzeige, STL-Vorschaubild-Generierung und automatischer Aktualisierung der Bibliothekslisten.
+
 ## v2.0.16 (05.11.2026) — Multihost-Modell-Hub (MakerWorld Fix, Printables & Direkt-Download)
 
 - **MakerWorld Download-Korrektur ("Did not return a download URL"):**

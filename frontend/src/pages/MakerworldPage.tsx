@@ -3,7 +3,7 @@ import DOMPurify from 'dompurify';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { AlertCircle, ArrowRight, Check, ChevronLeft, ChevronRight, Download, ExternalLink, FolderOpen, Globe, Images, Loader2, Search, Trash2, X } from 'lucide-react';
+import { AlertCircle, ArrowRight, Check, ChevronLeft, ChevronRight, Download, ExternalLink, FolderOpen, Globe, Images, Loader2, Search, Trash2, Upload, X } from 'lucide-react';
 
 import {
   api,
@@ -16,6 +16,7 @@ import { flattenFolderTree, pickNumber, pickObject, pickString, proxyCdn, proxyC
 import { Button } from '../components/Button';
 import { Card, CardContent, CardHeader } from '../components/Card';
 import { ConfirmModal } from '../components/ConfirmModal';
+import { FileUploadModal } from '../components/FileUploadModal';
 import { SliceModal, type SliceSource } from '../components/SliceModal';
 import { Cog } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -60,6 +61,9 @@ export function MakerworldPage() {
   const canImport = hasPermission('makerworld:import');
 
   const [urlInput, setUrlInput] = useState('');
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [droppedFiles, setDroppedFiles] = useState<File[]>([]);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [resolved, setResolved] = useState<MakerworldResolvedModel | null>(null);
   // Selected target folder. ``null`` means "let the backend use the default
   // MakerWorld folder" (auto-created if missing). Any other value is the id
@@ -469,9 +473,46 @@ export function MakerworldPage() {
         </Card>
       )}
 
-      <Card>
+      <Card
+        className={isDraggingOver ? 'ring-2 ring-bambu-green border-bambu-green' : undefined}
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsDraggingOver(true);
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsDraggingOver(false);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsDraggingOver(false);
+          const dropped = Array.from(e.dataTransfer.files);
+          if (dropped.length > 0) {
+            setDroppedFiles(dropped);
+            setShowUploadModal(true);
+          }
+        }}
+      >
         <CardHeader>
-          <h2 className="text-lg font-semibold">{t('makerworld.pasteUrlHeader')}</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">{t('makerworld.pasteUrlHeader')}</h2>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setDroppedFiles([]);
+                setShowUploadModal(true);
+              }}
+              className="flex items-center gap-1.5"
+            >
+              <Upload className="w-4 h-4" />
+              <span>{t('makerworld.uploadModel')}</span>
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleResolve} className="flex gap-2">
@@ -496,6 +537,9 @@ export function MakerworldPage() {
               <span className="ml-2">{t('makerworld.resolveButton')}</span>
             </Button>
           </form>
+          <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            {t('makerworld.dropFilesHint')}
+          </div>
         </CardContent>
       </Card>
 
@@ -548,6 +592,8 @@ export function MakerworldPage() {
                     <span className="px-2 py-0.5 rounded text-[11px] font-semibold uppercase bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
                       {resolved.source_type === 'printables'
                         ? 'Printables'
+                        : resolved.source_type === 'thingiverse'
+                        ? 'Thingiverse'
                         : resolved.source_type === 'direct'
                         ? 'Direkt-Download'
                         : 'MakerWorld'}
@@ -556,6 +602,8 @@ export function MakerworldPage() {
                       href={
                         resolved.source_type === 'printables'
                           ? `https://www.printables.com/model/${resolved.model_id}`
+                          : resolved.source_type === 'thingiverse'
+                          ? `https://www.thingiverse.com/thing:${resolved.model_id}`
                           : resolved.source_type === 'direct'
                           ? resolvedForUrl
                           : `https://makerworld.com/models/${resolved.model_id}${resolved.profile_id ? `#profileId-${resolved.profile_id}` : ''}`
@@ -566,7 +614,9 @@ export function MakerworldPage() {
                     >
                       <ExternalLink className="w-3 h-3" />{' '}
                       {resolved.source_type === 'printables'
-                        ? 'Auf Printables öffnen'
+                        ? t('makerworld.openOnPrintables', 'Auf Printables öffnen')
+                        : resolved.source_type === 'thingiverse'
+                        ? t('makerworld.openOnThingiverse', 'Auf Thingiverse öffnen')
                         : resolved.source_type === 'direct'
                         ? 'Original-Link öffnen'
                         : t('makerworld.openOnMakerworld')}
@@ -1015,6 +1065,23 @@ export function MakerworldPage() {
         <SliceModal
           source={sliceModalSource}
           onClose={() => setSliceModalSource(null)}
+        />
+      )}
+
+      {showUploadModal && (
+        <FileUploadModal
+          folderId={selectedFolderId}
+          onClose={() => {
+            setShowUploadModal(false);
+            setDroppedFiles([]);
+          }}
+          onUploadComplete={() => {
+            queryClient.invalidateQueries({ queryKey: ['library-files'] });
+            queryClient.invalidateQueries({ queryKey: ['library-folders'] });
+            queryClient.invalidateQueries({ queryKey: ['makerworld-recent-imports'] });
+            showToast(t('makerworld.uploadSuccess', 'Modell erfolgreich in die Bibliothek geladen'), 'success');
+          }}
+          initialFiles={droppedFiles.length > 0 ? droppedFiles : undefined}
         />
       )}
 

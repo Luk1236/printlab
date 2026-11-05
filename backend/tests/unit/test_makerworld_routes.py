@@ -232,7 +232,7 @@ class TestResolve:
     async def test_rejects_non_makerworld_url(self, async_client):
         resp = await async_client.post(
             "/api/v1/makerworld/resolve",
-            json={"url": "https://thingiverse.com/thing/1"},
+            json={"url": "https://cults3d.com/en/3d-model/art/something"},
         )
         # A pasted link for an unsupported host is a clean client-input 400,
         # never a 500 — the registry guard runs before any provider call.
@@ -392,10 +392,10 @@ class TestImport:
         with patch("backend.app.api.routes.makerworld._build_service", AsyncMock(return_value=svc)):
             resp = await async_client.post(
                 "/api/v1/makerworld/import",
-                json={"model_id": 1400373, "source_type": "thingiverse"},
+                json={"model_id": 1400373, "source_type": "cults3d"},
             )
         assert resp.status_code == 400, resp.text
-        assert "thingiverse" in resp.json()["detail"].lower()
+        assert "cults3d" in resp.json()["detail"].lower()
         svc.download.assert_not_called()
 
     @pytest.mark.asyncio

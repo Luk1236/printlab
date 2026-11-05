@@ -26,7 +26,7 @@ export function pickObject(
   return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
 }
 
-const CDN_HOSTS = /^https?:\/\/((?:makerworld|public-cdn)\.bblmw\.com|media\.printables\.com)\//i;
+const CDN_HOSTS = /^https?:\/\/((?:makerworld|public-cdn)\.bblmw\.com|media\.printables\.com|(?:cdn|resize)\.thingiverse\.com)\//i;
 
 /** Modell-CDN-Adresse über den eigenen Thumbnail-Proxy leiten (CSP erlaubt nur eigene Bilder). */
 export function proxyCdn(url: string): string {
@@ -38,7 +38,7 @@ export function proxyCdn(url: string): string {
 /** CDN-Adressen in beschreibendem HTML umschreiben (Beschreibungen enthalten `<img src="...">`). */
 export function proxyCdnUrlsInHtml(html: string): string {
   return html.replace(
-    /(https?:\/\/(?:(?:makerworld|public-cdn)\.bblmw\.com|media\.printables\.com)\/[^\s"']+)/gi,
+    /(https?:\/\/(?:(?:makerworld|public-cdn)\.bblmw\.com|media\.printables\.com|(?:cdn|resize)\.thingiverse\.com)\/[^\s"']+)/gi,
     (match) => `/api/v1/makerworld/thumbnail?url=${encodeURIComponent(match)}`,
   );
 }

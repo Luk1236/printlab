@@ -26,10 +26,12 @@ from backend.app.services.model_providers.base import (
 from backend.app.services.model_providers.direct import direct_url_provider
 from backend.app.services.model_providers.makerworld import makerworld_provider
 from backend.app.services.model_providers.printables import printables_provider
+from backend.app.services.model_providers.thingiverse import thingiverse_provider
 from backend.app.services.model_providers.registry import ModelProviderRegistry, registry
 
 registry.register(makerworld_provider)
 registry.register(printables_provider)
+registry.register(thingiverse_provider)
 registry.register(direct_url_provider)
 
 __all__ = [
@@ -52,5 +54,6 @@ __all__ = [
     "direct_url_provider",
     "makerworld_provider",
     "printables_provider",
+    "thingiverse_provider",
     "registry",
 ]

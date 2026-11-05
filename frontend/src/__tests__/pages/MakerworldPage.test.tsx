@@ -362,4 +362,40 @@ describe('MakerworldPage', () => {
     // And no literal ``<script>`` text leaks into the document.
     expect(document.body.innerHTML).not.toContain('window.__pwned');
   });
+
+  it('renders Thingiverse badge and link when source_type is thingiverse', async () => {
+    server.use(
+      http.post('*/makerworld/resolve', () =>
+        HttpResponse.json(
+          resolveResponse({
+            source_type: 'thingiverse',
+            model_id: 763622,
+            design: {
+              ...resolveResponse().design,
+              title: '3D Benchy',
+            },
+          }),
+        ),
+      ),
+    );
+    render(<MakerworldPage />);
+    await userEvent.type(
+      await screen.findByPlaceholderText(/https:\/\/makerworld\.com/i),
+      'https://www.thingiverse.com/thing:763622',
+    );
+    await userEvent.click(screen.getByRole('button', { name: /Resolve/i }));
+
+    await screen.findByText('3D Benchy');
+    expect(screen.getByText('Thingiverse')).toBeInTheDocument();
+    const link = screen.getByRole('link', { name: /Thingiverse/i });
+    expect(link).toHaveAttribute('href', 'https://www.thingiverse.com/thing:763622');
+  });
+
+  it('opens FileUploadModal when clicking Upload model button', async () => {
+    useAuthedHandlers();
+    render(<MakerworldPage />);
+    const uploadBtn = await screen.findByRole('button', { name: /Upload model/i });
+    await userEvent.click(uploadBtn);
+    expect(await screen.findByRole('heading', { level: 2, name: /Upload Files/i })).toBeInTheDocument();
+  });
 });
