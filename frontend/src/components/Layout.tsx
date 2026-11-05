@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo, Suspense } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Printer, Archive, ListOrdered, BarChart3, Cloud, Settings, Sun, Moon, Monitor, ChevronLeft, ChevronRight, ChevronDown, Keyboard, Github, ArrowUpCircle, Wrench, FolderKanban, FolderOpen, X, Menu, Info, Plug, Bug, LogOut, Key, Loader2, Disc3, ShieldAlert, Globe, Bell, Receipt, Megaphone, LifeBuoy, Activity, Compass, type LucideIcon } from 'lucide-react';
+import { Search, Printer, Archive, ListOrdered, BarChart3, Cloud, Settings, Sun, Moon, Monitor, ChevronLeft, ChevronRight, ChevronDown, Keyboard, Github, ArrowUpCircle, Wrench, FolderKanban, FolderOpen, X, Menu, Info, Plug, Bug, LogOut, Key, Loader2, Disc3, ShieldAlert, Globe, Bell, Receipt, Megaphone, LifeBuoy, Activity, Compass, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/ThemeContext';
 import { KeyboardShortcutsModal } from './KeyboardShortcutsModal';
@@ -672,24 +672,42 @@ export function Layout() {
           >
             <Menu className="w-6 h-6 text-white" />
           </button>
-          <img
-            src={resolvedMode === 'dark' ? '/img/printlab_dark.png' : '/img/printlab_light.png'}
-            alt="PrintLab"
-            className="h-8 ml-3"
-          />
-          {/* Bug report — the compact-layout home of the floating bubble. */}
-          {bugReportEnabled && (
           <button
-            onClick={() => setBugReportOpen(true)}
-            className={`ml-auto p-2 -mr-2 rounded-lg hover:bg-bambu-dark-tertiary transition-colors ${
-              bugReportLogging ? 'text-amber-500' : 'text-red-500'
-            }`}
-            title={bugReportLogging ? t('bugReport.resumeReport') : t('bugReport.title')}
-            aria-label={bugReportLogging ? t('bugReport.resumeReport') : t('bugReport.title')}
+            type="button"
+            onClick={() => navigate('/')}
+            className="flex items-center ml-2 group"
+            title="PrintLab"
+            aria-label="PrintLab"
           >
-            <Bug className={`w-5 h-5 ${bugReportLogging ? 'animate-pulse' : ''}`} />
+            <img
+              src={resolvedMode === 'dark' ? '/img/printlab_dark.png' : '/img/printlab_light.png'}
+              alt="PrintLab"
+              className="h-7 w-auto transition-opacity group-hover:opacity-90"
+            />
           </button>
-          )}
+          <div className="ml-auto flex items-center gap-1">
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('open-command-palette'))}
+              className="p-2 rounded-lg hover:bg-bambu-dark-tertiary transition-colors text-bambu-gray hover:text-white"
+              title={t('commandPalette.title', { defaultValue: 'Schnellsuche' })}
+              aria-label={t('commandPalette.title', { defaultValue: 'Schnellsuche' })}
+            >
+              <Search className="w-5 h-5" />
+            </button>
+            {/* Bug report — the compact-layout home of the floating bubble. */}
+            {bugReportEnabled && (
+            <button
+              onClick={() => setBugReportOpen(true)}
+              className={`p-2 -mr-2 rounded-lg hover:bg-bambu-dark-tertiary transition-colors ${
+                bugReportLogging ? 'text-amber-500' : 'text-red-500'
+              }`}
+              title={bugReportLogging ? t('bugReport.resumeReport') : t('bugReport.title')}
+              aria-label={bugReportLogging ? t('bugReport.resumeReport') : t('bugReport.title')}
+            >
+              <Bug className={`w-5 h-5 ${bugReportLogging ? 'animate-pulse' : ''}`} />
+            </button>
+            )}
+          </div>
         </header>
       )}
 
@@ -710,17 +728,56 @@ export function Layout() {
         }`}
       >
         {/* Logo */}
-        <div className={`border-b border-bambu-dark-tertiary flex items-center justify-center ${isSidebarCompact || sidebarExpanded ? 'p-4' : 'p-2'}`}>
-          <img
-            src={resolvedMode === 'dark' ? '/img/printlab_dark.png' : '/img/printlab_light.png'}
-            alt="PrintLab"
-            className={isSidebarCompact || sidebarExpanded ? 'h-16 w-auto' : 'h-8 w-8 object-cover object-left'}
-          />
+        <div className={`border-b border-bambu-dark-tertiary flex items-center ${isSidebarCompact || sidebarExpanded ? 'px-4 py-3 justify-between' : 'p-2 justify-center'}`}>
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 group transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-bambu-green rounded-lg"
+            title="PrintLab"
+            aria-label="PrintLab"
+          >
+            <img
+              src={resolvedMode === 'dark' ? '/img/printlab_dark.png' : '/img/printlab_light.png'}
+              alt="PrintLab"
+              className={isSidebarCompact || sidebarExpanded ? 'h-9 w-auto max-w-[170px] object-contain' : 'h-8 w-8 object-contain'}
+            />
+          </button>
+        </div>
+
+        {/* Quick Search Trigger */}
+        <div className="px-2 pt-2 pb-1">
+          {isSidebarCompact || sidebarExpanded ? (
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('open-command-palette'))}
+              className="w-full flex items-center justify-between px-2.5 py-1.5 text-xs text-bambu-gray bg-bambu-dark-tertiary/30 hover:bg-bambu-dark-tertiary/70 hover:text-white rounded-lg border border-bambu-dark-tertiary/50 transition-colors group select-none"
+              title={t('commandPalette.title', { defaultValue: 'Befehlspalette / Suche öffnen' })}
+            >
+              <span className="flex items-center gap-2 truncate">
+                <Search className="w-3.5 h-3.5 text-bambu-gray/70 group-hover:text-white transition-colors flex-shrink-0" />
+                <span className="truncate">{t('commandPalette.searchPlaceholder', { defaultValue: 'Schnellsuche...' })}</span>
+              </span>
+              <kbd className="hidden sm:inline-block text-[10px] bg-bambu-dark/70 px-1.5 py-0.5 rounded border border-bambu-dark-tertiary/70 text-bambu-gray/80 font-mono">
+                Ctrl K
+              </kbd>
+            </button>
+          ) : (
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent('open-command-palette'))}
+                className="p-2 text-bambu-gray hover:text-white hover:bg-bambu-dark-tertiary/70 rounded-lg transition-colors"
+                title={t('commandPalette.title', { defaultValue: 'Schnellsuche (Ctrl+K)' })}
+              >
+                <Search className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-2 py-1.5 overflow-y-auto">
-          <div className="space-y-2">
+        <nav className="flex-1 px-2 py-1 overflow-y-auto sidebar-scroll">
+          <div className="space-y-1.5">
             {sidebarGroups.map((group) => {
               const isCollapsed = (isSidebarCompact || sidebarExpanded) ? collapsedGroups.includes(group.id) : false;
               const hasActiveChild = group.ids.some((id) => {
@@ -779,7 +836,7 @@ export function Layout() {
                                   href={link.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className={`flex items-center ${isSidebarCompact || sidebarExpanded ? 'gap-2.5 px-3' : 'justify-center px-2'} py-2 rounded-lg transition-colors group text-bambu-gray-light hover:bg-bambu-dark-tertiary hover:text-white text-sm font-medium`}
+                                  className={`flex items-center ${isSidebarCompact || sidebarExpanded ? 'gap-2.5 px-3' : 'justify-center px-2'} py-1.5 rounded-lg transition-colors group text-bambu-gray-light hover:bg-bambu-dark-tertiary hover:text-white text-sm font-medium`}
                                   title={!isSidebarCompact && !sidebarExpanded ? link.name : undefined}
                                 >
                                   {link.custom_icon ? (
@@ -797,7 +854,7 @@ export function Layout() {
                                 <NavLink
                                   to={`/external/${link.id}`}
                                   className={({ isActive }) =>
-                                    `flex items-center ${isSidebarCompact || sidebarExpanded ? 'gap-2.5 px-3' : 'justify-center px-2'} py-2 rounded-lg transition-colors group text-sm font-medium ${
+                                    `flex items-center ${isSidebarCompact || sidebarExpanded ? 'gap-2.5 px-3' : 'justify-center px-2'} py-1.5 rounded-lg transition-colors group text-sm font-medium ${
                                       isActive
                                         ? 'bg-bambu-green text-white font-semibold'
                                         : 'text-bambu-gray-light hover:bg-bambu-dark-tertiary hover:text-white'
@@ -836,7 +893,7 @@ export function Layout() {
                               <NavLink
                                 to={to}
                                 className={({ isActive }) =>
-                                  `flex items-center ${isSidebarCompact || sidebarExpanded ? 'gap-2.5 px-3' : 'justify-center px-2'} py-2 rounded-lg transition-colors group text-sm font-medium ${
+                                  `flex items-center ${isSidebarCompact || sidebarExpanded ? 'gap-2.5 px-3' : 'justify-center px-2'} py-1.5 rounded-lg transition-colors group text-sm font-medium ${
                                     isActive
                                       ? 'bg-bambu-green text-white font-semibold'
                                       : 'text-bambu-gray-light hover:bg-bambu-dark-tertiary hover:text-white'
@@ -873,37 +930,87 @@ export function Layout() {
 
         {/* Collapse toggle - hide on compact sidebar */}
         {!isSidebarCompact && (
-          <button
-            onClick={() => setSidebarExpanded(!sidebarExpanded)}
-            className="p-2 mx-2 mb-2 rounded-lg hover:bg-bambu-dark-tertiary transition-colors text-bambu-gray-light hover:text-white flex items-center justify-center"
-            title={sidebarExpanded ? t('nav.collapseSidebar') : t('nav.expandSidebar')}
-          >
+          <div className="px-2 pt-1 pb-1 border-t border-bambu-dark-tertiary/40">
             {sidebarExpanded ? (
-              <ChevronLeft className="w-5 h-5" />
+              <button
+                type="button"
+                onClick={() => setSidebarExpanded(false)}
+                className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium text-bambu-gray hover:text-white hover:bg-bambu-dark-tertiary/60 transition-colors group"
+                title={t('nav.collapseSidebar', { defaultValue: 'Seitenleiste einklappen' })}
+                aria-label={t('nav.collapseSidebar', { defaultValue: 'Seitenleiste einklappen' })}
+              >
+                <span className="flex items-center gap-2">
+                  <ChevronLeft className="w-4 h-4 text-bambu-gray transition-transform group-hover:-translate-x-0.5 group-hover:text-white" />
+                  <span>{t('nav.collapseSidebar', { defaultValue: 'Seitenleiste einklappen' })}</span>
+                </span>
+                <span className="text-[10px] text-bambu-gray/50 font-mono hidden group-hover:inline">[</span>
+              </button>
             ) : (
-              <ChevronRight className="w-5 h-5" />
+              <div className="flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setSidebarExpanded(true)}
+                  className="p-2 rounded-lg text-bambu-gray hover:text-white hover:bg-bambu-dark-tertiary/60 transition-colors group"
+                  title={t('nav.expandSidebar', { defaultValue: 'Seitenleiste ausklappen' })}
+                  aria-label={t('nav.expandSidebar', { defaultValue: 'Seitenleiste ausklappen' })}
+                >
+                  <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:text-white" />
+                </button>
+              </div>
             )}
-          </button>
+          </div>
         )}
 
         {/* Footer */}
-        <div className="flex-shrink-0 p-2 border-t border-bambu-dark-tertiary">
+        <div className="flex-shrink-0 p-2 border-t border-bambu-dark-tertiary bg-bambu-dark-secondary/60">
           {isSidebarCompact || sidebarExpanded ? (
-            <div className="flex flex-col gap-2">
-              {/* Top row: icons. 32px each with no gap so seven fit the 239px
-                  of an expanded sidebar -- announcements, System, GitHub,
-                  shortcuts, theme, password, logout -- without wrapping. */}
-              <div className="flex items-center justify-center flex-wrap [&>a]:p-1.5 [&>button]:p-1.5 [&>span]:p-1.5 [&>div>button]:p-1.5">
+            <div className="flex flex-col gap-1.5">
+              {/* User session card if authenticated */}
+              {authEnabled && user && (
+                <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-bambu-dark-tertiary/30 border border-bambu-dark-tertiary/50">
+                  <div className="flex items-center gap-2 min-w-0 pr-1">
+                    <div className="w-5 h-5 rounded-full bg-bambu-green/20 text-bambu-green flex items-center justify-center text-[10px] font-bold uppercase flex-shrink-0">
+                      {user.username.charAt(0)}
+                    </div>
+                    <span className="text-xs font-medium text-white truncate" title={user.username}>
+                      {user.username}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-0.5 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setShowChangePasswordModal(true)}
+                      className="p-1 rounded text-bambu-gray hover:text-white hover:bg-bambu-dark-tertiary transition-colors"
+                      title={t('changePassword.title')}
+                      aria-label={t('changePassword.title')}
+                    >
+                      <Key className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={logout}
+                      className="p-1 rounded text-bambu-gray hover:text-red-400 hover:bg-bambu-dark-tertiary transition-colors"
+                      title={t('nav.logout', { defaultValue: 'Logout' })}
+                      aria-label={t('nav.logout', { defaultValue: 'Logout' })}
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Utility icons row */}
+              <div className="flex items-center justify-around py-0.5 text-bambu-gray-light [&>a]:p-1.5 [&>button]:p-1.5 [&>span]:p-1.5 [&>div>button]:p-1.5">
                 {hasSwitchbarPlugs && (
                   <div className="relative">
                     <button
                       onMouseEnter={() => setShowSwitchbar(true)}
-                      className={`p-2 rounded-lg hover:bg-bambu-dark-tertiary transition-colors ${
+                      className={`rounded-lg hover:bg-bambu-dark-tertiary transition-colors ${
                         showSwitchbar ? 'text-bambu-green' : 'text-bambu-gray-light hover:text-white'
                       }`}
                       title={t('nav.smartSwitches', { defaultValue: 'Smart Switches' })}
                     >
-                      <Plug className="w-5 h-5" />
+                      <Plug className="w-4 h-4" />
                     </button>
                     {showSwitchbar && (
                       <SwitchbarPopover onClose={() => setShowSwitchbar(false)} />
@@ -913,7 +1020,7 @@ export function Layout() {
                 {announcementsVisible && (
                   <button
                     onClick={() => openAnnouncements()}
-                    className="relative p-2 rounded-lg hover:bg-bambu-dark-tertiary transition-colors text-bambu-gray-light hover:text-white"
+                    className="relative rounded-lg hover:bg-bambu-dark-tertiary transition-colors text-bambu-gray-light hover:text-white"
                     title={t('announcements.title')}
                     aria-label={
                       unreadAnnouncements.length > 0
@@ -921,101 +1028,64 @@ export function Layout() {
                         : t('announcements.title')
                     }
                   >
-                    <Megaphone className="w-5 h-5" />
+                    <Megaphone className="w-4 h-4" />
                     {unreadAnnouncements.length > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 flex items-center justify-center text-[10px] font-bold rounded-full bg-bambu-green text-white">
+                      <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-3.5 px-0.5 flex items-center justify-center text-[9px] font-bold rounded-full bg-bambu-green text-white">
                         {unreadAnnouncements.length}
                       </span>
                     )}
                   </button>
-                )}
-                {hasPermission('system:read') ? (
-                  <NavLink
-                    to="/system"
-                    className={({ isActive }) =>
-                      `p-2 rounded-lg hover:bg-bambu-dark-tertiary transition-colors ${
-                        isActive ? 'text-bambu-green' : 'text-bambu-gray-light hover:text-white'
-                      }`
-                    }
-                    title={t('nav.system')}
-                  >
-                    <Info className="w-5 h-5" />
-                  </NavLink>
-                ) : (
-                  <span
-                    className="p-2 rounded-lg text-bambu-gray/50 cursor-not-allowed"
-                    title="You do not have permission to view system information"
-                  >
-                    <Info className="w-5 h-5" />
-                  </span>
                 )}
                 <InstallAppButton />
                 <a
                   href="https://github.com/Luk1236/printlab"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2 rounded-lg hover:bg-bambu-dark-tertiary transition-colors text-bambu-gray-light hover:text-white"
+                  className="rounded-lg hover:bg-bambu-dark-tertiary transition-colors text-bambu-gray-light hover:text-white"
                   title={t('nav.viewOnGithub')}
                 >
-                  <Github className="w-5 h-5" />
+                  <Github className="w-4 h-4" />
                 </a>
                 <button
                   onClick={() => setShowShortcuts(true)}
-                  className="p-2 rounded-lg hover:bg-bambu-dark-tertiary transition-colors text-bambu-gray-light hover:text-white"
+                  className="rounded-lg hover:bg-bambu-dark-tertiary transition-colors text-bambu-gray-light hover:text-white"
                   title={t('nav.keyboardShortcuts')}
                 >
-                  <Keyboard className="w-5 h-5" />
+                  <Keyboard className="w-4 h-4" />
                 </button>
                 <button
                   onClick={toggleMode}
-                  className="p-2 rounded-lg hover:bg-bambu-dark-tertiary transition-colors text-bambu-gray-light hover:text-white"
+                  className="rounded-lg hover:bg-bambu-dark-tertiary transition-colors text-bambu-gray-light hover:text-white"
                   title={themeSwitchTitle}
                 >
-                  <ThemeIcon className="w-5 h-5" />
+                  <ThemeIcon className="w-4 h-4" />
                 </button>
-                {authEnabled && user && (
-                  <>
-                    <button
-                      onClick={() => setShowChangePasswordModal(true)}
-                      className="p-2 rounded-lg hover:bg-bambu-dark-tertiary transition-colors text-bambu-gray-light hover:text-white"
-                      title={t('changePassword.title')}
-                    >
-                      <Key className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={logout}
-                      className="p-2 rounded-lg hover:bg-bambu-dark-tertiary transition-colors text-bambu-gray-light hover:text-white"
-                      title={t('nav.logout', { defaultValue: 'Logout' })}
-                    >
-                      <LogOut className="w-5 h-5" />
-                    </button>
-                  </>
-                )}
               </div>
-              {/* Bottom row: version */}
-              <div className="flex items-center justify-center gap-2">
-                <span className="text-sm text-bambu-gray">v{versionInfo?.version || '...'}</span>
+
+              {/* Version & Update row */}
+              <div className="flex items-center justify-between px-2 pt-0.5 text-[11px] text-bambu-gray">
+                <span className="font-mono text-bambu-gray/70">v{versionInfo?.version || '...'}</span>
                 {updateCheck?.update_available && (
                   <button
-                    onClick={() => navigate('/settings')}
-                    className="flex items-center gap-1 text-xs text-bambu-green hover:text-bambu-green/80 transition-colors"
+                    onClick={() => navigate('/settings?tab=updates')}
+                    className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-bambu-green/10 text-bambu-green hover:bg-bambu-green/20 font-medium transition-colors"
                     title={t('nav.updateAvailable', { version: updateCheck.latest_version })}
                   >
-                    <ArrowUpCircle className="w-4 h-4" />
+                    <ArrowUpCircle className="w-3.5 h-3.5 animate-pulse" />
                     <span>{t('nav.update')}</span>
                   </button>
                 )}
               </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center gap-1 overflow-y-auto max-h-[50vh]">
+            <div className="flex flex-col items-center gap-1 overflow-y-auto max-h-[50vh] sidebar-scroll">
               {updateCheck?.update_available && (
                 <button
-                  onClick={() => navigate('/settings')}
+                  onClick={() => navigate('/settings?tab=updates')}
                   className="p-2 rounded-lg hover:bg-bambu-dark-tertiary transition-colors text-bambu-green hover:text-bambu-green/80"
                   title={t('nav.updateAvailable', { version: updateCheck.latest_version })}
                 >
-                  <ArrowUpCircle className="w-5 h-5" />
+                  <ArrowUpCircle className="w-5 h-5 animate-pulse" />
                 </button>
               )}
               {hasSwitchbarPlugs && (
@@ -1050,26 +1120,6 @@ export function Layout() {
                     <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-bambu-green ring-2 ring-bambu-dark-secondary" />
                   )}
                 </button>
-              )}
-              {hasPermission('system:read') ? (
-                <NavLink
-                  to="/system"
-                  className={({ isActive }) =>
-                    `p-2 rounded-lg hover:bg-bambu-dark-tertiary transition-colors ${
-                      isActive ? 'text-bambu-green' : 'text-bambu-gray-light hover:text-white'
-                    }`
-                  }
-                  title={t('nav.system')}
-                >
-                  <Info className="w-5 h-5" />
-                </NavLink>
-              ) : (
-                <span
-                  className="p-2 rounded-lg text-bambu-gray/50 cursor-not-allowed"
-                  title="You do not have permission to view system information"
-                >
-                  <Info className="w-5 h-5" />
-                </span>
               )}
               <InstallAppButton />
               <a

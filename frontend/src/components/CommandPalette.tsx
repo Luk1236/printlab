@@ -83,6 +83,12 @@ export function CommandPalette() {
   useEffect(() => setActive(0), [query, open]);
 
   useEffect(() => {
+    const onOpen = () => setOpen(true);
+    window.addEventListener('open-command-palette', onOpen);
+    return () => window.removeEventListener('open-command-palette', onOpen);
+  }, []);
+
+  useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
