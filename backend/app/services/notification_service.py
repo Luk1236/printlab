@@ -351,6 +351,7 @@ class NotificationService:
         image_data: bytes | None = None,
         event_type: str | None = None,
         actions: str | None = None,
+        click_url: str | None = None,
     ) -> tuple[bool, str]:
         """Send notification via ntfy.
 
@@ -403,6 +404,9 @@ class NotificationService:
 
         if actions:
             headers["Actions"] = actions
+
+        if click_url:
+            headers["Click"] = click_url
 
         client = await self._get_client()
 
@@ -1168,6 +1172,7 @@ class NotificationService:
                 # is what keeps unfurlers from answering the prompt.
                 # clear=true dismisses the notification once a button was tapped.
                 ntfy_actions = None
+                click_url = None
                 good_url = (variables or {}).get("good_url")
                 reject_url = (variables or {}).get("reject_url")
                 # Buttons need absolute URLs; without a configured external_url
@@ -1184,8 +1189,32 @@ class NotificationService:
                         f"http, Good, {good_url}, method=POST, clear=true; "
                         f"http, Reject, {reject_url}, method=POST, clear=true"
                     )
+                    confirm_url = (variables or {}).get("confirm_url")
+                    if confirm_url and confirm_url.startswith("http"):
+                        click_url = confirm_url
+                elif db is not None:
+                    try:
+                        from backend.app.api.routes.settings import get_external_base_url
+
+                        base_url = await get_external_base_url(db)
+                        if base_url:
+                            pid = (variables or {}).get("printer_id") or provider.printer_id
+                            click_url = f"{base_url}/printers/{pid}" if pid else f"{base_url}/printers"
+                            ntfy_actions = (
+                                f"view, 📷 Live-Kamera, {base_url}/cameras; view, 🖨️ Drucker öffnen, {click_url}"
+                            )
+                    except Exception as e:
+                        logger.debug("Could not resolve ntfy actions/click_url: %s", e)
+
+                kwargs = {"click_url": click_url} if click_url else {}
                 return await self._send_ntfy(
-                    config, title, message, image_data=image_data, event_type=event_type, actions=ntfy_actions
+                    config,
+                    title,
+                    message,
+                    image_data=image_data,
+                    event_type=event_type,
+                    actions=ntfy_actions,
+                    **kwargs,
                 )
             elif provider.provider_type == "pushover":
                 # Outcome confirmation (#1898): Pushover has no arbitrary

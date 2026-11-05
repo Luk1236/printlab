@@ -104,6 +104,7 @@ class TelegramReactionPoller:
         # bot token -> last update_id confirmed. Kept across task restarts
         # within the process so a resync does not re-fetch handled updates.
         self._offsets: dict[str, int] = {}
+        self._allowed_chats: dict[str, set[str]] = {}
         self._http_client: httpx.AsyncClient | None = None
         self._session_factory = None
 
@@ -123,6 +124,7 @@ class TelegramReactionPoller:
             logger.info("Telegram reaction poller stopped (%d bot(s))", len(tasks))
         self._tasks.clear()
         self._providers.clear()
+        self._allowed_chats.clear()
         return tasks
 
     async def aclose(self):
@@ -151,10 +153,19 @@ class TelegramReactionPoller:
             providers = list(result.scalars().all())
 
         wanted: dict[str, set[int]] = {}
+        allowed_chats: dict[str, set[str]] = {}
         for provider in providers:
+            if provider.enabled:
+                cfg = json.loads(provider.config) if isinstance(provider.config, str) else (provider.config or {})
+                tok = str(cfg.get("bot_token") or "").strip()
+                cid = str(cfg.get("chat_id") or "").strip()
+                if tok and cid:
+                    allowed_chats.setdefault(tok, set()).add(cid)
             token = _provider_reaction_token(provider)
             if token:
                 wanted.setdefault(token, set()).add(provider.id)
+
+        self._allowed_chats = allowed_chats
 
         for token in list(self._tasks):
             if token not in wanted:
@@ -230,7 +241,10 @@ class TelegramReactionPoller:
         (409 webhook or second poller; 401/404 bad or deleted bot token) that
         are surfaced on the providers and cooled down instead of retried.
         """
-        params: dict = {"timeout": GET_UPDATES_TIMEOUT, "allowed_updates": ["message_reaction"]}
+        params: dict = {
+            "timeout": GET_UPDATES_TIMEOUT,
+            "allowed_updates": ["message_reaction", "message", "callback_query"],
+        }
         offset = self._offsets.get(bot_token)
         if offset is not None:
             params["offset"] = offset + 1
@@ -269,13 +283,38 @@ class TelegramReactionPoller:
             update_id = update.get("update_id")
             if isinstance(update_id, int):
                 self._offsets[bot_token] = max(self._offsets.get(bot_token, update_id), update_id)
+
             reaction = update.get("message_reaction")
-            if not isinstance(reaction, dict):
+            if isinstance(reaction, dict):
+                try:
+                    await self._handle_reaction(bot_token, reaction)
+                except Exception as e:
+                    logger.warning("Telegram reaction for %s could not be applied: %s", _bot_label(bot_token), e)
                 continue
-            try:
-                await self._handle_reaction(bot_token, reaction)
-            except Exception as e:
-                logger.warning("Telegram reaction for %s could not be applied: %s", _bot_label(bot_token), e)
+
+            message = update.get("message")
+            if isinstance(message, dict):
+                try:
+                    from backend.app.services.telegram_bot_commands import handle_telegram_message
+
+                    allowed = self._allowed_chats.get(bot_token, set())
+                    client = await self._get_client()
+                    await handle_telegram_message(bot_token, message, allowed, client)
+                except Exception as e:
+                    logger.warning("Telegram message command for %s failed: %s", _bot_label(bot_token), e)
+                continue
+
+            callback = update.get("callback_query")
+            if isinstance(callback, dict):
+                try:
+                    from backend.app.services.telegram_bot_commands import handle_telegram_callback_query
+
+                    allowed = self._allowed_chats.get(bot_token, set())
+                    client = await self._get_client()
+                    await handle_telegram_callback_query(bot_token, callback, allowed, client)
+                except Exception as e:
+                    logger.warning("Telegram callback query for %s failed: %s", _bot_label(bot_token), e)
+                continue
         return "ok"
 
     async def _record_error(self, bot_token: str, message: str):
