@@ -233,7 +233,11 @@ def test_the_stale_paths_write_a_key_the_editor_will_not_discard() -> None:
 
     app_dir = Path(__file__).resolve().parents[3] / "backend" / "app"
     text = ""
-    for home in (app_dir / "main.py", app_dir / "services" / "print_start_flow.py"):
+    for home in (
+        app_dir / "main.py",
+        app_dir / "services" / "print_start_flow.py",
+        app_dir / "services" / "mqtt_print_complete.py",
+    ):
         text += home.read_text(encoding="utf-8")
 
     assert "noStatusUpdate" in _FAILURE_REASON_KEYS
