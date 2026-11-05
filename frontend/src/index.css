@@ -644,3 +644,48 @@ body {
 .text-bambu-green {
   color: var(--accent-text);
 }
+
+/* ----------------------------------------------------------------------------
+   Barrierefreiheit (WCAG 2.2, Ziel AA) — globale Fundamente (A11y-Welle 2).
+   Tailwind v4 legt Utilities in einen @layer; ungeschichtetes Autoren-CSS
+   gewinnt die Kaskade in jedem Fall, deshalb stehen die drei Regeln hier.
+
+   1) 2.4.7 Fokus sichtbar: Ein sichtbarer Outline-Ring für alles, was den
+      Fokus über die Tastatur bekommt — auch dort, wo eine `outline-none`-
+      Klasse ihn unsichtbar macht (v3 setzte outline auf transparent; ohne
+      `focus:ring-…` blieb der Indikator weg — 2.4.7-Lücke). Elemente, die
+      einen eigenen Ring zeigen (focus-visible:ring-…), bekommen Outline und
+      Ring doppelt; das ist dem Greifbarkeitshinweis zugunsten akzeptiert.
+   2) 2.4.11 Fokus nicht verdeckt: Sprung- und Fokusziele rutschen unter die
+      Kompakt-Kopfzeile (h-14 = 3,5rem) — die Auffüllmaße halten Abstand.
+      (Scroll-padding für scrollIntoView/Anker, scroll-margin für fokussierte
+      Elemente.)
+   3) 2.3.3 Bewegung reduzieren: Alle Animationen/Übergänge auf Minimum, wenn
+      die Einstellung `reduce` aktiv ist — zusätzlich zu der bestehenden
+      partikulären Regel (SpoolBuddy-Ping) weiter oben.
+   ---------------------------------------------------------------------------- */
+:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+html {
+  scroll-padding-top: 5rem;   /* über der Kompakt-Kopfzeile (h-14) */
+  scroll-padding-bottom: 3rem;
+}
+
+:focus {
+  scroll-margin-top: 5rem;
+  scroll-margin-bottom: 3rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
