@@ -3,6 +3,24 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.13 (05.11.2026) — Modulares Einstellungsmenü, Layout-Modernisierung & Schnellsuche
+
+- **Modulares & aufgeräumtes Einstellungsmenü:**
+  - Kategorisierte Navigationsleiste (`SettingsNavRail.tsx`) mit 5 Themenbereichen: *System & Allgemein*, *Geräte & Hardware*, *Workflow & Druck*, *Netzwerk & Schnittstellen* und *Sicherheit & Zugriff*.
+  - Live-Indikatoren, Badge-Zähler und integrierte Echtzeit-Suchfilterung über alle Unterpunkte.
+  - Auslagerung und Entrümpelung von `SettingsPage.tsx`:
+    - `SetupSettingsSection.tsx`: Zentraler Einrichtungs-Hub (Quick-Setup, Checkliste, Selbsttest, Slicer-Verbindungscheck).
+    - `SystemSettingsSection.tsx`: Systemdiagnose mit Live-Logviewer, Verbindungsdiagnose und Support-Bundle-Download.
+    - `UpdatesSettingsSection.tsx`: Vollständige Versionsverwaltung, Update-Prüfung, Docker-/Windows-Befehle und GitHub-Release-Hinweise.
+  - `SettingsPage.tsx` um fast 400 Zeilen verkleinert und Dateigrößen-Budgetierung abgesenkt.
+- **Modernisiertes Layout & optimierte Seitenleiste:**
+  - **Logo & Kopfbereich:** Schlankeres Logo (36 px statt 64 px), spart vertikalen Platz und führt per Klick direkt zur Startseite.
+  - **Schnellsuche (Command Palette):** Zentral platziert im Hauptmenü (*„Schnellsuche... Ctrl K“*) und als Icon im mobilen Header.
+  - **Vertikale Dichte & Scrollbar:** Schlankere Abstände (`py-1.5`) und neue `.sidebar-scroll`-Klasse (kein klobiger Windows-Scrollbalken mehr). Alle Menüpunkte passen ohne Scrollen auf Standard-Displays.
+  - **Neugestaltete Collapse-Leiste:** Volle Aktionsleiste mit `Seitenleiste einklappen [` statt alleingestelltem Chevron.
+  - **Aufgeräumter Footer:** Redundantes Info-Icon entfernt; eigene Benutzerprofil-Karte für Authentifizierung mit Direktzugriff auf Passwort-Änderung und Abmeldung.
+  - **Direktverlinkung:** Update-Button leitet direkt auf den Unterpunkt `Updates` (`/settings?tab=updates`).
+
 ## v2.0.12 (05.11.2026) — Telegram-/ntfy-Erweiterungen & aufgeräumte Seitenleiste
 
 - **Telegram Zwei-Wege-Bot:**
