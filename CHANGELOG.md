@@ -3,6 +3,25 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.16 (05.11.2026) — Multihost-Modell-Hub (MakerWorld Fix, Printables & Direkt-Download)
+
+- **MakerWorld Download-Korrektur ("Did not return a download URL"):**
+  - Behebung des Download-Fehlers bei Platten-URLs mit abweichender Instanz- und Profil-ID (z. B. Mystic Dragon `#profileId-3884112`).
+  - Duale Kandidatenauflösung gleicht IDs gegen `id` und `profileId` ab und wählt bei Fehlern automatisch den passenden Fallback.
+  - Robuste Manifest-URL-Extraktion (`_extract_manifest_url_and_name`) für verschachtelte IoT-Antwortformate (`data.url`, `downloadUrl`, `files[]`).
+  - System-Trust-Store Initialisierung (`load_default_certs(ssl.Purpose.SERVER_AUTH)`) für fehlerfreie TLS-Verbindungen unter Windows.
+- **Integration von Printables (`printables.com`):**
+  - Direkte Eingabe von Printables-Modell-URLs im Modell-Hub.
+  - GraphQL-Integration zur automatischen Abfrage von Metadaten, Beschreibungen, Bildern und Dateilisten (STL, 3MF, etc.).
+  - Kostenloser und anonymer Download über signierte Printables-Links ohne Notwendigkeit eines Bambu-Cloud-Kontos.
+- **Integration von direkten 3D-Modell-Links (Direct URLs):**
+  - Direkte Eingabe beliebiger Weblinks zu `.3mf`-, `.stl`-, `.step`- und `.stp`-Dateien (z. B. GitHub Releases, Thingiverse-Direktdownloads).
+  - Automatisches Herunterladen und Speichern mit korrekter Dateiendung und Größenangabe in der Bibliothek.
+- **Modell-Hub Oberfläche & Provider-Erweiterungen:**
+  - Automatische Provider-Erkennung in der Eingabezeile mit Plattform-Badges (*MakerWorld*, *Printables*, *Direkt-Download*).
+  - Proxying von Printables-Bildern (`media.printables.com`) über den internen Thumbnail-Proxy zur Einhaltung der Browser-CSP.
+  - Provider-spezifische externe Links und angepasste Download-Hinweise (Bambu-Cloud-Warnung erscheint nur bei MakerWorld-Modellen).
+
 ## v2.0.15 (05.11.2026) — Fester KI-Assistent-Chat in der Seitenleiste & Schnellsuche entfernt
 
 - **Seitenleiste optimiert:**

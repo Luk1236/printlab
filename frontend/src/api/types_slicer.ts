@@ -346,6 +346,7 @@ export interface MakerworldStatus {
 export interface MakerworldResolvedModel {
   model_id: number;
   profile_id: number | null;
+  source_type?: string;
   design: Record<string, unknown>;
   instances: Array<Record<string, unknown>>;
   already_imported_library_ids: number[];

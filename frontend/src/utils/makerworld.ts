@@ -1,5 +1,5 @@
 /**
- * Reine Hilfsfunktionen für die MakerWorld-Seite: Felder aus den undurchsichtigen API-Antworten
+ * Reine Hilfsfunktionen für die Modell-Hub-Seite: Felder aus den undurchsichtigen API-Antworten
  * lesen, CDN-Adressen über den eigenen Thumbnail-Proxy leiten und den Bibliotheksbaum flach machen.
  *
  * Aus `pages/MakerworldPage.tsx` ausgelagert (siehe `backend/tests/unit/test_file_size_budget.py`):
@@ -26,9 +26,9 @@ export function pickObject(
   return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
 }
 
-const CDN_HOSTS = /^https?:\/\/(makerworld|public-cdn)\.bblmw\.com\//i;
+const CDN_HOSTS = /^https?:\/\/((?:makerworld|public-cdn)\.bblmw\.com|media\.printables\.com)\//i;
 
-/** MakerWorld-CDN-Adresse über den eigenen Thumbnail-Proxy leiten (CSP erlaubt nur eigene Bilder). */
+/** Modell-CDN-Adresse über den eigenen Thumbnail-Proxy leiten (CSP erlaubt nur eigene Bilder). */
 export function proxyCdn(url: string): string {
   if (!url) return '';
   if (!CDN_HOSTS.test(url)) return url;
@@ -38,7 +38,7 @@ export function proxyCdn(url: string): string {
 /** CDN-Adressen in beschreibendem HTML umschreiben (Beschreibungen enthalten `<img src="...">`). */
 export function proxyCdnUrlsInHtml(html: string): string {
   return html.replace(
-    /(https?:\/\/(?:makerworld|public-cdn)\.bblmw\.com\/[^\s"']+)/gi,
+    /(https?:\/\/(?:(?:makerworld|public-cdn)\.bblmw\.com|media\.printables\.com)\/[^\s"']+)/gi,
     (match) => `/api/v1/makerworld/thumbnail?url=${encodeURIComponent(match)}`,
   );
 }

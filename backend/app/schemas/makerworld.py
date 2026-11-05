@@ -27,6 +27,10 @@ class MakerWorldResolvedModel(BaseModel):
         default=None,
         description="Specific profile from the URL's #profileId- fragment, if any",
     )
+    source_type: str = Field(
+        default="makerworld",
+        description="Which registered model provider owns the resource ('makerworld', 'printables', 'direct', ...)",
+    )
     design: dict[str, Any]
     instances: list[dict[str, Any]]
     already_imported_library_ids: list[int] = Field(

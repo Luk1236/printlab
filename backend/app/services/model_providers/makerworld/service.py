@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import ssl
 from collections.abc import Awaitable, Callable
 from dataclasses import replace
 from typing import Any
@@ -90,6 +91,68 @@ _SIGN_IN_EXPIRED_MESSAGE = (
 )
 
 
+def _extract_manifest_url_and_name(manifest: dict[str, Any]) -> tuple[str | None, str | None]:
+    """Extract signed download URL and filename from various Bambu Lab/MakerWorld manifest shapes."""
+    signed_url: str | None = None
+    suggested_name: str | None = None
+
+    url_keys = ("url", "downloadUrl", "download_url", "fileUrl", "file_url")
+    name_keys = ("name", "fileName", "filename", "modelName")
+
+    # Check top-level keys
+    for key in url_keys:
+        val = manifest.get(key)
+        if isinstance(val, str) and val.startswith("http"):
+            signed_url = val
+            break
+
+    for key in name_keys:
+        val = manifest.get(key)
+        if isinstance(val, str) and val.strip():
+            suggested_name = val.strip()
+            break
+
+    # If wrapped in "data", "result", or "payload"
+    if not signed_url or not suggested_name:
+        for container_key in ("data", "result", "payload"):
+            container = manifest.get(container_key)
+            if isinstance(container, dict):
+                if not signed_url:
+                    for key in url_keys:
+                        val = container.get(key)
+                        if isinstance(val, str) and val.startswith("http"):
+                            signed_url = val
+                            break
+                if not suggested_name:
+                    for key in name_keys:
+                        val = container.get(key)
+                        if isinstance(val, str) and val.strip():
+                            suggested_name = val.strip()
+                            break
+
+    # If still not found, check if manifest has a list of files/modelFiles
+    if not signed_url:
+        files = manifest.get("files") or manifest.get("modelFiles")
+        if isinstance(files, list) and files:
+            for f in files:
+                if isinstance(f, dict):
+                    for key in url_keys:
+                        val = f.get(key)
+                        if isinstance(val, str) and val.startswith("http"):
+                            signed_url = val
+                            break
+                    if not suggested_name:
+                        for key in name_keys:
+                            val = f.get(key)
+                            if isinstance(val, str) and val.strip():
+                                suggested_name = val.strip()
+                                break
+                    if signed_url:
+                        break
+
+    return signed_url, suggested_name
+
+
 class MakerWorldService(ProviderService):
     """Per-request MakerWorld API client.
 
@@ -127,7 +190,12 @@ class MakerWorldService(ProviderService):
             self._client = _shared_http_client
             self._owns_client = False
         else:
-            self._client = httpx.AsyncClient(timeout=30.0)
+            ctx = ssl.create_default_context()
+            try:
+                ctx.load_default_certs(ssl.Purpose.SERVER_AUTH)
+            except Exception:
+                pass
+            self._client = httpx.AsyncClient(verify=ctx, timeout=30.0)
             self._owns_client = True
         self._auth_token = auth_token
         self._user = user
@@ -237,35 +305,82 @@ class MakerWorldService(ProviderService):
             raise MakerWorldUnavailableError("MakerWorld design metadata missing the modelId field")
 
         profile_id = int(ref.sub_id) if ref.sub_id else None
-        if profile_id is None:
+        candidate_ids: list[int] = []
+
+        if profile_id is not None:
+            # Check if this ID matches an instance's id or profileId in design.instances
+            matched = False
+            for inst in design.get("instances") or []:
+                if not isinstance(inst, dict):
+                    continue
+                pid = inst.get("profileId")
+                iid = inst.get("id")
+                if pid == profile_id or iid == profile_id:
+                    matched = True
+                    # In MakerWorld URLs, #profileId-<id> uses the instance id, but the IoT API
+                    # expects profileId (or occasionally vice-versa). Try profileId first, then id.
+                    if isinstance(pid, int) and pid > 0:
+                        candidate_ids.append(pid)
+                    if isinstance(iid, int) and iid > 0 and iid not in candidate_ids:
+                        candidate_ids.append(iid)
+                    break
+            if not matched:
+                candidate_ids.append(profile_id)
+        else:
             for instance in design.get("instances") or []:
                 pid = instance.get("profileId")
                 if isinstance(pid, int) and pid > 0:
                     profile_id = pid
+                    candidate_ids.append(pid)
+                    iid = instance.get("id")
+                    if isinstance(iid, int) and iid > 0 and iid != pid:
+                        candidate_ids.append(iid)
                     break
-            if profile_id is None:
+            if not candidate_ids:
                 envelope = await self.get_design_instances(model_id)
                 for hit in envelope.get("hits") or []:
                     pid = hit.get("profileId")
                     if isinstance(pid, int) and pid > 0:
                         profile_id = pid
+                        candidate_ids.append(pid)
+                        iid = hit.get("id")
+                        if isinstance(iid, int) and iid > 0 and iid != pid:
+                            candidate_ids.append(iid)
                         break
-            if profile_id is None:
+            if not candidate_ids:
                 raise MakerWorldUnavailableError("MakerWorld returned no instances for this model")
 
-        manifest = await self.get_profile_download(profile_id, alphanumeric_model_id)
+        signed_url: str | None = None
+        suggested_filename: str = ""
+        resolved_profile_id: int = candidate_ids[0]
+        last_error: Exception | None = None
 
-        signed_url = manifest.get("url")
+        for cid in candidate_ids:
+            try:
+                manifest = await self.get_profile_download(cid, alphanumeric_model_id)
+                s_url, s_name = _extract_manifest_url_and_name(manifest)
+                if s_url:
+                    signed_url = s_url
+                    suggested_filename = s_name or ""
+                    resolved_profile_id = cid
+                    break
+                msg = manifest.get("message") or manifest.get("error") or manifest.get("msg")
+                code = manifest.get("code")
+                if msg:
+                    last_error = MakerWorldUnavailableError(f"MakerWorld API: {msg} (code {code})")
+                else:
+                    last_error = MakerWorldUnavailableError("MakerWorld did not return a download URL")
+            except (MakerWorldNotFoundError, MakerWorldForbiddenError, MakerWorldUnavailableError) as exc:
+                last_error = exc
+                continue
+
         if not signed_url or not isinstance(signed_url, str):
+            if last_error:
+                raise last_error
             raise MakerWorldUnavailableError("MakerWorld did not return a download URL")
 
-        # Raw upstream name — the route layer basenames / percent-decodes it
-        # as defence-in-depth before persisting.
-        raw_name = manifest.get("name")
-        suggested_filename = raw_name if isinstance(raw_name, str) and raw_name.strip() else ""
-
         return ProviderDownloadInfo(
-            ref=replace(ref, sub_id=str(profile_id)),
+            ref=replace(ref, sub_id=str(resolved_profile_id)),
             url=signed_url,
             suggested_filename=suggested_filename,
         )

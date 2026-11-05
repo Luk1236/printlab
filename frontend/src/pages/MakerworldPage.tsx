@@ -184,7 +184,13 @@ export function MakerworldPage() {
 
   const importMutation = useMutation({
     mutationFn: ({ instanceId, profileId }: { instanceId: number; profileId: number | null }) =>
-      api.importMakerworldInstance(resolved?.model_id ?? 0, instanceId, profileId, selectedFolderId),
+      api.importMakerworldInstance(
+        resolved?.model_id ?? 0,
+        instanceId,
+        profileId,
+        selectedFolderId,
+        resolved?.source_type,
+      ),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['library-files'] });
       // Backend auto-creates a "MakerWorld" folder on first import; refresh
@@ -238,7 +244,13 @@ export function MakerworldPage() {
   // own "Download and Open" button behaviour.
   const sliceMutation = useMutation({
     mutationFn: ({ instanceId, profileId }: { instanceId: number; profileId: number | null }) =>
-      api.importMakerworldInstance(resolved?.model_id ?? 0, instanceId, profileId, selectedFolderId),
+      api.importMakerworldInstance(
+        resolved?.model_id ?? 0,
+        instanceId,
+        profileId,
+        selectedFolderId,
+        resolved?.source_type,
+      ),
     onSuccess: async (data: MakerworldImportResponse) => {
       queryClient.invalidateQueries({ queryKey: ['library-files'] });
       queryClient.invalidateQueries({ queryKey: ['library-folders'] });
@@ -432,7 +444,7 @@ export function MakerworldPage() {
         <p className="text-sm text-gray-500 dark:text-gray-400">{t('makerworld.description')}</p>
 
         <div className="space-y-6 min-w-0">
-      {!canDownload && (
+      {!canDownload && (!resolved || resolved.source_type === 'makerworld') && (
         <Card className="border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20">
           <CardContent>
             <div className="flex items-start gap-3 py-2">
@@ -532,14 +544,34 @@ export function MakerworldPage() {
                   />
                 )}
                 {resolved && (
-                  <a
-                    href={`https://makerworld.com/models/${resolved.model_id}${resolved.profile_id ? `#profileId-${resolved.profile_id}` : ''}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-3 inline-flex items-center gap-1 text-xs text-brand-500 hover:underline"
-                  >
-                    <ExternalLink className="w-3 h-3" /> {t('makerworld.openOnMakerworld')}
-                  </a>
+                  <div className="mt-3 flex items-center gap-3">
+                    <span className="px-2 py-0.5 rounded text-[11px] font-semibold uppercase bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
+                      {resolved.source_type === 'printables'
+                        ? 'Printables'
+                        : resolved.source_type === 'direct'
+                        ? 'Direkt-Download'
+                        : 'MakerWorld'}
+                    </span>
+                    <a
+                      href={
+                        resolved.source_type === 'printables'
+                          ? `https://www.printables.com/model/${resolved.model_id}`
+                          : resolved.source_type === 'direct'
+                          ? resolvedForUrl
+                          : `https://makerworld.com/models/${resolved.model_id}${resolved.profile_id ? `#profileId-${resolved.profile_id}` : ''}`
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-brand-500 hover:underline"
+                    >
+                      <ExternalLink className="w-3 h-3" />{' '}
+                      {resolved.source_type === 'printables'
+                        ? 'Auf Printables öffnen'
+                        : resolved.source_type === 'direct'
+                        ? 'Original-Link öffnen'
+                        : t('makerworld.openOnMakerworld')}
+                    </a>
+                  </div>
                 )}
               </div>
             </div>
@@ -577,7 +609,7 @@ export function MakerworldPage() {
                   size="sm"
                   disabled={
                     !canImport ||
-                    !canDownload ||
+                    (!canDownload && resolved.source_type === 'makerworld') ||
                     bulkProgress !== null ||
                     importMutation.isPending ||
                     sliceMutation.isPending
@@ -696,7 +728,7 @@ export function MakerworldPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          disabled={!canImport || !canDownload || isImporting || isPrinting || bulkProgress !== null}
+                          disabled={!canImport || (!canDownload && resolved.source_type === 'makerworld') || isImporting || isPrinting || bulkProgress !== null}
                           onClick={() => importMutation.mutate({ instanceId, profileId })}
                           title={!canDownload ? t('makerworld.signInRequiredTitle') : undefined}
                         >
@@ -718,7 +750,7 @@ export function MakerworldPage() {
                         <Button
                           variant="primary"
                           size="sm"
-                          disabled={!canImport || !canDownload || isImporting || isPrinting || bulkProgress !== null}
+                          disabled={!canImport || (!canDownload && resolved.source_type === 'makerworld') || isImporting || isPrinting || bulkProgress !== null}
                           onClick={() => sliceMutation.mutate({ instanceId, profileId })}
                           title={!canDownload ? t('makerworld.signInRequiredTitle') : undefined}
                         >

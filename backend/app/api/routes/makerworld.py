@@ -166,7 +166,7 @@ def _map_service_error(exc: ProviderError) -> HTTPException:
 
 @router.get("/thumbnail")
 async def proxy_thumbnail(
-    url: str = Query(..., description="MakerWorld CDN image URL (makerworld.bblmw.com or public-cdn.bblmw.com)"),
+    url: str = Query(..., description="Model CDN image URL (MakerWorld, Printables, etc.)"),
 ):
     """Proxy a MakerWorld CDN thumbnail.
 
@@ -186,7 +186,22 @@ async def proxy_thumbnail(
     URLs are content-addressable (filename contains a hash), so the
     aggressive ``immutable`` cache-control is safe.
     """
-    service = MakerWorldService(thumbnail_hosts=makerworld_provider.thumbnail_hosts())
+    matching_provider = None
+    try:
+        req_host = (urlparse(url).hostname or "").lower()
+        for p in registry.all():
+            if any(req_host == h.lower() for h in p.thumbnail_hosts()):
+                matching_provider = p
+                break
+    except Exception:
+        pass
+
+    thumb_hosts = (
+        matching_provider.thumbnail_hosts()
+        if matching_provider is not None
+        else makerworld_provider.thumbnail_hosts()
+    )
+    service = MakerWorldService(thumbnail_hosts=thumb_hosts)
     try:
         payload, content_type = await service.fetch_thumbnail(url)
     except ProviderError as exc:
@@ -292,6 +307,7 @@ async def resolve_url(
     return MakerWorldResolvedModel(
         model_id=model_id,
         profile_id=profile_id,
+        source_type=provider.source_type,
         design=resolved.design,
         instances=resolved.instances,
         already_imported_library_ids=already_imported,
@@ -413,20 +429,21 @@ async def import_instance(
     # filename regardless (see library.py), so this is defence-in-depth.
     raw_name = info.suggested_filename
     if isinstance(raw_name, str) and raw_name.strip():
-        # MakerWorld emits percent-encoded names (`%20` for spaces, etc.)
-        # because the same string round-trips through HTTP URLs in the
-        # CDN download path. Decode before persisting so the library
-        # row, the slice toast, and every later UI surface show the
-        # human-readable form.
-        suggested_name = os.path.basename(unquote(raw_name.strip())) or f"makerworld-{body.model_id}.3mf"
+        suggested_name = os.path.basename(unquote(raw_name.strip())) or f"{provider.source_type}-{body.model_id}.3mf"
     else:
-        suggested_name = f"makerworld-{body.model_id}.3mf"
+        suggested_name = f"{provider.source_type}-{body.model_id}.3mf"
 
-    # Prefer the server-provided human-readable filename; the signed URL's
-    # path ends in a UUID that's not meaningful to users. Decode the
-    # fallback path-tail too — same percent-encoding round-trip applies
-    # there as on the manifest-supplied name.
-    filename = suggested_name if suggested_name.endswith(".3mf") else unquote(download.filename)
+    s_ext = os.path.splitext(suggested_name)[1].lower()
+    d_name = unquote(download.filename)
+    d_ext = os.path.splitext(d_name)[1].lower()
+    valid_exts = {".3mf", ".stl", ".step", ".stp", ".gcode"}
+
+    if s_ext in valid_exts:
+        filename = suggested_name
+    elif d_ext in valid_exts:
+        filename = d_name
+    else:
+        filename = f"{suggested_name}.3mf" 
 
     # API-keyed callers carry identity on the key, not in current_user (#1777);
     # this collapse stays route-side solely so the library row is attributed
@@ -469,9 +486,10 @@ async def recent_imports(
     _ = current_user  # permission gate only
     capped = max(1, min(50, int(limit)))
 
+    registered_sources = [p.source_type for p in registry.all()]
     result = await db.execute(
         LibraryFile.active()
-        .where(LibraryFile.source_type == makerworld_provider.source_type)
+        .where(LibraryFile.source_type.in_(registered_sources))
         .order_by(LibraryFile.created_at.desc())
         .limit(capped)
     )
@@ -487,4 +505,17 @@ async def recent_imports(
             created_at=row.created_at.isoformat() if row.created_at else "",
         )
         for row in rows
+    ]
+
+
+@router.get("/providers")
+async def list_providers():
+    """Return all registered model providers."""
+    return [
+        {
+            "source_type": p.source_type,
+            "display_name": p.source_type.capitalize(),
+            "default_folder_name": p.default_folder_name,
+        }
+        for p in registry.all()
     ]

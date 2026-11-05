@@ -1786,6 +1786,7 @@ export const api = {
     instance_id: number | null,
     profile_id?: number | null,
     folder_id?: number | null,
+    source_type?: string,
   ) =>
     request<MakerworldImportResponse>('/makerworld/import', {
       method: 'POST',
@@ -1794,6 +1795,7 @@ export const api = {
         instance_id: instance_id ?? null,
         profile_id: profile_id ?? null,
         folder_id: folder_id ?? null,
+        source_type: source_type ?? 'makerworld',
       }),
     }),
   getCloudSettingDetail: (settingId: string) =>
