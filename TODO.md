@@ -169,8 +169,9 @@ dieser Reihenfolge, mit Erwartungen, Abbruchkriterien und Protokoll.
       `PrinterCard.tsx` 5 232 (Grenze 5 300, Dialoge in `PrinterCardModals.tsx`, 1 225, Bausteine in
       `PrinterCardParts.tsx`, 1 134, Grenze 1 150), `client.ts` 1 016 (Grenze 1 050),
       `types.ts` 19 Zeilen (Grenze 400; die API-Typen liegen nach Bereichen in `types_*.ts`),
-      `endpoints.ts` 4 005 (Grenze 4 050).
+      `endpoints.ts` 4 005 (Grenze 4 050), `QueuePage.tsx` 2 814 (Grenze 2 825, vorher 3 091 ohne Puffer).
       **Erledigt (Welle 11):** Lifespan-Orchestrierung (`setup_cloud_http_clients`, `run_startup_fixups`, `setup_printer_manager_callbacks`, `setup_mqtt_and_connections`, `start_background_services`, `stop_background_services`) in `lifespan_flow.py` (373 Zeilen) ausgelagert; `main.py` von 2 282 auf 1 985 Zeilen geschrumpft (erstmals unter 2 000 Zeilen).
+      **Erledigt (Frontend):** `QueuePage.tsx` ausgedünnt (3 091 → 2 814 Zeilen, Grenze auf 2 825 gesenkt): `QueueHistorySection.tsx` (242) und `GroupBatchModal.tsx` (64) ausgelagert.
       **Nächster Schnitt:** Hauptstück `mqtt_print_complete` (1 605 Zeilen) oder Frontend-Dateien (`PrinterCard.tsx`, `endpoints.ts`).
 - [ ] Volle E2E-Prüfung MakerWorld → PC-Slicer → Warteschlange. Die inneren Glieder sind abgesichert
       (566 Integrationstests zu MakerWorld, Bibliothek und Warteschlange, alle grün); der Slicer-Upload und der
