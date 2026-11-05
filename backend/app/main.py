@@ -222,8 +222,6 @@ from backend.app.services.obico_detection import obico_detection_service
 from backend.app.services.print_cost_estimate import plate_scoped_run_estimate as _plate_scoped_run_estimate
 from backend.app.services.print_scheduler import scheduler as print_scheduler
 from backend.app.services.print_start_flow import (  # noqa: F401 — Namensraum bleibt hier
-    _FALLBACK_3MF_RETRY_DELAYS_SECONDS,
-    _FALLBACK_3MF_TRANSFER_RETRY_DELAYS_SECONDS,
     _ask_outcome_for_external_print,
     _extract_filament_data_from_mqtt,
     _get_start_ams_mapping,
@@ -887,6 +885,21 @@ async def _get_plug_energy(plug, db) -> dict | None:
         return await rest_smart_plug_service.get_energy(plug)
     else:
         return await tasmota_service.get_energy(plug)
+
+
+# Retry ladder for a fallback archive created while the printer's FTPS cool-off
+# was running (#2957). The cool-off is 300s, so the first attempt is placed just
+# past it; the second covers a handshake that failed again on the way back and
+# armed a fresh one. Module-level so tests can shrink them.
+_FALLBACK_3MF_RETRY_DELAYS_SECONDS: tuple[float, ...] = (310.0, 620.0)
+
+# Retry ladder for the other temporary give-up: the file service answered and
+# the transfer still did not finish, which at print start is usually the printer
+# serving MQTT, the camera and a job upload at the same time (#3063). Nothing has
+# to expire here, so the first attempt comes early -- #3063's reporter had the
+# same 19MB file complete 48 seconds after the download budget ran out. The later
+# two cover a printer that stays busy well into the print.
+_FALLBACK_3MF_TRANSFER_RETRY_DELAYS_SECONDS: tuple[float, ...] = (60.0, 240.0, 600.0)
 
 
 def _compute_run_filament_grams(

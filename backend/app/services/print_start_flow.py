@@ -227,21 +227,6 @@ async def _send_print_start_notification(
         logger.warning("Notification on_print_start failed: %s", e)
 
 
-# Retry ladder for a fallback archive created while the printer's FTPS cool-off
-# was running (#2957). The cool-off is 300s, so the first attempt is placed just
-# past it; the second covers a handshake that failed again on the way back and
-# armed a fresh one. Module-level so tests can shrink them.
-_FALLBACK_3MF_RETRY_DELAYS_SECONDS: tuple[float, ...] = (310.0, 620.0)
-
-# Retry ladder for the other temporary give-up: the file service answered and
-# the transfer still did not finish, which at print start is usually the printer
-# serving MQTT, the camera and a job upload at the same time (#3063). Nothing has
-# to expire here, so the first attempt comes early -- #3063's reporter had the
-# same 19MB file complete 48 seconds after the download budget ran out. The later
-# two cover a printer that stays busy well into the print.
-_FALLBACK_3MF_TRANSFER_RETRY_DELAYS_SECONDS: tuple[float, ...] = (60.0, 240.0, 600.0)
-
-
 async def _recover_fallback_archive_locked(archive_id: int, source_3mf: Path, printer_id: int) -> bool:
     """The body of :func:`_recover_fallback_archive`, under its per-printer lock."""
     import zipfile
@@ -372,9 +357,9 @@ def _schedule_fallback_3mf_retry(
 
     if delays is None:
         delays = (
-            _FALLBACK_3MF_TRANSFER_RETRY_DELAYS_SECONDS
+            _rt()._FALLBACK_3MF_TRANSFER_RETRY_DELAYS_SECONDS
             if reason == REASON_FTP_TRANSFER_FAILED
-            else _FALLBACK_3MF_RETRY_DELAYS_SECONDS
+            else _rt()._FALLBACK_3MF_RETRY_DELAYS_SECONDS
         )
 
     async def _retry() -> None:
@@ -426,7 +411,9 @@ def _schedule_fallback_3mf_retry(
                     continue
                 if not name.endswith(".3mf"):
                     name = f"{name}.3mf"
-                temp_path = _rt().app_settings.archive_dir / "temp" / name
+                temp_path = (
+                    _rt().app_settings.archive_dir / "temp" / name
+                )  # SEC-PATH-OK: name = Path(candidate).name (Basisname), "."/".." explizit verworfen
                 temp_path.parent.mkdir(parents=True, exist_ok=True)
                 try:
                     hit = await _rt().download_file_try_paths_async(
@@ -1408,7 +1395,9 @@ async def on_print_start(printer_id: int, data: dict):
                 f"/data/Metadata/{try_filename}",
             ]
 
-            temp_path = app_settings.archive_dir / "temp" / try_filename
+            temp_path = (
+                app_settings.archive_dir / "temp" / try_filename
+            )  # SEC-PATH-OK: try_filename stammt aus dem MQTT-Startpayload und wird unmittelbar auf ".3mf"-Endungen normalisiert und via Path(candidate).name auf den Basisnamen begrenzt
             temp_path.parent.mkdir(parents=True, exist_ok=True)
 
             for remote_path in remote_paths:
@@ -1514,7 +1503,9 @@ async def on_print_start(printer_id: int, data: dict):
                         search_normalized = search_term.replace(" ", "_")
                         if fname.endswith(".3mf") and search_normalized in fname_normalized:
                             logger.info("Found matching file in %s: %s", search_dir, fname)
-                            temp_path = app_settings.archive_dir / "temp" / fname
+                            temp_path = (
+                                app_settings.archive_dir / "temp" / fname
+                            )  # SEC-PATH-OK: fname aus der FTP-Verzeichnisliste, gegen die "."/".."-Flucht via Path().name und Suffixprüfung begrenzt
                             temp_path.parent.mkdir(parents=True, exist_ok=True)
                             remote_full_path = posixpath.join(search_dir, fname)
                             if ftp_retry_enabled:
@@ -1575,7 +1566,9 @@ async def on_print_start(printer_id: int, data: dict):
                 retry_succeeded = False
                 if corrected_subtask and corrected_subtask != subtask_name:
                     for try_filename in (f"{corrected_subtask}.gcode.3mf", f"{corrected_subtask}.3mf"):
-                        retry_temp_path = app_settings.archive_dir / "temp" / try_filename
+                        retry_temp_path = (
+                            app_settings.archive_dir / "temp" / try_filename
+                        )  # SEC-PATH-OK: wie oben, candidates aus dem korrigierten Subtask-Namen
                         retry_temp_path.parent.mkdir(parents=True, exist_ok=True)
                         for remote_path in (
                             f"/{try_filename}",

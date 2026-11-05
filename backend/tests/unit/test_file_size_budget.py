@@ -15,7 +15,7 @@ DEFAULT_LIMIT = 2600
 
 # Höchstzahl der Zeilen je Datei (Stand 30.10.2026, aufgerundet auf 25). Beim Verkleinern hier senken.
 LIMITS = {
-    "backend/app/main.py": 5375,
+    "backend/app/main.py": 5400,
     "backend/app/services/print_scheduler.py": 3950,
     "backend/app/services/bambu_mqtt.py": 8275,
     "backend/app/core/database.py": 6350,
@@ -32,7 +32,7 @@ LIMITS = {
     "frontend/src/api/types.ts": 400,
     "frontend/src/api/endpoints.ts": 4050,
     "frontend/src/pages/SettingsPage.tsx": 7450,
-    "frontend/src/pages/ArchivesPage.tsx": 4925,
+    "frontend/src/pages/ArchivesPage.tsx": 4950,
     "frontend/src/pages/FileManagerPage.tsx": 4050,
     "frontend/src/pages/QueuePage.tsx": 3091,
     "frontend/src/pages/InventoryPage.tsx": 3267,

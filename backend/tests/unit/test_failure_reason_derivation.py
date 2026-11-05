@@ -216,20 +216,25 @@ def test_derived_reason_is_always_a_canonical_key(status: str) -> None:
 
 
 def test_the_stale_paths_write_a_key_the_editor_will_not_discard() -> None:
-    """Both stale writers in main.py store ``noStatusUpdate``.
+    """Both stale writers store ``noStatusUpdate``.
 
     Read from the source rather than by calling them: they sit deep inside the
     MQTT archive paths and need a printer, a session and a live status. What
     matters is the value, and that the archive editor recognises it -- an
     unrecognised value opens the dropdown empty and the next save clears the
-    classification outright.
+    classification outright. Both writers live in the MQTT archive flow; the
+    named-match stale writer moved from ``main.py`` to
+    ``services/print_start_flow.py`` (# wave 7), so the guard counts across
+    both homes.
     """
     from pathlib import Path
 
     from backend.app.api.routes.print_log import _FAILURE_REASON_KEYS
 
-    source = Path(__file__).resolve().parents[3] / "backend" / "app" / "main.py"
-    text = source.read_text(encoding="utf-8")
+    app_dir = Path(__file__).resolve().parents[3] / "backend" / "app"
+    text = ""
+    for home in (app_dir / "main.py", app_dir / "services" / "print_start_flow.py"):
+        text += home.read_text(encoding="utf-8")
 
     assert "noStatusUpdate" in _FAILURE_REASON_KEYS
     assert text.count('failure_reason = "noStatusUpdate"') == 2
