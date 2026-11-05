@@ -261,7 +261,9 @@ async def _max_z_for_current_print(printer_id: int, data: dict, logger) -> float
             # Der absolute Zweig oben stellt sicher, dass hier nur die
             # datenverzeichnis-relative Form verbleibt (archive.file_path
             # entstammt der DB, verwaltet durch ArchiveService).
-            path = Path(app_settings.data_dir) / path  # SEC-PATH-OK: relatives DB-Pfad-Fragment unter DATA_DIR; absolute Pfade zweigen oben ab
+            path = (
+                Path(app_settings.data_dir) / path
+            )  # SEC-PATH-OK: relatives DB-Pfad-Fragment unter DATA_DIR; absolute Pfade zweigen oben ab
         return await _rt().asyncio.to_thread(extract_max_z_height_from_3mf, path, archive.plate_id or 1)
     except Exception as e:
         logger.debug("[PLATE-RESTORE] printer %s: no usable print height: %s", printer_id, e)

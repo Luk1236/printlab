@@ -96,7 +96,9 @@ def _scope_notification_archive_data_to_plate(
         extract_print_time_from_3mf,
     )
 
-    archive_path = base_dir / archive_file_path  # SEC-PATH-OK: archive_file_path ist die DB-Spalte archive.file_path (archivintern verwaltet, keine Anfrage-Eingabe)
+    archive_path = (
+        base_dir / archive_file_path
+    )  # SEC-PATH-OK: archive_file_path ist die DB-Spalte archive.file_path (archivintern verwaltet, keine Anfrage-Eingabe)
     if not archive_path.exists():
         return archive_data
 
