@@ -3,6 +3,20 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.11 (05.11.2026) — Aufräumen: Lifespan-Orchestrierung und Queue-Ausdünnung
+
+Reines Aufräumen und Modularisieren — Technik-Schulden aus `docs/ANALYSE-2026-10-28.md` und Dateigrößen-Budgetierung:
+
+- **main.py unter 2.000 Zeilen:** Auslagerung der verbleibenden Lifespan-Orchestrierung
+  (Cloud-HTTP-Clients, Startup-Fixups, Printer-Manager-Callbacks, MQTT-Setup,
+  Starten und Stoppen der Hintergrunddienste) in `lifespan_flow.py` (373 Zeilen). `main.py`
+  sinkt von 2.282 auf 1.985 Zeilen (Welle 11) und bleibt weit unter der 2.600-Fallgrenze.
+- **QueuePage ausgedünnt:** Auslagerung von `GroupBatchModal` (64 Zeilen) und
+  `QueueHistorySection` (242 Zeilen). `QueuePage.tsx` schrumpft von 3.091 auf 2.814 Zeilen;
+  die Budget-Grenze im Dateigrößen-Wächter wurde von 3.091 auf 2.825 Zeilen gesenkt.
+- **Frontend & Tests:** Vollständig grün (`tsc -b`, ESLint, Vitest 61/61 in QueuePage,
+  `test_file_size_budget.py`).
+
 ## v2.0.10 (04.11.2026) — Aufräumen: Verfügbarkeit ausgelagert, API-Typen geteilt
 
 Reines Aufräumen ohne Funktionsänderung — Technik-Schulden aus `docs/ANALYSE-2026-10-28.md`, damit neue
