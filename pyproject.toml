@@ -50,8 +50,10 @@ unfixable = []
 "**/tests/**" = ["F401", "F811", "ARG"]
 # Init files often have unused imports for re-export
 "**/__init__.py" = ["F401"]
-# main.py needs early logging setup before other imports
-"backend/app/main.py" = ["E402"]
+# main.py needs early logging setup before other imports; the re-export surface
+# (ausgelagerte Dienstmodule) ist absichtlich "ungenutzt" — dort bleibt der
+# Namensraum von main.py der Test-Patch- und Registrierungspunkt (# wie immer).
+"backend/app/main.py" = ["E402", "F401"]
 # MQTT client has some unused variables for debugging
 "backend/app/services/bambu_mqtt.py" = ["F841"]
 # compat module intentionally uses version checks for Python 3.10 support
