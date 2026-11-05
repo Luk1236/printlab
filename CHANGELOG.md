@@ -3,6 +3,23 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.12 (05.11.2026) — Telegram-/ntfy-Erweiterungen & aufgeräumte Seitenleiste
+
+- **Telegram Zwei-Wege-Bot:**
+  - Live-Kamerafoto auf Abruf über Chat-Befehle (`/live`, `/foto`, `/snap`) sowie per Klick auf den Inline-Button `[📷 Live-Foto]`.
+  - Detaillierte Status-Abfrage (`/status`) mit aktuellem Druckstatus, Dateiname, Fortschritt %, Restzeit (ETA), Schichten und Temperaturen.
+  - Befehlsführung mit `/help` und Chat-Autorisierungsprüfung gegen konfigurierte Telegram-Provider.
+  - Nahtlos über bestehendes Long-Polling (`getUpdates`) ohne externe Webhook-Freigabe.
+- **ntfy Aktionsbuttons & Direktnavigation:**
+  - Sofort-Navigation via `Click`-Header direkt auf die Detailseite des Druckers (`/printers/<id>`).
+  - Schnellauswahl-Aktionen (`Actions`-Header) mit `[📷 Live-Kamera]` (`/cameras`) und `[🖨️ Drucker öffnen]`.
+  - Vollautomatisches Abschlussbild bei Druckende an Telegram und ntfy.
+- **Seitenleiste aufgeräumt & strukturiert:**
+  - Logische Aufteilung: Neue Gruppe „Dateien & Modelle“ trennt den Druck-Workflow von der Modellbibliothek.
+  - Einklappbare Kategorien (Akkordeon): Jede Kategorie per Klick auf- und zuklappbar; Zustand bleibt in `localStorage` erhalten.
+  - Schlankere Abstände (`py-2`, `space-y-0.5`): Über 180 px Platzersparnis, kein vertikaler Scrollbalken mehr.
+  - Mehrsprachige Übersetzungen für `nav.groupLibrary` in 15 Sprachen.
+
 ## v2.0.11 (05.11.2026) — Aufräumen: Lifespan-Orchestrierung und Queue-Ausdünnung
 
 Reines Aufräumen und Modularisieren — Technik-Schulden aus `docs/ANALYSE-2026-10-28.md` und Dateigrößen-Budgetierung:
