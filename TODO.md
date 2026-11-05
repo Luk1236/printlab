@@ -160,19 +160,21 @@ dieser Reihenfolge, mit Erwartungen, Abbruchkriterien und Protokoll.
 ## Technisch offen
 
 - [ ] Große Dateien weiter zerlegen; der Test `test_file_size_budget.py` verhindert nur das Wachsen. Stand
-      05.11.2026: `print_scheduler.py` 3 928 Zeilen (Grenze 3 950; die Verfügbarkeits- und Wecker-Logik liegt als
-      `scheduler/availability.py` Mixin, 623 Zeilen), `main.py` 8 731 Zeilen (Grenze 8 750; Zeitraffer, Spool-Verknüpfung,
-      Verlauf/Laufzeit, Wächter und expected-prints liegen in eigenen Dienstmodulen), `queue_pass.py` 582 (Vorgabe 2 600,
+      05.11.2026: `main.py` 4 153 Zeilen (Grenze 4 175; die Abflüsse liegen in neun Dienstmodulen: timelapse,
+      spool_linkage, history_runtime, background_services, expected_prints, mqtt_status_flow, print_start_flow,
+      completion_photo_plate, print_complete_flow), `print_scheduler.py` 3 928 Zeilen (Grenze 3 950;
+      Verfügbarkeit- und Wecker-Logik in `scheduler/availability.py`), `queue_pass.py` 582 (Vorgabe 2 600,
       Auswahl in `selection.py`, 483), `PrintersPage.tsx` 1 614 (Grenze 1 650, Leiste in `PrinterToolbar.tsx`, 497),
       `PrinterCard.tsx` 5 232 (Grenze 5 300, Dialoge in `PrinterCardModals.tsx`, 1 225, Bausteine in
       `PrinterCardParts.tsx`, 1 134, Grenze 1 150), `client.ts` 1 016 (Grenze 1 050),
       `types.ts` 19 Zeilen (Grenze 400; die API-Typen liegen nach Bereichen in `types_*.ts`),
       `endpoints.ts` 4 005 (Grenze 4 050).
-      **Nächster Schnitt:** (1) `main.py`-Rest: die Riesen `on_print_start` (1 429), `on_print_complete` (1 560),
-      `on_ams_change` (593) und `on_printer_status_change` (474) sind Modul-Ebene und folgen dem bewährten Muster;
-      ihre Hintergrund-Aufgaben sind Nestlinge (Closures) und wandern nicht blind mit — dort gehört erst eine
-      Zustandsübergabe-Reinigung, dann das Auslagern. `calibrate_snapshot` und `on_tray_change` liegen als
-      Nestlinge in `lifespan` (695) bzw. dortigen Closures.
+      **Nächster Schnitt:** (1) `main.py`-Rest: `on_print_complete` (1 560) und `on_print_start` (1 429) sind die
+      letzten Riesen; ihre Hintergrund-Aufgaben sind Nestlinge (Closures) und wandern mit dem Abschluss-Kontext —
+      vor dem Auslagern gehört eine Zustandsübergabe-Reinigung. `calibrate_snapshot` und `on_tray_change` sind
+      Nestlinge in `lifespan` (695).
+- [ ] ArchivesPage.tsx: 4 937 Zeilen, Grenze 4 950 (der Bruch von 4 925 war schon auf HEAD da); F1d senkt sie
+      wieder — Kartenauswahl auslagern wie `PageHeader`/`PrinterCardModals`.
 - [ ] Volle E2E-Prüfung MakerWorld → PC-Slicer → Warteschlange. Die inneren Glieder sind abgesichert
       (566 Integrationstests zu MakerWorld, Bibliothek und Warteschlange, alle grün); der Slicer-Upload und der
 druckende Drucker brauchen Gerät und Slicer.
