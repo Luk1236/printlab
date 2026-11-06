@@ -883,7 +883,7 @@ async def get_slicer_engine(
 
 @router.post("/slicer-engine/install")
 async def install_slicer_engine(
-    _: User | None = RequirePermissionIfAuthEnabled(Permission.SYSTEM_ADMIN),
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.SETTINGS_UPDATE),
 ):
     """Laedt die echte OrcaSlicer-Engine von GitHub herunter und richtet sie ein."""
     from backend.app.services.slicer_manager import get_slicer_status, install_orca_slicer_from_github
