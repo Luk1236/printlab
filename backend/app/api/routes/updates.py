@@ -731,18 +731,21 @@ async def check_for_updates(
             return _build_update_info(releases, include_beta)
 
     except httpx.HTTPError as e:
-        logger.error("Failed to check for updates: %s", e)
+        logger.warning("Failed to check for updates via GitHub API (%s); falling back to git tags", e)
+        via_git = await _git_tag_releases()
+        if via_git:
+            return _build_update_info(via_git, include_beta)
         _update_status = {
             "status": "error",
             "progress": 0,
             "message": "Failed to check for updates",
-            "error": "Failed to check for updates",
+            "error": f"Failed to check for updates: {e}",
         }
         return {
             "update_available": False,
             "current_version": PRINTLAB_VERSION,
             "latest_version": None,
-            "error": "Failed to check for updates",
+            "error": f"Failed to check for updates: {e}",
         }
 
 
@@ -787,7 +790,10 @@ async def _discover_target_release(db: AsyncSession) -> str | None:
                     response.raise_for_status()
                     releases = response.json()
         except (httpx.HTTPError, ValueError) as exc:
-            logger.error("Could not fetch GitHub releases for update target: %s", exc)
+            logger.warning("Could not fetch GitHub releases for update target (%s); falling back to git tags", exc)
+            releases = await _git_tag_releases()
+            if not releases:
+                return None
             return None
 
     for release in releases:

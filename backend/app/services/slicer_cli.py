@@ -35,7 +35,23 @@ class SliceOutput:
 
 
 def program_path() -> str:
-    return os.environ.get("BAMBU_STUDIO", DEFAULT_PROGRAM).strip()
+    env_prog = (os.environ.get("BAMBU_STUDIO") or os.environ.get("ORCA_SLICER") or "").strip()
+    if env_prog:
+        return env_prog
+    if Path(DEFAULT_PROGRAM).is_file():
+        return DEFAULT_PROGRAM
+    candidates = [
+        r"C:\Program Files\OrcaSlicer\orca-slicer.exe",
+        r"C:\Program Files\Orca Slicer\orca-slicer.exe",
+        Path.home() / "AppData/Local/Programs/OrcaSlicer/orca-slicer.exe",
+        "/usr/bin/bambu-studio",
+        "/usr/bin/orca-slicer",
+        "/usr/local/bin/orca-slicer",
+    ]
+    for c in candidates:
+        if Path(c).is_file():
+            return str(c)
+    return DEFAULT_PROGRAM
 
 
 def build_command(

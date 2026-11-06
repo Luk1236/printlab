@@ -3,6 +3,16 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.20 (06.11.2026) — PC-Slicer Netzwerkanbindung (LAN & Tailscale), Auto-Erkennung OrcaSlicer & Update-SSL-Fallback
+
+- **PC-Slicer Netzwerkanbindung für Raspberry Pi:**
+  - `starte_pc_slicer.bat` lauscht auf allen Netzwerk-Schnittstellen (`0.0.0.0:3001`) und schaltet LAN- und Tailscale-Netzwerke (`100.64.0.0/10`, `192.168.0.0/16`, `172.16.0.0/12`, `10.0.0.0/8`) frei.
+  - Zeigt beim Start im Konsolenfenster automatisch die genauen Adressen an (z. B. `http://<PC-IP>:3001`), die in PrintLab auf dem Raspberry Pi eingetragen werden müssen.
+- **Automatische Slicer-Erkennung:**
+  - `slicer_cli.py` erkennt neben Bambu Studio nun auch automatisch OrcaSlicer in Standardpfaden oder Umgebungsvariablen.
+- **Update-Prüfung SSL-Fallback:**
+  - Automatischer Fallback auf Git-Tags, wenn die GitHub-API durch Schul-/Unternehmens-Proxys oder Zertifikatsfehler (`[SSL: CERTIFICATE_VERIFY_FAILED]`) blockiert wird.
+
 ## v2.0.19 (06.11.2026) — Integrierter Slicer: Bambu Studio CLI Fix & echte Werkzeugbahnen für 3MF/STL
 
 - **Bambu Studio CLI Plattenauswahl korrigiert:** Der ungültige Parameter `--export-plate <N>` wurde durch das offizielle `--slice <N>` ersetzt. Bambu Studio bricht nicht mehr mit Fehler `-2` ab.
