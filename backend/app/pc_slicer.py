@@ -207,33 +207,18 @@ async def slice_route(request: Request):
         out_name = Path(filename).stem + ".gcode.3mf"
         try:
             result = await asyncio.to_thread(
-                slice_file,
+                slice_model_builtin,
                 Path(tmp_name),
                 out_name,
                 printerProfile,
                 presetProfile,
                 list(filamentProfile),
-                _truthy(arrange),
-                _truthy(orient),
-                900.0,
                 plate_num,
+                requestId,
             )
-        except SlicerCliError as exc:
-            cli_present = bool(program_path() and Path(program_path()).is_file())
-            if not cli_present or "nicht gefunden" in str(exc) or "Programm fehlt" in str(exc):
-                result = await asyncio.to_thread(
-                    slice_model_builtin,
-                    Path(tmp_name),
-                    out_name,
-                    printerProfile,
-                    presetProfile,
-                    list(filamentProfile),
-                    plate_num,
-                    requestId,
-                )
-            else:
-                logger.warning("[PC-Slicer] %s", exc)
-                raise HTTPException(500, str(exc)) from exc
+        except Exception as exc:
+            logger.warning("[PC-Slicer] Slicing fehlgeschlagen: %s", exc)
+            raise HTTPException(500, str(exc)) from exc
     finally:
         if tmp_name:
             Path(tmp_name).unlink(missing_ok=True)

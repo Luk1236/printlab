@@ -36,25 +36,75 @@ class SliceOutput:
 
 def program_path() -> str:
     env_prog = (os.environ.get("BAMBU_STUDIO") or os.environ.get("ORCA_SLICER") or "").strip()
-    if env_prog:
+    if env_prog and Path(env_prog).is_file():
         return env_prog
+
+    from backend.app.services.slicer_manager import find_existing_slicer
+
+    existing = find_existing_slicer()
+    if existing:
+        return existing
+
     if Path(DEFAULT_PROGRAM).is_file():
         return DEFAULT_PROGRAM
-    candidates = [
-        r"C:\Program Files\OrcaSlicer\orca-slicer.exe",
-        r"C:\Program Files\Orca Slicer\orca-slicer.exe",
-        Path.home() / "AppData/Local/Programs/OrcaSlicer/orca-slicer.exe",
-        "/usr/bin/bambu-studio",
-        "/usr/bin/orca-slicer",
-                "/usr/local/bin/orca-slicer",
-        "/opt/orca-slicer/orca-slicer",
-        "/opt/orca-slicer/orca-slicer.AppImage",
-        "/usr/local/bin/bambu-studio",
-    ]
-    for c in candidates:
-        if Path(c).is_file():
-            return str(c)
     return DEFAULT_PROGRAM
+
+
+
+
+def get_default_machine_json(name: str = "Bambu Lab P1S 0.4 nozzle") -> str:
+    """Liefert vollstaendige Standard-Maschinenkonfiguration fuer OrcaSlicer."""
+    repo_root = Path(__file__).resolve().parent.parent.parent.parent
+    sdir = repo_root / "data" / "slicer" / "resources" / "profiles" / "BBL" / "machine"
+    pfile = sdir / f"{name}.json"
+    if not pfile.is_file():
+        pfile = sdir / "Bambu Lab P1S 0.4 nozzle.json"
+    if pfile.is_file():
+        try:
+            data = json.loads(pfile.read_text(encoding="utf-8"))
+            data["layer_gcode"] = ";AFTER_LAYER_CHANGE\nG92 E0"
+            return json.dumps(data)
+        except Exception:
+            pass
+    return json.dumps({
+        "type": "machine",
+        "name": name,
+        "from": "system",
+        "setting_id": "GM014",
+        "instantiation": "true",
+        "nozzle_diameter": ["0.4"],
+        "printer_model": "Bambu Lab P1S",
+        "printer_variant": "0.4",
+        "printable_area": ["0x0", "256x0", "256x256", "0x256"],
+        "printable_height": "256",
+        "use_relative_e_distances": "1",
+        "layer_gcode": ";AFTER_LAYER_CHANGE\nG92 E0",
+    })
+
+
+def get_default_process_json(name: str = "0.20mm Standard @BBL X1C") -> str:
+    """Liefert vollstaendige Standard-Prozesskonfiguration fuer OrcaSlicer."""
+    repo_root = Path(__file__).resolve().parent.parent.parent.parent
+    sdir = repo_root / "data" / "slicer" / "resources" / "profiles" / "BBL" / "process"
+    pfile = sdir / f"{name}.json"
+    if not pfile.is_file():
+        pfile = sdir / "0.20mm Standard @BBL X1C.json"
+    if pfile.is_file():
+        try:
+            return pfile.read_text(encoding="utf-8")
+        except Exception:
+            pass
+    return json.dumps({
+        "type": "process",
+        "name": name,
+        "from": "system",
+        "setting_id": "GP004",
+        "instantiation": "true",
+        "layer_height": "0.2",
+        "initial_layer_print_height": "0.2",
+        "wall_loops": "2",
+        "sparse_infill_density": "15%",
+    })
 
 
 def build_command(
@@ -85,8 +135,16 @@ def build_command(
         if filament_jsons:
             filament_paths = []
             for idx, text in enumerate(filament_jsons, start=1):
+                try:
+                    fj = json.loads(text) if text else {}
+                except Exception:
+                    fj = {}
+                if not fj.get("type"):
+                    fj["type"] = "filament"
+                if not fj.get("from"):
+                    fj["from"] = "system"
                 path = out_dir / f"filament_{idx}.json"
-                path.write_text(text, encoding="utf-8")
+                path.write_text(json.dumps(fj), encoding="utf-8")
                 filament_paths.append(str(path))
             cmd += ["--load-filaments", ";".join(filament_paths)]
     cmd += ["--outputdir", str(out_dir), str(source)]
@@ -119,14 +177,24 @@ def _package_gcode_3mf(source: Path, tmp_path: Path, out_path: Path, plate: int 
         except Exception:
             pass
 
+    first_gcode = gcode_files[0].read_text(encoding="utf-8", errors="replace")
     if pred_sec <= 0:
-        first_gcode = gcode_files[0].read_text(encoding="utf-8", errors="replace")
-        m_time = re.search(r"estimated printing time.*?=\s*(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?", first_gcode)
+        m_total = re.search(r"total estimated time:\s*(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?", first_gcode)
+        m_model = re.search(r"model printing time:\s*(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?", first_gcode)
+        m_time = m_total or m_model or re.search(r"estimated printing time.*?=\s*(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?", first_gcode)
         if m_time:
             hours = int(m_time.group(1) or 0)
             mins = int(m_time.group(2) or 0)
             secs = int(m_time.group(3) or 0)
             pred_sec = hours * 3600 + mins * 60 + secs
+
+    if weight_g <= 0.0:
+        m_w = re.search(r"filament used \[g\]\s*=\s*([\d.]+)", first_gcode)
+        m_cm3 = re.search(r"filament used \[cm3\]\s*=\s*([\d.]+)", first_gcode)
+        if m_w:
+            weight_g = float(m_w.group(1))
+        elif m_cm3:
+            weight_g = round(float(m_cm3.group(1)) * 1.24, 2)
 
     plate_idx = plate if (plate is not None and plate >= 1) else 1
     slice_info_xml = (
@@ -229,43 +297,89 @@ def slice_file(
         name = Path(name).stem + ".gcode.3mf"
     with tempfile.TemporaryDirectory(prefix="bambu_slice_") as tmp:
         tmp_path = Path(tmp)
-        copy = tmp_path / source.name
+        copy = (tmp_path / source.name).resolve()
         shutil.copy2(source, copy)
 
-        # Prüfen, ob übergebene Profile echte Vollkonfigurationen sind oder nur Stubs (wie {"inherits": ...}).
-        # Stubs lassen Bambu Studio CLI mit Fehlercode abstürzen; für .3mf-Dateien sind die embedded settings
-        # bereits vollständig vorhanden.
-        has_full_settings = False
-        if printer_json and process_json:
-            try:
-                pj = json.loads(printer_json)
-                prj = json.loads(process_json)
-                if isinstance(pj, dict) and isinstance(prj, dict) and len(pj) > 8 and len(prj) > 8:
-                    has_full_settings = True
-            except Exception:
-                has_full_settings = False
+        # Wenn STL geslict wird (oder Profile unvollstaendig sind), mit den Standard-OrcaSlicer-Profilen anreichern
+        use_printer_json = printer_json
+        use_process_json = process_json
+        use_filaments = []
+        if filament_jsons:
+            for fj_str in filament_jsons:
+                try:
+                    parsed = json.loads(fj_str) if fj_str else {}
+                    if isinstance(parsed, dict) and len(parsed) >= 6 and ("nozzle_temperature" in parsed or "filament_max_volumetric_speed" in parsed):
+                        use_filaments.append(fj_str)
+                except Exception:
+                    pass
 
-        use_printer_json = printer_json if has_full_settings else None
-        use_process_json = process_json if has_full_settings else None
-        use_filaments = filament_jsons if has_full_settings else []
+        is_stl = source.suffix.lower() == ".stl"
+        if is_stl and not arrange:
+            arrange = True
+        try:
+            pj = json.loads(printer_json) if printer_json else {}
+        except Exception:
+            pj = {}
+        try:
+            prj = json.loads(process_json) if process_json else {}
+        except Exception:
+            prj = {}
+
+        if is_stl or (printer_json and len(pj) < 10) or (process_json and len(prj) < 10):
+            m_target_name = pj.get("name") or "Bambu Lab P1S 0.4 nozzle"
+            base_m = json.loads(get_default_machine_json(m_target_name))
+            base_m.update({k: v for k, v in pj.items() if v is not None})
+            base_m["layer_gcode"] = ";AFTER_LAYER_CHANGE\nG92 E0"
+            use_printer_json = json.dumps(base_m)
+
+            base_p = json.loads(get_default_process_json(prj.get("name") or "0.20mm Standard @BBL X1C"))
+            base_p.update({k: v for k, v in prj.items() if v is not None})
+            base_p["from"] = "system"
+            use_process_json = json.dumps(base_p)
+
+        # Sicherstellen, dass das Prozessprofil mit dem Druckernamen kompatibel ist (OrcaSlicer-Validierung)
+        if use_process_json and use_printer_json:
+            try:
+                cur_m = json.loads(use_printer_json)
+                cur_p = json.loads(use_process_json)
+                target_m_name = cur_m.get("name")
+                if target_m_name:
+                    compat = cur_p.get("compatible_printers")
+                    if isinstance(compat, list):
+                        if target_m_name not in compat:
+                            compat.append(target_m_name)
+                    else:
+                        cur_p["compatible_printers"] = [target_m_name]
+                    cur_p.pop("compatible_printers_condition", None)
+                    use_process_json = json.dumps(cur_p)
+            except Exception:
+                pass
+
+        slicer_dir = str(Path(program).parent) if Path(program).is_file() else str(tmp_path)
+        slicer_env = dict(os.environ)
+        if Path(program).is_file():
+            slicer_env["PATH"] = str(Path(program).parent) + os.pathsep + slicer_env.get("PATH", "")
 
         cmd = build_command(
-            program, copy, tmp_path, name, use_printer_json, use_process_json, use_filaments or [], arrange, orient, plate
+            program, copy, tmp_path.resolve(), name, use_printer_json, use_process_json, use_filaments or [], arrange, orient, plate
         )
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=tmp_path, check=False)
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=slicer_dir, env=slicer_env, check=False)
         except (OSError, subprocess.SubprocessError) as exc:
             raise SlicerCliError(f"Bambu Studio konnte nicht gestartet werden: {exc}") from exc
 
-        # Retry Stufe 1: Falls mit Settings versucht und gescheitert -> ohne --load-settings probieren
+        if result.returncode != 0:
+            logger.warning("[PC-Slicer] Initial call code=%s, stderr=%s, cmd=%s", result.returncode, result.stderr, cmd)
+
+        # Retry Stufe 1: Falls mit Settings versucht und gescheitert -> falls 3MF, ohne --load-settings probieren
         has_gcodes = bool(list(tmp_path.glob("plate_*.gcode")))
-        if (result.returncode != 0 or not has_gcodes) and (use_printer_json is not None or use_process_json is not None):
+        if (result.returncode != 0 or not has_gcodes) and not is_stl and (use_printer_json is not None or use_process_json is not None):
             logger.warning("[PC-Slicer] Slicen mit Settings fehlgeschlagen; wiederhole mit eingebetteten 3MF-Settings.")
             cmd = build_command(
-                program, copy, tmp_path, name, None, None, [], arrange, orient, plate
+                program, copy, tmp_path.resolve(), name, None, None, [], arrange, orient, plate
             )
             try:
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=tmp_path, check=False)
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=slicer_dir, env=slicer_env, check=False)
             except (OSError, subprocess.SubprocessError) as exc:
                 raise SlicerCliError(f"Bambu Studio konnte nicht gestartet werden: {exc}") from exc
 
@@ -274,10 +388,10 @@ def slice_file(
         if (result.returncode != 0 or not has_gcodes) and plate is not None and plate > 0:
             logger.warning("[PC-Slicer] --slice %s fehlgeschlagen; wiederhole mit allen Platten (--slice 0).", plate)
             cmd = build_command(
-                program, copy, tmp_path, name, None, None, [], arrange, orient, 0
+                program, copy, tmp_path.resolve(), name, use_printer_json, use_process_json, use_filaments or [], arrange, orient, 0
             )
             try:
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=tmp_path, check=False)
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=slicer_dir, env=slicer_env, check=False)
             except (OSError, subprocess.SubprocessError) as exc:
                 raise SlicerCliError(f"Bambu Studio konnte nicht gestartet werden: {exc}") from exc
 

@@ -1,46 +1,39 @@
-"""Unit-Tests fuer den integrierten PrintLab-Slicer (builtin_slicer & pc_slicer)."""
+"""Unit-Tests fuer den integrierten PrintLab-Slicer (builtin_slicer, slicer_manager & pc_slicer)."""
 
 from __future__ import annotations
 
 import io
 import json
-import struct
 import zipfile
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from fastapi.testclient import TestClient
 
 from backend.app.pc_slicer import app as pc_slicer_app
 from backend.app.services.builtin_slicer import (
+    BUILTIN_VERSION,
     list_bundled_profiles,
     resolve_profile_values,
     slice_model_builtin,
 )
-from backend.app.services.slicer_cli import SlicerCliError
+from backend.app.services.slicer_cli import SliceOutput, SlicerCliError
+from backend.app.services.slicer_manager import find_existing_slicer, get_slicer_status
 
 
-def _make_binary_stl_cube(path: Path) -> None:
-    """Schreibt einen einfachen binaeren STL-Wuerfel (10x10x10 mm)."""
-    triangles = [
-        ((0, 0, -1), (0, 0, 0), (10, 10, 0), (10, 0, 0)),
-        ((0, 0, -1), (0, 0, 0), (0, 10, 0), (10, 10, 0)),
-        ((0, 0, 1), (0, 0, 10), (10, 0, 10), (10, 10, 10)),
-        ((0, 0, 1), (0, 0, 10), (10, 10, 10), (0, 10, 10)),
-        ((0, -1, 0), (0, 0, 0), (10, 0, 0), (10, 0, 10)),
-        ((0, -1, 0), (0, 0, 0), (10, 0, 10), (0, 0, 10)),
-        ((0, 1, 0), (0, 10, 0), (10, 10, 10), (10, 10, 0)),
-        ((0, 1, 0), (0, 10, 0), (0, 10, 10), (10, 10, 10)),
-        ((-1, 0, 0), (0, 0, 0), (0, 0, 10), (0, 10, 10)),
-        ((-1, 0, 0), (0, 0, 0), (0, 10, 10), (0, 10, 0)),
-        ((1, 0, 0), (10, 0, 0), (10, 10, 0), (10, 10, 10)),
-        ((1, 0, 0), (10, 0, 0), (10, 10, 10), (10, 0, 10)),
-    ]
+def _make_dummy_3mf_with_gcode(path: Path, gcode: str = "; TEST GCODE\nG1 X10 Y10\n") -> None:
+    """Erzeugt eine Test-3MF mit eingebetteter plate_1.gcode."""
     buf = io.BytesIO()
-    buf.write(b"PrintLab STL Cube".ljust(80, b"\x00"))
-    buf.write(struct.pack("<I", len(triangles)))
-    for normal, v0, v1, v2 in triangles:
-        buf.write(struct.pack("<12fH", *normal, *v0, *v1, *v2, 0))
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr(
+            "[Content_Types].xml",
+            '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>',
+        )
+        zf.writestr("Metadata/plate_1.gcode", gcode.encode("utf-8"))
+        zf.writestr(
+            "Metadata/slice_info.config",
+            '<config><plate><metadata key="prediction" value="120"/><metadata key="weight" value="5.5"/></plate></config>',
+        )
     path.write_bytes(buf.getvalue())
 
 
@@ -64,27 +57,47 @@ def test_resolve_profile_values_flattens_inherits_and_overrides():
     assert resolved["sparse_infill_density"] == "25%"
 
 
-def test_slice_model_builtin_produces_valid_gcode_3mf(tmp_path: Path):
-    stl_path = tmp_path / "cube.stl"
-    _make_binary_stl_cube(stl_path)
+def test_slice_model_builtin_extracts_pre_sliced_3mf(tmp_path: Path):
+    """Testet, dass bereits geslicte 3MFs mit vorhandenem G-Code sofort extrahiert werden."""
+    dummy_3mf = tmp_path / "presliced.3mf"
+    _make_dummy_3mf_with_gcode(dummy_3mf, "; OrcaSlicer generated gcode\nM104 S220\n")
 
-    result = slice_model_builtin(
-        stl_path,
-        "cube.gcode.3mf",
-        printer_json=json.dumps({"inherits": "Bambu Lab P2S 0.4 nozzle"}),
-        process_json=json.dumps({"inherits": "0.20mm Standard @BBL P2S"}),
-        filament_jsons=[json.dumps({"inherits": "Bambu PLA Basic @BBL P2S"})],
-    )
-    assert result.print_time_seconds > 0
-    assert result.filament_grams > 0
+    result = slice_model_builtin(dummy_3mf, "out.gcode.3mf", plate=1)
+    assert result.print_time_seconds == 120
+    assert result.filament_grams == 5.5
     with zipfile.ZipFile(io.BytesIO(result.content), "r") as zf:
-        names = set(zf.namelist())
-        assert "Metadata/plate_1.gcode" in names
-        assert "Metadata/plate_1.gcode.md5" in names
-        assert "Metadata/slice_info.config" in names
+        assert "Metadata/plate_1.gcode" in zf.namelist()
         gcode = zf.read("Metadata/plate_1.gcode").decode("utf-8")
-        assert "; CHANGE_LAYER" in gcode
-        assert "PrintLab Builtin Slicer" in gcode
+        assert "OrcaSlicer generated gcode" in gcode
+
+
+def test_slice_model_builtin_delegates_to_real_slicer(tmp_path: Path):
+    """Testet, dass ungeslicte Modelle an die echte OrcaSlicer-CLI delegiert werden."""
+    stl_path = tmp_path / "model.stl"
+    stl_path.write_text("solid test\nfacet normal 0 0 1\nouter loop\nvertex 0 0 0\nvertex 1 0 0\nvertex 1 1 0\nendloop\nendfacet\nendsolid test\n")
+
+    mock_output = SliceOutput(b"FAKE_3MF_DATA", 300, 12.4)
+    with patch("backend.app.services.builtin_slicer.find_existing_slicer", return_value="/usr/local/bin/orca-slicer"), \
+         patch("backend.app.services.builtin_slicer.slice_file", return_value=mock_output) as mock_slice:
+        res = slice_model_builtin(
+            stl_path,
+            "model.gcode.3mf",
+            printer_json=json.dumps({"name": "Bambu Lab P2S 0.4 nozzle"}),
+            process_json=json.dumps({"layer_height": "0.2"}),
+            plate=1,
+            request_id="req-123",
+        )
+        assert res.print_time_seconds == 300
+        assert res.filament_grams == 12.4
+        assert mock_slice.called
+
+
+def test_slicer_manager_status_and_discovery():
+    status = get_slicer_status()
+    assert "installed" in status
+    assert "version" in status
+    assert "platform" in status
+    assert status["version"] == "2.4.2"
 
 
 def test_pc_slicer_sidecar_contract_endpoints(tmp_path: Path):
@@ -108,33 +121,33 @@ def test_pc_slicer_sidecar_contract_endpoints(tmp_path: Path):
     assert resolved.json()["profile"]["layer_height"] == "0.2"
     assert resolved.json()["values"]["layer_height"] == "0.2"
 
-    stl_path = tmp_path / "part.stl"
-    _make_binary_stl_cube(stl_path)
-    with patch("backend.app.pc_slicer.slice_file", side_effect=SlicerCliError("Bambu Studio nicht gefunden")):
-        slice_resp = client.post(
-            "/slice",
-            headers={"X-Slice-Request-Id": "test-req-1"},
-            data={"exportType": "3mf"},
-            files=[
-                ("file", ("part.stl", stl_path.read_bytes(), "application/octet-stream")),
+    dummy_3mf = tmp_path / "part.3mf"
+    _make_dummy_3mf_with_gcode(dummy_3mf, "; GCODE PLATE 1\n")
+
+    slice_resp = client.post(
+        "/slice",
+        headers={"X-Slice-Request-Id": "test-req-1"},
+        data={"exportType": "3mf"},
+        files=[
+            ("file", ("part.3mf", dummy_3mf.read_bytes(), "application/octet-stream")),
+            (
+                "printerProfile",
+                ("printer.json", json.dumps({"inherits": "Bambu Lab P2S 0.4 nozzle"}).encode(), "application/json"),
+            ),
+            (
+                "presetProfile",
+                ("process.json", json.dumps({"inherits": "0.20mm Standard @BBL P2S"}).encode(), "application/json"),
+            ),
+            (
+                "filamentProfile",
                 (
-                    "printerProfile",
-                    ("printer.json", json.dumps({"inherits": "Bambu Lab P2S 0.4 nozzle"}).encode(), "application/json"),
+                    "filament_1.json",
+                    json.dumps({"inherits": "Bambu PLA Basic @BBL P2S"}).encode(),
+                    "application/json",
                 ),
-                (
-                    "presetProfile",
-                    ("process.json", json.dumps({"inherits": "0.20mm Standard @BBL P2S"}).encode(), "application/json"),
-                ),
-                (
-                    "filamentProfile",
-                    (
-                        "filament_1.json",
-                        json.dumps({"inherits": "Bambu PLA Basic @BBL P2S"}).encode(),
-                        "application/json",
-                    ),
-                ),
-            ],
-        )
+            ),
+        ],
+    )
     assert slice_resp.status_code == 200
     with zipfile.ZipFile(io.BytesIO(slice_resp.content), "r") as zf:
         assert "Metadata/plate_1.gcode" in zf.namelist()
@@ -142,58 +155,3 @@ def test_pc_slicer_sidecar_contract_endpoints(tmp_path: Path):
     prog = client.get("/slice/progress/test-req-1")
     assert prog.status_code == 200
     assert prog.json()["percent"] == 100
-
-
-def test_slice_model_builtin_slices_true_geometry_not_bounding_box(tmp_path: Path):
-    """Prueft, dass ein Zylinder mit runder Kontur geslict wird und NICHT als 4-Ecken-Klotz (Kastenleiste)."""
-    import re
-    import trimesh
-    cyl = trimesh.creation.cylinder(radius=12.0, height=8.0)
-    stl_path = tmp_path / "cylinder.stl"
-    cyl.export(str(stl_path))
-
-    result = slice_model_builtin(
-        stl_path,
-        "cylinder.gcode.3mf",
-        printer_json=json.dumps({"inherits": "Bambu Lab P2S 0.4 nozzle"}),
-        process_json=json.dumps({"inherits": "0.20mm Standard @BBL P2S"}),
-        filament_jsons=[json.dumps({"inherits": "Bambu PLA Basic @BBL P2S"})],
-    )
-    assert result.print_time_seconds > 0
-    with zipfile.ZipFile(io.BytesIO(result.content), "r") as zf:
-        gcode = zf.read("Metadata/plate_1.gcode").decode("utf-8")
-        
-        # Pruefe Schichten: es muessen viele runde Koordinatenpunkte vorkommen
-        lines = [l for l in gcode.splitlines() if l.startswith("G1 X") and "E" in l]
-        assert len(lines) > 50, "Zu wenige G1-Pfade fuer ein 3D-Modell"
-        
-        # Ein runder Zylinder hat Dutzende unterschiedliche X-Werte,
-        # waehrend ein Quader / Kastenleiste nur exakt 2 oder 4 X-Werte hat.
-        x_values = set()
-        for l in lines:
-            m = re.search(r"X([\d.]+)", l)
-            if m:
-                x_values.add(round(float(m.group(1)), 1))
-        assert len(x_values) >= 10, f"Modell wurde als Klotz statt als echter Zylinder geslict! X-Werte: {x_values}"
-
-
-def test_slice_model_builtin_generates_solid_shells_and_multi_walls(tmp_path: Path):
-    """Prueft, dass der Builtin-Slicer dichte Boeden/Decken, Innenwaende und Feature-Tags erzeugt."""
-    import trimesh
-    box = trimesh.creation.box([30.0, 30.0, 10.0])
-    stl_path = tmp_path / "box.stl"
-    box.export(str(stl_path))
-
-    result = slice_model_builtin(
-        stl_path,
-        "box.gcode.3mf",
-        printer_json=json.dumps({"inherits": "Bambu Lab P2S 0.4 nozzle"}),
-        process_json=json.dumps({"inherits": "0.20mm Standard @BBL P2S", "wall_loops": "3"}),
-        filament_jsons=[json.dumps({"inherits": "Bambu PLA Basic @BBL P2S"})],
-    )
-    with zipfile.ZipFile(io.BytesIO(result.content), "r") as zf:
-        gcode = zf.read("Metadata/plate_1.gcode").decode("utf-8")
-        assert "; FEATURE: Outer wall" in gcode
-        assert "; FEATURE: Inner wall" in gcode
-        assert "; FEATURE: Top surface" in gcode
-        assert "G1 E-0.8000 F3600" in gcode  # Retraktion bei Travel

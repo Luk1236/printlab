@@ -532,14 +532,27 @@ def run_durchstich() -> list[dict]:
             from backend.app.services import builtin_slicer
 
             stl_path = tmp_dir / "abnahme_wuerfel.stl"
-            stl_path.write_text(
-                "solid cube\n"
-                "facet normal 0 0 1\n outer loop\n"
-                "  vertex 0 0 0\n  vertex 20 0 0\n  vertex 20 20 10\n"
-                " endloop\nendfacet\n"
-                "endsolid cube\n",
-                encoding="utf-8",
-            )
+            triangles = [
+                ((0, 0, -1), (0, 0, 0), (10, 10, 0), (10, 0, 0)),
+                ((0, 0, -1), (0, 0, 0), (0, 10, 0), (10, 10, 0)),
+                ((0, 0, 1), (0, 0, 10), (10, 0, 10), (10, 10, 10)),
+                ((0, 0, 1), (0, 0, 10), (10, 10, 10), (0, 10, 10)),
+                ((0, -1, 0), (0, 0, 0), (10, 0, 0), (10, 0, 10)),
+                ((0, -1, 0), (0, 0, 0), (10, 0, 10), (0, 0, 10)),
+                ((0, 1, 0), (0, 10, 0), (10, 10, 10), (10, 10, 0)),
+                ((0, 1, 0), (0, 10, 0), (0, 10, 10), (10, 10, 10)),
+                ((-1, 0, 0), (0, 0, 0), (0, 0, 10), (0, 10, 10)),
+                ((-1, 0, 0), (0, 0, 0), (0, 10, 10), (0, 10, 0)),
+                ((1, 0, 0), (10, 0, 0), (10, 10, 0), (10, 10, 10)),
+                ((1, 0, 0), (10, 0, 0), (10, 10, 10), (0, 10, 10)),
+            ]
+            import io, struct
+            buf = io.BytesIO()
+            buf.write(b"PrintLab STL Cube".ljust(80, b"\x00"))
+            buf.write(struct.pack("<I", len(triangles)))
+            for normal, v0, v1, v2 in triangles:
+                buf.write(struct.pack("<12fH", *normal, *v0, *v1, *v2, 0))
+            stl_path.write_bytes(buf.getvalue())
             sliced = builtin_slicer.slice_model_builtin(
                 stl_path,
                 "abnahme_wuerfel.gcode.3mf",

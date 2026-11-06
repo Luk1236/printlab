@@ -870,3 +870,23 @@ async def dismiss_crash_report(
 
     crash_diagnostics.dismiss_report(settings.base_dir)
     return {"status": "ok", "dismissed": True}
+
+@router.get("/slicer-engine")
+async def get_slicer_engine(
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.SYSTEM_READ),
+):
+    """Liefert den aktuellen Status der integrierten OrcaSlicer-Engine (installiert, Pfad, Version, Plattform)."""
+    from backend.app.services.slicer_manager import get_slicer_status
+
+    return get_slicer_status()
+
+
+@router.post("/slicer-engine/install")
+async def install_slicer_engine(
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.SYSTEM_ADMIN),
+):
+    """Laedt die echte OrcaSlicer-Engine von GitHub herunter und richtet sie ein."""
+    from backend.app.services.slicer_manager import get_slicer_status, install_orca_slicer_from_github
+
+    await asyncio.to_thread(install_orca_slicer_from_github)
+    return get_slicer_status()

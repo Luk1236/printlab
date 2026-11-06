@@ -3,6 +3,21 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.26 (06.11.2026) — Offizielle OrcaSlicer-Engine integriert (GitHub Auto-Download & Headless-Slicing)
+
+- **Echter GitHub-Slicer statt fehlerhaftem Python-Code (`builtin_slicer.py` & `slicer_manager.py`):**
+  - Vollstaendige Abloesung des frueheren Polygon-basierten Python-Slicers durch die offizielle **OrcaSlicer v2.4.2 CLI-Engine** direkt von GitHub (`SoftFever/OrcaSlicer` sowie `kldzj/orca-slicer-arm64`).
+  - Komplexe Geometrien, Handyhalter, Loecher, Waende, Infill und Ueberhaenge werden 1:1 exakt in echten Bambu Lab G-Code geslict – keine massiven Kloetze oder fehlerhaften Gitterstrukturen mehr.
+  - Automatischer Download und Entpacken der passenden Binaerdatei fuer Windows (x64 / ARM64) und Linux / Raspberry Pi (x86_64 / aarch64 mit Xvfb-Headless-Unterstuetzung).
+- **Robuste Profil- & Druckervalidierung (`slicer_cli.py`):**
+  - Automatische Injektion von `compatible_printers` in Prozessprofile, sodass alle Druckerprofile (Bambu Lab P2S, P1S, X1 Carbon, A1, A1 mini, H2D) ohne OrcaSlicer-Preset-Fehler sauber geslict werden.
+  - Automatische Zentrierung (`--arrange 1`) und Vermeidung der Bambu Lab Bett-Ausschlusszone (Cutter/Wiper) fuer STL-Modelle.
+  - Automatischer Layer-Reset (`layer_gcode: ";AFTER_LAYER_CHANGE\nG92 E0"`) zur Verhinderung von Rundungsfehlern bei relativer Extrusion.
+  - Praezise Rueckgabe von Druckzeit (`seconds`) und Filamentgewicht (`grams`) aus den erzeugten G-Code-Dateien und `slice_info.config`.
+- **System-Verwaltung (`/api/v1/system/slicer-engine`):**
+  - Neue API-Endpunkte zur Abfrage des Slicer-Zustands (`GET /slicer-engine`) und zur Hintergrund-Installation von GitHub (`POST /slicer-engine/install`).
+  - Standalone-Installer `werkzeuge/pi_slicer_installieren.sh` fuer unkomplizierte Einrichtung auf Raspberry Pi OS.
+
 ## v2.0.25 (06.11.2026) — Vollwertige Solid-Skin & Mehrfach-Wand-Slicing, Pi OrcaSlicer-Installer
 
 - **Vollstaendige Solid-Skin- & Mehrfach-Wand-Engine (`builtin_slicer.py`):**
