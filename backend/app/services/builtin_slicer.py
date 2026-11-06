@@ -30,6 +30,9 @@ import threading
 import time
 import xml.etree.ElementTree as ET
 import zipfile
+import numpy as np
+import trimesh
+from trimesh.intersections import mesh_plane
 from pathlib import Path
 from typing import Any
 
@@ -232,59 +235,149 @@ def _parse_json_safe(raw: str | None) -> dict[str, Any]:
         return {}
 
 
-def _extract_mesh_bounds_and_triangles(
-    source: Path,
-) -> tuple[list[tuple[float, float, float]], tuple[float, float, float, float, float, float]]:
-    """Liest Knoten aus einer .stl- oder .3mf-Datei und gibt (Vertices, (xmin, ymin, zmin, xmax, ymax, zmax)) zurück."""
+def _load_mesh(source: Path) -> trimesh.Trimesh:
+    """Laedt STL oder 3MF und gibt ein echtes 3D-Mesh (trimesh.Trimesh) mit Vertices & Dreiecksflaechen zurueck."""
     suffix = source.suffix.lower()
     verts: list[tuple[float, float, float]] = []
+    faces: list[tuple[int, int, int]] = []
 
     if suffix == ".stl":
         data = source.read_bytes()
         if len(data) >= 84 and not data[:5].lower().startswith(b"solid"):
             count = struct.unpack("<I", data[80:84])[0]
-            max_tris = min(count, (len(data) - 84) // 50, 200000)
+            max_tris = min(count, (len(data) - 84) // 50, 500000)
             offset = 84
+            v_idx = 0
             for _ in range(max_tris):
                 vals = struct.unpack("<12fH", data[offset : offset + 50])
                 verts.append((vals[3], vals[4], vals[5]))
                 verts.append((vals[6], vals[7], vals[8]))
                 verts.append((vals[9], vals[10], vals[11]))
+                faces.append((v_idx, v_idx + 1, v_idx + 2))
+                v_idx += 3
                 offset += 50
         else:
             text = data.decode("utf-8", "replace")
+            tri: list[tuple[float, float, float]] = []
+            v_idx = 0
             for m in re.finditer(r"vertex\s+([-\d.eE+]+)\s+([-\d.eE+]+)\s+([-\d.eE+]+)", text):
-                verts.append((float(m.group(1)), float(m.group(2)), float(m.group(3))))
+                tri.append((float(m.group(1)), float(m.group(2)), float(m.group(3))))
+                if len(tri) == 3:
+                    verts.extend(tri)
+                    faces.append((v_idx, v_idx + 1, v_idx + 2))
+                    v_idx += 3
+                    tri = []
     elif suffix == ".3mf" and zipfile.is_zipfile(source):
         with zipfile.ZipFile(source) as zf:
             model_files = [n for n in zf.namelist() if n.lower().endswith(".model")]
-            for mf in model_files:
+            for mf in sorted(model_files):
                 try:
                     xml_bytes = zf.read(mf)
                     root = ET.fromstring(xml_bytes)  # noqa: S314
+                    v_base = len(verts)
+                    file_verts: list[tuple[float, float, float]] = []
                     for elem in root.iter():
-                        if elem.tag.endswith("vertex"):
+                        tag = elem.tag.split("}")[-1] if "}" in elem.tag else elem.tag
+                        if tag == "vertex":
                             x = float(elem.attrib.get("x", "0"))
                             y = float(elem.attrib.get("y", "0"))
                             z = float(elem.attrib.get("z", "0"))
-                            verts.append((x, y, z))
+                            file_verts.append((x, y, z))
+                        elif tag == "triangle":
+                            v1 = int(elem.attrib.get("v1", "0")) + v_base
+                            v2 = int(elem.attrib.get("v2", "0")) + v_base
+                            v3 = int(elem.attrib.get("v3", "0")) + v_base
+                            faces.append((v1, v2, v3))
+                    verts.extend(file_verts)
                 except Exception:
                     continue
 
-    if not verts:
-        # Fallback: 20x20x10 mm Kalibrierkörper, falls ein Modell nur eingebettete Metadaten enthält
-        verts = [
-            (0.0, 0.0, 0.0),
-            (20.0, 0.0, 0.0),
-            (20.0, 20.0, 0.0),
-            (0.0, 20.0, 10.0),
-            (20.0, 20.0, 10.0),
-        ]
+    if not verts or not faces:
+        return trimesh.creation.box(extents=(20.0, 20.0, 10.0))
 
-    xs = [v[0] for v in verts]
-    ys = [v[1] for v in verts]
-    zs = [v[2] for v in verts]
-    return verts, (min(xs), min(ys), min(zs), max(xs), max(ys), max(zs))
+    return trimesh.Trimesh(vertices=verts, faces=faces, process=False)
+
+
+def _chain_segments(segments: np.ndarray, decimals: int = 2) -> list[list[tuple[float, float]]]:
+    """Verbindet Liniensegmente aus mesh_plane zu zusammenhaengenden 2D-Polygonpfaden (Perimeter)."""
+    if len(segments) == 0:
+        return []
+    from collections import defaultdict
+
+    adj: dict[tuple[float, float], list[tuple[tuple[float, float], int, tuple[float, float], tuple[float, float]]]] = defaultdict(list)
+    for idx, (p0, p1) in enumerate(segments):
+        k0 = (round(float(p0[0]), decimals), round(float(p0[1]), decimals))
+        k1 = (round(float(p1[0]), decimals), round(float(p1[1]), decimals))
+        pt0 = (float(p0[0]), float(p0[1]))
+        pt1 = (float(p1[0]), float(p1[1]))
+        adj[k0].append((k1, idx, pt0, pt1))
+        adj[k1].append((k0, idx, pt1, pt0))
+
+    used: set[int] = set()
+    loops: list[list[tuple[float, float]]] = []
+
+    for (p0, p1) in segments:
+        k_start = (round(float(p0[0]), decimals), round(float(p0[1]), decimals))
+        for next_k, idx, pt_from, pt_to in adj[k_start]:
+            if idx in used:
+                continue
+            used.add(idx)
+            loop = [pt_from, pt_to]
+            cur_k = next_k
+
+            while True:
+                found = False
+                for nk, s_idx, _f_pt, t_pt in adj[cur_k]:
+                    if s_idx not in used:
+                        used.add(s_idx)
+                        loop.append(t_pt)
+                        cur_k = nk
+                        found = True
+                        break
+                if not found:
+                    break
+            if len(loop) >= 3:
+                loops.append(loop)
+    return loops
+
+
+def _scanline_infill(
+    loops: list[list[tuple[float, float]]],
+    y_step: float = 4.0,
+    flip: bool = False,
+) -> list[tuple[tuple[float, float], tuple[float, float]]]:
+    """Erzeugt Infill-Linien nur innerhalb der tatsaechlichen Modell-Konturen (Hohlraeume bleiben frei)."""
+    if not loops:
+        return []
+    all_ys = [p[1] for l in loops for p in l]
+    ymin, ymax = min(all_ys), max(all_ys)
+    lines: list[tuple[tuple[float, float], tuple[float, float]]] = []
+
+    y = ymin + max(0.4, y_step / 2.0)
+    cur_flip = flip
+    while y <= ymax - 0.4:
+        intersections: list[float] = []
+        for loop in loops:
+            n = len(loop)
+            for k in range(n - 1):
+                p0, p1 = loop[k], loop[k + 1]
+                if (p0[1] <= y < p1[1]) or (p1[1] <= y < p0[1]):
+                    dy = p1[1] - p0[1]
+                    if abs(dy) > 1e-6:
+                        t = (y - p0[1]) / dy
+                        x = p0[0] + t * (p1[0] - p0[0])
+                        intersections.append(x)
+        intersections.sort()
+        for m in range(0, len(intersections) - 1, 2):
+            x_start, x_end = intersections[m], intersections[m + 1]
+            if x_end - x_start > 0.8:
+                if cur_flip:
+                    lines.append(((round(x_end, 3), round(y, 3)), (round(x_start, 3), round(y, 3))))
+                else:
+                    lines.append(((round(x_start, 3), round(y, 3)), (round(x_end, 3), round(y, 3))))
+        y += y_step
+        cur_flip = not cur_flip
+    return lines
 
 
 def _try_extract_existing_3mf_slice(source: Path, plate: int | None) -> SliceOutput | None:
@@ -362,18 +455,26 @@ def slice_model_builtin(
     nozzle_temp = 220 if filament_type == "PLA" else (240 if filament_type == "PETG" else 255)
     bed_temp = 60 if filament_type == "PLA" else (70 if filament_type == "PETG" else 95)
 
-    set_slice_progress(request_id, "Slicing layers", 40)
-    _verts, (xmin, ymin, zmin, xmax, ymax, zmax) = _extract_mesh_bounds_and_triangles(source)
-    dx = max(4.0, min(240.0, xmax - xmin))
-    dy = max(4.0, min(240.0, ymax - ymin))
-    dz = max(layer_h, min(250.0, zmax - zmin))
+    set_slice_progress(request_id, "Preparing model geometry", 20)
+    mesh = _load_mesh(source)
 
-    cx, cy = 128.0, 128.0
-    x0, x1 = round(cx - dx / 2.0, 3), round(cx + dx / 2.0, 3)
-    y0, y1 = round(cy - dy / 2.0, 3), round(cy + dy / 2.0, 3)
+    # Modell auf das Druckbett zentrieren (Bambu 256x256 -> Mitte 128, 128) und Boden auf z=0 setzen
+    bounds = mesh.bounds
+    min_b, max_b = bounds[0], bounds[1]
+    dx = float(max_b[0] - min_b[0])
+    dy = float(max_b[1] - min_b[1])
+    dz = float(max_b[2] - min_b[2])
+
+    center_x = (min_b[0] + max_b[0]) / 2.0
+    center_y = (min_b[1] + max_b[1]) / 2.0
+    shift_x = 128.0 - center_x
+    shift_y = 128.0 - center_y
+    shift_z = -float(min_b[2])
+
+    mesh.apply_translation([shift_x, shift_y, shift_z])
     num_layers = max(1, int(math.ceil(dz / layer_h)))
 
-    set_slice_progress(request_id, "Generating G-code", 70)
+    set_slice_progress(request_id, "Generating G-code", 30)
     lines: list[str] = [
         "; HEADER_BLOCK_START",
         f"; generated by PrintLab Builtin Slicer {BUILTIN_VERSION}",
@@ -394,49 +495,66 @@ def slice_model_builtin(
     e_per_mm = round(0.033 * (layer_h / 0.20), 5)
     total_e_mm = 0.0
     total_travel_mm = 0.0
+    infill_step = max(1.5, round(4.0 * (20.0 / max(5.0, infill_pct)), 2))
+    flip_infill = False
 
     for layer_idx in range(num_layers):
+        if layer_idx % 10 == 0:
+            pct = 30 + int(55 * (layer_idx / max(1, num_layers)))
+            set_slice_progress(request_id, "Slicing layers", pct)
+
         z = round((layer_idx + 1) * layer_h, 3)
         feed = 1800 if layer_idx == 0 else 4800
+
+        # Schnitt mit Ebene z
+        segs = mesh_plane(mesh, plane_normal=[0, 0, 1], plane_origin=[0, 0, z])
+        loops = _chain_segments(segs)
+
         lines.append("; CHANGE_LAYER")
-        lines.append(f"; Z_HEIGHT: {z}")
+        lines.append(f"; Z_HEIGHT: {z:.3f}")
         lines.append(f"; LAYER_HEIGHT: {layer_h}")
         lines.append(f"G1 Z{z:.3f} F1200")
 
-        for w in range(walls):
-            inset = round(w * 0.42, 3)
-            wx0, wx1 = x0 + inset, x1 - inset
-            wy0, wy1 = y0 + inset, y1 - inset
-            if wx1 <= wx0 or wy1 <= wy0:
-                break
-            seg_x = wx1 - wx0
-            seg_y = wy1 - wy0
-            ex = round(seg_x * e_per_mm, 4)
-            ey = round(seg_y * e_per_mm, 4)
-            lines.append(f"G0 X{wx0:.3f} Y{wy0:.3f} F9000")
-            lines.append(f"G1 X{wx1:.3f} Y{wy0:.3f} E{ex:.4f} F{feed}")
-            lines.append(f"G1 X{wx1:.3f} Y{wy1:.3f} E{ey:.4f} F{feed}")
-            lines.append(f"G1 X{wx0:.3f} Y{wy1:.3f} E{ex:.4f} F{feed}")
-            lines.append(f"G1 X{wx0:.3f} Y{wy0:.3f} E{ey:.4f} F{feed}")
-            perim = 2.0 * (seg_x + seg_y)
-            total_e_mm += perim * e_per_mm
-            total_travel_mm += perim
+        if not loops:
+            continue
 
-        if infill_pct > 0 and (x1 - x0) > 2.0 and (y1 - y0) > 2.0:
-            step = max(1.2, round(4.0 * (20.0 / max(5.0, infill_pct)), 2))
-            y_cur = y0 + 0.84
-            flip = False
-            while y_cur < y1 - 0.84:
-                ix_start = x0 + 0.84 if not flip else x1 - 0.84
-                ix_end = x1 - 0.84 if not flip else x0 + 0.84
-                seg = abs(ix_end - ix_start)
-                e_inf = round(seg * e_per_mm, 4)
-                lines.append(f"G0 X{ix_start:.3f} Y{y_cur:.3f} F9000")
-                lines.append(f"G1 X{ix_end:.3f} Y{y_cur:.3f} E{e_inf:.4f} F{feed}")
+        # 1. Perimeter (Aussenkonturen und Hohlraeume)
+        for loop in loops:
+            if len(loop) < 2:
+                continue
+            lines.append(f"G0 X{loop[0][0]:.3f} Y{loop[0][1]:.3f} F9000")
+            prev = loop[0]
+            for pt in loop[1:]:
+                dist = math.hypot(pt[0] - prev[0], pt[1] - prev[1])
+                if dist < 0.01:
+                    continue
+                e_val = round(dist * e_per_mm, 4)
+                lines.append(f"G1 X{pt[0]:.3f} Y{pt[1]:.3f} E{e_val:.4f} F{feed}")
+                total_e_mm += e_val
+                total_travel_mm += dist
+                prev = pt
+
+            # Schleife schliessen, falls Endpunkt nicht Startpunkt ist
+            close_dist = math.hypot(loop[0][0] - prev[0], loop[0][1] - prev[1])
+            if close_dist > 0.02:
+                e_close = round(close_dist * e_per_mm, 4)
+                lines.append(f"G1 X{loop[0][0]:.3f} Y{loop[0][1]:.3f} E{e_close:.4f} F{feed}")
+                total_e_mm += e_close
+                total_travel_mm += close_dist
+
+        # 2. Infill nur innerhalb der echten Konturen (Hohlraeume bleiben frei)
+        if infill_pct > 0.0:
+            infill_lines = _scanline_infill(loops, y_step=infill_step, flip=flip_infill)
+            flip_infill = not flip_infill
+            for pt_start, pt_end in infill_lines:
+                dist = math.hypot(pt_end[0] - pt_start[0], pt_end[1] - pt_start[1])
+                if dist < 0.2:
+                    continue
+                e_inf = round(dist * e_per_mm, 4)
+                lines.append(f"G0 X{pt_start[0]:.3f} Y{pt_start[1]:.3f} F9000")
+                lines.append(f"G1 X{pt_end[0]:.3f} Y{pt_end[1]:.3f} E{e_inf:.4f} F{feed}")
                 total_e_mm += e_inf
-                total_travel_mm += seg
-                y_cur = round(y_cur + step, 3)
-                flip = not flip
+                total_travel_mm += dist
 
     lines.extend(
         [

@@ -43,6 +43,22 @@ export interface CompanyProfile {
   has_logo: boolean;
 }
 
+export interface CrashReport {
+  detected_at: string;
+  is_system_reboot: boolean;
+  is_service_crash: boolean;
+  previous_boot_id: string | null;
+  current_boot_id: string | null;
+  last_heartbeat: number;
+  cause: string;
+  title: string;
+  explanation: string;
+  recommendations: string[];
+  throttled_flags: string[];
+  recent_logs: string[];
+  dismissed: boolean;
+}
+
 export interface PiHealthWarning {
   level: 'warn' | 'crit';
   code: string;
@@ -60,6 +76,7 @@ export interface PiHealth {
   backup: { path: string; age_days: number } | null;
   external_backup: { ok: boolean; detail: string; at: string } | null;
   warnings: PiHealthWarning[];
+  crash_report?: CrashReport | null;
 }
 
 export interface AlertChannelsStatus {
@@ -842,6 +859,8 @@ export function createForkApi({ request, apiBase, getAuthToken }: ForkApiDeps) {
     return { blob: await response.blob(), filename: match?.[1] ?? 'Monatsreport.pdf' };
   },
   getPiHealth: () => request<PiHealth>('/system/pi-health'),
+  dismissCrashReport: () => request<{ status: string; dismissed: boolean }>('/system/crash-report/dismiss', { method: 'POST' }),
+  getCrashReport: () => request<{ crash_report: CrashReport | null }>('/system/crash-report'),
   getRemoteAccess: () => request<RemoteAccessStatus>('/remote-access'),
   setupRemoteAccess: () => request<RemoteAccessStatus>('/remote-access/setup', { method: 'POST' }),
   shareRemoteAccess: () => request<RemoteAccessStatus>('/remote-access/share', { method: 'POST' }),

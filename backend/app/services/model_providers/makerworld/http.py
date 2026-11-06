@@ -146,21 +146,19 @@ async def _download_s3_urllib(url: str, filename_fallback: str) -> tuple[bytes, 
 
 
 def _extract_upstream_error(response: httpx.Response) -> str | None:
-    """Pull MakerWorld's own error text out of a 4xx/5xx response body.
-
-    MakerWorld returns ``{"code": N, "error": "text"}`` on auth/perm failures
-    and sometimes ``{"message": "..."}`` on other errors. Returns ``None`` if
-    the body isn't JSON or doesn't have a recognised error field — callers
-    should fall back to a generic message in that case.
-    """
+    """Pull MakerWorld's own error text out of a 4xx/5xx response body."""
     try:
         data = response.json()
-    except ValueError:
-        return None
-    if not isinstance(data, dict):
-        return None
-    for key in ("error", "message", "detail"):
-        value = data.get(key)
-        if isinstance(value, str) and value.strip():
-            return value.strip()
+        if isinstance(data, dict):
+            for key in ("error", "message", "detail", "msg", "error_msg", "description"):
+                value = data.get(key)
+                if isinstance(value, str) and value.strip():
+                    return value.strip()
+            if "code" in data:
+                return f"Code {data['code']}"
+    except Exception:
+        pass
+    text = response.text.strip()
+    if text and len(text) < 200 and not text.startswith("<"):
+        return text
     return None

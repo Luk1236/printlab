@@ -29,6 +29,19 @@ async def on_startup(base_dir: Path, session_factory: Callable[[], Any]) -> None
     except Exception as exc:  # pragma: no cover - darf den Start nie verhindern
         logger.warning("Update-Bestätigung nicht geplant: %s", exc)
 
+    # Absturz-Diagnose: Prüfen, ob Rechner oder Dienst unerwartet neu gestartet wurden
+    try:
+        import asyncio
+        from backend.app.services import crash_diagnostics
+
+        task = asyncio.get_running_loop().create_task(
+            crash_diagnostics.check_crash_and_notify(base_dir, session_factory)
+        )
+        _BACKGROUND_TASKS.add(task)
+        task.add_done_callback(_BACKGROUND_TASKS.discard)
+    except Exception as exc:  # noqa: BLE001
+        logger.debug("[PrintLab] Absturzprüfung übersprungen: %s", exc)
+
     # Integrierten Slicer auf 127.0.0.1:3001 / 3003 starten und Slicer-API standardmäßig einschalten
     if os.environ.get("PRINTLAB_DISABLE_BUILTIN_SLICER", "").strip() not in ("1", "true", "yes"):
         try:

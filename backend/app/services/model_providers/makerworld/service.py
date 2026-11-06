@@ -582,34 +582,46 @@ class MakerWorldService(ProviderService):
         headers = dict(_CLIENT_HEADERS)
         headers["Authorization"] = f"Bearer {self._auth_token}"
 
-        # Try model_id as given, and fall back to without model_id if 400 occurs
-        m_candidates = [str(model_id)] if model_id else []
-        m_candidates.append("")  # fallback without model_id query parameter
+        # Try model_id as given, design_id, and fall back to without model_id if 400 occurs
+        param_candidates: list[dict[str, str]] = []
+        if model_id:
+            param_candidates.append({"model_id": str(model_id)})
+            param_candidates.append({"design_id": str(model_id)})
+        param_candidates.append({"profile_id": str(profile_id)})
+        param_candidates.append({})  # fallback without query parameters
+
+        # Also prepare fallback header with BambuStudio user-agent if cloud gateway checks it
+        header_variants = [
+            headers,
+            {**headers, "User-Agent": "BambuStudio/01.09.05.51 (Windows 10 Pro; x64)"},
+        ]
 
         response = None
-        for m_val in m_candidates:
-            p = {"model_id": m_val} if m_val else {}
-            try:
-                response = await self._client.get(
-                    url,
-                    headers=headers,
-                    params=p,
-                    timeout=30.0,
-                )
-            except httpx.TimeoutException as exc:
-                raise MakerWorldUnavailableError(f"Bambu Lab API request timed out: {exc}") from exc
-            except httpx.HTTPError as exc:
-                raise MakerWorldUnavailableError(f"Bambu Lab API request failed: {exc}") from exc
+        for h_variant in header_variants:
+            for p in param_candidates:
+                try:
+                    response = await self._client.get(
+                        url,
+                        headers=h_variant,
+                        params=p,
+                        timeout=30.0,
+                    )
+                except httpx.TimeoutException as exc:
+                    raise MakerWorldUnavailableError(f"Bambu Lab API request timed out: {exc}") from exc
+                except httpx.HTTPError as exc:
+                    raise MakerWorldUnavailableError(f"Bambu Lab API request failed: {exc}") from exc
 
-            if response.status_code == 401:
-                await self._note_auth_failure(response)
-                raise MakerWorldAuthError(_SIGN_IN_EXPIRED_MESSAGE)
-            if response.status_code == 403:
-                upstream = _extract_upstream_error(response)
-                raise MakerWorldForbiddenError(upstream or f"Bambu Lab verweigerte Zugriff auf Profil {profile_id}")
-            if response.status_code == 200:
-                break
-            if response.status_code not in (400, 404):
+                if response.status_code == 401:
+                    await self._note_auth_failure(response)
+                    raise MakerWorldAuthError(_SIGN_IN_EXPIRED_MESSAGE)
+                if response.status_code == 403:
+                    upstream = _extract_upstream_error(response)
+                    raise MakerWorldForbiddenError(upstream or f"Bambu Lab verweigerte Zugriff auf Profil {profile_id}")
+                if response.status_code == 200:
+                    break
+                if response.status_code not in (400, 404):
+                    break
+            if response is not None and response.status_code == 200:
                 break
 
         if response is None:

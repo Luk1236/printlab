@@ -200,6 +200,15 @@ def warnings_for(info: dict[str, Any]) -> list[dict[str, Any]]:
             "external_failed",
             "Die letzte Sicherung nach außen ist fehlgeschlagen: " + str(external.get("detail", "")),
         )
+    crash = info.get("crash_report")
+    if crash and not crash.get("dismissed"):
+        level = "crit" if crash.get("cause") in ("undervoltage", "oom", "thermal", "kernel_panic") else "warn"
+        add(
+            level,
+            "system_crashed",
+            f"Neustart nach Absturz: {crash.get('title')}. {crash.get('explanation')}",
+            cause=crash.get("cause"),
+        )
     return out
 
 
@@ -225,6 +234,14 @@ def external_backup_status(data_dir: Path | str) -> dict[str, Any] | None:
 def snapshot(data_dir: Path | str, extra_backup_dirs: list[Path] | None = None) -> dict[str, Any]:
     if extra_backup_dirs is None:
         extra_backup_dirs = backup_dirs()
+    crash_report = None
+    try:
+        from backend.app.services import crash_diagnostics
+
+        crash_report = crash_diagnostics.get_last_report(data_dir)
+    except Exception:
+        pass
+
     info: dict[str, Any] = {
         "cpu_temp_c": cpu_temp_c(),
         "throttled": throttled(),
@@ -234,6 +251,7 @@ def snapshot(data_dir: Path | str, extra_backup_dirs: list[Path] | None = None) 
         "uptime_seconds": uptime_seconds(),
         "backup": latest_backup(data_dir, extra_backup_dirs),
         "external_backup": external_backup_status(data_dir),
+        "crash_report": crash_report,
     }
     info["warnings"] = warnings_for(info)
     return info

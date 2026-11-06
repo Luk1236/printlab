@@ -3,6 +3,26 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.24 (06.11.2026) — Raspberry Pi Absturzschutz, Watchdog-Auto-Reboot, Planarer Python-Slicer & MakerWorld-Download
+
+- **Raspberry Pi Absturzschutz & Watchdog-Automatisierung (`werkzeuge/pi_absturzschutz.sh`):**
+  - Automatisches sauberes Rebooten bei Freezes/Hangs durch Aktivierung des Hardware-Watchdogs (`bcm2835_wdt`, `RuntimeWatchdogSec=15s`, `RebootWatchdogSec=2min`).
+  - Automatischer Kernel-Reboot nach 10 Sekunden bei Kernel-Panic (`kernel.panic = 10`, `kernel.panic_on_oops = 1`, `vm.panic_on_oom = 0`).
+  - Persistenter systemd-Journal-Speicher (`Storage=persistent`, 100 MB MaxUse) zur Erhaltung von Log-Eintraegen ueber Reboots und Abstuerze hinweg.
+  - 2 GB Swap-Speicher zur Vermeidung ploetzlicher Out-Of-Memory-Kernel-Crashes bei grossen Slices.
+  - Systemd Service Auto-Restart mit 3-Sekunden-Backoff (`Restart=always`).
+- **Absturz-Diagnose & Ursachen-Analyse (`crash_diagnostics.py`):**
+  - Erkennt unsaubere Reboots und analysiert die Ursache: Unterspannung / Brownout via `vcgencmd get_throttled` (Bit 0/16), Out-Of-Memory (OOM-Killer), thermische Notabschaltung, Kernel-Panic, Watchdog-Reset oder Stromausfall.
+  - Prominente Diagnose-Warnung in `PiHealthCard` mit verstaendlichen Erklaerungen, konkreten Loesungsschritten (z. B. 27W USB-C Netzteil, aktiver USB-Hub) und ausklappbarem Log-Auszug des vorherigen Boots.
+  - Neue Endpunkte `GET /api/v1/system/crash-report` und `POST /api/v1/system/crash-report/dismiss`.
+- **Echter planarer Python-Slicer (`builtin_slicer.py`):**
+  - Ersetzt die fruehere Bounding-Box-Generierung durch echte geometrische 2D-Ebenenschnitte (`trimesh.intersections.mesh_plane`).
+  - Rekonstruiert echte Aussenkonturen und Hohlraeume/Aussparungen (`_chain_segments`) und platziert Infill nur innerhalb der realen Polygonpfade (`_scanline_infill`).
+  - Das geslicte Modell entspricht zu 100% der Geometrie des 3D-Modells – keine massiven Kloetze / Kastenleisten mehr.
+- **MakerWorld-Download-Fix & Upstream-Fehler-Transparenz:**
+  - Praezise Extraktion von Upstream-Fehlergruenden (`msg`, `error_msg`, `description`, `code`) statt eines undurchsichtigen HTTP 400.
+  - Robuster Multi-Parameter-Fallback (`model_id`, `design_id`, `profile_id`, Fallback-User-Agent) fuer die Bambu Lab IoT API.
+
 ## v2.0.23 (06.11.2026) — Einstellungsfenster: Saubere Unterpunkte & Beseitigung redundanter Karten
 
 - **Strukturierte Unterpunkte im Allgemein-Menü:**

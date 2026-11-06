@@ -846,3 +846,27 @@ async def get_appliance_defaults():
         "locale": config.get("locale"),
         "time_synced": read_ntp_gate(),
     }
+
+
+@router.get("/crash-report")
+async def get_crash_report(
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.SYSTEM_READ),
+):
+    """Liefert den letzten Absturz-Diagnosebericht (falls ein unsauberer Neustart oder Crash erkannt wurde)."""
+    from backend.app.core.config import settings
+    from backend.app.services import crash_diagnostics
+
+    report = crash_diagnostics.get_last_report(settings.base_dir)
+    return {"crash_report": report}
+
+
+@router.post("/crash-report/dismiss")
+async def dismiss_crash_report(
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.SYSTEM_READ),
+):
+    """Bestaetigt und verwirft den aktuellen Absturzbericht, sodass er im Dashboard nicht mehr warnt."""
+    from backend.app.core.config import settings
+    from backend.app.services import crash_diagnostics
+
+    crash_diagnostics.dismiss_report(settings.base_dir)
+    return {"status": "ok", "dismissed": True}

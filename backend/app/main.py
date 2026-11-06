@@ -1378,6 +1378,14 @@ async def lifespan(app: FastAPI):
     # Shutdown
     await stop_background_services()
 
+    # Sauberer Shutdown für Absturzdiagnose registrieren
+    try:
+        from backend.app.services import crash_diagnostics
+
+        crash_diagnostics.record_clean_shutdown(app_settings.base_dir)
+    except Exception as exc:  # noqa: BLE001
+        logging.debug("Fehler bei Shutdown-Registrierung: %s", exc)
+
 
 app = FastAPI(
     title=app_settings.app_name,

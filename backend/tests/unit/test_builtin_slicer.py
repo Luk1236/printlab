@@ -142,3 +142,36 @@ def test_pc_slicer_sidecar_contract_endpoints(tmp_path: Path):
     prog = client.get("/slice/progress/test-req-1")
     assert prog.status_code == 200
     assert prog.json()["percent"] == 100
+
+
+def test_slice_model_builtin_slices_true_geometry_not_bounding_box(tmp_path: Path):
+    """Prueft, dass ein Zylinder mit runder Kontur geslict wird und NICHT als 4-Ecken-Klotz (Kastenleiste)."""
+    import re
+    import trimesh
+    cyl = trimesh.creation.cylinder(radius=12.0, height=8.0)
+    stl_path = tmp_path / "cylinder.stl"
+    cyl.export(str(stl_path))
+
+    result = slice_model_builtin(
+        stl_path,
+        "cylinder.gcode.3mf",
+        printer_json=json.dumps({"inherits": "Bambu Lab P2S 0.4 nozzle"}),
+        process_json=json.dumps({"inherits": "0.20mm Standard @BBL P2S"}),
+        filament_jsons=[json.dumps({"inherits": "Bambu PLA Basic @BBL P2S"})],
+    )
+    assert result.print_time_seconds > 0
+    with zipfile.ZipFile(io.BytesIO(result.content), "r") as zf:
+        gcode = zf.read("Metadata/plate_1.gcode").decode("utf-8")
+        
+        # Pruefe Schichten: es muessen viele runde Koordinatenpunkte vorkommen
+        lines = [l for l in gcode.splitlines() if l.startswith("G1 X") and "E" in l]
+        assert len(lines) > 50, "Zu wenige G1-Pfade fuer ein 3D-Modell"
+        
+        # Ein runder Zylinder hat Dutzende unterschiedliche X-Werte,
+        # waehrend ein Quader / Kastenleiste nur exakt 2 oder 4 X-Werte hat.
+        x_values = set()
+        for l in lines:
+            m = re.search(r"X([\d.]+)", l)
+            if m:
+                x_values.add(round(float(m.group(1)), 1))
+        assert len(x_values) >= 10, f"Modell wurde als Klotz statt als echter Zylinder geslict! X-Werte: {x_values}"
