@@ -3,6 +3,16 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.22 (06.11.2026) — Slicer-Geometrie (Echte Werkzeugbahnen statt Kasten) & MakerWorld-Download-Fix
+
+- **Echte Slicer-Geometrie statt Dummy-Kasten (Bambu Studio CLI G-Code Paketierung):**
+  - Bambu Studio CLI erzeugt bei `--outputdir` standardmäßig `plate_1.gcode` und `result.json` statt einer direkten 3MF-Datei. Der fehlerhafte Parameter `--export-3mf <name>` (der zum Abbruch und Bounding-Box-Fallback führte) wurde korrigiert.
+  - Neue Paketierungsfunktion `_package_gcode_3mf` führt die echten G-Code-Werkzeugbahnen, Schichten, Infill und Dauern mit der 3D-Geometrie und `Metadata/slice_info.config` zusammen.
+  - Modelle werden nun mit 100% originalgetreuen Konturen, Aussparungen und Rundungen geslict – kein massiver rechteckiger Dummy-Kasten mehr.
+- **MakerWorld / Bambu Lab API Download-Fix (Status 400 Fallback):**
+  - `get_profile_download` fängt HTTP 400 von der Bambu Lab IoT-API ab und versucht automatisch alternative Parameter (`model_id` als Design-ID sowie ohne `model_id`-Filter).
+  - Klare deutsche Fehlermeldung mit Extraktion des Upstream-Fehlers (`_extract_upstream_error`), wenn ein Profil nicht mehr verfügbar oder geschützt ist, statt eines kryptischen Status 400.
+
 ## v2.0.21 (06.11.2026) — Modell-Hub: Thangs 3D Benutzerführung, Yeggi-Metasuche & zuverlässige Links
 
 - **Thangs 3D Benutzerführung & Aufklärung:**

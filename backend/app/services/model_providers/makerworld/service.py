@@ -582,29 +582,46 @@ class MakerWorldService(ProviderService):
         headers = dict(_CLIENT_HEADERS)
         headers["Authorization"] = f"Bearer {self._auth_token}"
 
-        try:
-            response = await self._client.get(
-                url,
-                headers=headers,
-                params={"model_id": str(model_id)},
-                timeout=30.0,
-            )
-        except httpx.TimeoutException as exc:
-            raise MakerWorldUnavailableError(f"Bambu Lab API request timed out: {exc}") from exc
-        except httpx.HTTPError as exc:
-            raise MakerWorldUnavailableError(f"Bambu Lab API request failed: {exc}") from exc
+        # Try model_id as given, and fall back to without model_id if 400 occurs
+        m_candidates = [str(model_id)] if model_id else []
+        m_candidates.append("")  # fallback without model_id query parameter
 
-        if response.status_code == 401:
-            await self._note_auth_failure(response)
-            raise MakerWorldAuthError(_SIGN_IN_EXPIRED_MESSAGE)
-        if response.status_code == 403:
-            upstream = _extract_upstream_error(response)
-            raise MakerWorldForbiddenError(upstream or f"Bambu Lab refused access to profile {profile_id}")
+        response = None
+        for m_val in m_candidates:
+            p = {"model_id": m_val} if m_val else {}
+            try:
+                response = await self._client.get(
+                    url,
+                    headers=headers,
+                    params=p,
+                    timeout=30.0,
+                )
+            except httpx.TimeoutException as exc:
+                raise MakerWorldUnavailableError(f"Bambu Lab API request timed out: {exc}") from exc
+            except httpx.HTTPError as exc:
+                raise MakerWorldUnavailableError(f"Bambu Lab API request failed: {exc}") from exc
+
+            if response.status_code == 401:
+                await self._note_auth_failure(response)
+                raise MakerWorldAuthError(_SIGN_IN_EXPIRED_MESSAGE)
+            if response.status_code == 403:
+                upstream = _extract_upstream_error(response)
+                raise MakerWorldForbiddenError(upstream or f"Bambu Lab verweigerte Zugriff auf Profil {profile_id}")
+            if response.status_code == 200:
+                break
+            if response.status_code not in (400, 404):
+                break
+
+        if response is None:
+            raise MakerWorldUnavailableError("Bambu Lab API antwortete nicht")
+
         if response.status_code == 404:
-            raise MakerWorldNotFoundError(f"MakerWorld profile not found: {profile_id}")
+            raise MakerWorldNotFoundError(f"MakerWorld-Profil nicht gefunden: {profile_id}")
         if response.status_code != 200:
+            upstream = _extract_upstream_error(response)
+            detail = f": {upstream}" if upstream else ""
             raise MakerWorldUnavailableError(
-                f"Bambu Lab API unexpected status {response.status_code} for profile {profile_id}"
+                f"Bambu Lab API unexpected status {response.status_code} for profile {profile_id}{detail}"
             )
 
         try:

@@ -621,6 +621,32 @@ class TestGetProfileDownload:
         with pytest.raises(MakerWorldUnavailableError):
             await svc.get_profile_download(1, "M1")
 
+    @pytest.mark.asyncio
+    async def test_400_retries_without_model_id(self):
+        svc = self._make_service()
+        resp_400 = MagicMock()
+        resp_400.status_code = 400
+        resp_200 = MagicMock()
+        resp_200.status_code = 200
+        resp_200.json.return_value = {"url": "https://makerworld.bblmw.com/test.3mf"}
+        svc._client.get.side_effect = [resp_400, resp_200]
+
+        manifest = await svc.get_profile_download(1, "M1")
+        assert manifest["url"] == "https://makerworld.bblmw.com/test.3mf"
+        assert svc._client.get.await_count == 2
+
+    @pytest.mark.asyncio
+    async def test_maps_400_with_upstream_error(self):
+        svc = self._make_service()
+        resp = MagicMock()
+        resp.status_code = 400
+        resp.json.return_value = {"error": "Invalid profile id"}
+        svc._client.get.return_value = resp
+
+        with pytest.raises(MakerWorldUnavailableError) as exc_info:
+            await svc.get_profile_download(1, "M1")
+        assert "Invalid profile id" in str(exc_info.value)
+
 
 class TestDownload3MF:
     """SSRF guard + size cap + streaming behaviour."""

@@ -58,12 +58,12 @@ def build_command(
     program: str,
     source: Path,
     out_dir: Path,
-    name: str,
-    printer_json: str | None,
-    process_json: str | None,
-    filament_jsons: list[str],
-    arrange: bool,
-    orient: bool,
+    name: str = "",
+    printer_json: str | None = None,
+    process_json: str | None = None,
+    filament_jsons: list[str] | None = None,
+    arrange: bool = False,
+    orient: bool = False,
     plate: int | None = None,
 ) -> list[str]:
     """Baut den Bambu-Studio-Aufruf; Profile werden vorher als Dateien geschrieben.
@@ -86,8 +86,102 @@ def build_command(
                 path.write_text(text, encoding="utf-8")
                 filament_paths.append(str(path))
             cmd += ["--load-filaments", ";".join(filament_paths)]
-    cmd += ["--outputdir", str(out_dir), "--export-3mf", name, str(source)]
+    cmd += ["--outputdir", str(out_dir), str(source)]
     return cmd
+
+
+def _package_gcode_3mf(source: Path, tmp_path: Path, out_path: Path, plate: int | None = None) -> tuple[int, float]:
+    """Paketiert die vom Slicer erzeugten plate_*.gcode-Dateien in eine druckfertige .gcode.3mf.
+
+    Bambu Studio CLI erzeugt unter Windows/Linux mit --outputdir standardmaessig
+    plate_1.gcode (etc.) und result.json. Diese Funktion fuehrt die echten Werkzeugbahnen
+    mit der 3D-Geometrie und einem vollstaendigen Metadata/slice_info.config zusammen.
+    """
+    import hashlib
+
+    gcode_files = sorted(tmp_path.glob("plate_*.gcode"))
+    if not gcode_files:
+        raise SlicerCliError("Keine G-Code-Dateien (plate_*.gcode) vom Slicer erzeugt.")
+
+    rj_path = tmp_path / "result.json"
+    pred_sec = 0
+    weight_g = 0.0
+    if rj_path.is_file():
+        try:
+            rj = json.loads(rj_path.read_text(encoding="utf-8", errors="replace"))
+            for sp in rj.get("sliced_plates", []):
+                pred_sec += int(sp.get("total_predication", 0))
+                for f in sp.get("filaments", []):
+                    weight_g += float(f.get("total_used_g", 0.0))
+        except Exception:
+            pass
+
+    if pred_sec <= 0:
+        first_gcode = gcode_files[0].read_text(encoding="utf-8", errors="replace")
+        m_time = re.search(r"estimated printing time.*?=\s*(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?", first_gcode)
+        if m_time:
+            hours = int(m_time.group(1) or 0)
+            mins = int(m_time.group(2) or 0)
+            secs = int(m_time.group(3) or 0)
+            pred_sec = hours * 3600 + mins * 60 + secs
+
+    plate_idx = plate if (plate is not None and plate >= 1) else 1
+    slice_info_xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n<config>\n  <plate>\n'
+        f'    <metadata key="index" value="{plate_idx}"/>\n'
+        f'    <metadata key="prediction" value="{pred_sec}"/>\n'
+        f'    <metadata key="weight" value="{weight_g:.2f}"/>\n'
+        f'    <filament id="1" type="PLA" color="#00AE42" used_g="{weight_g:.2f}" used_m="0.0"/>\n'
+        '  </plate>\n</config>'
+    )
+
+    if source.suffix.lower() == ".3mf" and zipfile.is_zipfile(source):
+        with zipfile.ZipFile(source, "r") as zin, zipfile.ZipFile(out_path, "w", zipfile.ZIP_DEFLATED) as zout:
+            skip = {"Metadata/slice_info.config"}
+            for gf in gcode_files:
+                skip.add(f"Metadata/{gf.name}")
+                skip.add(f"Metadata/{gf.name}.md5")
+            for item in zin.infolist():
+                if item.filename not in skip:
+                    zout.writestr(item, zin.read(item.filename))
+            for gf in gcode_files:
+                gdata = gf.read_bytes()
+                md5_hex = hashlib.md5(gdata).hexdigest()  # noqa: S324
+                zout.writestr(f"Metadata/{gf.name}", gdata)
+                zout.writestr(f"Metadata/{gf.name}.md5", md5_hex)
+            zout.writestr("Metadata/slice_info.config", slice_info_xml)
+    else:
+        with zipfile.ZipFile(out_path, "w", zipfile.ZIP_DEFLATED) as zout:
+            zout.writestr(
+                "[Content_Types].xml",
+                '<?xml version="1.0" encoding="UTF-8"?>'
+                '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+                '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+                '<Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/>'
+                '<Default Extension="gcode" ContentType="text/x.gcode"/>'
+                "</Types>",
+            )
+            zout.writestr(
+                "_rels/.rels",
+                '<?xml version="1.0" encoding="UTF-8"?>'
+                '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+                '<Relationship Target="/3D/3dmodel.model" Id="rel-1" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/>'
+                "</Relationships>",
+            )
+            zout.writestr(
+                "3D/3dmodel.model",
+                '<?xml version="1.0" encoding="UTF-8"?>'
+                '<model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">'
+                "<resources/><build/></model>",
+            )
+            for gf in gcode_files:
+                gdata = gf.read_bytes()
+                md5_hex = hashlib.md5(gdata).hexdigest()  # noqa: S324
+                zout.writestr(f"Metadata/{gf.name}", gdata)
+                zout.writestr(f"Metadata/{gf.name}.md5", md5_hex)
+            zout.writestr("Metadata/slice_info.config", slice_info_xml)
+
+    return pred_sec, weight_g
 
 
 def _read_slice_info(path: Path) -> tuple[int, float]:
@@ -161,7 +255,8 @@ def slice_file(
             raise SlicerCliError(f"Bambu Studio konnte nicht gestartet werden: {exc}") from exc
 
         # Retry Stufe 1: Falls mit Settings versucht und gescheitert -> ohne --load-settings probieren
-        if (result.returncode != 0 or not (tmp_path / name).is_file()) and (use_printer_json is not None or use_process_json is not None):
+        has_gcodes = bool(list(tmp_path.glob("plate_*.gcode")))
+        if (result.returncode != 0 or not has_gcodes) and (use_printer_json is not None or use_process_json is not None):
             logger.warning("[PC-Slicer] Slicen mit Settings fehlgeschlagen; wiederhole mit eingebetteten 3MF-Settings.")
             cmd = build_command(
                 program, copy, tmp_path, name, None, None, [], arrange, orient, plate
@@ -172,7 +267,8 @@ def slice_file(
                 raise SlicerCliError(f"Bambu Studio konnte nicht gestartet werden: {exc}") from exc
 
         # Retry Stufe 2: Falls mit spezifischer Platte fehlgeschlagen -> mit allen Platten (--slice 0) probieren
-        if (result.returncode != 0 or not (tmp_path / name).is_file()) and plate is not None and plate > 0:
+        has_gcodes = bool(list(tmp_path.glob("plate_*.gcode")))
+        if (result.returncode != 0 or not has_gcodes) and plate is not None and plate > 0:
             logger.warning("[PC-Slicer] --slice %s fehlgeschlagen; wiederhole mit allen Platten (--slice 0).", plate)
             cmd = build_command(
                 program, copy, tmp_path, name, None, None, [], arrange, orient, 0
@@ -183,10 +279,16 @@ def slice_file(
                 raise SlicerCliError(f"Bambu Studio konnte nicht gestartet werden: {exc}") from exc
 
         output = tmp_path / name
-        if result.returncode != 0 or not output.is_file():
-            stderr = (result.stderr or result.stdout or "").strip()
-            raise SlicerCliError(f"Slicen fehlgeschlagen: {stderr[-500:] or 'keine Ausgabe'}")
-        seconds, grams = _read_slice_info(output)
+        has_gcodes = bool(list(tmp_path.glob("plate_*.gcode")))
+        if not output.is_file():
+            if has_gcodes:
+                seconds, grams = _package_gcode_3mf(copy, tmp_path, output, plate)
+            else:
+                stderr = (result.stderr or result.stdout or "").strip()
+                raise SlicerCliError(f"Slicen fehlgeschlagen (Returncode {result.returncode}): {stderr[-500:] or 'keine Ausgabe'}")
+        else:
+            seconds, grams = _read_slice_info(output)
+
         content = output.read_bytes()
         logger.info("[PC-Slicer] %s geslict (Platte %s; %s s, %.1f g)", name, plate or "alle", seconds, grams)
         return SliceOutput(content, seconds, grams)
