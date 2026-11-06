@@ -77,6 +77,13 @@ def _provider_for_url(url: str) -> ModelProvider:
     """
     provider = registry.find_for_url(url)
     if provider is None:
+        if "thangs.com" in (url or "").lower():
+            msg = (
+                "Thangs 3D ist eine Metasuchmaschine (kein direkter Download-Host) und verlangt einen Login. "
+                "Tipp: Klicke auf Thangs auf den Link zur Original-Quelle (z. B. MakerWorld, Thingiverse oder Printables) "
+                "und füge diesen hier ein – oder lade die Modelldatei herunter und ziehe sie direkt per Drag & Drop hierher!"
+            )
+            raise HTTPException(status_code=400, detail=msg)
         msg = f"No registered model provider supports {url!r}"
         raise HTTPException(status_code=400, detail=msg)
     return provider

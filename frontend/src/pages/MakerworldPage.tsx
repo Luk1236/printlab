@@ -541,14 +541,15 @@ export function MakerworldPage() {
                   </p>
                 </div>
                 <div className="pt-2 border-t border-gray-200/60 dark:border-gray-700/60 flex items-center justify-end">
-                  <button
-                    type="button"
-                    onClick={() => window.open('https://makerworld.com', '_blank')}
+                  <a
+                    href="https://makerworld.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
                   >
                     <span>{t('makerworld.platforms.openPortal')}</span>
                     <ExternalLink className="w-3.5 h-3.5" />
-                  </button>
+                  </a>
                 </div>
               </div>
 
@@ -571,14 +572,15 @@ export function MakerworldPage() {
                   </p>
                 </div>
                 <div className="pt-2 border-t border-gray-200/60 dark:border-gray-700/60 flex items-center justify-end">
-                  <button
-                    type="button"
-                    onClick={() => window.open('https://www.printables.com', '_blank')}
+                  <a
+                    href="https://www.printables.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 text-xs font-medium text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 transition-colors"
                   >
                     <span>{t('makerworld.platforms.openPortal')}</span>
                     <ExternalLink className="w-3.5 h-3.5" />
-                  </button>
+                  </a>
                 </div>
               </div>
 
@@ -601,14 +603,15 @@ export function MakerworldPage() {
                   </p>
                 </div>
                 <div className="pt-2 border-t border-gray-200/60 dark:border-gray-700/60 flex items-center justify-end">
-                  <button
-                    type="button"
-                    onClick={() => window.open('https://www.thingiverse.com', '_blank')}
+                  <a
+                    href="https://www.thingiverse.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
                   >
                     <span>{t('makerworld.platforms.openPortal')}</span>
                     <ExternalLink className="w-3.5 h-3.5" />
-                  </button>
+                  </a>
                 </div>
               </div>
 
@@ -623,7 +626,7 @@ export function MakerworldPage() {
                       </span>
                     </div>
                     <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-purple-100/70 dark:bg-purple-950/50 text-purple-800 dark:text-purple-300">
-                      thangs.com
+                      {t('makerworld.platforms.metaBadge', 'Metasuche')}
                     </span>
                   </div>
                   <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
@@ -631,14 +634,15 @@ export function MakerworldPage() {
                   </p>
                 </div>
                 <div className="pt-2 border-t border-gray-200/60 dark:border-gray-700/60 flex items-center justify-end">
-                  <button
-                    type="button"
-                    onClick={() => window.open('https://thangs.com', '_blank')}
+                  <a
+                    href="https://thangs.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 text-xs font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
                   >
                     <span>{t('makerworld.platforms.openMetaSearch')}</span>
                     <ExternalLink className="w-3.5 h-3.5" />
-                  </button>
+                  </a>
                 </div>
               </div>
 
@@ -733,6 +737,24 @@ export function MakerworldPage() {
               <span className="ml-2">{t('makerworld.resolveButton')}</span>
             </Button>
           </form>
+
+          {urlInput.trim().toLowerCase().includes('thangs.com') && (
+            <div className="mt-3 p-3 rounded-lg bg-purple-50/80 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60 text-xs text-purple-950 dark:text-purple-200 flex items-start gap-2.5">
+              <Info className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="font-semibold text-purple-900 dark:text-purple-100">
+                  Thangs 3D-Link erkannt:
+                </p>
+                <p>
+                  Thangs ist eine <strong>Metasuchmaschine</strong> und verlangt für eigene Downloads einen Login. Die meisten Modelle stammen jedoch von <em>MakerWorld</em>, <em>Thingiverse</em> oder <em>Printables</em>!
+                </p>
+                <p className="text-purple-800 dark:text-purple-300 font-medium pt-0.5">
+                  👉 <strong>Tipp:</strong> Klicke auf Thangs beim Modell auf den Link der Original-Quelle (z. B. <em>MakerWorld</em> oder <em>Thingiverse</em>) und füge diese URL hier ein – oder ziehe die heruntergeladene Datei per Drag & Drop direkt ins Fenster.
+                </p>
+              </div>
+            </div>
+          )}
+
           {urlInput.trim() && !urlInput.trim().startsWith('http') && (
             <div className="mt-2.5 flex flex-wrap items-center gap-2 text-xs">
               <span className="text-gray-500 dark:text-gray-400 font-medium">Online suchen:</span>
@@ -770,6 +792,15 @@ export function MakerworldPage() {
                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 transition-colors"
               >
                 <span>Thangs</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+              <a
+                href={`https://www.yeggi.com/q/${encodeURIComponent(urlInput.trim())}/`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 transition-colors"
+              >
+                <span>Yeggi</span>
                 <ExternalLink className="w-3 h-3" />
               </a>
             </div>

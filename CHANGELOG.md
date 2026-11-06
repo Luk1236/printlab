@@ -3,6 +3,16 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.21 (06.11.2026) — Modell-Hub: Thangs 3D Benutzerführung, Yeggi-Metasuche & zuverlässige Links
+
+- **Thangs 3D Benutzerführung & Aufklärung:**
+  - Da Thangs eine Metasuchmaschine ist, die eigene Logins und Cloudflare verlangt, zeigt PrintLab bei Eingabe von `thangs.com`-Links nun sofort einen verständlichen Hilfekasten mit Schritt-für-Schritt-Anleitung an (Original-Quelle auf Thangs anklicken oder Datei per Drag & Drop importieren).
+  - Backend liefert bei `thangs.com`-Links eine hilfreiche deutsche Handlungsanweisung statt eines technischen 400-Fehlers.
+- **Yeggi 3D-Metasuche hinzugefügt:**
+  - Yeggi (`yeggi.com`) als schlanke und unkomplizierte Suchmaschine direkt neben Thangs in der Schnellsuche integriert.
+- **Zuverlässige Portal-Links:**
+  - Alle Portal-Schaltflächen (MakerWorld, Printables, Thingiverse, Thangs) als echte Hyperlinks umgestellt, sodass sie nie wieder von Browser-Popup-Blockern verhindert werden.
+
 ## v2.0.20 (06.11.2026) — PC-Slicer Netzwerkanbindung (LAN & Tailscale), Auto-Erkennung OrcaSlicer & Update-SSL-Fallback
 
 - **PC-Slicer Netzwerkanbindung für Raspberry Pi:**

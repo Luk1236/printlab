@@ -36,14 +36,14 @@ class TestAppRegistry:
 
     def test_unknown_source_type_raises_keyerror(self):
         with pytest.raises(KeyError):
-            registry.get("thingiverse")
+            registry.get("unknown_provider_xyz")
 
     def test_find_for_url_routes_makerworld_urls(self):
         provider = registry.find_for_url("https://makerworld.com/en/models/1400373#profileId-1452154")
         assert provider is makerworld_provider
 
     def test_find_for_url_returns_none_for_foreign_hosts(self):
-        assert registry.find_for_url("https://thingiverse.com/thing/123") is None
+        assert registry.find_for_url("https://example.com/model/123") is None
         assert registry.find_for_url("") is None
         assert registry.find_for_url(None) is None  # type: ignore[arg-type]
 
