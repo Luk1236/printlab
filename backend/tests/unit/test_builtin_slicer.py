@@ -175,3 +175,25 @@ def test_slice_model_builtin_slices_true_geometry_not_bounding_box(tmp_path: Pat
             if m:
                 x_values.add(round(float(m.group(1)), 1))
         assert len(x_values) >= 10, f"Modell wurde als Klotz statt als echter Zylinder geslict! X-Werte: {x_values}"
+
+
+def test_slice_model_builtin_generates_solid_shells_and_multi_walls(tmp_path: Path):
+    """Prueft, dass der Builtin-Slicer dichte Boeden/Decken, Innenwaende und Feature-Tags erzeugt."""
+    import trimesh
+    box = trimesh.creation.box([30.0, 30.0, 10.0])
+    stl_path = tmp_path / "box.stl"
+    box.export(str(stl_path))
+
+    result = slice_model_builtin(
+        stl_path,
+        "box.gcode.3mf",
+        printer_json=json.dumps({"inherits": "Bambu Lab P2S 0.4 nozzle"}),
+        process_json=json.dumps({"inherits": "0.20mm Standard @BBL P2S", "wall_loops": "3"}),
+        filament_jsons=[json.dumps({"inherits": "Bambu PLA Basic @BBL P2S"})],
+    )
+    with zipfile.ZipFile(io.BytesIO(result.content), "r") as zf:
+        gcode = zf.read("Metadata/plate_1.gcode").decode("utf-8")
+        assert "; FEATURE: Outer wall" in gcode
+        assert "; FEATURE: Inner wall" in gcode
+        assert "; FEATURE: Top surface" in gcode
+        assert "G1 E-0.8000 F3600" in gcode  # Retraktion bei Travel

@@ -341,43 +341,172 @@ def _chain_segments(segments: np.ndarray, decimals: int = 2) -> list[list[tuple[
     return loops
 
 
+def _offset_polygon(poly: list[tuple[float, float]], distance: float) -> list[tuple[float, float]]:
+    """Versetzt ein geschlossenes 2D-Polygon um `distance` mm nach innen (fuer innere Perimeter/Waende)."""
+    pts = np.array(poly, dtype=np.float64)
+    n = len(pts)
+    if n < 3:
+        return []
+    if np.allclose(pts[0], pts[-1]):
+        pts = pts[:-1]
+        n -= 1
+    if n < 3:
+        return []
+    area = 0.5 * np.sum(pts[:, 0] * np.roll(pts[:, 1], -1) - np.roll(pts[:, 0], -1) * pts[:, 1])
+    if abs(area) < 0.5:
+        return []
+    sign = 1.0 if area > 0 else -1.0
+    edges = np.roll(pts, -1, axis=0) - pts
+    lengths = np.hypot(edges[:, 0], edges[:, 1])
+    lengths[lengths < 1e-6] = 1e-6
+    u_edges = edges / lengths[:, None]
+    normals = sign * np.column_stack([-u_edges[:, 1], u_edges[:, 0]])
+    offset_pts = []
+    for i in range(n):
+        prev_i = (i - 1 + n) % n
+        n0 = normals[prev_i]
+        n1 = normals[i]
+        p0 = pts[prev_i] + n0 * distance
+        p1 = pts[i] + n1 * distance
+        u0 = u_edges[prev_i]
+        u1 = u_edges[i]
+        det = u0[0] * (-u1[1]) - u0[1] * (-u1[0])
+        if abs(det) < 1e-4:
+            offset_pts.append(pts[i] + n1 * distance)
+        else:
+            dx = p1[0] - p0[0]
+            dy = p1[1] - p0[1]
+            t = (dx * (-u1[1]) - dy * (-u1[0])) / det
+            miter = p0 + t * u0
+            if np.hypot(miter[0] - pts[i][0], miter[1] - pts[i][1]) > 2.5 * distance:
+                offset_pts.append(pts[i] + n1 * distance)
+            else:
+                offset_pts.append(miter)
+    off_arr = np.array(offset_pts, dtype=np.float64)
+    new_area = 0.5 * np.sum(off_arr[:, 0] * np.roll(off_arr[:, 1], -1) - np.roll(off_arr[:, 0], -1) * off_arr[:, 1])
+    if np.sign(new_area) != np.sign(area) or abs(new_area) < 0.5:
+        return []
+    res = [(round(float(p[0]), 3), round(float(p[1]), 3)) for p in offset_pts]
+    res.append(res[0])
+    return res
+
+
+def _point_in_poly(x: float, y: float, poly: list[tuple[float, float]]) -> bool:
+    """Ray-Casting Punkt-in-Polygon-Test."""
+    n = len(poly)
+    if n < 3:
+        return False
+    inside = False
+    p1x, p1y = poly[0]
+    for i in range(1, n + 1):
+        p2x, p2y = poly[i % n]
+        if y > min(p1y, p2y) and y <= max(p1y, p2y) and x <= max(p1x, p2x):
+            if p1y != p2y:
+                xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
+            if p1x == p2x or x <= xinters:
+                inside = not inside
+        p1x, p1y = p2x, p2y
+    return inside
+
+
+def _inside_solid(x: float, y: float, loops: list[list[tuple[float, float]]]) -> bool:
+    """Even-Odd-Regel fuer Polygone mit Loechern."""
+    if not loops:
+        return False
+    return sum(_point_in_poly(x, y, l) for l in loops) % 2 == 1
+
+
+def _generate_layer_infill(
+    loops: list[list[tuple[float, float]]],
+    loops_above: list[list[tuple[float, float]]] | None,
+    loops_below: list[list[tuple[float, float]]] | None,
+    is_entirely_solid: bool,
+    infill_pct: float,
+    angle_deg: float = 45.0,
+    flip: bool = False,
+) -> list[tuple[tuple[float, float], tuple[float, float], str]]:
+    """Erzeugt Infill- und Solid-Skin-Linien mit automatischer Erkennung von Boeden, Decken und Schraegen."""
+    if not loops:
+        return []
+    rad = math.radians(angle_deg)
+    c, s = math.cos(rad), math.sin(rad)
+    rot_loops = [[(p[0] * c - p[1] * s, p[0] * s + p[1] * c) for p in l] for l in loops]
+
+    all_ys = [p[1] for l in rot_loops for p in l]
+    ymin, ymax = min(all_ys), max(all_ys)
+    lines: list[tuple[tuple[float, float], tuple[float, float], str]] = []
+
+    y_dense = 0.42  # Duesenstrang-Abstand fuer 100% Vollflaeche
+    infill_step = max(1.5, round(4.0 * (20.0 / max(5.0, infill_pct)), 2))
+    sparse_stride = max(1, int(round(infill_step / y_dense)))
+
+    inv_c, inv_s = math.cos(-rad), math.sin(-rad)
+    y = ymin + 0.2
+    step_idx = 0
+    cur_flip = flip
+
+    while y <= ymax - 0.2:
+        intersections: list[float] = []
+        for l in rot_loops:
+            n = len(l)
+            for k in range(n - 1):
+                p0, p1 = l[k], l[k + 1]
+                if (p0[1] <= y < p1[1]) or (p1[1] <= y < p0[1]):
+                    dy = p1[1] - p0[1]
+                    if abs(dy) > 1e-6:
+                        intersections.append(p0[0] + (y - p0[1]) / dy * (p1[0] - p0[0]))
+        intersections.sort()
+
+        for m in range(0, len(intersections) - 1, 2):
+            x0, x1 = intersections[m], intersections[m + 1]
+            if x1 - x0 < 0.4:
+                continue
+
+            mid_x_rot = (x0 + x1) / 2.0
+            mid_orig_x = mid_x_rot * inv_c - y * inv_s
+            mid_orig_y = mid_x_rot * inv_s + y * inv_c
+
+            is_solid = is_entirely_solid
+            feature = "Top surface" if is_entirely_solid else "Sparse infill"
+
+            if not is_solid:
+                covered_above = _inside_solid(mid_orig_x, mid_orig_y, loops_above) if loops_above else False
+                covered_below = _inside_solid(mid_orig_x, mid_orig_y, loops_below) if loops_below else False
+                if not covered_above:
+                    is_solid = True
+                    feature = "Top surface"
+                elif not covered_below:
+                    is_solid = True
+                    feature = "Bottom surface"
+
+            if is_solid:
+                pt_start = (x0, y) if not cur_flip else (x1, y)
+                pt_end = (x1, y) if not cur_flip else (x0, y)
+                p_start_orig = (round(pt_start[0] * inv_c - pt_start[1] * inv_s, 3), round(pt_start[0] * inv_s + pt_start[1] * inv_c, 3))
+                p_end_orig = (round(pt_end[0] * inv_c - pt_end[1] * inv_s, 3), round(pt_end[0] * inv_s + pt_end[1] * inv_c, 3))
+                lines.append((p_start_orig, p_end_orig, feature))
+            elif infill_pct > 0.0 and (step_idx % sparse_stride == 0):
+                pt_start = (x0, y) if not cur_flip else (x1, y)
+                pt_end = (x1, y) if not cur_flip else (x0, y)
+                p_start_orig = (round(pt_start[0] * inv_c - pt_start[1] * inv_s, 3), round(pt_start[0] * inv_s + pt_start[1] * inv_c, 3))
+                p_end_orig = (round(pt_end[0] * inv_c - pt_end[1] * inv_s, 3), round(pt_end[0] * inv_s + pt_end[1] * inv_c, 3))
+                lines.append((p_start_orig, p_end_orig, "Sparse infill"))
+
+        y += y_dense
+        step_idx += 1
+        cur_flip = not cur_flip
+
+    return lines
+
+
 def _scanline_infill(
     loops: list[list[tuple[float, float]]],
     y_step: float = 4.0,
     flip: bool = False,
 ) -> list[tuple[tuple[float, float], tuple[float, float]]]:
-    """Erzeugt Infill-Linien nur innerhalb der tatsaechlichen Modell-Konturen (Hohlraeume bleiben frei)."""
-    if not loops:
-        return []
-    all_ys = [p[1] for l in loops for p in l]
-    ymin, ymax = min(all_ys), max(all_ys)
-    lines: list[tuple[tuple[float, float], tuple[float, float]]] = []
-
-    y = ymin + max(0.4, y_step / 2.0)
-    cur_flip = flip
-    while y <= ymax - 0.4:
-        intersections: list[float] = []
-        for loop in loops:
-            n = len(loop)
-            for k in range(n - 1):
-                p0, p1 = loop[k], loop[k + 1]
-                if (p0[1] <= y < p1[1]) or (p1[1] <= y < p0[1]):
-                    dy = p1[1] - p0[1]
-                    if abs(dy) > 1e-6:
-                        t = (y - p0[1]) / dy
-                        x = p0[0] + t * (p1[0] - p0[0])
-                        intersections.append(x)
-        intersections.sort()
-        for m in range(0, len(intersections) - 1, 2):
-            x_start, x_end = intersections[m], intersections[m + 1]
-            if x_end - x_start > 0.8:
-                if cur_flip:
-                    lines.append(((round(x_end, 3), round(y, 3)), (round(x_start, 3), round(y, 3))))
-                else:
-                    lines.append(((round(x_start, 3), round(y, 3)), (round(x_end, 3), round(y, 3))))
-        y += y_step
-        cur_flip = not cur_flip
-    return lines
+    """Kompatibilitaets-Wrapper fuer aeltere Aufrufe."""
+    lines = _generate_layer_infill(loops, None, None, is_entirely_solid=True, infill_pct=15.0, angle_deg=0.0, flip=flip)
+    return [(s, e) for s, e, _ in lines]
 
 
 def _try_extract_existing_3mf_slice(source: Path, plate: int | None) -> SliceOutput | None:
@@ -495,8 +624,19 @@ def slice_model_builtin(
     e_per_mm = round(0.033 * (layer_h / 0.20), 5)
     total_e_mm = 0.0
     total_travel_mm = 0.0
-    infill_step = max(1.5, round(4.0 * (20.0 / max(5.0, infill_pct)), 2))
     flip_infill = False
+    shell_count = 4  # 4 Schichten Decke/Boden = 0.8 mm
+
+    # Alle Ebenen vorab schneiden und verbinden, damit Schraegen und Boeden erkannt werden
+    set_slice_progress(request_id, "Intersecting planar geometry", 25)
+    all_loops: list[list[list[tuple[float, float]]]] = []
+    for layer_idx in range(num_layers):
+        z = round((layer_idx + 1) * layer_h, 3)
+        segs = mesh_plane(mesh, plane_normal=[0, 0, 1], plane_origin=[0, 0, z])
+        all_loops.append(_chain_segments(segs))
+
+    retracted = False
+    last_x, last_y = 128.0, 128.0
 
     for layer_idx in range(num_layers):
         if layer_idx % 10 == 0:
@@ -505,10 +645,7 @@ def slice_model_builtin(
 
         z = round((layer_idx + 1) * layer_h, 3)
         feed = 1800 if layer_idx == 0 else 4800
-
-        # Schnitt mit Ebene z
-        segs = mesh_plane(mesh, plane_normal=[0, 0, 1], plane_origin=[0, 0, z])
-        loops = _chain_segments(segs)
+        loops = all_loops[layer_idx]
 
         lines.append("; CHANGE_LAYER")
         lines.append(f"; Z_HEIGHT: {z:.3f}")
@@ -518,43 +655,83 @@ def slice_model_builtin(
         if not loops:
             continue
 
-        # 1. Perimeter (Aussenkonturen und Hohlraeume)
-        for loop in loops:
-            if len(loop) < 2:
+        # 1. PERIMETER (Waende mit Versatz fuer walls=2 oder 3)
+        wall_passes: list[tuple[list[list[tuple[float, float]]], str]] = [(loops, "Outer wall")]
+        for w_idx in range(1, walls):
+            inner_loops = []
+            for l in loops:
+                off = _offset_polygon(l, 0.40 * w_idx)
+                if len(off) >= 3:
+                    inner_loops.append(off)
+            if inner_loops:
+                wall_passes.append((inner_loops, "Inner wall"))
+
+        for pass_loops, feature in wall_passes:
+            lines.append(f"; FEATURE: {feature}")
+            for loop in pass_loops:
+                if len(loop) < 2:
+                    continue
+                dist_to_start = math.hypot(loop[0][0] - last_x, loop[0][1] - last_y)
+                if dist_to_start > 2.0 and not retracted:
+                    lines.append("G1 E-0.8000 F3600")
+                    retracted = True
+                lines.append(f"G0 X{loop[0][0]:.3f} Y{loop[0][1]:.3f} F9000")
+                if retracted:
+                    lines.append("G1 E0.8000 F3600")
+                    retracted = False
+
+                prev = loop[0]
+                for pt in loop[1:]:
+                    dist = math.hypot(pt[0] - prev[0], pt[1] - prev[1])
+                    if dist < 0.01:
+                        continue
+                    e_val = round(dist * e_per_mm, 4)
+                    lines.append(f"G1 X{pt[0]:.3f} Y{pt[1]:.3f} E{e_val:.4f} F{feed}")
+                    total_e_mm += e_val
+                    total_travel_mm += dist
+                    prev = pt
+                last_x, last_y = prev[0], prev[1]
+
+        # 2. INFILL & SOLID SKINS (Boden, Decke, Schraegen)
+        loops_above = all_loops[layer_idx + shell_count] if (layer_idx + shell_count < num_layers) else []
+        loops_below = all_loops[layer_idx - shell_count] if (layer_idx - shell_count >= 0) else []
+        is_entirely_solid = (layer_idx < shell_count or layer_idx >= num_layers - shell_count or not loops_above or not loops_below)
+
+        angle = 45.0 if (layer_idx % 2 == 0) else -45.0
+        infill_lines = _generate_layer_infill(
+            loops,
+            loops_above=loops_above,
+            loops_below=loops_below,
+            is_entirely_solid=is_entirely_solid,
+            infill_pct=infill_pct,
+            angle_deg=angle,
+            flip=flip_infill,
+        )
+        flip_infill = not flip_infill
+
+        current_feat = ""
+        for pt_start, pt_end, feat in infill_lines:
+            dist = math.hypot(pt_end[0] - pt_start[0], pt_end[1] - pt_start[1])
+            if dist < 0.2:
                 continue
-            lines.append(f"G0 X{loop[0][0]:.3f} Y{loop[0][1]:.3f} F9000")
-            prev = loop[0]
-            for pt in loop[1:]:
-                dist = math.hypot(pt[0] - prev[0], pt[1] - prev[1])
-                if dist < 0.01:
-                    continue
-                e_val = round(dist * e_per_mm, 4)
-                lines.append(f"G1 X{pt[0]:.3f} Y{pt[1]:.3f} E{e_val:.4f} F{feed}")
-                total_e_mm += e_val
-                total_travel_mm += dist
-                prev = pt
+            if feat != current_feat:
+                lines.append(f"; FEATURE: {feat}")
+                current_feat = feat
 
-            # Schleife schliessen, falls Endpunkt nicht Startpunkt ist
-            close_dist = math.hypot(loop[0][0] - prev[0], loop[0][1] - prev[1])
-            if close_dist > 0.02:
-                e_close = round(close_dist * e_per_mm, 4)
-                lines.append(f"G1 X{loop[0][0]:.3f} Y{loop[0][1]:.3f} E{e_close:.4f} F{feed}")
-                total_e_mm += e_close
-                total_travel_mm += close_dist
+            dist_to_start = math.hypot(pt_start[0] - last_x, pt_start[1] - last_y)
+            if dist_to_start > 2.0 and not retracted:
+                lines.append("G1 E-0.8000 F3600")
+                retracted = True
+            lines.append(f"G0 X{pt_start[0]:.3f} Y{pt_start[1]:.3f} F9000")
+            if retracted:
+                lines.append("G1 E0.8000 F3600")
+                retracted = False
 
-        # 2. Infill nur innerhalb der echten Konturen (Hohlraeume bleiben frei)
-        if infill_pct > 0.0:
-            infill_lines = _scanline_infill(loops, y_step=infill_step, flip=flip_infill)
-            flip_infill = not flip_infill
-            for pt_start, pt_end in infill_lines:
-                dist = math.hypot(pt_end[0] - pt_start[0], pt_end[1] - pt_start[1])
-                if dist < 0.2:
-                    continue
-                e_inf = round(dist * e_per_mm, 4)
-                lines.append(f"G0 X{pt_start[0]:.3f} Y{pt_start[1]:.3f} F9000")
-                lines.append(f"G1 X{pt_end[0]:.3f} Y{pt_end[1]:.3f} E{e_inf:.4f} F{feed}")
-                total_e_mm += e_inf
-                total_travel_mm += dist
+            e_inf = round(dist * e_per_mm, 4)
+            lines.append(f"G1 X{pt_end[0]:.3f} Y{pt_end[1]:.3f} E{e_inf:.4f} F{feed}")
+            total_e_mm += e_inf
+            total_travel_mm += dist
+            last_x, last_y = pt_end[0], pt_end[1]
 
     lines.extend(
         [

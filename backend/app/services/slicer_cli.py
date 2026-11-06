@@ -46,7 +46,10 @@ def program_path() -> str:
         Path.home() / "AppData/Local/Programs/OrcaSlicer/orca-slicer.exe",
         "/usr/bin/bambu-studio",
         "/usr/bin/orca-slicer",
-        "/usr/local/bin/orca-slicer",
+                "/usr/local/bin/orca-slicer",
+        "/opt/orca-slicer/orca-slicer",
+        "/opt/orca-slicer/orca-slicer.AppImage",
+        "/usr/local/bin/bambu-studio",
     ]
     for c in candidates:
         if Path(c).is_file():

@@ -3,6 +3,19 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.25 (06.11.2026) — Vollwertige Solid-Skin & Mehrfach-Wand-Slicing, Pi OrcaSlicer-Installer
+
+- **Vollstaendige Solid-Skin- & Mehrfach-Wand-Engine (`builtin_slicer.py`):**
+  - **Dichte Decken & Boeden (Solid Shells):** Die ersten 4 Schichten am Druckbett und die obersten 4 Schichten werden zu 100% vollflaechig mit 0.42 mm Strangabstand gedruckt.
+  - **Automatische Solid-Skin fuer Schraegflaechen & Ueberhaenge:** Schraeg abfallende Flaechen und Rampen (z. B. Handyhalterungen) werden schichtuebergreifend erkannt und dicht geschlossen statt als offenes Gitter gedruckt.
+  - **Mehrfach-Waende (Inner & Outer Perimeters):** Exakte Umsetzung von `wall_loops` (2, 3 oder mehr Waende) durch geometrisches Polygon-Insetting (0.40 mm Versatz) mit automatischer Singularitaets- und Invertierungspruefung.
+  - **45°/-45° Wechselschraffur:** Das Infill wechselt schichtweise den Winkel (+45° / -45°), sodass ein stabiles, tragendes Kreuzgitter entsteht.
+  - **Bambu-Feature-Tags & Faden-Vermeidung:** Ausgabe von `; FEATURE: Outer wall`, `; FEATURE: Inner wall`, `; FEATURE: Top surface`, `; FEATURE: Sparse infill` zur korrekten Farbdarstellung im Bambu-Studio-Vorschaufenster sowie 0.8 mm Retraktion vor laengeren Travel-Fahrten.
+- **OrcaSlicer CLI Installer fuer Raspberry Pi (`werkzeuge/pi_slicer_installieren.sh`):**
+  - Ein-Klick-Installation des offiziellen OrcaSlicer ARM64 Linux AppImages inklusive Xvfb-Headless-Wrapper auf dem Raspberry Pi 4 / 5.
+  - Ermoeglicht bei Bedarf vollwertiges Desktop-Slicing (inkl. Baum-Supports, adaptiver Schichthoehe, Nahtplatzierung) direkt auf dem Pi.
+  - Automatische Erkennung in `slicer_cli.py` unter `/usr/local/bin/orca-slicer` und `/opt/orca-slicer/`.
+
 ## v2.0.24 (06.11.2026) — Raspberry Pi Absturzschutz, Watchdog-Auto-Reboot, Planarer Python-Slicer & MakerWorld-Download
 
 - **Raspberry Pi Absturzschutz & Watchdog-Automatisierung (`werkzeuge/pi_absturzschutz.sh`):**
