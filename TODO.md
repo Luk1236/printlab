@@ -1,6 +1,6 @@
 # TODO — PrintLab
 
-**Stand:** 06.11.2026, Version 2.0.18 · **Basis:** Bambuddy 1.2.5.7 (AGPL-3.0, Herkunft: `NOTICE`) · **Branch:** `bambu-monitor-port`
+**Stand:** 06.11.2026, Version 2.0.19 · **Basis:** Bambuddy 1.2.5.7 (AGPL-3.0, Herkunft: `NOTICE`) · **Branch:** `bambu-monitor-port`
 
 Was fertig ist, steht mit Datum im `CHANGELOG.md`. Die ausführliche Bewertung (Risiken R1–R16, Verbesserungen, Erweiterungen)
 steht in `docs/ANALYSE-2026-10-28.md`, die Abnahme in `docs/ABNAHME.md`.

@@ -3,6 +3,13 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.19 (06.11.2026) — Integrierter Slicer: Bambu Studio CLI Fix & echte Werkzeugbahnen für 3MF/STL
+
+- **Bambu Studio CLI Plattenauswahl korrigiert:** Der ungültige Parameter `--export-plate <N>` wurde durch das offizielle `--slice <N>` ersetzt. Bambu Studio bricht nicht mehr mit Fehler `-2` ab.
+- **Profil-Stubs & Fallback für 3MF behoben:** Rumpf-Profile (`{"inherits": ...}`) werden nicht mehr ungeprüft über `--load-settings` übergeben, was Bambu Studio zum Absturz brachte. 3MF-Dateien nutzen direkt ihre eingebetteten Original-Einstellungen mit automatischem Retry.
+- **Keine Dummy-Kästen mehr:** Der fehlerhafte Notfall-Fallback in `pc_slicer.py` wurde behoben, sodass installierte Bambu-Studio-Installationen echte Werkzeugbahnen und G-Code erzeugen statt einer massiven rechteckigen Bounding-Box.
+- **Signiertes Release:** Release-Tag wird mit SSH-Schlüssel signiert, um die Signaturprüfung auf Raspberry Pi und Zielsystemen zu bestehen.
+
 ## v2.0.18 (06.11.2026) — 3D-Modell-Hub (6 Plattformen & Quellen), Telegram-Aktionen & Auto-Druckbett-Prüfung
 
 - **3D-Modell-Hub mit 6 Plattformen & Quellen:**

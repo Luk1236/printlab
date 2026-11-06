@@ -219,7 +219,8 @@ async def slice_route(request: Request):
                 plate_num,
             )
         except SlicerCliError as exc:
-            if "nicht gefunden" in str(exc) or not hasattr(slice_file, "_mock_name"):
+            cli_present = bool(program_path() and Path(program_path()).is_file())
+            if not cli_present or "nicht gefunden" in str(exc) or "Programm fehlt" in str(exc):
                 result = await asyncio.to_thread(
                     slice_model_builtin,
                     Path(tmp_name),
