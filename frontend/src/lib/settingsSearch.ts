@@ -26,7 +26,19 @@ export type SettingsSearchTab =
   | 'backup'
   | 'failure-detection';
 
-export type SettingsSearchSubTab = 'users' | 'email' | 'ldap' | 'oidc' | 'twofa' | 'security';
+export type SettingsSearchSubTab =
+  | 'users'
+  | 'email'
+  | 'ldap'
+  | 'oidc'
+  | 'twofa'
+  | 'security'
+  | 'basic'
+  | 'appearance'
+  | 'costs'
+  | 'camera'
+  | 'storage'
+  | 'all';
 
 export type UsersSubTab = SettingsSearchSubTab;
 
@@ -62,16 +74,16 @@ export function getSettingsSearchEntries(): SettingsSearchEntry[] {
  * PrintLab-/P2S-Einrichtungs- und Werkstattbereiche für die globale Suche.
  */
 export function registerCoreSettingsSearchEntries(): void {
-  registerSettingsSearch({ labelKey: 'settings.general', tab: 'general', keywords: 'language date time format printer model printers cards sprache datum uhrzeit', anchor: 'card-general' });
-  registerSettingsSearch({ labelKey: 'settings.appearance', tab: 'general', keywords: 'theme dark light mode colors design dunkel hell farben', anchor: 'card-appearance' });
-  registerSettingsSearch({ labelKey: 'settings.archiveSettings', tab: 'general', keywords: 'archive auto save thumbnails captures archiv vorschaubilder abschlussfoto', anchor: 'card-archive' });
-  registerSettingsSearch({ labelKey: 'settings.camera', tab: 'general', keywords: 'camera external video stream kamera extern', anchor: 'card-camera' });
-  registerSettingsSearch({ labelKey: 'settings.costTracking', tab: 'general', keywords: 'currency filament cost energy kwh price billing abrechnung finanzen strompreis währung', anchor: 'card-cost' });
-  registerSettingsSearch({ labelKey: 'settings.fileManager', tab: 'general', keywords: 'file manager archive mode disk warning storage dateimanager speicherplatz', anchor: 'card-filemanager' });
+  registerSettingsSearch({ labelKey: 'settings.general', tab: 'general', subTab: 'basic', keywords: 'language date time format printer model printers cards sprache datum uhrzeit', anchor: 'card-general' });
+  registerSettingsSearch({ labelKey: 'settings.appearance', tab: 'general', subTab: 'appearance', keywords: 'theme dark light mode colors design dunkel hell farben', anchor: 'card-appearance' });
+  registerSettingsSearch({ labelKey: 'settings.archiveSettings', tab: 'general', subTab: 'storage', keywords: 'archive auto save thumbnails captures archiv vorschaubilder abschlussfoto', anchor: 'card-archive' });
+  registerSettingsSearch({ labelKey: 'settings.camera', tab: 'general', subTab: 'camera', keywords: 'camera external video stream kamera extern', anchor: 'card-camera' });
+  registerSettingsSearch({ labelKey: 'settings.costTracking', tab: 'general', subTab: 'costs', keywords: 'currency filament cost energy kwh price billing abrechnung finanzen strompreis währung', anchor: 'card-cost' });
+  registerSettingsSearch({ labelKey: 'settings.fileManager', tab: 'general', subTab: 'storage', keywords: 'file manager archive mode disk warning storage dateimanager speicherplatz', anchor: 'card-filemanager' });
   registerSettingsSearch({ labelKey: 'setupWizard.title', labelFallback: 'Setup & Assistant', tab: 'setup', keywords: 'setup wizard assistant checklist selftest slicer erstinstallation assistent kompass einrichtung', anchor: 'card-setup-hub' });
   registerSettingsSearch({ labelKey: 'nav.systemStatus', labelFallback: 'System Status', tab: 'system', keywords: 'system status health cpu ram memory disk logs diagnose bundle supportprotokoll gesundheit diagnose', anchor: 'card-system' });
   registerSettingsSearch({ labelKey: 'settings.updates', tab: 'updates', keywords: 'updates version firmware beta check aktualisierung release', anchor: 'card-updates' });
-  registerSettingsSearch({ labelKey: 'settings.dataManagement', tab: 'backup', keywords: 'data reset clear logs notifications preferences datenverwaltung speicher vacuum bereinigung', anchor: 'card-data' });
+  registerSettingsSearch({ labelKey: 'settings.dataManagement', tab: 'general', subTab: 'storage', keywords: 'data reset clear logs notifications preferences datenverwaltung speicher vacuum bereinigung', anchor: 'card-data' });
   registerSettingsSearch({ labelKey: 'settings.smartPlugs', tab: 'plugs', keywords: 'smart plug energy power automation tapo kasa tplink shelly tasmota steckdose strom', anchor: 'card-plugs' });
   registerSettingsSearch({ labelKey: 'haSensors.sectionTitle', tab: 'sensors', keywords: 'home assistant sensor printer temperature humidity alert notify block print', anchor: 'card-ha-sensors' });
   registerSettingsSearch({ labelKey: 'locationHaSensors.sectionTitle', tab: 'sensors', keywords: 'home assistant sensor location storage box temperature humidity battery alert notify', anchor: 'card-location-sensors' });
@@ -107,7 +119,7 @@ export function registerCoreSettingsSearchEntries(): void {
   registerSettingsSearch({ labelKey: 'settings.email.smtpSettings', labelFallback: 'SMTP Configuration', tab: 'users', subTab: 'email', keywords: 'smtp email send server port password auth starttls ssl', anchor: 'card-smtp' });
   registerSettingsSearch({ labelKey: 'settings.ldap.title', labelFallback: 'LDAP Authentication', tab: 'users', subTab: 'ldap', keywords: 'ldap active directory ad authentication bind dn search base group mapping', anchor: 'card-ldap' });
   registerSettingsSearch({ labelKey: 'settings.tabs.backup', tab: 'backup', keywords: 'backup github restore download cloud sync profiles archives sicherung wiederherstellen', anchor: 'card-backup' });
-  registerSettingsSearch({ labelKey: 'externalLinks.sidebarLayout', labelFallback: 'Sidebar', tab: 'general', keywords: 'sidebar layout links pages hide show external custom navigation url add seitenleiste', anchor: 'card-sidebar-links' });
+  registerSettingsSearch({ labelKey: 'externalLinks.sidebarLayout', labelFallback: 'Sidebar', tab: 'general', subTab: 'appearance', keywords: 'sidebar layout links pages hide show external custom navigation url add seitenleiste', anchor: 'card-sidebar-links' });
   registerSettingsSearch({ labelKey: 'settings.filamentTracking', tab: 'filament', keywords: 'spoolman filament tracking inventory sync remote integration bestand', anchor: 'card-spoolman' });
   registerSettingsSearch({ labelKey: 'settings.catalog.spoolCatalog', labelFallback: 'Spool Catalog', tab: 'filament', keywords: 'spool catalog entries brand material reset import export spulenkatalog', anchor: 'card-spool-catalog' });
   registerSettingsSearch({ labelKey: 'settings.colorCatalog.title', labelFallback: 'Color Catalog', tab: 'filament', keywords: 'color catalog hex swatch palette sync reset farbkatalog', anchor: 'card-color-catalog' });

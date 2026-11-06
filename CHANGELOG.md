@@ -3,6 +3,20 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.23 (06.11.2026) — Einstellungsfenster: Saubere Unterpunkte & Beseitigung redundanter Karten
+
+- **Strukturierte Unterpunkte im Allgemein-Menü:**
+  - Das Einstellungsfenster wurde modularisiert und in übersichtliche Unterbereiche (Pills-Navigation) unterteilt:
+    - **Grundeinstellungen:** Sprache, Standard-Startseite, Datums- und Zeitformate sowie Standarddrucker.
+    - **Erscheinungsbild:** Theme-Umschaltung (Dunkel / Hell / System), Farbpaletten, Akzente, Druckfortschritt im Browsertab sowie Menüleisten-/Seitenleisten-Quicklinks.
+    - **Kosten & Abrechnung:** Währung, Filament- und Strompreise, Verbrauchsmodi, Abrechnung/Kostenstellen, Schutz vor unbefugtem Druck und monatlicher Budget-Reset.
+    - **Kamera & Medien:** Externe Videostreams und Snapshots pro Drucker (MJPEG, RTSP, Snapshot, USB V4L2) mit Verbindungstest, Abschlussfotos bei Druckende und Druckbett-Parkposition.
+    - **Dateien & Speicher:** Bibliotheks-Archivregeln, Speicherwarnschwelle, automatische Papierkorb- und Verlaufsbereinigung, visuelle Speicherplatz-Nutzungsanalyse und Wartungsfunktionen.
+    - **Alle anzeigen:** Vollständige Übersicht aller Karten für schnellen Gesamteinblick.
+- **Beseitigung von Duplikaten & Redundanzen:**
+  - Die redundante Karte *Aktualisierungen* wurde aus dem *Allgemein*-Tab entfernt – sämtliche Update-, Firmware- und Versionsprüfungen befinden sich nun exklusiv im dafür vorgesehenen Hauptmenüpunkt *Updates & Version*.
+  - Vermeidung unübersichtlicher 3-Spalten-Wände zugunsten strukturierter, responsiver Unterkarten mit Deep-Link- und Suchunterstützung.
+
 ## v2.0.22 (06.11.2026) — Slicer-Geometrie (Echte Werkzeugbahnen statt Kasten) & MakerWorld-Download-Fix
 
 - **Echte Slicer-Geometrie statt Dummy-Kasten (Bambu Studio CLI G-Code Paketierung):**
