@@ -150,6 +150,30 @@ def _extract_manifest_url_and_name(manifest: dict[str, Any]) -> tuple[str | None
                     if signed_url:
                         break
 
+    # Deep recursive fallback scan for any valid model download URL
+    if not signed_url:
+        def _find_url(obj: Any) -> str | None:
+            if isinstance(obj, str) and obj.startswith("http") and ("bblmw.com" in obj or ".3mf" in obj.lower() or ".stl" in obj.lower()):
+                return obj
+            if isinstance(obj, dict):
+                for v in obj.values():
+                    found = _find_url(v)
+                    if found:
+                        return found
+            elif isinstance(obj, list):
+                for item in obj:
+                    found = _find_url(item)
+                    if found:
+                        return found
+            return None
+
+        signed_url = _find_url(manifest)
+
+    if not suggested_name and signed_url:
+        path_name = signed_url.split("?")[0].rsplit("/", 1)[-1]
+        if path_name and ("." in path_name):
+            suggested_name = path_name
+
     return signed_url, suggested_name
 
 
@@ -324,6 +348,24 @@ class MakerWorldService(ProviderService):
                     if isinstance(iid, int) and iid > 0 and iid not in candidate_ids:
                         candidate_ids.append(iid)
                     break
+            if not matched:
+                try:
+                    envelope = await self.get_design_instances(model_id)
+                    for hit in envelope.get("hits") or []:
+                        if not isinstance(hit, dict):
+                            continue
+                        pid = hit.get("profileId")
+                        iid = hit.get("id")
+                        if pid == profile_id or iid == profile_id:
+                            matched = True
+                            if isinstance(pid, int) and pid > 0:
+                                candidate_ids.append(pid)
+                            if isinstance(iid, int) and iid > 0 and iid not in candidate_ids:
+                                candidate_ids.append(iid)
+                            break
+                except Exception as exc:
+                    logger.debug("Failed to fetch design instances for candidate match: %s", exc)
+
             if not matched:
                 candidate_ids.append(profile_id)
         else:

@@ -3429,6 +3429,13 @@ class PrintScheduler(AvailabilityMixin, PreheatMixin, DryingMixin, WatchdogMixin
                 await self._power_off_if_needed(db, item)
                 return
 
+        # Automated build plate empty check before preheat & dispatch
+        from backend.app.services.queue_plate_check import check_queue_plate_clear
+        plate_clear, _ = await check_queue_plate_clear(printer, item, db)
+        if not plate_clear:
+            await self._power_off_if_needed(db, item)
+            return
+
         # Preheat / heat-soak (#1468) — fires before upload so the printer's
         # bed (and chamber, if applicable) is at temperature when the firmware
         # starts the actual print routine. Best-effort: any failure logs and

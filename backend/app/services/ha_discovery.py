@@ -159,6 +159,75 @@ def build_discovery_payloads(
                 "device": device,
             },
         },
+        # 9. Bauraumtemperatur Sensor
+        {
+            "component": "sensor",
+            "object_id": "chamber_temperature",
+            "config": {
+                "name": f"{printer_name} Bauraumtemperatur",
+                "state_topic": state_topic,
+                "value_template": "{{ value_json.chamber_temp | default(0) | round(1) }}",
+                "unit_of_measurement": "°C",
+                "device_class": "temperature",
+                "state_class": "measurement",
+                "unique_id": f"printlab_{safe_id}_chamber_temp",
+                "device": device,
+            },
+        },
+        # 10. Aktuelle Druckdatei
+        {
+            "component": "sensor",
+            "object_id": "current_print",
+            "config": {
+                "name": f"{printer_name} Aktuelle Datei",
+                "state_topic": state_topic,
+                "value_template": "{{ value_json.current_file | default('Keine') }}",
+                "icon": "mdi:file-document-outline",
+                "unique_id": f"printlab_{safe_id}_current_file",
+                "device": device,
+            },
+        },
+        # 11. Bauteillüfter Drehzahl (%)
+        {
+            "component": "sensor",
+            "object_id": "cooling_fan_speed",
+            "config": {
+                "name": f"{printer_name} Lüfterdrehzahl",
+                "state_topic": state_topic,
+                "value_template": "{{ value_json.fan_speed | default(0) | int }}",
+                "unit_of_measurement": "%",
+                "icon": "mdi:fan",
+                "state_class": "measurement",
+                "unique_id": f"printlab_{safe_id}_fan_speed",
+                "device": device,
+            },
+        },
+        # 12. Pause Button
+        {
+            "component": "button",
+            "object_id": "pause_print",
+            "config": {
+                "name": f"{printer_name} Pause",
+                "command_topic": f"{cmd_topic}/pause",
+                "payload_press": "PAUSE",
+                "icon": "mdi:pause",
+                "unique_id": f"printlab_{safe_id}_pause",
+                "device": device,
+            },
+        },
+        # 13. Fortsetzen Button
+        {
+            "component": "button",
+            "object_id": "resume_print",
+            "config": {
+                "name": f"{printer_name} Fortsetzen",
+                "command_topic": f"{cmd_topic}/resume",
+                "payload_press": "RESUME",
+                "icon": "mdi:play",
+                "unique_id": f"printlab_{safe_id}_resume",
+                "device": device,
+            },
+        },
     ]
 
     results = []
@@ -185,17 +254,23 @@ def build_telemetry_payload(
     total_layers: int = 0,
     emergency_stop: bool = False,
     chamber_light: bool = False,
+    chamber_temp: float = 0.0,
+    current_file: str = "",
+    fan_speed: int = 0,
 ) -> str:
     """Formatiert einen Echtzeit-Telemetriedatensatz für Home Assistant als JSON-String."""
     data = {
         "state": state,
         "nozzle_temp": round(nozzle_temp, 1),
         "bed_temp": round(bed_temp, 1),
+        "chamber_temp": round(chamber_temp, 1),
         "progress": progress,
         "remaining_minutes": remaining_minutes,
         "current_layer": current_layer,
         "total_layers": total_layers,
         "emergency_stop": bool(emergency_stop),
         "chamber_light": bool(chamber_light),
+        "current_file": current_file or "Keine",
+        "fan_speed": int(fan_speed),
     }
     return json.dumps(data, ensure_ascii=False)

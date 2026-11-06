@@ -1,6 +1,6 @@
 """Tests for Telegram bot commands and ntfy action buttons."""
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
@@ -210,3 +210,101 @@ async def test_send_to_provider_ntfy_sets_camera_action_and_click():
     assert captured["click_url"] == "https://farm.example.com/printers/42"
     assert "view, 📷 Live-Kamera, https://farm.example.com/cameras" in captured["actions"]
     assert "view, 🖨️ Drucker öffnen, https://farm.example.com/printers/42" in captured["actions"]
+
+
+@pytest.mark.asyncio
+async def test_pause_and_resume_commands():
+    client = _CaptureClient()
+    fake_printer = type("Printer", (), {"id": 1, "name": "Bambu P1S"})()
+    mock_bambu_client = MagicMock()
+
+    with patch("backend.app.services.telegram_bot_commands.resolve_target_printer", return_value=fake_printer), \
+         patch("backend.app.services.printer_manager.printer_manager.get_client", return_value=mock_bambu_client):
+        
+        # /pause
+        await handle_telegram_message(
+            bot_token=BOT_TOKEN,
+            message={"chat": {"id": int(CHAT_ID)}, "text": "/pause"},
+            allowed_chat_ids={CHAT_ID},
+            http_client=client,
+        )
+        assert mock_bambu_client.pause_print.called
+
+        # /resume
+        await handle_telegram_message(
+            bot_token=BOT_TOKEN,
+            message={"chat": {"id": int(CHAT_ID)}, "text": "/resume"},
+            allowed_chat_ids={CHAT_ID},
+            http_client=client,
+        )
+        assert mock_bambu_client.resume_print.called
+
+
+@pytest.mark.asyncio
+async def test_light_toggle_command():
+    client = _CaptureClient()
+    fake_printer = type("Printer", (), {"id": 1, "name": "Bambu P1S"})()
+    mock_bambu_client = MagicMock()
+    mock_bambu_client.state = type("State", (), {"chamber_light": False})()
+
+    with patch("backend.app.services.telegram_bot_commands.resolve_target_printer", return_value=fake_printer), \
+         patch("backend.app.services.printer_manager.printer_manager.get_client", return_value=mock_bambu_client):
+        
+        await handle_telegram_message(
+            bot_token=BOT_TOKEN,
+            message={"chat": {"id": int(CHAT_ID)}, "text": "/licht"},
+            allowed_chat_ids={CHAT_ID},
+            http_client=client,
+        )
+        mock_bambu_client.set_chamber_light.assert_called_with(True)
+
+
+@pytest.mark.asyncio
+async def test_stop_command_prompts_confirmation():
+    client = _CaptureClient()
+    fake_printer = type("Printer", (), {"id": 1, "name": "Bambu P1S"})()
+
+    with patch("backend.app.services.telegram_bot_commands.resolve_target_printer", return_value=fake_printer):
+        await handle_telegram_message(
+            bot_token=BOT_TOKEN,
+            message={"chat": {"id": int(CHAT_ID)}, "text": "/stop"},
+            allowed_chat_ids={CHAT_ID},
+            http_client=client,
+        )
+    send_msg = next(c for c in client.calls if c["url"].endswith("/sendMessage"))
+    assert "wirklich abbrechen" in send_msg["json"]["text"]
+    assert "cmd:stop_confirm:1" in send_msg["json"]["reply_markup"]["inline_keyboard"][0][0]["callback_data"]
+
+
+@pytest.mark.asyncio
+async def test_callback_query_actions():
+    client = _CaptureClient()
+    mock_bambu_client = MagicMock()
+    mock_bambu_client.state = type("State", (), {"chamber_light": False})()
+
+    with patch("backend.app.services.printer_manager.printer_manager.get_client", return_value=mock_bambu_client):
+        # Test cmd:light:1
+        await handle_telegram_callback_query(
+            bot_token=BOT_TOKEN,
+            callback_query={
+                "id": "q1",
+                "data": "cmd:light:1",
+                "message": {"chat": {"id": int(CHAT_ID)}, "message_id": 10},
+            },
+            allowed_chat_ids={CHAT_ID},
+            http_client=client,
+        )
+        mock_bambu_client.set_chamber_light.assert_called_with(True)
+
+        # Test cmd:stop_confirm:1
+        await handle_telegram_callback_query(
+            bot_token=BOT_TOKEN,
+            callback_query={
+                "id": "q2",
+                "data": "cmd:stop_confirm:1",
+                "message": {"chat": {"id": int(CHAT_ID)}, "message_id": 11},
+            },
+            allowed_chat_ids={CHAT_ID},
+            http_client=client,
+        )
+        mock_bambu_client.stop_print.assert_called()

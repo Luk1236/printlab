@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import DOMPurify from 'dompurify';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -61,6 +61,7 @@ export function MakerworldPage() {
   const canImport = hasPermission('makerworld:import');
 
   const [urlInput, setUrlInput] = useState('');
+  const urlInputRef = useRef<HTMLInputElement>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [droppedFiles, setDroppedFiles] = useState<File[]>([]);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -515,8 +516,203 @@ export function MakerworldPage() {
           </div>
         </CardHeader>
         <CardContent>
+          {/* Unterstützte 3D-Plattformen & Quellen (6 Kacheln) */}
+          <div className="mb-5">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2.5">
+              {t('makerworld.platformsTitle')}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {/* 1. MakerWorld */}
+              <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/60 hover:border-emerald-500/50 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/20 transition-all flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {t('makerworld.platforms.makerworldTitle')}
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-100/70 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300">
+                      makerworld.com
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                    {t('makerworld.platforms.makerworldDesc')}
+                  </p>
+                </div>
+                <div className="pt-2 border-t border-gray-200/60 dark:border-gray-700/60 flex items-center justify-end">
+                  <button
+                    type="button"
+                    onClick={() => window.open('https://makerworld.com', '_blank')}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
+                  >
+                    <span>{t('makerworld.platforms.openPortal')}</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* 2. Printables */}
+              <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/60 hover:border-orange-500/50 hover:bg-orange-50/20 dark:hover:bg-orange-950/20 transition-all flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-orange-500 shrink-0" />
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {t('makerworld.platforms.printablesTitle')}
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-orange-100/70 dark:bg-orange-950/50 text-orange-800 dark:text-orange-300">
+                      printables.com
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                    {t('makerworld.platforms.printablesDesc')}
+                  </p>
+                </div>
+                <div className="pt-2 border-t border-gray-200/60 dark:border-gray-700/60 flex items-center justify-end">
+                  <button
+                    type="button"
+                    onClick={() => window.open('https://www.printables.com', '_blank')}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 transition-colors"
+                  >
+                    <span>{t('makerworld.platforms.openPortal')}</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* 3. Thingiverse */}
+              <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/60 hover:border-blue-500/50 hover:bg-blue-50/20 dark:hover:bg-blue-950/20 transition-all flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0" />
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {t('makerworld.platforms.thingiverseTitle')}
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-blue-100/70 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300">
+                      thingiverse.com
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                    {t('makerworld.platforms.thingiverseDesc')}
+                  </p>
+                </div>
+                <div className="pt-2 border-t border-gray-200/60 dark:border-gray-700/60 flex items-center justify-end">
+                  <button
+                    type="button"
+                    onClick={() => window.open('https://www.thingiverse.com', '_blank')}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                  >
+                    <span>{t('makerworld.platforms.openPortal')}</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* 4. Thangs 3D */}
+              <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/60 hover:border-purple-500/50 hover:bg-purple-50/20 dark:hover:bg-purple-950/20 transition-all flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-purple-500 shrink-0" />
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {t('makerworld.platforms.thangsTitle')}
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-purple-100/70 dark:bg-purple-950/50 text-purple-800 dark:text-purple-300">
+                      thangs.com
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                    {t('makerworld.platforms.thangsDesc')}
+                  </p>
+                </div>
+                <div className="pt-2 border-t border-gray-200/60 dark:border-gray-700/60 flex items-center justify-end">
+                  <button
+                    type="button"
+                    onClick={() => window.open('https://thangs.com', '_blank')}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
+                  >
+                    <span>{t('makerworld.platforms.openMetaSearch')}</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* 5. Direkt-Download */}
+              <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/60 hover:border-amber-500/50 hover:bg-amber-50/20 dark:hover:bg-amber-950/20 transition-all flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {t('makerworld.platforms.directTitle')}
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-amber-100/70 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300">
+                      .3mf, .stl, .step
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                    {t('makerworld.platforms.directDesc')}
+                  </p>
+                </div>
+                <div className="pt-2 border-t border-gray-200/60 dark:border-gray-700/60 flex items-center justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      urlInputRef.current?.focus();
+                      urlInputRef.current?.select();
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 transition-colors"
+                  >
+                    <span>{t('makerworld.platforms.directAction')}</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* 6. Eigener Datei-Upload */}
+              <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/60 hover:border-teal-500/50 hover:bg-teal-50/20 dark:hover:bg-teal-950/20 transition-all flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-teal-500 shrink-0" />
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {t('makerworld.platforms.uploadTitle')}
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-teal-100/70 dark:bg-teal-950/50 text-teal-800 dark:text-teal-300">
+                      Drag & Drop
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                    {t('makerworld.platforms.uploadDesc')}
+                  </p>
+                </div>
+                <div className="pt-2 border-t border-gray-200/60 dark:border-gray-700/60 flex items-center justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDroppedFiles([]);
+                      setShowUploadModal(true);
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 transition-colors"
+                  >
+                    <span>{t('makerworld.platforms.uploadAction')}</span>
+                    <Upload className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <form onSubmit={handleResolve} className="flex gap-2">
             <input
+              ref={urlInputRef}
               type="text"
               value={urlInput}
               onChange={(e) => setUrlInput(e.target.value)}
@@ -537,6 +733,48 @@ export function MakerworldPage() {
               <span className="ml-2">{t('makerworld.resolveButton')}</span>
             </Button>
           </form>
+          {urlInput.trim() && !urlInput.trim().startsWith('http') && (
+            <div className="mt-2.5 flex flex-wrap items-center gap-2 text-xs">
+              <span className="text-gray-500 dark:text-gray-400 font-medium">Online suchen:</span>
+              <a
+                href={`https://makerworld.com/en/search/models?keyword=${encodeURIComponent(urlInput.trim())}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 transition-colors"
+              >
+                <span>MakerWorld</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+              <a
+                href={`https://www.printables.com/search/models?q=${encodeURIComponent(urlInput.trim())}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800 hover:bg-orange-100 transition-colors"
+              >
+                <span>Printables</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+              <a
+                href={`https://www.thingiverse.com/search?q=${encodeURIComponent(urlInput.trim())}&type=things`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 transition-colors"
+              >
+                <span>Thingiverse</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+              <a
+                href={`https://thangs.com/search/${encodeURIComponent(urlInput.trim())}?scope=all`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 transition-colors"
+              >
+                <span>Thangs</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+          )}
+
           <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
             {t('makerworld.dropFilesHint')}
           </div>

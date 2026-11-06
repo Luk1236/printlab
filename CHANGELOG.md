@@ -3,6 +3,27 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.18 (06.11.2026) — 3D-Modell-Hub (6 Plattformen & Quellen), Telegram-Aktionen & Auto-Druckbett-Prüfung
+
+- **3D-Modell-Hub mit 6 Plattformen & Quellen:**
+  - **🟢 MakerWorld (`makerworld.com`):** Direkte Auflösung von Bambu Lab 3MFs, Platten, Druckern und AMS-Farbzuweisungen.
+  - **🟠 Printables (`printables.com`):** Prusa Research Modelle (3MF & STL) direkt per Link laden.
+  - **🔵 Thingiverse (`thingiverse.com`):** Ultimaker Community-Modelle direkt per Link (z. B. `thing:763622`) abrufen und Platten/Dateien einzeln importieren.
+  - **🟣 Thangs 3D (`thangs.com`):** Schnellzugriff auf die weltweit größte Metasuchmaschine für 3D-Druckmodelle.
+  - **🔗 Direkt-Download:** Beliebige direkte Web-Links zu `.3mf`-, `.stl`- oder `.step`-Dateien werden sofort erkannt und geladen.
+  - **📁 Eigener Datei-Upload:** `.3mf`-, `.stl`- und `.step`-Dateien können direkt per Klick auf „Modell hochladen“ oder via Drag & Drop ins Browserfenster importiert werden.
+  - **Modell-Hub Navigation:** Untermenüpunkt in der Seitenleiste umbenannt zu *Modell-Hub (MakerWorld & 3D)*.
+- **MakerWorld Download-Korrektur ("Did not return a download URL"):**
+  - Kandidatenauflösung für Modelle mit vielen Platten (wie Mystic Dragon mit 23 Profilen) erweitert: dynamischer Abruf aller Platten über `get_design_instances` (`hits`), wenn eine Profil-ID außerhalb der ersten 4 Standardinstanzen liegt.
+  - Robuste rekursive Fallback-Suche nach signierten 3MF/STL-URLs (`bblmw.com`) in verschachtelten Manifest-Antworten.
+- **Interaktive Telegram-Bot-Steuerung:**
+  - Neue Chat-Befehle `/pause`, `/resume`, `/licht`, `/stop` sowie interaktive Inline-Keyboard-Buttons (`cmd:live`, `cmd:light`, `cmd:pause`, `cmd:resume`, `cmd:stop`, `cmd:stop_confirm`) mit Sicherheitsabfrage vor Abbruch.
+- **Automatische Druckbett-Leerkontrolle in der Warteschlange:**
+  - Automatischer Bed-Check vor Vorheizen und Druckjob-Upload in `print_scheduler.py` via `queue_plate_check.py`.
+  - Blockiert automatisches Drucken und sendet Warnungen, wenn das Druckbett noch nicht geräumt ist.
+- **Home Assistant MQTT Discovery & Telemetrie-Erweiterung:**
+  - Neue Sensoren für Bauraumtemperatur (`chamber_temperature`), aktiven Druckauftrag (`current_print`), Bauteillüfter-Geschwindigkeit (`cooling_fan_speed`) und Schalter für Druck-Pause/Fortsetzen via MQTT-Discovery.
+
 ## v2.0.17 (05.11.2026) — Thingiverse-Integration & Direkter 3D-Modell-Upload
 
 - **Thingiverse-Integration (`thingiverse.com`):**

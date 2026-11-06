@@ -301,6 +301,38 @@ class MQTTRelayService:
             retain=True,
         )
 
+        # Publish HA telemetry state
+        try:
+            temps = state.temperatures or {}
+            nozzle = float(temps.get("nozzle", 0.0) or 0.0)
+            bed = float(temps.get("bed", 0.0) or 0.0)
+            chamber = float(temps.get("chamber", 0.0) or 0.0)
+            file_name = state.subtask_name or state.current_print or state.gcode_file or ""
+            fan = int(state.cooling_fan_speed or 0)
+            remaining_m = int(state.remaining_time or 0)
+
+            ha_state = {
+                "state": state.state or "IDLE",
+                "nozzle_temp": round(nozzle, 1),
+                "bed_temp": round(bed, 1),
+                "chamber_temp": round(chamber, 1),
+                "progress": int(state.progress or 0),
+                "remaining_minutes": remaining_m,
+                "current_layer": int(state.layer_num or 0),
+                "total_layers": int(state.total_layers or 0),
+                "emergency_stop": False,
+                "chamber_light": bool(state.chamber_light),
+                "current_file": file_name,
+                "fan_speed": fan,
+            }
+            self._publish(
+                f"{self.topic_prefix}/printer/{printer_id}/state",
+                ha_state,
+                retain=False,
+            )
+        except Exception:
+            pass
+
     async def on_plate_clear_state(
         self,
         printer_id: int,
@@ -332,6 +364,20 @@ class MQTTRelayService:
             retain=True,
         )
 
+    def publish_ha_discovery(self, printer_id: int | str, printer_name: str):
+        """Publish Home Assistant MQTT discovery configs for this printer."""
+        if not self.enabled or not self.connected:
+            return
+
+        try:
+            from backend.app.services.ha_discovery import build_discovery_payloads
+
+            configs = build_discovery_payloads(str(printer_id), printer_name, base_topic=self.topic_prefix)
+            for item in configs:
+                self._publish(item["topic"], item["payload"], retain=True)
+        except Exception as exc:
+            logger.debug("Failed to publish HA discovery for printer %s: %s", printer_id, exc)
+
     async def on_printer_online(self, printer_id: int, printer_name: str, printer_serial: str):
         """Publish printer came online event."""
         if not self.enabled or not self.connected:
@@ -346,6 +392,7 @@ class MQTTRelayService:
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             },
         )
+        self.publish_ha_discovery(printer_id, printer_name)
 
     async def on_printer_offline(self, printer_id: int, printer_name: str, printer_serial: str):
         """Publish printer went offline event."""
