@@ -3,6 +3,14 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.27 (07.11.2026) — SliceModal Stabilität & Slicer-Fehlerbehebung
+
+- **SliceModal UI-Crash behoben (`(intermediate value).trim is not a function`):**
+  - Robuste Typ-Normalisierung (`normalizeTypeString`) in `slicePresetPicker.ts` verhindert Abstuerze beim Oeffnen des Slicer-Fensters, wenn `filament_type` als Array (`["PLA"]`) oder `null`/`undefined` geliefert wird.
+  - Backend-Bereinigung in `builtin_slicer.py` und `slicer_presets.py`: `filament_type` wird strikt zu einem standardkonformen String (`str`) normalisiert.
+  - Automatischer Pydantic-Validator in `UnifiedPreset` garantiert typsichere Serialisierung der Preset-Daten.
+  - Neu gebautes Produktions-Frontend in `static/` mit validiertem Quell-Hash.
+
 ## v2.0.26 (06.11.2026) — Offizielle OrcaSlicer-Engine integriert (GitHub Auto-Download & Headless-Slicing)
 
 - **Echter GitHub-Slicer statt fehlerhaftem Python-Code (`builtin_slicer.py` & `slicer_manager.py`):**
