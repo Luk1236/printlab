@@ -145,6 +145,38 @@ async def on_layer_change(printer_id: int, layer_num: int):
             except Exception as exc:  # noqa: BLE001 - Callback darf nicht abbrechen
                 logger.warning("Bauteil-Wächter fehlgeschlagen: %s", exc)
 
+    # Kontinuierliche Schichtanalyse & Edge-Spaghetti-Detektor
+    from backend.app.services.layer_inspection import layer_inspection_service
+
+    if layer_inspection_service.should_inspect(printer_id, layer_num):
+        li_client = printer_manager.get_client(printer_id)
+        li_state = li_client.state if li_client else None
+        if li_state and li_state.state == "RUNNING":
+            try:
+                from backend.app.models.printer import Printer
+
+                async with _rt().async_session() as li_db:
+                    result = await li_db.execute(select(Printer).where(Printer.id == printer_id))
+                    li_printer = result.scalar_one_or_none()
+                    if li_printer:
+                        raw_image = await _capture_snapshot_for_notification(printer_id, li_printer, logger)
+                        if raw_image:
+                            calibrated = await calibrate_snapshot(printer_id, raw_image)
+                            is_warped = calibrated is not None and calibrated != raw_image
+                            image_to_use = calibrated if is_warped else raw_image
+                            await layer_inspection_service.observe(
+                                printer_id=printer_id,
+                                printer_name=li_printer.name,
+                                layer_num=layer_num,
+                                image_data=image_to_use,
+                                client=li_client,
+                                db=li_db,
+                                task_name=li_state.subtask_name or li_state.gcode_file or "",
+                                is_warped=is_warped,
+                            )
+            except Exception as exc:  # noqa: BLE001 - Callback darf nicht abbrechen
+                logger.warning("Kontinuierliche Schichtanalyse fehlgeschlagen: %s", exc)
+
     from backend.app.services.layer_timelapse import on_layer_change as tl_layer_change
 
     await tl_layer_change(printer_id, layer_num)

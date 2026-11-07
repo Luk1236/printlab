@@ -1,6 +1,7 @@
 import { API_BASE, authToken, parseContentDispositionFilename, request } from './core';
 export * from './core';
 export * from './types';
+export type { LayerInspectionConfig, LayerInspectionStatus, LayerInspectionHistoryItem, LayerInspectionTestResult } from './types_finance';
 export { api } from './endpoints';
 import type {
   AnnouncementList,

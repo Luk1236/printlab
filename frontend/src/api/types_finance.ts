@@ -42,6 +42,53 @@ export interface FirstLayerStatus {
   checked: boolean;
   last_layer: number;
 }
+
+export interface LayerInspectionConfig {
+  enabled: boolean;
+  layer_interval: number;
+  sensitivity_threshold: number;
+  consecutive_alerts: number;
+  auto_pause: boolean;
+  save_debug_snapshots: boolean;
+  min_layer: number;
+}
+
+export interface LayerInspectionHistoryItem {
+  timestamp: string;
+  layer_num: number;
+  chaos_score: number;
+  orientation_entropy: number;
+  edge_density: number;
+  is_failure: boolean;
+  consecutive_count: number;
+  action_taken: string;
+  saved_filename?: string | null;
+}
+
+export interface LayerInspectionStatus {
+  printer_id: number;
+  config: LayerInspectionConfig;
+  consecutive_alerts: number;
+  last_layer: number;
+  history: LayerInspectionHistoryItem[];
+}
+
+export interface LayerInspectionTestResult {
+  printer_id: number;
+  config: LayerInspectionConfig;
+  result: {
+    is_failure: boolean;
+    confidence: number;
+    chaos_score: number;
+    orientation_entropy: number;
+    edge_density: number;
+    fragment_count: number;
+    bounding_box?: [number, number, number, number] | null;
+    message: string;
+    has_debug_image: boolean;
+    debug_image_b64?: string;
+  };
+}
 export interface ExternalLink {
   id: number;
   name: string;

@@ -47,6 +47,7 @@ import { ConfirmModal } from '../components/ConfirmModal';
 import { MaintenanceProgramsCard } from '../components/MaintenanceProgramsCard';
 import { HardwareAdminCard } from '../components/HardwareAdminCard';
 import { GpioHardwareCard } from '../components/GpioHardwareCard';
+import { LayerInspectionCard } from '../components/LayerInspectionCard';
 import { RemoteAccessCard } from '../components/RemoteAccessCard';
 import { PiHealthCard } from '../components/PiHealthCard';
 import { SelfTestCard } from '../components/SelfTestCard';
@@ -1348,6 +1349,7 @@ export function MaintenancePage() {
 
           {(hwSubTab === 'mechanics' || hwSubTab === 'all') && (
             <div className="space-y-6">
+              <div id="hw-layer-inspection"><LayerInspectionCard canControl={hasPermission('printers:control')} /></div>
               <div id="hw-gpio"><GpioHardwareCard canControl={hasPermission('printers:control')} /></div>
               <div id="hw-admin"><HardwareAdminCard canControl={hasPermission('printers:control')} /></div>
               <div id="hw-wizard"><PlateWizardCard canControl={hasPermission('printers:control')} /></div>

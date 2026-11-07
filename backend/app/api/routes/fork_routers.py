@@ -20,6 +20,7 @@ from backend.app.api.routes import (
     fleet,
     ha_discovery_route,
     hardware,
+    layer_inspection,
     maintenance_wear,
     monthly_report,
     plate_calibration,
@@ -32,6 +33,7 @@ from backend.app.api.routes import (
     reorder,
     search,
     selftest,
+    spool_auto_fallback,
     timelapse_export,
     webhooks_outbound,
 )
@@ -43,7 +45,9 @@ def register_fork_routers(app: FastAPI, prefix: str) -> None:
     app.include_router(plate_calibration.router, prefix=prefix)
     # Spaghetti-/Abbruch-Erkennung (nur Warnung, nach Druckmitte).
     app.include_router(first_layer_inspector.router, prefix=prefix)
+    app.include_router(layer_inspection.router, prefix=prefix)
     app.include_router(hardware.router, prefix=prefix)
+    app.include_router(spool_auto_fallback.router, prefix=prefix)
     app.include_router(plate_tuning.router, prefix=prefix)
     app.include_router(assistant.router, prefix=prefix)
     app.include_router(selftest.router, prefix=prefix)

@@ -5,6 +5,7 @@
  */
 
 import { createForkApi } from './forkApi';
+import { hardwareEndpoints } from './hardware_endpoints';
 import type { ArchivePlatesResponse, LibraryFilePlatesResponse } from '../types/plates';
 import { API_BASE, authToken, buildSlicerUrlFilename, parseContentDispositionFilename, postForBlob, request, uploadSpoolsCsv, withMediaToken, withStreamToken } from './core';
 import type {
@@ -67,6 +68,10 @@ import type {
   Filament,
   FilamentSkuSettings,
   FirstLayerStatus,
+  LayerInspectionConfig,
+  LayerInspectionHistoryItem,
+  LayerInspectionStatus,
+  LayerInspectionTestResult,
   ForgotPasswordRequest,
   ForgotPasswordResponse,
   GitHubBackupConfig,
@@ -2843,37 +2848,7 @@ export const api = {
   resetEmergencyStop: (printerId: number) =>
     request<HardwareActionResponse>(`/printers/${printerId}/hardware/emergency-stop/reset`, { method: 'POST' }),
 
-  // Phase 5: GPIO Hardware Buttons & Servo Tuning
-  getGpioStatus: () =>
-    request<{
-      enabled: boolean;
-      is_simulated: boolean;
-      estop_triggered: boolean;
-      estop_source: string | null;
-      estop_button_physically_pressed: boolean;
-      led_state: string;
-      pins: Record<string, any>;
-      servo_calibration: { min_angle: number; max_angle: number };
-    }>('/printers/hardware/gpio/status'),
-  updateGpioConfig: (payload: Record<string, any>) =>
-    request<{ success: boolean; config: Record<string, any>; status: any }>('/printers/hardware/gpio/config', {
-      method: 'PUT',
-      body: JSON.stringify(payload),
-    }),
-  triggerGpioEstop: () =>
-    request<{ success: boolean; status: any }>('/printers/hardware/gpio/estop/trigger', { method: 'POST' }),
-  resetGpioEstop: () =>
-    request<{ success: boolean; message: string; status: any }>('/printers/hardware/gpio/estop/reset', { method: 'POST' }),
-  testServo: (angle: number) =>
-    request<{ success: boolean; message: string; angle: number }>('/printers/hardware/servo/test', {
-      method: 'POST',
-      body: JSON.stringify({ angle }),
-    }),
-  calibrateServo: (minAngle: number, maxAngle: number) =>
-    request<{ success: boolean; message: string; status: any }>('/printers/hardware/servo/calibrate', {
-      method: 'POST',
-      body: JSON.stringify({ min_angle: minAngle, max_angle: maxAngle }),
-    }),
+  ...hardwareEndpoints,
   resolveIncompleteChange: (printerId: number) =>
     request<HardwareActionResponse>(`/printers/${printerId}/hardware/incomplete/resolve`, { method: 'POST' }),
   cancelAutoPlateChange: (printerId: number) =>

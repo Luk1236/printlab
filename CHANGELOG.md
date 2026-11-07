@@ -3,6 +3,31 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.33 (07.11.2026) — KI & Kamera: Kontinuierliche Schichtanalyse & Edge-Spaghetti-Detektor (Phase 6)
+
+- **Schneller lokaler Edge-Spaghetti-Detektor (`spaghetti_detector.py`):**
+  - **OpenCV CLAHE-Beleuchtungskompensation:** Normalisiert Helligkeit und Kontrastschwankungen im LAB-Farbraum (Chamber-LED an/aus, Tag/Nacht, Reflexionen) vor der Merkmalsextraktion.
+  - **Sobel-Orientierungsentropie:** Mathematische Trennung zwischen geordneten Druckbahnen (Wände, Gitter, Infill mit 0°/45°/90° Orientierungsspitzen) und chaotischem Filament-Salat (isotrope Winkeldistribution mit hoher Shannon-Entropie > 0.70).
+  - **Kantendichte & Kontur-Clusterung:** Findet Spaghetti-Fäden mittels Canny-Kantendichte und gruppiert morphologische Filament-Nester zu einer exakten Fehler-Bounding-Box.
+  - **Ultra-performant:** Läuft in unter 25 ms auf Raspberry Pi 5 / CPU ohne Cloud- oder LLM-Latenz.
+- **Kontinuierlicher Schichtanalyse-Dienst (`layer_inspection.py`):**
+  - Hook in `on_layer_change` in `printer_telemetry_flow.py`: Prüft das Druckbett im einstellbaren Takt (z. B. alle 2–3 Schichten).
+  - **Schwellwert- & Bestätigungsfilter:** Verhindert Fehlalarme durch vorübergehende Verdeckungen (z. B. durch den Druckkopf) via Konfigurationsparameter `consecutive_alerts` (Standard: 2 bestätigte Prüfungen in Folge).
+  - **Automatischer Not-Stopp (Auto-Pause):** Sendet bei bestätigtem Fehldruck sofort `pause_print()` an den Drucker, archiviert ein annotiertes Beweisfoto in der Fehlerbild-Sammlung und löst die AI-Alarmierungs-Pipeline aus.
+  - Ringpuffer für die letzten 50 Schichtprüfungen mit Schichtnummer, Entropie, Kantendichte und Status.
+- **API-Endpunkte (`layer_inspection.py`):**
+  - `GET /api/v1/printers/{id}/layer-inspection`: Status, Konfiguration und Historie.
+  - `PUT /api/v1/printers/{id}/layer-inspection`: Konfiguration aktualisieren.
+  - `POST /api/v1/printers/{id}/layer-inspection/reset`: Laufenden Fehlerzähler zurücksetzen.
+  - `POST /api/v1/printers/{id}/layer-inspection/test`: Sofortige Einzelprüfung mit Live-Kamerabild oder Test-Upload inklusive Base64-Vorschau.
+- **Web-Frontend (`LayerInspectionCard.tsx`):**
+  - Neues Diagnose- und Überwachungs-Panel auf der Wartungsseite mit Live-Statusanzeige, Sensitivitäts-Schieberegler, Prüfintervall, Auto-Pause-Schalter, Test-Upload mit annotierter Bildvorschau und Verlaufstabelle.
+  - Direkte Schalter-Integration in der zentralen Karte `AiChecksCard.tsx`.
+- **Test-Suite:**
+  - `test_spaghetti_detector.py` (5 Unit-Tests für Normalisierung, Entropie, Gitter vs. Spaghetti, Bildformate).
+  - `test_layer_inspection.py` (6 Unit-Tests für Konfiguration, Intervallfilter, Notpause-Ablauf, Sofort-Test).
+  - `test_layer_inspection_api.py` (3 Integrationstests für REST-Endpunkte).
+
 ## v2.0.32 (07.11.2026) — GPIO Hardware-Taster, Not-Halt-Dienst & Servo-Justierung (Phase 5)
 
 - **GPIO Not-Halt & Taster-Dienst (`gpio_hardware.py`):**

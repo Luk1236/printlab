@@ -79,6 +79,11 @@ export function AiChecksCard() {
     queryFn: () => api.getPartWatcher(printerId),
     enabled: printerId > 0,
   });
+  const { data: layerInspection } = useQuery({
+    queryKey: ['layerInspection', printerId],
+    queryFn: () => api.getLayerInspection(printerId),
+    enabled: printerId > 0,
+  });
   const { data: status } = useQuery({
     queryKey: ['printerStatus', printerId],
     queryFn: () => api.getPrinterStatus(printerId),
@@ -233,6 +238,24 @@ export function AiChecksCard() {
                     overrides: partWatcher?.overrides,
                   }),
                 queryKey: ['partWatcher', printerId],
+              })
+            }
+          />
+        </CheckRow>
+        <CheckRow
+          id="layer-inspection"
+          label={t('aiChecks.layerInspection', 'Schichtanalyse & Edge-Spaghetti-Detektor')}
+          hint={t('aiChecks.layerInspectionHint', 'Lokale Echtzeitanalyse alle N Schichten mit Not-Stopp bei Filament-Salat')}
+          link="/maintenance?tab=hardware#hw-layer-inspection"
+          linkLabel={t('aiChecks.settingsLink')}
+        >
+          <Toggle
+            checked={Boolean(layerInspection?.config?.enabled)}
+            disabled={!canControl || !layerInspection}
+            onChange={(enabled) =>
+              toggle.mutate({
+                run: () => api.updateLayerInspection(printerId, { enabled }),
+                queryKey: ['layerInspection', printerId],
               })
             }
           />

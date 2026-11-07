@@ -124,6 +124,7 @@ feature_votes.sh
 /maintenance/
 /part_watcher.json
 /first_layer_inspector.json
+/layer_inspection.json
 /spaghetti_check.json
 /audit_log.jsonl
 /hardware_*.json
