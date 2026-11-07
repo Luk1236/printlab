@@ -718,6 +718,25 @@ export const api = {
       { method: 'POST' }
     ),
 
+  getAmsBackupPairs: (printerId: number) =>
+    request<{
+      printer_id: number;
+      ams_filament_backup: boolean | null;
+      pairs_count: number;
+      pairs: Array<{
+        ams_id: number;
+        material: string;
+        color: string;
+        primary_slot: number;
+        primary_tray_id: number;
+        primary_remain_pct: number;
+        backup_slot: number;
+        backup_tray_id: number;
+        backup_remain_pct: number;
+        same_color_exact: boolean;
+      }>;
+    }>(`/printers/${printerId}/ams-backup-pairs`),
+
   // Per-globalTrayId remaining grams for this printer's inventory-bound slots
   // (#1766). Drives the client-side "Prefer Lowest Remaining Filament" sort
   // when computing the AMS mapping; mirrors backend `_build_inventory_remain_overrides`

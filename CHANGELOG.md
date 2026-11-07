@@ -3,6 +3,19 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.31 (07.11.2026) — Intelligenter Rollentausch & AMS Spool Auto-Fallback (Phase 4)
+
+- **Intelligenter AMS Rollentausch & Spool-Auto-Fallback (`spool_auto_fallback.py`):**
+  - **Automatische Backup-Erkennung:** Identifiziert kompatible Rollenpaare in allen AMS-Einheiten des Druckers basierend auf Materialtyp (PLA, PETG etc.), Farb-Kompatibilität (exakter Hex-Code oder Delta-E Schwellenwert) und Düsendurchmesser.
+  - **Proaktive Auto-Refill-Aktivierung:** Beim Druckstart in `print_scheduler.py` und bei der Filament-Defizit-Prüfung in `filament_deficit.py` wird Bambus natives `ams_filament_backup` automatisch auf dem Drucker aktiviert, wenn kompatible Spulen geladen sind. Dies verhindert Druckabbrüche und Wartepausen bei leerlaufenden Spulen.
+  - **Material-Pooling bei Defiziten:** Bei aktiviertem Auto-Fallback poolt PrintLab das Restfilament aller kompatiblen Schächte, sodass Aufträge ohne Fehlalarm starten können, wenn die Summe des Filaments ausreicht.
+- **Neue API-Endpunkte für AMS-Fallback:**
+  - `GET /api/v1/printers/{id}/ams-backup-pairs`: Liefert die aktiven und redundanten Spulenpaarungen pro AMS-Einheit mit Schacht-Nummern und Restmengen.
+  - `POST /api/v1/printers/{id}/ams-auto-fallback/apply`: Erzwingt die proaktive Aktivierung des nativen AMS-Backups für kompatible Rollen.
+- **Slicer & Slicing-Stabilität:**
+  - `tree_support_wall_count` wird bei allen Prozesskonfigurationen standardmäßig auf `"0"` vorgegeben, wodurch der OrcaSlicer CLI Returncode 238 (-1 out of range) vollständig verhindert wird.
+  - Linux-Paket-Abhängigkeiten (`libwebkit2gtk-4.1-0`, `xvfb`) und Multi-User-Service-Neustart in `werkzeuge/pi_slicer_installieren.sh` verbessert.
+
 ## v2.0.30 (07.11.2026) — Slicer-Preset-Manager UI & Profil-Verwaltung (Phase 3)
 
 - **Slicer-Preset-Manager im Web-Frontend (`LocalProfilesView.tsx`):**

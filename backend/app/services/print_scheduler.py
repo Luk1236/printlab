@@ -3759,6 +3759,13 @@ class PrintScheduler(AvailabilityMixin, PreheatMixin, DryingMixin, WatchdogMixin
         except Exception:
             logger.exception("Queue item %s: K-profile check before dispatch failed", item.id)
 
+        # Intelligenter Rollentausch (AMS Spool Auto-Fallback bei vorhandenen Backup-Spulen)
+        try:
+            from backend.app.services.spool_auto_fallback import auto_enable_ams_filament_backup_if_eligible
+            auto_enable_ams_filament_backup_if_eligible(item.printer_id)
+        except Exception:
+            logger.warning("Queue item %s: Auto-Fallback-Prüfung vor Druckstart fehlgeschlagen", item.id, exc_info=True)
+
         # Was der Watchdog nach dem Absetzen braucht, kommt aus dem Plan.
         pre_state = plan.pre_state
         pre_subtask_id = plan.pre_subtask_id
