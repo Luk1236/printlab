@@ -3,6 +3,20 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.32 (07.11.2026) — GPIO Hardware-Taster, Not-Halt-Dienst & Servo-Justierung (Phase 5)
+
+- **GPIO Not-Halt & Taster-Dienst (`gpio_hardware.py`):**
+  - **Physischer Not-Halt (E-Stop):** Überwachung von GPIO 26 mit Software-Entprellung (50 ms) im Öffner- (NC) oder Schließer-Modus (NO). Bei Unterbrechung werden sofort alle Schrittmotoren stromlos geschaltet, aktive Drucke gestoppt und neue Warteschlangen-Aufträge verriegelt.
+  - **Sicherheits-Verriegelung:** Der Not-Halt kann erst quittiert werden, wenn der physische Pilztaster mechanisch entriegelt ist.
+  - **Quittier- & Pausetaster:** Physischer Quittiertaster (GPIO 16) zum Rücksetzen des Not-Halts oder Bestätigen von Plattenwechseln; Pausetaster (GPIO 20) zum Anhalten/Fortsetzen des Drucks.
+  - **Status-LED-Ansteuerung:** GPIO 21 signalisiert den Betriebszustand (Bereit, Druckt, Not-Halt).
+- **Servo-Winkel-Justierassistent:**
+  - Kalibrierung der Endlagen für Türschließer-Servos (`zu_grad`, `offen_grad`) direkt über Schieberegler im Web-Interface mit Live-Testfahrt ohne manuelle JSON-Edits.
+- **Web-Frontend (`GpioHardwareCard.tsx`):**
+  - Neues Hardware-Bedienfeld auf der Wartungsseite mit Not-Halt-Statusbanner, rotem Not-Aus-Schalter, Quittierungs-Button, Live-Pinanzeige und Servo-Kalibrierung.
+- **Unit-Tests:**
+  - `backend/tests/unit/test_gpio_hardware.py` (4 Tests) deckt Status, Entprellung, E-Stop-Auslösung, Reset und Kalibrier-Endpunkte vollständig ab.
+
 ## v2.0.31 (07.11.2026) — Intelligenter Rollentausch & AMS Spool Auto-Fallback (Phase 4)
 
 - **Intelligenter AMS Rollentausch & Spool-Auto-Fallback (`spool_auto_fallback.py`):**

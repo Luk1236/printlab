@@ -3024,6 +3024,15 @@ class PrintScheduler(AvailabilityMixin, PreheatMixin, DryingMixin, WatchdogMixin
         """
         logger.info("Starting queue item %s", item.id)
 
+        # Phase 5: Not-Halt-Verriegelung prüfen
+        try:
+            from backend.app.services.gpio_hardware import gpio_service
+            if gpio_service.is_estop_active():
+                logger.warning("Queue item %s: Druckstart blockiert — NOT-HALT ist verriegelt!", item.id)
+                return
+        except Exception:
+            pass
+
         # Also covers a reservation left active by a process interruption
         # during an earlier attempt. `_dispatch_one` releases this marker on
         # every exit unless start_print() confirms that the command was sent.

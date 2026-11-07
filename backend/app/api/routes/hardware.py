@@ -358,3 +358,85 @@ async def emergency_stop(
     if not ok:
         raise HTTPException(400, message)
     return {"success": True, "message": message, **get_hardware(printer_id).status()}
+
+
+# --- Phase 5: GPIO Hardware-Taster, Entprellung & Servo-Kalibrierung ---
+
+
+@router.get("/hardware/gpio/status")
+async def get_gpio_status(_=RequirePermissionIfAuthEnabled(Permission.PRINTERS_READ)):
+    """Liefert den aktuellen Zustand der physischen GPIO-Pins und des Not-Halts."""
+    from backend.app.services.gpio_hardware import gpio_service
+
+    return gpio_service.get_status()
+
+
+@router.put("/hardware/gpio/config")
+async def update_gpio_config(
+    payload: dict,
+    _=RequirePermissionIfAuthEnabled(Permission.SETTINGS_UPDATE),
+):
+    """Speichert die GPIO-Pinbelegung, Entprellung und Betriebsmodi."""
+    from backend.app.services.gpio_hardware import gpio_service
+
+    saved = gpio_service.save_config(payload or {})
+    return {"success": True, "config": saved, "status": gpio_service.get_status()}
+
+
+@router.post("/hardware/gpio/estop/trigger")
+async def trigger_gpio_estop(
+    user=Depends(get_current_user_optional),
+    _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_CONTROL),
+):
+    """Löst den Not-Halt manuell über API aus."""
+    from backend.app.services.gpio_hardware import gpio_service
+
+    username = getattr(user, "username", "web_user")
+    status = gpio_service.trigger_emergency_stop(source=f"web_ui ({username})", user=username)
+    return {"success": True, "status": status}
+
+
+@router.post("/hardware/gpio/estop/reset")
+async def reset_gpio_estop(
+    user=Depends(get_current_user_optional),
+    _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_CONTROL),
+):
+    """Quittiert den Not-Halt und gibt das System wieder frei."""
+    from backend.app.services.gpio_hardware import gpio_service
+
+    username = getattr(user, "username", "web_user")
+    ok, message = gpio_service.reset_emergency_stop(user=username)
+    if not ok:
+        raise HTTPException(400, message)
+    return {"success": True, "message": message, "status": gpio_service.get_status()}
+
+
+@router.post("/hardware/servo/test")
+async def test_servo(
+    payload: dict,
+    _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_CONTROL),
+):
+    """Fährt das Tür-Servo zu Testzwecken auf einen gewünschten Winkel."""
+    from backend.app.services.gpio_hardware import gpio_service
+
+    angle = float(payload.get("angle", 90.0))
+    ok, message = gpio_service.test_servo_angle(angle)
+    if not ok:
+        raise HTTPException(400, message)
+    return {"success": True, "message": message, "angle": angle}
+
+
+@router.post("/hardware/servo/calibrate")
+async def calibrate_servo(
+    payload: dict,
+    _=RequirePermissionIfAuthEnabled(Permission.SETTINGS_UPDATE),
+):
+    """Speichert die kalibrierten Servowinkel für Tür-ZU und Tür-OFFEN."""
+    from backend.app.services.gpio_hardware import gpio_service
+
+    min_a = float(payload.get("min_angle", 10.0))
+    max_a = float(payload.get("max_angle", 154.0))
+    ok, message = gpio_service.save_servo_calibration(min_a, max_a)
+    if not ok:
+        raise HTTPException(400, message)
+    return {"success": True, "message": message, "status": gpio_service.get_status()}
