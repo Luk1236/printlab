@@ -890,3 +890,24 @@ async def install_slicer_engine(
 
     await asyncio.to_thread(install_orca_slicer_from_github)
     return get_slicer_status()
+
+
+@router.get("/slicer-cache")
+async def get_slicer_cache(
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.SYSTEM_READ),
+):
+    """Liefert Speicherstatistiken des Slicer-Caches und temporaerer Dateien."""
+    from backend.app.services.slicer_cache import get_slicer_cache_stats
+
+    return get_slicer_cache_stats()
+
+
+@router.post("/slicer-cache/clean")
+async def trigger_clean_slicer_cache(
+    force: bool = False,
+    _: User | None = RequirePermissionIfAuthEnabled(Permission.SETTINGS_UPDATE),
+):
+    """Bereinigt verwaiste temporaere Slicing-Dateien."""
+    from backend.app.services.slicer_cache import clean_slicer_cache
+
+    return await asyncio.to_thread(clean_slicer_cache, force_all=force)

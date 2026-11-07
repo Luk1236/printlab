@@ -221,7 +221,17 @@ export function SliceJobTrackerProvider({ children }: { children: ReactNode }) {
           offer
             ? {
                 action: { label: t('slice.printNow'), onClick: () => setPrintOffer(offer) },
-                durationMs: 15000,
+                secondaryAction: {
+                  label: t('slice.preview', '3D-Vorschau'),
+                  onClick: () => {
+                    const targetUrl =
+                      offer.kind === 'libraryFile'
+                        ? `/gcode-viewer?library_file=${offer.id}`
+                        : `/gcode-viewer?archive=${offer.id}`;
+                    window.location.assign(targetUrl);
+                  },
+                },
+                durationMs: 20000,
               }
             : undefined,
         );

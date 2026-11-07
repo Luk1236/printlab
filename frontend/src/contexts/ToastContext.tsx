@@ -45,6 +45,7 @@ interface ToastAction {
 
 interface ToastOptions {
   action?: ToastAction;
+  secondaryAction?: ToastAction;
   /** Wie lange die Meldung stehen bleibt. Vorgabe: 3 s (Fehler/Warnungen 6 s).
    *  Eine Meldung mit Aktion braucht länger, sonst ist der Knopf weg, bevor
    *  man ihn erreicht. */
@@ -64,6 +65,7 @@ interface Toast {
   type: ToastType;
   persistent?: boolean;
   action?: ToastAction;
+  secondaryAction?: ToastAction;
   dispatchData?: DispatchToastData;
 }
 
@@ -176,7 +178,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     (message: string, type: ToastType = 'success', options?: ToastOptions) => {
       if (!isMountedRef.current) return;
       const id = Math.random().toString(36).substr(2, 9);
-      setToasts((prev) => [...prev, { id, message, type, action: options?.action }]);
+      setToasts((prev) => [
+        ...prev,
+        {
+          id,
+          message,
+          type,
+          action: options?.action,
+          secondaryAction: options?.secondaryAction,
+        },
+      ]);
 
       // Auto-dismiss — longer for the types that carry more to read, and longer
       // still when an explicit duration is asked for (an offer with a button).
@@ -523,6 +534,32 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                       className="ml-2 px-2 py-1 rounded text-xs font-medium bg-bambu-green/20 text-bambu-green hover:bg-bambu-green/30 whitespace-nowrap"
                     >
                       {toast.action.label}
+                    </button>
+                  ))}
+                {toast.secondaryAction &&
+                  (toast.secondaryAction.href ? (
+                    <a
+                      href={toast.secondaryAction.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => {
+                        toast.secondaryAction?.onClick?.();
+                        dismissToast(toast.id);
+                      }}
+                      className="ml-1.5 px-2 py-1 rounded text-xs font-medium bg-zinc-700/60 text-zinc-200 hover:bg-zinc-700 hover:text-white whitespace-nowrap"
+                    >
+                      {toast.secondaryAction.label}
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        toast.secondaryAction?.onClick?.();
+                        dismissToast(toast.id);
+                      }}
+                      className="ml-1.5 px-2 py-1 rounded text-xs font-medium bg-zinc-700/60 text-zinc-200 hover:bg-zinc-700 hover:text-white whitespace-nowrap"
+                    >
+                      {toast.secondaryAction.label}
                     </button>
                   ))}
                 <button

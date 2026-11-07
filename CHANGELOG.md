@@ -3,6 +3,18 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.29 (07.11.2026) — Slicer-Cache-Hygiene & 3D-Toolpath-Direktvorschau
+
+- **Slicer-Cache-Bereinigung & Speicher-Hygiene (`slicer_cache.py`):**
+  - Automatischer Hintergrund-Watchdog bereinigt verwaiste temporäre Slicing-Ordner (`bambu_slice_*`) im System-Temp-Verzeichnis periodisch.
+  - Begrenzt überdimensionierte Slicer-Logdateien (`*.log` > 5 MB) durch automatische Rotation/Kürzung.
+  - Neue System-Endpunkte `GET /api/v1/system/slicer-cache` und `POST /api/v1/system/slicer-cache/clean` für Monitoring und manuelle Bereinigung.
+  - Unit-Tests in `backend/tests/unit/test_slicer_cache.py`.
+- **3D G-Code / Toolpath Direktzugriff nach Slicen:**
+  - `ToastContext` um sekundäre Aktionen (`secondaryAction`) erweitert.
+  - Slice-Fertigstellungs-Meldung bietet neben `[Jetzt drucken]` nun auch direkt `[3D-Vorschau]` an, um die visualisierten Werkzeugbahnen und Schichten ohne Umwege im Three.js G-Code-Viewer zu betrachten.
+  - Frontend-Produktions-Build aktualisiert.
+
 ## v2.0.28 (07.11.2026) — OrcaSlicer Parameter-Validierung & Auto-Korrektur (tree_support_wall_count)
 
 - **OrcaSlicer CLI Range-Validierungsfehler behoben (Returncode 238):**

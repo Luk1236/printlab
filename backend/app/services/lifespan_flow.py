@@ -215,6 +215,9 @@ async def start_background_services() -> None:
     from backend.app.services import local_ai_watch
 
     rt.spawn_background_task(local_ai_watch.run(), name="local-ai-watch")
+    from backend.app.services import slicer_cache
+
+    rt.spawn_background_task(slicer_cache.run_slicer_cache_watchdog(), name="slicer-cache-watchdog")
 
     # Start the smart plug scheduler for time-based on/off
     rt.smart_plug_manager.start_scheduler()
