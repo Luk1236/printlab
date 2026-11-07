@@ -84,17 +84,26 @@ async def resolve_preset_ref(
     preset type, cloud auth failure, network error fetching cloud detail).
     """
     if ref.source == "local":
-        return await _resolve_local(db, ref, slot)
-    if ref.source == "cloud":
-        return await _resolve_cloud(db, user, ref, slot)
-    if ref.source == "orca_cloud":
-        return await _resolve_orca_cloud(db, user, ref, slot)
-    if ref.source == "standard":
-        return _resolve_standard(ref, slot)
-    raise HTTPException(
-        status_code=400,
-        detail=f"Unknown preset source for {slot}: {ref.source!r}",
-    )
+        res = await _resolve_local(db, ref, slot)
+    elif ref.source == "cloud":
+        res = await _resolve_cloud(db, user, ref, slot)
+    elif ref.source == "orca_cloud":
+        res = await _resolve_orca_cloud(db, user, ref, slot)
+    elif ref.source == "standard":
+        res = _resolve_standard(ref, slot)
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown preset source for {slot}: {ref.source!r}",
+        )
+    if slot == "process":
+        try:
+            from backend.app.services.slicer_cli import sanitize_process_json_str
+
+            res = sanitize_process_json_str(res) or res
+        except Exception:
+            pass
+    return res
 
 
 async def _resolve_local(db: AsyncSession, ref: PresetRef, slot: str) -> str:

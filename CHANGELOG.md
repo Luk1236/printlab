@@ -3,6 +3,16 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.28 (07.11.2026) — OrcaSlicer Parameter-Validierung & Auto-Korrektur (tree_support_wall_count)
+
+- **OrcaSlicer CLI Range-Validierungsfehler behoben (Returncode 238):**
+  - **Tree-Support-Wandanzahl sanitisiert:** Bambu Studio / Bambu Cloud Profile setzen `tree_support_wall_count: -1` als Sentinel für "Auto". OrcaSlicer v2.4.2 validiert diesen Wert strikt gegen den Wertebereich `[0.0, 2.0]` und bricht mit Returncode 238 ab (`tree_support_wall_count: -1 not in range [0.000000,2.000000]`).
+  - `slicer_cli.py`, `preset_resolver.py` und `library.py` sanitieren negative Sentinel-Werte nun proaktiv und setzen `tree_support_wall_count` auf den gültigen Standardwert `"0"`.
+  - Zusätzliche Absicherung für weitere Bambu Studio Sentinel-Werte wie `raft_first_layer_expansion`, `prime_tower_brim_width` und `support_bottom_interface_spacing` (auf `0` geclampt).
+  - Chirurgische Bereinigung eingebetteter Sentinels aus `.3mf`-Dateien (`project_settings.config`) auch beim direkten Slicing via Sidecar.
+- **Resiliente automatische Fehler-Selbstheilung bei Slicer-Validierungsfehlern:**
+  - Erkennt `slicer_cli.py` in der Slicer-CLI-Ausgabe einen Wertebereichs-Fehler (`<param>: <val> not in range [<min>, <max>]`), wird der betreffende Parameter automatisch auf den erlaubten Grenzwert geclampt und der Slice-Auftrag transparent wiederholt, ohne dass der Benutzer mit einem Fehlerdialog abbricht.
+
 ## v2.0.27 (07.11.2026) — SliceModal Stabilität & Slicer-Fehlerbehebung
 
 - **SliceModal UI-Crash behoben (`(intermediate value).trim is not a function`):**

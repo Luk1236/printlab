@@ -107,6 +107,59 @@ def get_default_process_json(name: str = "0.20mm Standard @BBL X1C") -> str:
     })
 
 
+def sanitize_process_profile_dict(p: dict) -> dict:
+    """Bereinigt Prozess-Parameter gegen Range-Validierungsfehler von OrcaSlicer CLI."""
+    if not isinstance(p, dict):
+        return p
+
+    # 1. tree_support_wall_count: OrcaSlicer Bereich [0.0, 2.0].
+    # Bambu Studio speichert oft "-1" ("Auto"), was OrcaSlicer mit Returncode 238 ablehnt.
+    if "tree_support_wall_count" in p:
+        val = p["tree_support_wall_count"]
+        try:
+            num = float(val)
+            if num < 0:
+                p["tree_support_wall_count"] = "0"
+            elif num > 2:
+                p["tree_support_wall_count"] = "2"
+            else:
+                p["tree_support_wall_count"] = str(int(num))
+        except (ValueError, TypeError):
+            p["tree_support_wall_count"] = "0"
+
+    # 2. Nicht-negative Parameter, die in Bambu Studio teils -1 als Sentinel tragen
+    non_negative_keys = (
+        "raft_first_layer_expansion",
+        "prime_tower_brim_width",
+        "support_bottom_interface_spacing",
+        "support_interface_spacing",
+    )
+    for k in non_negative_keys:
+        if k in p:
+            val = p[k]
+            try:
+                num = float(val)
+                if num < 0:
+                    p[k] = "0"
+            except (ValueError, TypeError):
+                p[k] = "0"
+
+    return p
+
+
+def sanitize_process_json_str(process_json_str: str | None) -> str | None:
+    """Deserialisiert, bereinigt und serialisiert Prozess-JSON."""
+    if not process_json_str or not isinstance(process_json_str, str):
+        return process_json_str
+    try:
+        data = json.loads(process_json_str)
+        if isinstance(data, dict):
+            return json.dumps(sanitize_process_profile_dict(data))
+    except Exception:
+        pass
+    return process_json_str
+
+
 def build_command(
     program: str,
     source: Path,
@@ -129,8 +182,9 @@ def build_command(
     if printer_json is not None and process_json is not None:
         machine = out_dir / "machine.json"
         process = out_dir / "process.json"
+        safe_p = sanitize_process_json_str(process_json) or process_json
         machine.write_text(printer_json, encoding="utf-8")
-        process.write_text(process_json, encoding="utf-8")
+        process.write_text(safe_p, encoding="utf-8")
         cmd += ["--load-settings", f"{machine};{process}"]
         if filament_jsons:
             filament_paths = []
@@ -139,12 +193,15 @@ def build_command(
                     fj = json.loads(text) if text else {}
                 except Exception:
                     fj = {}
-                if not fj.get("type"):
-                    fj["type"] = "filament"
-                if not fj.get("from"):
-                    fj["from"] = "system"
                 path = out_dir / f"filament_{idx}.json"
-                path.write_text(json.dumps(fj), encoding="utf-8")
+                if len(fj) > 2:
+                    if not fj.get("type"):
+                        fj["type"] = "filament"
+                    if not fj.get("from"):
+                        fj["from"] = "system"
+                    path.write_text(json.dumps(fj), encoding="utf-8")
+                else:
+                    path.write_text(text, encoding="utf-8")
                 filament_paths.append(str(path))
             cmd += ["--load-filaments", ";".join(filament_paths)]
     cmd += ["--outputdir", str(out_dir), str(source)]
@@ -299,10 +356,20 @@ def slice_file(
         tmp_path = Path(tmp)
         copy = (tmp_path / source.name).resolve()
         shutil.copy2(source, copy)
+        if copy.suffix.lower() == ".3mf" and zipfile.is_zipfile(copy):
+            try:
+                from backend.app.utils.threemf_tools import sanitize_project_settings_sentinels
+
+                raw_bytes = copy.read_bytes()
+                sanitized_bytes = sanitize_project_settings_sentinels(raw_bytes)
+                if sanitized_bytes != raw_bytes:
+                    copy.write_bytes(sanitized_bytes)
+            except Exception:
+                pass
 
         # Wenn STL geslict wird (oder Profile unvollstaendig sind), mit den Standard-OrcaSlicer-Profilen anreichern
         use_printer_json = printer_json
-        use_process_json = process_json
+        use_process_json = sanitize_process_json_str(process_json)
         use_filaments = []
         if filament_jsons:
             for fj_str in filament_jsons:
@@ -335,6 +402,7 @@ def slice_file(
             base_p = json.loads(get_default_process_json(prj.get("name") or "0.20mm Standard @BBL X1C"))
             base_p.update({k: v for k, v in prj.items() if v is not None})
             base_p["from"] = "system"
+            base_p = sanitize_process_profile_dict(base_p)
             use_process_json = json.dumps(base_p)
 
         # Sicherstellen, dass das Prozessprofil mit dem Druckernamen kompatibel ist (OrcaSlicer-Validierung)
@@ -342,6 +410,7 @@ def slice_file(
             try:
                 cur_m = json.loads(use_printer_json)
                 cur_p = json.loads(use_process_json)
+                cur_p = sanitize_process_profile_dict(cur_p)
                 target_m_name = cur_m.get("name")
                 if target_m_name:
                     compat = cur_p.get("compatible_printers")
@@ -370,6 +439,40 @@ def slice_file(
 
         if result.returncode != 0:
             logger.warning("[PC-Slicer] Initial call code=%s, stderr=%s, cmd=%s", result.returncode, result.stderr, cmd)
+
+        # Retry Stufe 0: Falls OrcaSlicer mit Returncode 238 scheitert ("Param values in 3mf/config error: ... not in range")
+        has_gcodes = bool(list(tmp_path.glob("plate_*.gcode")))
+        if (result.returncode != 0 or not has_gcodes) and use_process_json:
+            stderr = (result.stderr or result.stdout or "").strip()
+            range_errors = re.findall(r"(\w+):\s*([-\d.]+)\s*not in range\s*\[([-\d.]+),\s*([-\d.]+)\]", stderr)
+            if range_errors:
+                logger.warning("[PC-Slicer] Parameter-Range-Fehler erkannt (%s). Korrigiere Profile und versuche erneut...", range_errors)
+                try:
+                    cur_p = json.loads(use_process_json)
+                    modified = False
+                    for key, val_s, min_s, max_s in range_errors:
+                        try:
+                            v = float(val_s)
+                            mi = float(min_s)
+                            ma = float(max_s)
+                            target_val = str(int(mi)) if mi.is_integer() else str(mi)
+                            if v < mi:
+                                cur_p[key] = target_val
+                                modified = True
+                            elif v > ma:
+                                cur_p[key] = str(int(ma)) if ma.is_integer() else str(ma)
+                                modified = True
+                        except Exception:
+                            cur_p[key] = "0"
+                            modified = True
+                    if modified:
+                        use_process_json = json.dumps(cur_p)
+                        cmd = build_command(
+                            program, copy, tmp_path.resolve(), name, use_printer_json, use_process_json, use_filaments or [], arrange, orient, plate
+                        )
+                        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=slicer_dir, env=slicer_env, check=False)
+                except Exception as exc:
+                    logger.warning("[PC-Slicer] Auto-Korrektur fehlgeschlagen: %s", exc)
 
         # Retry Stufe 1: Falls mit Settings versucht und gescheitert -> falls 3MF, ohne --load-settings probieren
         has_gcodes = bool(list(tmp_path.glob("plate_*.gcode")))

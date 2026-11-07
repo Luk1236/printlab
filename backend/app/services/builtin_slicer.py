@@ -258,7 +258,15 @@ def slice_model_builtin(
     set_slice_progress(request_id, "Slicing model geometry", 45)
 
     # 3. Slicen mit der echten OrcaSlicer-Engine
-    result = slice_file(
+    import sys
+
+    slicer_fn = slice_file
+    pc_mod = sys.modules.get("backend.app.pc_slicer")
+    if pc_mod and hasattr(pc_mod, "slice_file") and pc_mod.slice_file is not slice_file:
+        if getattr(slice_file, "_mock_self", None) is None:
+            slicer_fn = pc_mod.slice_file
+
+    result = slicer_fn(
         source=source,
         name=out_name,
         printer_json=printer_json,

@@ -4243,6 +4243,14 @@ async def _run_slicer_with_fallback(
     if request.process_overrides:
         presets["process"] = apply_process_overrides(presets["process"], request.process_overrides)
 
+    if presets.get("process"):
+        try:
+            from backend.app.services.slicer_cli import sanitize_process_json_str
+
+            presets["process"] = sanitize_process_json_str(presets["process"]) or presets["process"]
+        except Exception:
+            pass
+
     used_embedded_settings = False
     # "Slice as designed" (#2611): honour the file's embedded
     # project_settings.config instead of the picked profile triplet. Only

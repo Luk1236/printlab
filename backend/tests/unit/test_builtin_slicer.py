@@ -155,3 +155,28 @@ def test_pc_slicer_sidecar_contract_endpoints(tmp_path: Path):
     prog = client.get("/slice/progress/test-req-1")
     assert prog.status_code == 200
     assert prog.json()["percent"] == 100
+
+
+def test_sanitize_process_profile_clamps_negative_sentinels():
+    from backend.app.services.slicer_cli import sanitize_process_profile_dict, sanitize_process_json_str
+
+    raw = {
+        "tree_support_wall_count": "-1",
+        "raft_first_layer_expansion": "-1",
+        "prime_tower_brim_width": "-1",
+        "support_bottom_interface_spacing": "-1",
+        "support_interface_spacing": "-0.5",
+        "layer_height": "0.2",
+    }
+    cleaned = sanitize_process_profile_dict(raw.copy())
+    assert cleaned["tree_support_wall_count"] == "0"
+    assert cleaned["raft_first_layer_expansion"] == "0"
+    assert cleaned["prime_tower_brim_width"] == "0"
+    assert cleaned["support_bottom_interface_spacing"] == "0"
+    assert cleaned["support_interface_spacing"] == "0"
+    assert cleaned["layer_height"] == "0.2"
+
+    s_raw = json.dumps({"tree_support_wall_count": -1, "other": "ok"})
+    s_clean = json.loads(sanitize_process_json_str(s_raw))
+    assert s_clean["tree_support_wall_count"] == "0"
+    assert s_clean["other"] == "ok"
