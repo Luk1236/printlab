@@ -402,6 +402,13 @@ def slice_file(
                 seconds, grams = _package_gcode_3mf(copy, tmp_path, output, plate)
             else:
                 stderr = (result.stderr or result.stdout or "").strip()
+                if "WebKitGTK" in stderr or "libwebkit2gtk" in stderr:
+                    raise SlicerCliError(
+                        "OrcaSlicer benötigt die Linux-Bibliothek WebKitGTK 4.1 auf dem Raspberry Pi.\n\n"
+                        "Bitte im Terminal auf dem Raspberry Pi einmalig ausführen:\n"
+                        "sudo apt update && sudo apt install -y libwebkit2gtk-4.1-0 libjavascriptcoregtk-4.1-0 xvfb\n\n"
+                        "(Oder: sudo bash werkzeuge/pi_slicer_installieren.sh)"
+                    )
                 raise SlicerCliError(f"Slicen fehlgeschlagen (Returncode {result.returncode}): {stderr[-500:] or 'keine Ausgabe'}")
         else:
             seconds, grams = _read_slice_info(output)

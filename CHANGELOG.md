@@ -10,6 +10,10 @@ PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
   - Backend-Bereinigung in `builtin_slicer.py` und `slicer_presets.py`: `filament_type` wird strikt zu einem standardkonformen String (`str`) normalisiert.
   - Automatischer Pydantic-Validator in `UnifiedPreset` garantiert typsichere Serialisierung der Preset-Daten.
   - Neu gebautes Produktions-Frontend in `static/` mit validiertem Quell-Hash.
+- **Linux / Raspberry Pi WebKitGTK 4.1 Laufzeitumgebung & Fehlerbehandlung:**
+  - `werkzeuge/pi_slicer_installieren.sh` installiert gezielt `libwebkit2gtk-4.1-0` und `libjavascriptcoregtk-4.1-0` fuer Raspberry Pi OS 12 (Bookworm) und neuere Debian/Ubuntu-Systeme.
+  - Automatischer Installationsversuch im Slicer-Wrapper `run_slicer.sh` bei fehlenden Bibliotheken.
+  - Verstaendliche, praezise Handlungsanweisung im Slice-Fehlerdialog mit dem exakten Terminalbefehl statt kryptischem Returncode 1.
 
 ## v2.0.26 (06.11.2026) — Offizielle OrcaSlicer-Engine integriert (GitHub Auto-Download & Headless-Slicing)
 

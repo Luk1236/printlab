@@ -197,6 +197,14 @@ def install_orca_slicer_from_github() -> str:
                 "#!/usr/bin/env bash\n"
                 "export GDK_BACKEND=x11\n"
                 "export NO_AT_BRIDGE=1\n"
+                "# Automatisch fehlende WebKitGTK 4.1 / Xvfb Laufzeitbibliotheken nachinstallieren falls sudo verfuegbar\n"
+                'if ! ldconfig -p 2>/dev/null | grep -q "libwebkit2gtk-4.1"; then\n'
+                '  if [ "$(id -u)" -eq 0 ]; then\n'
+                "    apt-get update -qq 2>/dev/null && apt-get install -y -qq libwebkit2gtk-4.1-0 libjavascriptcoregtk-4.1-0 xvfb 2>/dev/null || true\n"
+                "  elif sudo -n true 2>/dev/null; then\n"
+                "    sudo -n apt-get update -qq 2>/dev/null && sudo -n apt-get install -y -qq libwebkit2gtk-4.1-0 libjavascriptcoregtk-4.1-0 xvfb 2>/dev/null || true\n"
+                "  fi\n"
+                "fi\n"
                 'DIR="$(cd "$(dirname "$0")" && pwd)"\n'
                 'if [ -f "$DIR/squashfs-root/AppRun" ]; then\n'
                 '  BIN="$DIR/squashfs-root/AppRun"\n'
