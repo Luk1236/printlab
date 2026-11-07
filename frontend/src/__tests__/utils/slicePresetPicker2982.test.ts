@@ -65,9 +65,23 @@ describe('statesDifferentMaterial', () => {
   it('is false when the plate asks for no particular material', () => {
     expect(statesDifferentMaterial({ filament_type: 'PETG' }, '')).toBe(false);
   });
+
+  it('handles array and non-string filament_type gracefully without crashing (.trim is not a function)', () => {
+    expect(statesDifferentMaterial({ filament_type: ['PETG'] as unknown as string }, 'PLA')).toBe(true);
+    expect(statesDifferentMaterial({ filament_type: ['PLA'] as unknown as string }, 'PLA')).toBe(false);
+    expect(statesDifferentMaterial({ filament_type: null }, null as unknown as string)).toBe(false);
+  });
 });
 
 describe('pickFilamentForSlot — material is a hard partition (#2982)', () => {
+  it('handles array filament_type from slicer profiles without crashing', () => {
+    const presets = standard('filament', [
+      { name: 'Bambu PLA Basic @BBL P2S', filament_type: ['PLA'] as unknown as string, filament_colour: '#00AE42' },
+    ]);
+    const pick = pickFilamentForSlot(presets, { type: 'PLA', color: '#00AE42' }, 'Bambu Lab P2S 0.4 nozzle', index);
+    expect(pick?.id).toBe('Bambu PLA Basic @BBL P2S');
+  });
+
   it('never picks a stated PETG for a PLA plate, however well the colour fits', () => {
     // The reported symptom, in the state the fixed sidecar produces: with a
     // material on both presets the +10 type bonus decides it. What made the

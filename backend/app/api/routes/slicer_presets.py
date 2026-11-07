@@ -409,7 +409,10 @@ async def _fetch_bundled_presets(db: AsyncSession, *, refresh: bool = False) -> 
             # by name during the `inherits:` walk), so name doubles as id.
             preset = UnifiedPreset(id=name, name=name, source="standard")
             if slot == "filament":
-                preset.filament_type = entry.get("filament_type")
+                raw_ft = entry.get("filament_type")
+                if isinstance(raw_ft, list):
+                    raw_ft = raw_ft[0] if raw_ft else None
+                preset.filament_type = str(raw_ft).strip() if raw_ft is not None else None
                 preset.filament_colour = entry.get("filament_colour")
             if slot in ("process", "filament"):
                 # The slicer's own compatible-printer list, and the only

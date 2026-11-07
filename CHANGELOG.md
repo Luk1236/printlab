@@ -17,6 +17,9 @@ PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 - **System-Verwaltung (`/api/v1/system/slicer-engine`):**
   - Neue API-Endpunkte zur Abfrage des Slicer-Zustands (`GET /slicer-engine`) und zur Hintergrund-Installation von GitHub (`POST /slicer-engine/install`).
   - Standalone-Installer `werkzeuge/pi_slicer_installieren.sh` fuer unkomplizierte Einrichtung auf Raspberry Pi OS.
+- **SliceModal UI-Crash behoben (`(intermediate value).trim is not a function`):**
+  - Robuste Typ-Normalisierung (`normalizeTypeString`) in `slicePresetPicker.ts` verhindert Abstuerze, wenn `filament_type` als Array (`["PLA"]`) oder `null`/`undefined` geliefert wird.
+  - Backend-Bereinigung in `builtin_slicer.py` und `slicer_presets.py`: `filament_type` wird strikt zu einem standardkonformen String normalisiert.
 
 ## v2.0.25 (06.11.2026) — Vollwertige Solid-Skin & Mehrfach-Wand-Slicing, Pi OrcaSlicer-Installer
 

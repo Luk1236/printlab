@@ -7,7 +7,9 @@ returns all three lists with name-based dedup applied so each preset appears
 exactly once across the response.
 """
 
-from typing import Literal
+from typing import Any, Literal
+
+from pydantic import field_validator
 
 from pydantic import BaseModel
 
@@ -48,6 +50,16 @@ class UnifiedPreset(BaseModel):
     filament_type: str | None = None
     filament_colour: str | None = None
     compatible_printers: list[str] | None = None
+
+    @field_validator("filament_type", mode="before")
+    @classmethod
+    def _coerce_filament_type(cls, v: Any) -> str | None:
+        if isinstance(v, list):
+            return str(v[0]).strip() if v else None
+        if v is not None:
+            s = str(v).strip()
+            return s if s else None
+        return None
 
 
 class UnifiedPresetsBySlot(BaseModel):

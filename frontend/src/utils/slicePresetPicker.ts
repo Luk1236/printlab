@@ -169,12 +169,25 @@ function preferDefaultLayerHeight(candidates: UnifiedPreset[]): UnifiedPreset | 
  * material genuinely cannot be resolved — excluding those would leave slots
  * with nothing to pick.
  */
+function normalizeTypeString(val: unknown): string {
+  if (Array.isArray(val)) {
+    return val.length > 0 ? String(val[0] ?? '').trim() : '';
+  }
+  if (typeof val === 'string') {
+    return val.trim();
+  }
+  if (val != null) {
+    return String(val).trim();
+  }
+  return '';
+}
+
 export function statesDifferentMaterial(
   preset: Pick<UnifiedPreset, 'filament_type'>,
   requiredType: string,
 ): boolean {
-  const required = requiredType.trim().toUpperCase();
-  const stated = (preset.filament_type ?? '').trim().toUpperCase();
+  const required = normalizeTypeString(requiredType).toUpperCase();
+  const stated = normalizeTypeString(preset.filament_type).toUpperCase();
   return Boolean(required) && Boolean(stated) && required !== stated;
 }
 
@@ -221,8 +234,8 @@ export function pickFilamentForSlot(
   // not "different", and 32 profiles in the shipped bundle inherit from a
   // parent it doesn't contain, so their material is genuinely unknown. The
   // same asymmetry `presetCompatibility` applies to printers.
-  const reqType = required.type.trim().toUpperCase();
-  const reqColor = normalizeColorForCompare(required.color);
+  const reqType = normalizeTypeString(required?.type).toUpperCase();
+  const reqColor = normalizeColorForCompare(required?.color ?? '');
 
   let bestCompatible: { ref: PresetRef; score: number } | null = null;
   let bestMismatch: { ref: PresetRef; score: number } | null = null;
@@ -230,12 +243,12 @@ export function pickFilamentForSlot(
   for (const tier of SLICE_MODAL_TIER_ORDER) {
     for (const p of by[tier].filament) {
       let score = 0;
-      const presetType = (p.filament_type ?? '').trim().toUpperCase();
+      const presetType = normalizeTypeString(p.filament_type).toUpperCase();
       const presetColor = normalizeColorForCompare(p.filament_colour ?? '');
       if (reqType && presetType && reqType === presetType) score += 10;
       if (reqColor && presetColor) {
         if (presetColor === reqColor) score += 5;
-        else if (colorsAreSimilar(p.filament_colour ?? '', required.color)) score += 2;
+        else if (colorsAreSimilar(p.filament_colour ?? '', required?.color ?? '')) score += 2;
       }
       score += TIER_BONUS[tier];
       const ref = { source: p.source, id: p.id };
