@@ -4002,6 +4002,10 @@ export const api = {
     }),
   deleteLocalPreset: (id: number) =>
     request<{ success: boolean }>(`/local-presets/${id}`, { method: 'DELETE' }),
+  cloneLocalPreset: (id: number) =>
+    request<LocalPreset>(`/local-presets/${id}/clone`, { method: 'POST' }),
+  getLocalPresetTemplates: () =>
+    request<{ filament: Array<{ id: string; name: string; filament_type?: string; filament_vendor?: string; default_filament_colour?: string; setting: Record<string, unknown> }>; process: Array<{ id: string; name: string; setting: Record<string, unknown> }> }>('/local-presets/templates'),
   refreshBaseProfileCache: () =>
     request<{ refreshed: number; failed: number; total: number }>('/local-presets/base-cache/refresh', { method: 'POST' }),
 };

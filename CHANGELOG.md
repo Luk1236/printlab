@@ -3,6 +3,20 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.30 (07.11.2026) — Slicer-Preset-Manager UI & Profil-Verwaltung (Phase 3)
+
+- **Slicer-Preset-Manager im Web-Frontend (`LocalProfilesView.tsx`):**
+  - **Neues Profil erstellen:** Dialog zur Erstellung benutzerdefinierter Filament- und Prozess-Profile mit Auswahl vorgefertigter Basis-Vorlagen (Generic PLA, PETG, ABS, TPU sowie 0.20mm Standard, 0.12mm Fein, 0.28mm Schnell, 0.20mm Stabil).
+  - **Profil bearbeiten:** Umfassender Editor mit Formular-Modus (Drucktemperaturen, Bett-Temperatur, Volumengeschwindigkeit, Schichthöhe, Wandlinien, Infill-Muster, Stützen etc.) und Experten-Modus (Live-JSON-Editor mit Syntax-Validierung).
+  - **Profil klonen:** 1-Klick-Duplizierung bestehender Presets mit automatischer fortlaufender Namensgebung (`(Kopie)`).
+  - **Profil exportieren:** Direkter Download als Bambu Studio / OrcaSlicer kompatibles `.json`.
+  - **Kategorie-Filter:** Tab-Leiste zur schnellen Umschaltung zwischen allen Profilen, Filamenten, Prozessen und Druckern mit Mengenzählern.
+- **Backend-Erweiterungen für Profile (`local_presets.py`):**
+  - Neuer Endpunkt `GET /api/v1/local-presets/templates` für Standardvorlagen.
+  - Neuer Endpunkt `POST /api/v1/local-presets/{id}/clone` zum Klonen.
+  - Automatische Sanitisierung von Prozess-Parametern beim Anlegen und Aktualisieren zur Verhinderung von OrcaSlicer-Range-Fehlern.
+  - Unit-Tests in `backend/tests/unit/test_local_presets_api.py`.
+
 ## v2.0.29 (07.11.2026) — Slicer-Cache-Hygiene & 3D-Toolpath-Direktvorschau
 
 - **Slicer-Cache-Bereinigung & Speicher-Hygiene (`slicer_cache.py`):**
