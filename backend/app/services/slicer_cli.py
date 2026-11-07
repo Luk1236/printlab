@@ -114,7 +114,7 @@ def sanitize_process_profile_dict(p: dict) -> dict:
 
     # 1. tree_support_wall_count: OrcaSlicer Bereich [0.0, 2.0].
     # Bambu Studio speichert oft "-1" ("Auto"), was OrcaSlicer mit Returncode 238 ablehnt.
-    if "tree_support_wall_count" in p:
+    if "tree_support_wall_count" in p and p.get("tree_support_wall_count") is not None:
         val = p["tree_support_wall_count"]
         try:
             num = float(val)
@@ -126,6 +126,8 @@ def sanitize_process_profile_dict(p: dict) -> dict:
                 p["tree_support_wall_count"] = str(int(num))
         except (ValueError, TypeError):
             p["tree_support_wall_count"] = "0"
+    else:
+        p["tree_support_wall_count"] = "0"
 
     # 2. Nicht-negative Parameter, die in Bambu Studio teils -1 als Sentinel tragen
     non_negative_keys = (

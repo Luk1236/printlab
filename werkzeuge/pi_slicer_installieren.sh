@@ -118,8 +118,13 @@ if /usr/local/bin/orca-slicer --help >/dev/null 2>&1 || true; then
     echo "PrintLab wird nun automatisch die vollwertige OrcaSlicer-Engine nutzen."
 
     if systemctl is-active --quiet printlab 2>/dev/null; then
-        echo "Starte PrintLab-Dienst neu, um den neuen Slicer zu aktivieren..."
+        echo "Starte PrintLab-Dienst (System) neu..."
         systemctl restart printlab || true
+    fi
+    # Falls PrintLab als systemd-User-Dienst läuft (z.B. Benutzer lukas oder pi)
+    TARGET_USER="${SUDO_USER:-$(logname 2>/dev/null || echo 'lukas')}"
+    if [ -n "$TARGET_USER" ] && id "$TARGET_USER" &>/dev/null; then
+        su - "$TARGET_USER" -c "systemctl --user restart printlab 2>/dev/null" || true
     fi
 else
     echo "Installation abgeschlossen."
