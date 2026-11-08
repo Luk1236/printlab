@@ -3,6 +3,18 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.41 (08.11.2026) — 2D Auto-Nesting, 3D-Orientierungs-Analyse, M486-Injektor & Farm-Seriensplit (Phase 13)
+
+- **Kollisionsfreies 2D-Multi-Plate-Bin-Packing (`backend/app/services/auto_nesting.py`, `POST /api/v1/fleet/auto-nest`):**
+  - Guillotine-Bin-Packer (Best-Short-Side-Fit) mit automatischer $90^\circ$-Rotationsoptimierung für beliebige Stückzahlen und Bauteiltypen auf eine oder mehrere Bauplatten ($256 \times 256\,\text{mm}$).
+  - Mathematische Kollisionsfreiheits-Garantie (`verify_no_collisions`), Plattenauslastung in Prozent, Filamentbedarf und Druckzeit pro Platte sowie automatische Erkennung übergroßer Bauteile (`oversized_parts`).
+- **Paralleler Farm-Seriensplit (`split_batch_across_fleet`, `POST /api/v1/fleet/batch-split`):**
+  - Verteilt die gepackten Bauplatten einer Großserie automatisch per Longest-Processing-Time-First (LPT) auf alle geeigneten, freien Farm-Drucker (passendes Material, Farbe, Düsendurchmesser) und berechnet den realen Speedup-Faktor (`speedup_factor`).
+- **Optimale 3D-Druckausrichtung (`suggest_optimal_orientation`, `POST /api/v1/fleet/orientation-check`):**
+  - Bewertet alle 6 orthogonalen Ausrichtungen anhand von Betthaftungsfläche, Kippsicherheit (Schwerpunkthöhe) und Überhanganteil.
+- **G-Code `M486` Object-Exclusion-Injektor (`inject_m486_object_markers`, `POST /api/v1/fleet/gcode-m486`):**
+  - Analysiert Slicer-G-Code und injiziert fehlende `M486 T<count>` / `M486 S<idx>` / `M486 S-1` Marker für das gezielte Überspringen einzelner fehlerhafter Bauteile während des Drucks.
+
 ## v2.0.40 (08.11.2026) — Raspberry Pi OOM-Absturzschutz beim Update & systemd Auto-Restart-Härtung
 
 - **Vermeidung von OOM-Kernel-Freezes bei In-App-Updates (`backend/app/api/routes/updates.py`):**

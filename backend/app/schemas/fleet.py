@@ -86,3 +86,54 @@ class FleetMetricsResponse(BaseModel):
     avg_broadcast_ms: float
     max_broadcast_ms: float
     maintenance_printers_count: int
+
+
+class NestingPartItem(BaseModel):
+    """Input specification for a single 3D part in 2D auto-nesting."""
+
+    part_id: str = Field(..., min_length=1, max_length=100)
+    name: str = Field(..., min_length=1, max_length=200)
+    width_mm: float = Field(..., gt=0.1, le=1000.0)
+    depth_mm: float = Field(..., gt=0.1, le=1000.0)
+    height_mm: float = Field(10.0, gt=0.1, le=1000.0)
+    copies: int = Field(1, ge=1, le=500)
+    allow_rotation: bool = Field(True)
+    filament_grams_per_copy: float = Field(10.0, ge=0.1, le=10000.0)
+    print_minutes_per_copy: float = Field(20.0, ge=0.5, le=20000.0)
+
+
+class AutoNestRequest(BaseModel):
+    """Request payload for multi-plate 2D auto-nesting."""
+
+    parts: list[NestingPartItem] = Field(..., min_length=1, max_length=100)
+    bed_width_mm: float = Field(256.0, ge=50.0, le=600.0)
+    bed_depth_mm: float = Field(256.0, ge=50.0, le=600.0)
+    bed_height_mm: float = Field(256.0, ge=50.0, le=600.0)
+    margin_mm: float = Field(5.0, ge=0.0, le=30.0)
+    spacing_mm: float = Field(4.0, ge=0.5, le=30.0)
+
+
+class BatchSplitRequest(AutoNestRequest):
+    """Request payload for auto-nesting + parallel farm batch splitting."""
+
+    material: str = Field("PLA", max_length=32)
+    color: str = Field("", max_length=32)
+    nozzle_diameter: float = Field(0.4, ge=0.15, le=1.2)
+    requires_hardened_nozzle: bool = Field(False)
+
+
+class OrientationCheckRequest(BaseModel):
+    """Request payload for optimal 3D print orientation scoring."""
+
+    width_mm: float = Field(..., gt=0.1, le=1000.0)
+    depth_mm: float = Field(..., gt=0.1, le=1000.0)
+    height_mm: float = Field(..., gt=0.1, le=1000.0)
+    overhang_ratio_by_axis: dict[str, float] | None = None
+
+
+class GcodeM486Request(BaseModel):
+    """Request payload for M486 object exclusion marker analysis and injection."""
+
+    gcode: str = Field(..., min_length=1, max_length=5_000_000)
+    object_names: list[str] | None = None
+

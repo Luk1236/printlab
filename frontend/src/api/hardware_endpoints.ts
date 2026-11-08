@@ -138,4 +138,80 @@ export const hardwareEndpoints = {
       max_broadcast_ms: number;
       maintenance_printers_count: number;
     }>('/fleet/metrics'),
+
+  // Phase 13: 2D Auto-Nesting, Batch Farm Split, 3D Orientation & G-Code M486
+  autoNestParts: (payload: {
+    parts: Array<{
+      part_id: string;
+      name: string;
+      width_mm: number;
+      depth_mm: number;
+      height_mm?: number;
+      copies?: number;
+      allow_rotation?: boolean;
+      filament_grams_per_copy?: number;
+      print_minutes_per_copy?: number;
+    }>;
+    bed_width_mm?: number;
+    bed_depth_mm?: number;
+    bed_height_mm?: number;
+    margin_mm?: number;
+    spacing_mm?: number;
+  }) =>
+    request<{
+      total_parts_requested: number;
+      total_parts_placed: number;
+      total_plates: number;
+      average_utilization_percent: number;
+      collision_free: boolean;
+      total_filament_grams: number;
+      total_estimated_minutes: number;
+      plates: Array<Record<string, any>>;
+      oversized_parts: Array<Record<string, any>>;
+    }>('/fleet/auto-nest', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  splitBatchOrder: (payload: Record<string, any>) =>
+    request<{
+      nesting: Record<string, any>;
+      fleet_split: {
+        can_dispatch_parallel: boolean;
+        eligible_printer_count: number;
+        printers_used?: number;
+        total_plates: number;
+        single_printer_minutes: number;
+        parallel_makespan_minutes: number;
+        speedup_factor: number;
+        assignments: Array<Record<string, any>>;
+        unassigned_plates: number[];
+      };
+    }>('/fleet/batch-split', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  evaluatePartOrientation: (payload: {
+    width_mm: number;
+    depth_mm: number;
+    height_mm: number;
+    overhang_ratio_by_axis?: Record<string, number>;
+  }) =>
+    request<{
+      recommended: Record<string, any>;
+      alternatives: Array<Record<string, any>>;
+    }>('/fleet/orientation-check', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  injectGcodeM486: (payload: { gcode: string; object_names?: string[] }) =>
+    request<{
+      total_objects: number;
+      object_names: string[];
+      injected_markers: number;
+      already_had_m486: boolean;
+      gcode: string;
+    }>('/fleet/gcode-m486', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 };

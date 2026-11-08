@@ -29,12 +29,23 @@ from backend.app.core.permissions import Permission
 from backend.app.core.websocket import ws_manager
 from backend.app.models.printer import Printer
 from backend.app.schemas.fleet import (
+    AutoNestRequest,
+    BatchSplitRequest,
     FleetCommandRequest,
     FleetCommandResponse,
     FleetCommandResultItem,
     FleetJobSummary,
     FleetMetricsResponse,
     FleetOverviewResponse,
+    GcodeM486Request,
+    OrientationCheckRequest,
+)
+from backend.app.services.auto_nesting import (
+    NestingPart,
+    inject_m486_object_markers,
+    pack_parts_onto_plates,
+    split_batch_across_fleet,
+    suggest_optimal_orientation,
 )
 from backend.app.services.fleet_load_balancer import (
     MIN_DISPATCH_SCORE,
@@ -498,3 +509,98 @@ async def get_fleet_metrics(
         max_broadcast_ms=ws["max_broadcast_ms"],
         maintenance_printers_count=len(_maintenance_printers),
     )
+
+
+@router.post("/auto-nest", response_model=dict[str, Any])
+async def auto_nest_parts(
+    req: AutoNestRequest,
+    _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_READ),
+) -> dict[str, Any]:
+    """Berechnet eine kollisionsfreie 2D-Multi-Plate-Plattenbelegung (Guillotine Bin-Packing mit 90°-Drehung)."""
+    parts = [
+        NestingPart(
+            part_id=p.part_id,
+            name=p.name,
+            width_mm=p.width_mm,
+            depth_mm=p.depth_mm,
+            height_mm=p.height_mm,
+            copies=p.copies,
+            allow_rotation=p.allow_rotation,
+            filament_grams_per_copy=p.filament_grams_per_copy,
+            print_minutes_per_copy=p.print_minutes_per_copy,
+        )
+        for p in req.parts
+    ]
+    return pack_parts_onto_plates(
+        parts,
+        bed_width_mm=req.bed_width_mm,
+        bed_depth_mm=req.bed_depth_mm,
+        bed_height_mm=req.bed_height_mm,
+        margin_mm=req.margin_mm,
+        spacing_mm=req.spacing_mm,
+    )
+
+
+@router.post("/batch-split", response_model=dict[str, Any])
+async def split_batch_order(
+    req: BatchSplitRequest,
+    _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_CONTROL),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Packt eine Großserie auf mehrere Platten und verteilt sie parallel über alle geeigneten Farm-Drucker."""
+    parts = [
+        NestingPart(
+            part_id=p.part_id,
+            name=p.name,
+            width_mm=p.width_mm,
+            depth_mm=p.depth_mm,
+            height_mm=p.height_mm,
+            copies=p.copies,
+            allow_rotation=p.allow_rotation,
+            filament_grams_per_copy=p.filament_grams_per_copy,
+            print_minutes_per_copy=p.print_minutes_per_copy,
+        )
+        for p in req.parts
+    ]
+    nesting = pack_parts_onto_plates(
+        parts,
+        bed_width_mm=req.bed_width_mm,
+        bed_depth_mm=req.bed_depth_mm,
+        bed_height_mm=req.bed_height_mm,
+        margin_mm=req.margin_mm,
+        spacing_mm=req.spacing_mm,
+    )
+    printers = await _gather_fleet_state(db)
+    split = split_batch_across_fleet(
+        nesting,
+        printers,
+        job_requirements={
+            "material": req.material,
+            "color": req.color,
+            "nozzle_diameter": req.nozzle_diameter,
+            "requires_hardened_nozzle": req.requires_hardened_nozzle,
+        },
+    )
+    return {"nesting": nesting, "fleet_split": split}
+
+
+@router.post("/orientation-check", response_model=dict[str, Any])
+async def evaluate_part_orientation(
+    req: OrientationCheckRequest,
+    _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_READ),
+) -> dict[str, Any]:
+    """Empfiehlt die optimale 3D-Druckausrichtung anhand von Auflagefläche, Bauhöhe und Überhang."""
+    return suggest_optimal_orientation(
+        (req.width_mm, req.depth_mm, req.height_mm),
+        overhang_ratio_by_axis=req.overhang_ratio_by_axis,
+    )
+
+
+@router.post("/gcode-m486", response_model=dict[str, Any])
+async def process_gcode_m486(
+    req: GcodeM486Request,
+    _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_CONTROL),
+) -> dict[str, Any]:
+    """Analysiert G-Code und injiziert fehlende M486-Objektmarker für Einzelobjekt-Ausschluss."""
+    return inject_m486_object_markers(req.gcode, req.object_names)
+
