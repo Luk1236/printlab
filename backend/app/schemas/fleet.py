@@ -102,6 +102,16 @@ class NestingPartItem(BaseModel):
     print_minutes_per_copy: float = Field(20.0, ge=0.5, le=20000.0)
 
 
+class ExclusionZoneItem(BaseModel):
+    """Sperr- oder Schadenszone auf dem Druckbett (z.B. PEI-Kratzer)."""
+
+    min_x: float = Field(..., ge=0.0, le=1000.0)
+    min_y: float = Field(..., ge=0.0, le=1000.0)
+    max_x: float = Field(..., ge=0.0, le=1000.0)
+    max_y: float = Field(..., ge=0.0, le=1000.0)
+    reason: str = Field("Damaged PEI", max_length=120)
+
+
 class AutoNestRequest(BaseModel):
     """Request payload for multi-plate 2D auto-nesting."""
 
@@ -111,6 +121,7 @@ class AutoNestRequest(BaseModel):
     bed_height_mm: float = Field(256.0, ge=50.0, le=600.0)
     margin_mm: float = Field(5.0, ge=0.0, le=30.0)
     spacing_mm: float = Field(4.0, ge=0.5, le=30.0)
+    exclusion_zones: list[ExclusionZoneItem] | None = None
 
 
 class BatchSplitRequest(AutoNestRequest):
@@ -120,6 +131,16 @@ class BatchSplitRequest(AutoNestRequest):
     color: str = Field("", max_length=32)
     nozzle_diameter: float = Field(0.4, ge=0.15, le=1.2)
     requires_hardened_nozzle: bool = Field(False)
+
+
+class PurgeOptimizeRequest(BaseModel):
+    """Request payload for multicolor flush volume reduction and purge-to-infill analysis."""
+
+    gcode: str = Field(..., min_length=1, max_length=10_000_000)
+    flush_multiplier: float = Field(0.65, ge=0.3, le=1.5)
+    enable_purge_to_infill: bool = Field(True)
+    infill_purge_ratio: float = Field(0.40, ge=0.0, le=0.7)
+    cost_per_kg_eur: float = Field(24.0, ge=1.0, le=500.0)
 
 
 class OrientationCheckRequest(BaseModel):

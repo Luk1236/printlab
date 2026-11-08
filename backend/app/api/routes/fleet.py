@@ -39,6 +39,7 @@ from backend.app.schemas.fleet import (
     FleetOverviewResponse,
     GcodeM486Request,
     OrientationCheckRequest,
+    PurgeOptimizeRequest,
 )
 from backend.app.services.auto_nesting import (
     NestingPart,
@@ -47,6 +48,7 @@ from backend.app.services.auto_nesting import (
     split_batch_across_fleet,
     suggest_optimal_orientation,
 )
+from backend.app.services.purge_optimizer import optimize_purge_volume
 from backend.app.services.fleet_load_balancer import (
     MIN_DISPATCH_SCORE,
     calculate_printer_fitness,
@@ -531,6 +533,7 @@ async def auto_nest_parts(
         )
         for p in req.parts
     ]
+    zones = [z.model_dump() for z in req.exclusion_zones] if req.exclusion_zones else None
     return pack_parts_onto_plates(
         parts,
         bed_width_mm=req.bed_width_mm,
@@ -538,6 +541,7 @@ async def auto_nest_parts(
         bed_height_mm=req.bed_height_mm,
         margin_mm=req.margin_mm,
         spacing_mm=req.spacing_mm,
+        exclusion_zones=zones,
     )
 
 
@@ -562,6 +566,7 @@ async def split_batch_order(
         )
         for p in req.parts
     ]
+    zones = [z.model_dump() for z in req.exclusion_zones] if req.exclusion_zones else None
     nesting = pack_parts_onto_plates(
         parts,
         bed_width_mm=req.bed_width_mm,
@@ -569,6 +574,7 @@ async def split_batch_order(
         bed_height_mm=req.bed_height_mm,
         margin_mm=req.margin_mm,
         spacing_mm=req.spacing_mm,
+        exclusion_zones=zones,
     )
     printers = await _gather_fleet_state(db)
     split = split_batch_across_fleet(
@@ -582,6 +588,21 @@ async def split_batch_order(
         },
     )
     return {"nesting": nesting, "fleet_split": split}
+
+
+@router.post("/purge-optimize", response_model=dict[str, Any])
+async def optimize_purge_gcode(
+    req: PurgeOptimizeRequest,
+    _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_READ),
+) -> dict[str, Any]:
+    """Analysiert Werkzeugwechsel im G-Code und berechnet Spülmengen-Minimierung und Infill-Purge-Einsparungen."""
+    return optimize_purge_volume(
+        gcode_text=req.gcode,
+        flush_multiplier=req.flush_multiplier,
+        enable_purge_to_infill=req.enable_purge_to_infill,
+        infill_purge_ratio=req.infill_purge_ratio,
+        cost_per_kg_eur=req.cost_per_kg_eur,
+    )
 
 
 @router.post("/orientation-check", response_model=dict[str, Any])

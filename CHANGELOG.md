@@ -3,6 +3,15 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.48 (08.11.2026) — Spülmengen-Minimierer & Druckbett-Schadenszonen-Sperre (Phase 19)
+
+- **Spülmengen-Minimierer & G-Code Farbwechsel-Optimierer (`backend/app/services/purge_optimizer.py`, `POST /api/v1/fleet/purge-optimize`):**
+  - Analysiert Werkzeug- und Farbwechsel (T0, T1...) im G-Code und berechnet dynamische Spülmengen-Reduktion (Flush-Multiplikator von 1.0 auf 0.65).
+  - Purge-to-Infill Filter: Leitet bis zu 40% des verbleibenden Farbwechsels in das Bauteil-Infill um, spart bis zu 60% Spülmüll und mehrere Euro Filament pro Mehrfarb-Auftrag.
+- **Druckbett-Schadenszonen-Sperre & PEI Exclusion Zones (`backend/app/services/auto_nesting.py`, `POST /api/v1/fleet/auto-nest`):**
+  - Guillotine-Bin-Packer mit Sperrzonen-Ausschnitt (`_carve_exclusion_zones`): Verhindert die Platzierung von Bauteilen auf beschädigten, zerkratzten oder abgelösten PEI-Druckbettbereichen.
+  - Mathematische Kollisions- und Sperrzonen-Verifikation (`verify_no_exclusion_collisions`).
+
 ## v2.0.47 (08.11.2026) — Abrasive Filament Wear Predictor & AMS Taupunkt-Trocknungswächter (Phase 18)
 
 - **Abrasive Filament Wear Predictor (`backend/app/services/wear_predictor.py`, `POST /api/v1/maintenance/wear/forecast`):**

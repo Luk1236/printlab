@@ -146,19 +146,105 @@ def verify_no_collisions(placements: list[PlacedInstance], spacing_mm: float = 0
     return True
 
 
+def verify_no_exclusion_collisions(
+    placements: list[PlacedInstance],
+    exclusion_zones: list[dict[str, Any]] | None = None,
+    eps: float = 1e-4,
+) -> bool:
+    """Prüft, ob keines der platzierten Teile in eine der gesperrten Druckbett-Zonen ragt."""
+    if not exclusion_zones:
+        return True
+    for p in placements:
+        px0, py0 = p.min_x_mm, p.min_y_mm
+        px1, py1 = px0 + p.width_mm, py0 + p.depth_mm
+        for ez in exclusion_zones:
+            ez_x0 = float(ez.get("min_x", ez.get("x", 0.0)))
+            ez_y0 = float(ez.get("min_y", ez.get("y", 0.0)))
+            ez_x1 = float(ez.get("max_x", ez_x0 + ez.get("width", ez.get("w", 0.0))))
+            ez_y1 = float(ez.get("max_y", ez_y0 + ez.get("depth", ez.get("height", ez.get("h", 0.0)))))
+            overlap_x = px0 < ez_x1 - eps and px1 > ez_x0 + eps
+            overlap_y = py0 < ez_y1 - eps and py1 > ez_y0 + eps
+            if overlap_x and overlap_y:
+                return False
+    return True
+
+
 class _GuillotineBin:
     """2D-Guillotine-Bin-Packer (Best-Short-Side-Fit) für eine einzelne Bauplatte."""
 
-    def __init__(self, width: float, depth: float, margin_x: float, margin_y: float, spacing: float):
+    def __init__(
+        self,
+        width: float,
+        depth: float,
+        margin_x: float,
+        margin_y: float,
+        spacing: float,
+        exclusion_zones: list[dict[str, Any]] | None = None,
+    ):
         self.width = width
         self.depth = depth
         self.margin_x = margin_x
         self.margin_y = margin_y
         self.spacing = spacing
+        self.exclusion_zones = exclusion_zones or []
         # Freie Rechtecke als (x, y, w, d) im nutzbaren Bereich (inkl. +spacing Puffer rechts/oben)
         self.free_rects: list[tuple[float, float, float, float]] = [
             (0.0, 0.0, width + spacing, depth + spacing)
         ]
+        self._carve_exclusion_zones()
+
+    def _carve_exclusion_zones(self) -> None:
+        """Schneidet Schadens- und Sperrzonen aus den verfügbaren freien Rechtecken heraus."""
+        for ez in self.exclusion_zones:
+            raw_x0 = float(ez.get("min_x", ez.get("x", 0.0)))
+            raw_y0 = float(ez.get("min_y", ez.get("y", 0.0)))
+            raw_x1 = float(ez.get("max_x", raw_x0 + ez.get("width", ez.get("w", 0.0))))
+            raw_y1 = float(ez.get("max_y", raw_y0 + ez.get("depth", ez.get("height", ez.get("h", 0.0)))))
+
+            # Auf Bin-Koordinaten umrechnen
+            ex0 = max(0.0, raw_x0 - self.margin_x)
+            ey0 = max(0.0, raw_y0 - self.margin_y)
+            ex1 = min(self.width + self.spacing, raw_x1 - self.margin_x + self.spacing)
+            ey1 = min(self.depth + self.spacing, raw_y1 - self.margin_y + self.spacing)
+
+            if ex1 <= ex0 or ey1 <= ey0:
+                continue
+
+            new_free: list[tuple[float, float, float, float]] = []
+            for rx, ry, rw, rh in self.free_rects:
+                ix0 = max(rx, ex0)
+                iy0 = max(ry, ey0)
+                ix1 = min(rx + rw, ex1)
+                iy1 = min(ry + rh, ey1)
+
+                if ix1 <= ix0 or iy1 <= iy0:
+                    new_free.append((rx, ry, rw, rh))
+                    continue
+
+                # In bis zu 4 Rechtecke um das Hindernis zerlegen
+                if ex0 > rx + 1.0:
+                    new_free.append((rx, ry, ex0 - rx, rh))
+                if rx + rw > ex1 + 1.0:
+                    new_free.append((ex1, ry, rx + rw - ex1, rh))
+                if ey0 > ry + 1.0:
+                    new_free.append((rx, ry, rw, ey0 - ry))
+                if ry + rh > ey1 + 1.0:
+                    new_free.append((rx, ey1, rw, ry + rh - ey1))
+
+            self.free_rects = [r for r in new_free if r[2] >= 5.0 and r[3] >= 5.0]
+            if not self.free_rects:
+                # Falls komplett bedeckt
+                self.free_rects = []
+
+    def _collides_with_exclusion(self, abs_x: float, abs_y: float, abs_w: float, abs_d: float) -> bool:
+        for ez in self.exclusion_zones:
+            ez_x0 = float(ez.get("min_x", ez.get("x", 0.0)))
+            ez_y0 = float(ez.get("min_y", ez.get("y", 0.0)))
+            ez_x1 = float(ez.get("max_x", ez_x0 + ez.get("width", ez.get("w", 0.0))))
+            ez_y1 = float(ez.get("max_y", ez_y0 + ez.get("depth", ez.get("height", ez.get("h", 0.0)))))
+            if abs_x < ez_x1 and abs_x + abs_w > ez_x0 and abs_y < ez_y1 and abs_y + abs_d > ez_y0:
+                return True
+        return False
 
     def try_insert(self, w: float, d: float, allow_rotation: bool) -> tuple[float, float, float, float, bool] | None:
         """Versucht ein Rechteck (w, d) einzufügen. Liefert (x, y, placed_w, placed_d, rotated_90) oder None."""
@@ -176,6 +262,10 @@ class _GuillotineBin:
         for idx, (fx, fy, fw, fd) in enumerate(self.free_rects):
             for rw, rd, orig_w, orig_d, rot in candidates:
                 if rw <= fw + 1e-6 and rd <= fd + 1e-6:
+                    abs_x = self.margin_x + fx
+                    abs_y = self.margin_y + fy
+                    if self._collides_with_exclusion(abs_x, abs_y, orig_w, orig_d):
+                        continue
                     leftover_h = abs(fw - rw)
                     leftover_v = abs(fd - rd)
                     short_side = min(leftover_h, leftover_v)
@@ -220,6 +310,7 @@ def pack_parts_onto_plates(
     bed_height_mm: float = DEFAULT_BED_HEIGHT_MM,
     margin_mm: float = DEFAULT_MARGIN_MM,
     spacing_mm: float = DEFAULT_SPACING_MM,
+    exclusion_zones: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Packt Bauteile (mit Kopien) kollisionsfrei auf eine oder mehrere Bauplatten."""
     usable_w = max(10.0, bed_width_mm - 2.0 * margin_mm)
@@ -279,7 +370,9 @@ def pack_parts_onto_plates(
                 break
 
         if placed_tuple is None:
-            new_bin = _GuillotineBin(usable_w, usable_d, margin_mm, margin_mm, spacing_mm)
+            new_bin = _GuillotineBin(
+                usable_w, usable_d, margin_mm, margin_mm, spacing_mm, exclusion_zones=exclusion_zones
+            )
             res = new_bin.try_insert(part.width_mm, part.depth_mm, part.allow_rotation)
             if res is None:
                 continue
@@ -317,6 +410,9 @@ def pack_parts_onto_plates(
         plates[target_plate_idx].placements.append(instance)
 
     collision_free = all(verify_no_collisions(plate.placements, spacing_mm=spacing_mm) for plate in plates)
+    exclusion_safe = all(
+        verify_no_exclusion_collisions(plate.placements, exclusion_zones) for plate in plates
+    )
     total_placed = sum(len(plate.placements) for plate in plates)
     avg_utilization = (
         round(sum(p.utilization_percent for p in plates) / len(plates), 2) if plates else 0.0
@@ -327,7 +423,9 @@ def pack_parts_onto_plates(
         "total_parts_placed": total_placed,
         "total_plates": len(plates),
         "average_utilization_percent": avg_utilization,
-        "collision_free": collision_free,
+        "collision_free": collision_free and exclusion_safe,
+        "exclusion_safe": exclusion_safe,
+        "exclusion_zones_applied": exclusion_zones or [],
         "total_filament_grams": round(sum(p.total_filament_grams for p in plates), 2),
         "total_estimated_minutes": round(sum(p.estimated_print_minutes for p in plates), 2),
         "plates": [p.to_dict() for p in plates],
