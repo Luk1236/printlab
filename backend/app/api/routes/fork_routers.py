@@ -13,6 +13,7 @@ from backend.app.api.routes import (
     auto_requeue,
     auto_setup,
     customer_portal_route,
+    customer_tracking_route,
     customers,
     error_help,
     failure_images,
@@ -85,5 +86,6 @@ def register_fork_routers(app: FastAPI, prefix: str) -> None:
     app.include_router(maintenance_wear.router, prefix=prefix)
     app.include_router(ha_discovery_route.router, prefix=prefix)
     app.include_router(customer_portal_route.router, prefix=prefix)
+    app.include_router(customer_tracking_route.router, prefix=prefix)
     app.include_router(webhooks_outbound.router, prefix=prefix)
     app.include_router(quality.router, prefix=prefix)

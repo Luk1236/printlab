@@ -3,6 +3,19 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.44 (08.11.2026) — Live Customer Tracking Portal & Volume Tier Pricing (Phase 15)
+
+- **Echtzeit-Tracking-Portal für Kunden (`backend/app/services/customer_tracking.py`, `backend/app/api/routes/customer_tracking_route.py`):**
+  - Öffentliche Auftragsverfolgung über fälschungssichere HMAC-SHA256 Tracking-Tokens (`GET /api/v1/portal/tracking/{token}`) ohne Benutzer-Login.
+  - Mehrstufige visuelle Fortschrittsanzeige (`RECEIVED`, `QUEUED`, `PRINTING`, `POST_PROCESSING`, `QUALITY_CHECK`, `DISPATCHED`) mit Live-Schicht, Restzeit, Druckermodell und Sendungsverfolgungsnummer (DHL / DPD / UPS).
+- **Dynamische Mengenstaffel-Berechnung (Volume Tier Pricing):**
+  - 5-Stufen-Rabattmatrix für B2B- und Serienfertigung (1–9: 0 %, 10–49: 10 %, 50–99: 18 %, 100–249: 25 %, 250+: 32 %).
+  - Transparente Ersparnisanzeige (`savings_eur`) und Staffelübersicht (`tiers_overview`) für Kunden im Sofortkalkulator.
+- **Nachbearbeitungs-Optionen & 24h-Expressfertigung:**
+  - Konfigurierbarer Katalog für Stützstrukturentfernung, thermische Gewindeeinsätze (M2–M6), Oberflächenfeinschliff und Ofen-Tempern.
+  - 24h-Expressfertigung mit Prio-Warteschlange an der Spitze der Druckfarm (`express_24h`).
+  - Endpunkte: `GET /api/v1/portal/pricing/options`, `POST /api/v1/portal/pricing/calculate-tiers`, `POST /api/v1/portal/tracking/token`.
+
 ## v2.0.43 (08.11.2026) — B2B & ISO-9001 Qualitätszertifikat PDF & Auto-Skip Defekt-Ausschluss (Phase 14)
 
 - **DIN A4 ISO-9001 Werks- und Qualitätsprüfzertifikat (`backend/app/services/quality_certificate.py`, `backend/app/api/routes/quality.py`):**

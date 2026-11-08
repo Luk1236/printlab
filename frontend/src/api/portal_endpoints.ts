@@ -107,4 +107,65 @@ export const portalEndpoints = {
    */
   getShippingLabelPdfUrl: (quoteId: string, format = '100x150') =>
     `${API_BASE}/portal/shipping-label/${quoteId}/pdf?format=${format}`,
+  /**
+   * Live-Auftragsstatus per Tracking-Token abrufen.
+   */
+  getTrackingStatus: (token: string) =>
+    request<{
+      token: string;
+      order_number: string;
+      order_status: string;
+      current_stage: { stage: string; title: string; desc: string };
+      stages: Array<{ stage: string; title: string; desc: string }>;
+      part_name: string;
+      quantity: number;
+      material: string;
+      printer_name: string;
+      progress_percent: number;
+      current_layer: number;
+      total_layers: number;
+      remaining_minutes: number;
+      estimated_completion: string;
+      carrier: string;
+      tracking_number: string;
+      is_express: boolean;
+    }>('/portal/tracking/' + encodeURIComponent(token)),
+
+  /**
+   * Mengenstaffelpreise und Nachbearbeitungsoptionen berechnen.
+   */
+  calculateTiers: (payload: {
+    base_unit_price_cents: number;
+    quantity: number;
+    selected_options?: string[];
+    option_quantities?: Record<string, number>;
+  }) =>
+    request<{
+      pricing_tier: {
+        base_unit_price_cents: number;
+        quantity: number;
+        discount_percent: number;
+        active_tier_name: string;
+        unit_price_cents: number;
+        unit_price_eur: number;
+        total_parts_cents: number;
+        total_parts_eur: number;
+        savings_cents: number;
+        savings_eur: number;
+        tiers_overview: Array<any>;
+      };
+      post_processing: Array<any>;
+      options_total_cents: number;
+      options_total_eur: number;
+      is_express: boolean;
+      net_total_cents: number;
+      net_total_eur: number;
+      vat_19_cents: number;
+      vat_19_eur: number;
+      gross_total_cents: number;
+      gross_total_eur: number;
+    }>('/portal/pricing/calculate-tiers', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 };
