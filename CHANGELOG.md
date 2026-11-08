@@ -3,6 +3,13 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.53 (08.11.2026) — ERP & E-Commerce Webhook-Brücke für Shopify, WooCommerce & SAP (Phase 24)
+
+- **Kryptographische Webhook-Empfänger (`backend/app/services/ecommerce_bridge.py`, `/api/v1/integrations/ecommerce/*`):**
+  - Direkte Auftragsübernahme aus Shopify (`X-Shopify-Hmac-Sha256`), WooCommerce (`X-WC-Webhook-Signature`) und SAP ERP (Bearer-Token-Authentifizierung).
+  - Automatische Konvertierung von Shop-Bestellzeilen (SKUs, Stückzahlen, Farben) in fertige PrintLab Fertigungs- und Queue-Aufträge.
+  - Statusrückmeldung & Fulfillment-Payload-Generierung mit DHL/UPS/DPD Sendungsverfolgung.
+
 ## v2.0.52 (08.11.2026) — KI-Druckbett-Räumungsprüfung & Kollisionsschutz (Phase 23)
 
 - **Optische Druckbett-Räumungsprüfung (`backend/app/services/plate_clearance_detector.py`, `/api/v1/plate-clearance/*`):**
