@@ -3,6 +3,16 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.45 (08.11.2026) — ZUGFeRD 2.2 / Factur-X Hybrid PDF & DATEV EXTF Buchungsstapel-Export (Phase 16)
+
+- **Amtlicher DATEV EXTF Buchungsstapel (CSV) Export (ackend/app/services/accounting_export.py, ackend/app/api/routes/accounting.py):**
+  - Vollständige Unterstützung der amtlichen DATEV-Schnittstellendefinition (Format 700 / Version 12) für Steuerkanzleien und DATEV Unternehmen online.
+  - Vorkonfigurierte Kontenrahmen SKR03 (Erlöskonten 8400, 8300, 8100, Forderungen 10000) und SKR04 (Erlöskonten 4400, 4300, 4100, Debitoren 10000).
+  - Automatische Ermittlung von Bruttoumsatz, Soll/Haben-Kennzeichen, Belegdatum (TTMM), Belegfeld 1 (Rechnungsnummer) und Buchungstext sowie Vorab-Summenkontrolle (GET /api/v1/accounting/datev-preview).
+- **Hybride E-Rechnung ZUGFeRD 2.2 / Factur-X (PDF/A-3):**
+  - Generierung von maschinenlesbaren Hybrid-PDFs mit eingebettetem actur-x.xml (Profil EN 16931 / Comfort) im PDF/A-3 Dateistrom (GET /api/v1/accounting/invoices/{id}/zugferd-pdf).
+  - Vollständige Gesetzeskonformität zur E-Rechnungspflicht ab 01.01.2025 im deutschen B2B-Geschäftsverkehr.
+
 ## v2.0.44 (08.11.2026) — Live Customer Tracking Portal & Volume Tier Pricing (Phase 15)
 
 - **Echtzeit-Tracking-Portal für Kunden (`backend/app/services/customer_tracking.py`, `backend/app/api/routes/customer_tracking_route.py`):**

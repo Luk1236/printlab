@@ -9,6 +9,7 @@ bindet alle Router einmalig in der bisherigen Reihenfolge ein — die Endpunkte
 from fastapi import FastAPI
 
 from backend.app.api.routes import (
+    accounting,
     assistant,
     auto_requeue,
     auto_setup,
@@ -89,3 +90,4 @@ def register_fork_routers(app: FastAPI, prefix: str) -> None:
     app.include_router(customer_tracking_route.router, prefix=prefix)
     app.include_router(webhooks_outbound.router, prefix=prefix)
     app.include_router(quality.router, prefix=prefix)
+    app.include_router(accounting.router, prefix=prefix)

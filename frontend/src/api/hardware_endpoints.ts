@@ -259,3 +259,25 @@ export const qualityApi = {
       body: JSON.stringify(payload),
     }),
 };
+
+export const accountingApi = {
+  getKontenrahmen: () =>
+    request<{ kontenrahmen: Record<string, any> }>("/accounting/kontenrahmen"),
+  previewDatev: (params?: { skr?: string; from_date?: string; to_date?: string }) => {
+    const q = new URLSearchParams(params as any).toString();
+    return request<{
+      invoice_count: number;
+      total_net_eur: number;
+      total_vat_eur: number;
+      total_gross_eur: number;
+      currency: string;
+      selected_skr: string;
+    }>(`/accounting/datev-preview${q ? `?${q}` : ""}`);
+  },
+  getDatevCsvUrl: (params?: { skr?: string; consultant?: number; client?: number; from_date?: string; to_date?: string }) => {
+    const q = new URLSearchParams(params as any).toString();
+    return `${API_BASE}/accounting/datev-csv${q ? `?${q}` : ""}`;
+  },
+  getZugferdPdfUrl: (invoiceId: string, lang = "de") =>
+    `${API_BASE}/accounting/invoices/${invoiceId}/zugferd-pdf?lang=${lang}`,
+};
