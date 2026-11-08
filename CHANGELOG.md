@@ -3,6 +3,13 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.52 (08.11.2026) — KI-Druckbett-Räumungsprüfung & Kollisionsschutz (Phase 23)
+
+- **Optische Druckbett-Räumungsprüfung (`backend/app/services/plate_clearance_detector.py`, `/api/v1/plate-clearance/*`):**
+  - Vor-Druck-Kamerainspektion zur Vermeidung verheerender Werkzeugkopf-Kollisionen durch vergessene Bauteile, Spachtel, Werkzeuge oder Filamentreste.
+  - Clearance-Score-Berechnung gegen registrierte Leer-Bett-Referenzen (`set-baseline`) mit konfigurierbarem Sicherheitsschwellwert (Standard 0.85).
+  - Not-Halt und Dispatch-Sperre bei Fremdkörpern mit manuellem Bediener-Override (`override`).
+
 ## v2.0.51 (08.11.2026) — Automatischer Druckbett-Auswurf & Ejektor-Steuerung (Phase 22)
 
 - **Automatischer Bauteilauswurf für Endlos-Serienfertigung (`backend/app/services/auto_ejector.py`, `/api/v1/automation/ejector/*`):**
