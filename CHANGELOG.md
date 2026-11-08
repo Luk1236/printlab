@@ -3,6 +3,13 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.51 (08.11.2026) — Automatischer Druckbett-Auswurf & Ejektor-Steuerung (Phase 22)
+
+- **Automatischer Bauteilauswurf für Endlos-Serienfertigung (`backend/app/services/auto_ejector.py`, `/api/v1/automation/ejector/*`):**
+  - Werkzeugkopf-Räumzyklus (Toolhead-Sweep-G-Code) und GPIO-Ansteuerung für Servo- oder Pneumatik-Auswerfer.
+  - Cooldown-Wächter für thermische Selbstablösung auf PEI (PLA <= 32°C, PETG <= 30°C, ABS <= 45°C).
+  - Automatische Plattenquittierung und Weiterschaltung des nächsten Warteschlangen-Auftrags ohne menschlichen Eingriff.
+
 ## v2.0.50 (08.11.2026) — HX711 Spulen-Wägezelle & Barcode Handscanner Scan-to-Action (Phase 21)
 
 - **HX711 24-Bit ADC Spulen-Wägezelle (`backend/app/services/spool_scale_hx711.py`, `/api/v1/hardware/scale/*`):**

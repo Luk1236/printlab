@@ -590,4 +590,206 @@ export const maintenanceWearApi = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+
+  // Phase 22: Automatischer Druckbett-Auswurf (Auto Ejector)
+  getEjectorConfig: () =>
+    request<{
+      enabled: boolean;
+      mode: string;
+      gpio_pin: number;
+      gpio_pulse_seconds: number;
+      max_bed_temp_c: number;
+      auto_advance_queue: boolean;
+      cooldown_check_enabled: boolean;
+    }>("/automation/ejector/config"),
+  updateEjectorConfig: (payload: {
+    enabled?: boolean;
+    mode?: string;
+    gpio_pin?: number;
+    gpio_pulse_seconds?: number;
+    max_bed_temp_c?: number;
+    auto_advance_queue?: boolean;
+    cooldown_check_enabled?: boolean;
+  }) =>
+    request<Record<string, any>>("/automation/ejector/config", {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+  triggerEjection: (payload: {
+    printer_id: string;
+    current_bed_temp_c?: number;
+    filament_type?: string;
+    force?: boolean;
+  }) =>
+    request<{
+      success: boolean;
+      printer_id: string;
+      ejected: boolean;
+      mode: string;
+      message: string;
+    }>("/automation/ejector/trigger", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  getEjectorStatus: (printerId: string, currentBedTempC: number = 25.0, filamentType: string = "PLA") =>
+    request<{
+      printer_id: string;
+      can_eject: boolean;
+      current_bed_temp_c: number;
+      target_bed_temp_c: number;
+      temp_delta_c: number;
+      reason: string;
+    }>(`/automation/ejector/status/${printerId}?current_bed_temp_c=${currentBedTempC}&filament_type=${filamentType}`),
+
+  // Phase 23: KI-Druckbett-Räumungsprüfung (Plate Clearance AI)
+  inspectPlateClearance: (printerId: string, payload?: {
+    threshold?: number;
+    mock_has_obstacle?: boolean;
+    mock_obstacle_type?: string;
+  }) =>
+    request<{
+      printer_id: string;
+      can_safely_print: boolean;
+      clearance_score: number;
+      threshold: number;
+      status: string;
+      detected_anomalies: string[];
+      message: string;
+    }>(`/plate-clearance/inspect/${printerId}`, {
+      method: "POST",
+      body: JSON.stringify(payload || {}),
+    }),
+  setPlateClearanceBaseline: (printerId: string, payload: {
+    resolution?: string;
+    mean_brightness?: number;
+    edge_density?: number;
+  }) =>
+    request<{
+      success: boolean;
+      printer_id: string;
+      baseline: Record<string, any>;
+      message: string;
+    }>(`/plate-clearance/set-baseline/${printerId}`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  overridePlateClearance: (printerId: string, payload: {
+    operator_name: string;
+    notes?: string;
+  }) =>
+    request<{
+      success: boolean;
+      printer_id: string;
+      override: Record<string, any>;
+      message: string;
+    }>(`/plate-clearance/override/${printerId}`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  getPlateClearanceStatus: (printerId: string) =>
+    request<{
+      printer_id: string;
+      has_baseline: boolean;
+      baseline_info: Record<string, any> | null;
+      latest_inspection: Record<string, any>;
+    }>(`/plate-clearance/status/${printerId}`),
+
+  // Phase 24: E-Commerce & ERP Webhook-Brücke
+  getEcommerceConfig: () =>
+    request<{
+      enabled: boolean;
+      shopify_webhook_secret: string;
+      woocommerce_webhook_secret: string;
+      sap_erp_api_token: string;
+      auto_queue_incoming_orders: boolean;
+      default_material: string;
+    }>("/integrations/ecommerce/config"),
+  updateEcommerceConfig: (payload: Record<string, any>) =>
+    request<Record<string, any>>("/integrations/ecommerce/config", {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+  submitSapOrder: (payload: {
+    sap_sales_order_id: string;
+    plant_id?: string;
+    company_code?: string;
+    delivery_date?: string;
+    materials: Array<Record<string, any>>;
+  }, authToken?: string) => {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (authToken) {
+      headers["Authorization"] = `Bearer ${authToken}`;
+    }
+    return request<Record<string, any>>("/integrations/ecommerce/sap-erp/order", {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    });
+  },
+
+  // Phase 25: Multi-Location Farm Mesh & Cloud-Relay
+  getMeshNodes: () =>
+    request<{
+      local_node: Record<string, any>;
+      peer_nodes: Array<Record<string, any>>;
+    }>("/mesh/nodes"),
+  registerMeshNode: (payload: {
+    node_id: string;
+    name: string;
+    location: string;
+    api_url: string;
+    auth_token?: string;
+    printers_count?: number;
+  }) =>
+    request<{
+      success: boolean;
+      node: Record<string, any>;
+      message: string;
+    }>("/mesh/nodes/register", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  unregisterMeshNode: (nodeId: string) =>
+    request<{ success: boolean; message: string }>(`/mesh/nodes/${nodeId}`, {
+      method: "DELETE",
+    }),
+  sendMeshHeartbeat: (payload: {
+    node_id: string;
+    active_printers: number;
+    queue_depth: number;
+    latency_ms?: number;
+  }) =>
+    request<Record<string, any>>("/mesh/heartbeat", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  getMeshOverview: () =>
+    request<{
+      mesh_health: string;
+      total_locations_count: number;
+      online_nodes_count: number;
+      total_cluster_printers: number;
+      total_cluster_queue_jobs: number;
+      local_node: Record<string, any>;
+      remote_nodes: Array<Record<string, any>>;
+      timestamp: string;
+    }>("/mesh/overview"),
+  routeMeshJob: (payload: {
+    job_name: string;
+    material?: string;
+    required_grams?: number;
+    local_farm_busy?: boolean;
+  }) =>
+    request<{
+      routed_target: string;
+      target_node_id: string;
+      target_node_name: string;
+      target_location?: string;
+      reason: string;
+      job_name: string;
+      material: string;
+    }>("/mesh/route-job", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
 };
