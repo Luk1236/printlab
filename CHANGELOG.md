@@ -3,6 +3,26 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.36 (08.11.2026) — Vollständige Barrierefreiheit & WCAG 2.1 AA Audits (Phase 9)
+
+- **Zentraler Focus-Trap & Keyboard-Management Hook (`useFocusTrap.ts`):**
+  - **Fokus-Einschluss (Focus Trap):** Verhindert das Ausbrechen von Tab und Shift-Tab Navigation in den Hintergrundbereich während geöffnete Dialoge aktiv sind (WCAG 2.1.2 No Keyboard Trap).
+  - **Escape-Key Handler:** Globales und kontextsensitives Schließen von Modals über Escape mit vollständiger Scroll-Verriegelung des `body`-Elements (`overflow: hidden`).
+  - **Automatischer Fokus & Rücksprung:** Automatisches Fokussieren des ersten interaktiven Elements beim Öffnen und zuverlässige Rückführung des Tastaturfokus auf das auslösende Element beim Schließen (WCAG 2.4.3 Focus Order).
+- **Semantische ARIA-Überarbeitung aller Kern-Modals:**
+  - **`ConfirmModal.tsx`:** Dynamische Rollenvergabe (`role="alertdialog"` für Warnungen/Gefahren, `role="dialog"` für Standard), `aria-modal="true"`, `aria-labelledby="confirm-modal-title"` und `aria-describedby="confirm-modal-description"`.
+  - **`AlertModal.tsx`:** Barrierefreier Hinweisdialog mit `role="alertdialog"`, `aria-modal="true"`, dedizierten Titel- und Beschreibungs-IDs sowie automatischer Fokusführung.
+  - **`PreviewModalShell.tsx`:** Vollständige Barrierefreiheit für alle Datei- und 3D-Viewer (3D-Model, G-Code, PDF, Spreadsheet, Image) inklusive Screen-Reader-Titel und Vollbild-Tastaturbehandlung.
+- **Barrierefreiheit im Kundenportal (`CustomerPortalPage.tsx`):**
+  - **Barrierefreie Dropzone:** Umwandlung der 3D-Upload-Zone in ein vollwertiges Tastatur-Bedienelement mit `role="button"`, `tabIndex={0}`, `aria-label` und Enter/Leertaste-Aktivierung.
+  - **Screen-Reader-Unterstützung für Regler und Auswahlen:** Infill-Slider mit `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, `aria-label`; Material- und Mengenstaffelknöpfe mit dynamischem `aria-pressed`.
+- **Barrierefreiheit der Drucker-Achsensteuerung (`PrinterMovementPopover.tsx`):**
+  - Jog-Popover als eigenständiger Dialog mit `role="dialog"`, `aria-haspopup="dialog"`, `aria-expanded` und `aria-pressed` für Schrittweiten-Buttons (1/10/50mm).
+- **Test-Suite & Qualitätssicherung:**
+  - Neuer Test-Satz `useFocusTrap.test.tsx`: 7 Unit-Tests zur Verifizierung von Fokus-Einschluss, Tab-Wrapping, Shift-Tab, Escape, Scroll-Lock und Fokus-Wiederherstellung.
+  - Erweiterung von `ConfirmModal.test.tsx`: 20/20 Tests zur Verifizierung von ARIA-Attributen und Tastatur-Navigation.
+  - 6/6 Tests für `PrinterMovementPopover.test.tsx` und 4/4 Tests für `AlertModal.test.tsx`.
+
 ## v2.0.35 (08.11.2026) — Code-Modularisierung der Monolithen & Dateigrößen-Budgets (Phase 8)
 
 - **Modularisierung von library.py (Backend-Bibliotheksverwaltung):**

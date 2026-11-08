@@ -2,6 +2,7 @@ import { useEffect, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Maximize2, Minimize2, X } from 'lucide-react';
 import type { PreviewFullscreen } from '../hooks/usePreviewFullscreen';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 // One size for every file preview (#2976). Each modal used to carry its own
 // max-width (4xl/5xl/6xl at 80-85vh), which left most of a wide screen empty
@@ -51,13 +52,23 @@ export function PreviewModalShell({
   const { t } = useTranslation();
   const { panelRef, isFullscreen, toggleFullscreen } = fullscreen;
 
+  const handleClose = () => {
+    if (!document.fullscreenElement) {
+      onClose();
+    }
+  };
+
+  const { containerRef } = useFocusTrap<HTMLDivElement>({
+    isOpen: true,
+    onClose: handleClose,
+  });
+
+  // Connect both panelRef and containerRef
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !document.fullscreenElement) onClose();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+    if (panelRef.current) {
+      (containerRef as React.MutableRefObject<HTMLDivElement | null>).current = panelRef.current;
+    }
+  }, [panelRef, containerRef]);
 
   return (
     <div
@@ -66,6 +77,9 @@ export function PreviewModalShell({
     >
       <div
         ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="preview-modal-title"
         className={`bg-bambu-dark-secondary border border-bambu-dark-tertiary flex flex-col ${
           isFullscreen
             ? 'w-full h-full max-w-none rounded-none'
@@ -76,7 +90,9 @@ export function PreviewModalShell({
         <div className="flex items-center justify-between gap-4 p-4 border-b border-bambu-dark-tertiary flex-shrink-0">
           <div className="flex items-center gap-2 min-w-0">
             {icon}
-            <h2 className="text-lg font-semibold text-white truncate">{title}</h2>
+            <h2 id="preview-modal-title" className="text-lg font-semibold text-white truncate">
+              {title}
+            </h2>
             {titleExtra}
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">

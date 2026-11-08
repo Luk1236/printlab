@@ -268,6 +268,15 @@ export function CustomerPortalPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div
+                  role="button"
+                  tabIndex={0}
+                  aria-label="3D-Modell hochladen (STL, 3MF, OBJ)"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      document.getElementById('portal-file-input')?.click();
+                    }
+                  }}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={(e) => {
                     e.preventDefault();
@@ -423,6 +432,7 @@ export function CustomerPortalPage() {
                       <button
                         key={key}
                         type="button"
+                        aria-pressed={filamentType === key}
                         onClick={() => {
                           setFilamentType(key);
                         }}
@@ -452,10 +462,15 @@ export function CustomerPortalPage() {
                       <span className="text-bambu-green font-bold text-sm normal-case">{infillPercent}%</span>
                     </div>
                     <input
+                      id="portal-infill-slider"
                       type="range"
                       min={5}
                       max={100}
                       step={5}
+                      aria-label="Füllgrad (Infill) in Prozent"
+                      aria-valuemin={5}
+                      aria-valuemax={100}
+                      aria-valuenow={infillPercent}
                       value={infillPercent}
                       onChange={(e) => setInfillPercent(Number(e.target.value))}
                       className="w-full accent-bambu-green cursor-pointer"
@@ -496,9 +511,11 @@ export function CustomerPortalPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <input
+                      id="portal-quantity-input"
                       type="number"
                       min={1}
                       max={1000}
+                      aria-label="Auftragsstückzahl"
                       value={quantity}
                       onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
                       className="w-32 bg-bambu-dark border border-bambu-dark-tertiary rounded-lg px-3 py-2 text-sm font-semibold text-white focus:outline-none focus:border-bambu-green"
@@ -508,6 +525,8 @@ export function CustomerPortalPage() {
                         <button
                           key={q}
                           type="button"
+                          aria-pressed={quantity === q}
+                          aria-label={`${q} Stück`}
                           onClick={() => setQuantity(q)}
                           className={`px-2.5 py-1 text-xs rounded border transition-colors ${
                             quantity === q

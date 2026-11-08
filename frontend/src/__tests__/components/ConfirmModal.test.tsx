@@ -164,4 +164,39 @@ describe('ConfirmModal', () => {
       expect(onCancel).not.toHaveBeenCalled();
     });
   });
+
+  describe('accessibility (WCAG 2.1 AA)', () => {
+    it('sets role="dialog" and aria-modal="true" for default variant', () => {
+      render(<ConfirmModal {...defaultProps} variant="default" />);
+      const dialog = screen.getByRole('dialog');
+      expect(dialog).toBeInTheDocument();
+      expect(dialog).toHaveAttribute('aria-modal', 'true');
+      expect(dialog).toHaveAttribute('aria-labelledby', 'confirm-modal-title');
+      expect(dialog).toHaveAttribute('aria-describedby', 'confirm-modal-description');
+    });
+
+    it('sets role="alertdialog" for danger variant', () => {
+      render(<ConfirmModal {...defaultProps} variant="danger" />);
+      const dialog = screen.getByRole('alertdialog');
+      expect(dialog).toBeInTheDocument();
+      expect(dialog).toHaveAttribute('aria-modal', 'true');
+    });
+
+    it('traps Tab navigation within the modal', () => {
+      render(<ConfirmModal {...defaultProps} />);
+      const cancelButton = screen.getByText('Cancel');
+      const confirmButton = screen.getByText('Confirm');
+
+      confirmButton.focus();
+      expect(document.activeElement).toBe(confirmButton);
+
+      // Press Tab from last focusable element
+      fireEvent.keyDown(confirmButton, { key: 'Tab', shiftKey: false });
+      expect(document.activeElement).toBe(cancelButton);
+
+      // Press Shift+Tab from first focusable element
+      fireEvent.keyDown(cancelButton, { key: 'Tab', shiftKey: true });
+      expect(document.activeElement).toBe(confirmButton);
+    });
+  });
 });

@@ -25,8 +25,8 @@ export interface PrinterMovementPopoverProps {
   iconControlClass: string;
   bedJogStep: number;
   setBedJogStep: (step: number) => void;
-  showBedJogMenu: string | null;
-  setShowBedJogMenu: (id: string | null) => void;
+  showBedJogMenu: number | string | null;
+  setShowBedJogMenu: (id: any) => void;
   homeAxesMutation: { mutate: (axis: 'all' | 'z') => void; isPending: boolean };
   bedJogMutation: { mutate: (args: { distance: number }) => void; isPending: boolean };
   xyJogMutation: { mutate: (args: { x: number; y: number }) => void; isPending: boolean };
@@ -77,11 +77,16 @@ export function PrinterMovementPopover({
     extruderJogMutation.mutate(distance);
   };
 
+  const isOpen = showBedJogMenu != null && String(showBedJogMenu) === String(printer.id);
+
   return (
     <div className="relative">
       <button
-        onClick={() => setShowBedJogMenu(showBedJogMenu === printer.id ? null : printer.id)}
+        onClick={() => setShowBedJogMenu(isOpen ? null : printer.id)}
         disabled={disabled}
+        aria-haspopup="dialog"
+        aria-expanded={isOpen}
+        aria-label={t('printers.bedJog.title')}
         className={`${iconControlClass} ${
           disabled
             ? 'bg-bambu-dark text-bambu-gray/50 cursor-not-allowed'
@@ -97,10 +102,14 @@ export function PrinterMovementPopover({
       >
         <Move className="w-[var(--pc-i4,1rem)] h-[var(--pc-i4,1rem)]" />
       </button>
-      {showBedJogMenu === printer.id && (
+      {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setShowBedJogMenu(null)} />
-          <div className="absolute bottom-full left-0 mb-1 z-50 flex w-[216px] flex-col overflow-hidden rounded-xl border border-bambu-dark-tertiary bg-bambu-dark-secondary shadow-2xl">
+          <div
+            role="dialog"
+            aria-label={t('printers.bedJog.title')}
+            className="absolute bottom-full left-0 mb-1 z-50 flex w-[216px] flex-col overflow-hidden rounded-xl border border-bambu-dark-tertiary bg-bambu-dark-secondary shadow-2xl"
+          >
             <div className="shrink-0 px-3 py-2.5 text-center text-sm font-medium text-white">
               {t('printers.bedJog.title')}
             </div>
@@ -219,6 +228,8 @@ export function PrinterMovementPopover({
                   <button
                     key={step}
                     onClick={() => setBedJogStep(step)}
+                    aria-pressed={bedJogStep === step}
+                    aria-label={`${step} mm`}
                     className={`flex-1 px-1 py-1 rounded text-[length:var(--pc-t10,10px)] transition-colors ${
                       bedJogStep === step
                         ? 'bg-bambu-green/20 text-bambu-green'

@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle } from 'lucide-react';
 import { Card, CardContent } from './Card';
 import { Button } from './Button';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 interface AlertModalProps {
   title: string;
@@ -33,16 +33,15 @@ export function AlertModal({
   const { t } = useTranslation();
   const resolvedCloseText = closeText ?? t('common.close');
 
-  // Close on Escape — matches ConfirmModal's behaviour.
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  const { containerRef } = useFocusTrap<HTMLDivElement>({
+    isOpen: true,
+    onClose,
+  });
 
-  const iconColor = variant === 'warning' ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400';
+  const iconColor =
+    variant === 'warning'
+      ? 'text-yellow-600 dark:text-yellow-400'
+      : 'text-red-600 dark:text-red-400';
 
   return (
     <div
@@ -51,25 +50,39 @@ export function AlertModal({
       className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[120]"
       onClick={onClose}
     >
-      <Card className="w-full max-w-md" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-        <CardContent className="p-6">
-          <div className="flex items-start gap-4">
-            <div className={`p-2 rounded-full bg-bambu-dark ${iconColor}`}>
-              <AlertTriangle className="w-6 h-6" />
+      <div
+        ref={containerRef}
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="alert-modal-title"
+        aria-describedby="alert-modal-message"
+        className="w-full max-w-md"
+        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+      >
+        <Card className="w-full">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className={`p-2 rounded-full bg-bambu-dark ${iconColor}`}>
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 id="alert-modal-title" className="text-lg font-semibold text-white mb-1">
+                  {title}
+                </h3>
+                {subtitle && <p className="text-xs text-bambu-gray mb-2 truncate">{subtitle}</p>}
+                <p id="alert-modal-message" className="text-bambu-gray text-sm whitespace-pre-line break-words">
+                  {message}
+                </p>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-semibold text-white mb-1">{title}</h3>
-              {subtitle && <p className="text-xs text-bambu-gray mb-2 truncate">{subtitle}</p>}
-              <p className="text-bambu-gray text-sm whitespace-pre-line break-words">{message}</p>
+            <div className="flex mt-6">
+              <Button onClick={onClose} className="flex-1">
+                {resolvedCloseText}
+              </Button>
             </div>
-          </div>
-          <div className="flex mt-6">
-            <Button onClick={onClose} className="flex-1">
-              {resolvedCloseText}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
