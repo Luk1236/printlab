@@ -3,6 +3,29 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.35 (08.11.2026) — Code-Modularisierung der Monolithen & Dateigrößen-Budgets (Phase 8)
+
+- **Modularisierung von library.py (Backend-Bibliotheksverwaltung):**
+  - Reduzierung des Monolithen von 6.094 Zeilen auf 3.975 Zeilen (-2.119 Zeilen, -35%).
+  - **library_helpers.py (854 Zeilen):** Saubere Kapselung von 3MF-Metadaten-Bereinigung, Pfadvalidierungen, STL/PDF-Thumbnail-Generierung und Sichtbarkeitsprüfungen.
+  - **library_slicing.py (1.465 Zeilen):** Vollständige Auslagerung der Slicing-Workflows, Preset-Auflösung, G-Code-Extraktion, Cross-Class-Multi-Plate-Schleifen und Slicing-Jobs.
+  - Rückwärtskompatible Re-Exporte aller Funktionen in library.py, sodass bestehende Integrationen unberührt bleiben.
+- **Modularisierung von ambu_mqtt.py (MQTT-Druckerkommunikation):**
+  - Reduzierung des Monolithen von 8.249 Zeilen auf 7.660 Zeilen (-589 Zeilen).
+  - **ambu_mapping.py (627 Zeilen):** Saubere Kapselung aller AMS- und Nozzle-Rack-Mapping-Logiken, A2L Lite Einheiten-Normalisierung, 	ray_exist_bits-Bitmaskenberechnung und Rack-Positionierungs-Algorithmen.
+- **Modularisierung von PrinterCard.tsx (Frontend-Druckersteuerung):**
+  - Reduzierung der Hauptkarte von 5.232 Zeilen auf 4.981 Zeilen (-251 Zeilen).
+  - **PrinterMovementPopover.tsx (215 Zeilen):** Auslagerung der interaktiven Achsensteuerung (XY, Z, Extruder, Homing, Schrittweitenauswahl 1/10/50mm) mit integrierter Bauraum-Kollisionswarnung (#2579).
+  - **PrinterConfirmModals.tsx (190 Zeilen):** Zentrale Kapselung aller Betriebs- und Sicherheitsdialoge (Strom An/Aus, Wartungsmodus bei aktivem Druck, Abbruch, Pause, Fortsetzen, HA-Schalter).
+- **Verschärfung der Dateigrößen-Budgets (	est_file_size_budget.py):**
+  - ackend/app/api/routes/library.py: Budget gesenkt von 6.100 auf 4.200 Zeilen.
+  - ackend/app/services/bambu_mqtt.py: Budget gesenkt von 8.275 auf 7.700 Zeilen.
+  - rontend/src/pages/PrinterCard.tsx: Budget gesenkt von 5.300 auf 5.000 Zeilen.
+- **Qualitätssicherung & Tests:**
+  - 100% Pass auf allen 106 Bibliotheks- und Slicing-Tests.
+  - 100% Pass auf allen 675 MQTT- und Hardware-Tests.
+  - Vollständiger 5/5 Durchstich-Test bestanden (bnahme.py --nur-durchstich).
+
 ## v2.0.34 (08.11.2026) — Kundenportal 2.0 & Sofort-Kalkulator mit 3D-Upload, Lieferschein & Thermo-Labels (Phase 7)
 
 - **3D-Mesh- und Geometrieanalyse (`mesh_analysis.py`):**
