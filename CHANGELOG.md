@@ -3,6 +3,13 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.54 (08.11.2026) — Multi-Location Farm Mesh & Cloud-Relay (Phase 25)
+
+- **Multi-Location Farm Mesh Relay (`backend/app/services/farm_mesh_relay.py`, `/api/v1/mesh/*`):**
+  - Standortübergreifende Peer-to-Peer-Vernetzung mehrerer Druckwerkstätten in einem gemeinsamen Leitstand.
+  - Dynamisches Cross-Location Job-Routing (`POST /api/v1/mesh/route-job`): Leitet Druckaufträge bei lokaler Farm-Überlastung oder fehlendem Spezialfilament automatisch an Partner-Standorte mit freier Kapazität weiter.
+  - Aggregierte Flotten-Telemetrie (`GET /api/v1/mesh/overview`) und Node-Heartbeat-Überwachung mit Latenzmessung.
+
 ## v2.0.53 (08.11.2026) — ERP & E-Commerce Webhook-Brücke für Shopify, WooCommerce & SAP (Phase 24)
 
 - **Kryptographische Webhook-Empfänger (`backend/app/services/ecommerce_bridge.py`, `/api/v1/integrations/ecommerce/*`):**

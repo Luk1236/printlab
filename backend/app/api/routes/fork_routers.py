@@ -12,7 +12,10 @@ from backend.app.api.routes import (
     accounting,
     assistant,
     auto_requeue,
+    auto_ejector_route,
     auto_setup,
+    ecommerce_bridge_route,
+    farm_mesh_route,
     customer_portal_route,
     customer_tracking_route,
     customers,
@@ -28,6 +31,7 @@ from backend.app.api.routes import (
     maintenance_flow_route,
     maintenance_wear,
     monthly_report,
+    plate_clearance_route,
     plate_calibration,
     plate_tuning,
     plate_wizard,
@@ -97,3 +101,7 @@ def register_fork_routers(app: FastAPI, prefix: str) -> None:
     app.include_router(kiosk.router, prefix=prefix)
     app.include_router(maintenance_flow_route.router, prefix=prefix)
     app.include_router(hardware_scale_scanner.router, prefix=prefix)
+    app.include_router(auto_ejector_route.router, prefix=prefix)
+    app.include_router(plate_clearance_route.router, prefix=prefix)
+    app.include_router(ecommerce_bridge_route.router, prefix=prefix)
+    app.include_router(farm_mesh_route.router, prefix=prefix)
