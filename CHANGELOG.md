@@ -3,6 +3,14 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.39 (08.11.2026) — Finaler Gesamttest & Exzellenz-Zertifizierung aller 10 Domänen (Phase 12)
+
+- **Vollständige Verifikation aller 12 Ausbauphasen (v2.0.28 bis v2.0.39):**
+  - **Backend-Zertifizierung:** 82/82 Phasen-Tests (Slicer-Cache, Presets, AMS Spool Auto-Fallback, GPIO-Hardware/Not-Halt, KI-Schichtanalyse, Kundenportal 2.0, Flottenmanagement, E2E-Benchmarks, Dateigrößen-Budgets) in 13,9s grün.
+  - **Frontend- & WCAG 2.1 AA-Zertifizierung:** 43/43 Vitest-Assertions (useFocusTrap, ConfirmModal, AlertModal, PreviewModalShell, PrinterMovementPopover) in 2,87s grün; 199 Produktions-Bundles Safari-16.0-Baseline-konform.
+  - **Durchstich-Abnahme (bnahme.py --nur-durchstich):** Alle 5 End-to-End-Stufen (Angebots-Link & XRechnung, Hardware-Trockenlauf & Not-Halt, Einmess-Assistent & Plattenwechsel, Kamera-Einmessung & Leerbett-Erkennung, Integrierter Slicer STL/3MF -> G-Code) mit 0 Fehlern und 0 Hinweisen bestanden.
+  - **Statische Build-Hash-Synchronisation:** static/BUILD_SOURCE_SHA nach CRLF-Normalisierung festgeschrieben.
+
 ## v2.0.38 (08.11.2026) — E2E Integration, WebSocket-Parallelauslieferung & Performance-Benchmarks (Phase 11)
 
 - **Paralleler WebSocket-Fanout & Slow-Client-Isolierung (`backend/app/core/websocket.py`):**
