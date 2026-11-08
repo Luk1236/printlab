@@ -281,3 +281,36 @@ export const accountingApi = {
   getZugferdPdfUrl: (invoiceId: string, lang = "de") =>
     `${API_BASE}/accounting/invoices/${invoiceId}/zugferd-pdf?lang=${lang}`,
 };
+
+export const kioskApi = {
+  getStatus: () =>
+    request<{
+      printers: Array<any>;
+      total_printers: number;
+      active_printing_count: number;
+      attention_needed_count: number;
+      sd_wear_guard: Record<string, any>;
+    }>("/kiosk/status"),
+  quickAction: (
+    printerId: number,
+    payload: { action: string; preset?: string; confirmed?: boolean }
+  ) =>
+    request<{
+      success: boolean;
+      printer_id: number;
+      action: string;
+      message: string;
+      preset?: string;
+      bed_temp?: number;
+      nozzle_temp?: number;
+    }>(`/kiosk/printers/${printerId}/quick-action`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  getSdGuardStats: () =>
+    request<Record<string, any>>("/kiosk/sd-guard/stats"),
+  cleanupSdGuard: () =>
+    request<{ success: boolean; deleted_buffer_files: number }>("/kiosk/sd-guard/cleanup", {
+      method: "POST",
+    }),
+};

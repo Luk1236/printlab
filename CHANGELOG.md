@@ -3,6 +3,17 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.46 (08.11.2026) — Raspberry Pi 7" Touch-Kiosk Modus & SD-Card Wear Guard (Phase 17)
+
+- **Raspberry Pi 7" Touch-Kiosk-Modus (`backend/app/api/routes/kiosk.py`, `frontend/src/pages/KioskModePage.tsx`):**
+  - Große, handschuh- und touchscreen-optimierte Bedienoberfläche für Werkstatt- und Standalone-Displays.
+  - Not-Halt (E-Stop) mit zweistufiger Bestätigungssperre (`POST /api/v1/kiosk/printers/{id}/quick-action?action=e_stop`).
+  - Ein-Klick-Aktionen: Druckbettfreigabe (`plate_clear`), Kammerlicht umschalten (`toggle_light`), Vorheiz-Presets (PLA, PETG, ABS, ASA, TPU, Cooldown) und AMS-Spulenrescan (`ams_sync`).
+- **SD-Card Wear Guard & /dev/shm RAM-Disk Pufferung (`backend/app/services/pi_sd_wear_guard.py`):**
+  - Automatische Verlagerung flüchtiger I/O-Schreiblasten (Live-Webcam Einzelbilder, Zeitraffer-Renderframes, Slicer-Uploads) in den Linux tmpfs Arbeitsspeicher (`/dev/shm/printlab`).
+  - Schont die MicroSD-Karte des Raspberry Pi vor Speicherzellen-Verschleiß und verhindert I/O-bedingte System-Hänger.
+  - Statistiken und RAM-Disk Überwachung über `GET /api/v1/kiosk/sd-guard/stats`.
+
 ## v2.0.45 (08.11.2026) — ZUGFeRD 2.2 / Factur-X Hybrid PDF & DATEV EXTF Buchungsstapel-Export (Phase 16)
 
 - **Amtlicher DATEV EXTF Buchungsstapel (CSV) Export (ackend/app/services/accounting_export.py, ackend/app/api/routes/accounting.py):**

@@ -22,6 +22,7 @@ from backend.app.api.routes import (
     fleet,
     ha_discovery_route,
     hardware,
+    kiosk,
     layer_inspection,
     maintenance_wear,
     monthly_report,
@@ -91,3 +92,4 @@ def register_fork_routers(app: FastAPI, prefix: str) -> None:
     app.include_router(webhooks_outbound.router, prefix=prefix)
     app.include_router(quality.router, prefix=prefix)
     app.include_router(accounting.router, prefix=prefix)
+    app.include_router(kiosk.router, prefix=prefix)
