@@ -3,6 +3,19 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.49 (08.11.2026) — Düsenwechsel-Wartungsposition & Überholte Drucker-Reinigungsroutinen
+
+- **Ergonomische Düsenwechsel- & Wartungsposition (`backend/app/services/maintenance_service_flow.py`, `POST /api/v1/maintenance/printers/{id}/service-position`):**
+  - Fährt das Druckbett automatisch auf Z=180 mm herunter und positioniert den Werkzeugkopf sicher vorne Mitte (X=128, Y=30) für maximale Zugänglichkeit.
+  - Schaltet das Kammerlicht für optimale Sicht ein und deaktiviert Heizelemente und Lüfter mit integrierter Abkühlungs- und Verbrennungswarnung (bzw. optionales Vorheizen auf 130°C für Hot-Tightening).
+  - Sicheres Verlassen und Parken mit Achsen-Referenzierung (`POST /api/v1/maintenance/printers/{id}/exit-service-position`).
+- **Interaktiver Schritt-für-Schritt Cold-Pull-Assistent (`POST /api/v1/maintenance/printers/{id}/cold-pull`):**
+  - 4-Stufen-Reinigungsroutine gegen Düsenverstopfungen: Aufheizen (240–285°C) -> Schnellabkühlung mit 100% Bauteillüfter auf 85–90°C -> Elastisches Herausziehen verunreinigter Reste -> Inspektionsquittierung.
+- **Automatisierte Reinigungs-Verfahrzyklen & Verschleiß-Reset (`POST /api/v1/maintenance/printers/{id}/cleaning-motion`, `POST /api/v1/maintenance/printers/{id}/complete-task`):**
+  - Sanfte X-Achsen-Fahrten für die Reinigung der Carbon-X-Stangen mit 99% Isopropanol.
+  - Mehrfache Z-Achsen-Hubfahrten zur gleichmäßigen Verteilung von frischem Schmierfett auf den drei Gewindespindeln.
+  - Nozzle-Wiper Abstreiftest und automatische Nullung der Wartungszähler in `wear_tracker.py`.
+
 ## v2.0.48 (08.11.2026) — Spülmengen-Minimierer & Druckbett-Schadenszonen-Sperre (Phase 19)
 
 - **Spülmengen-Minimierer & G-Code Farbwechsel-Optimierer (`backend/app/services/purge_optimizer.py`, `POST /api/v1/fleet/purge-optimize`):**

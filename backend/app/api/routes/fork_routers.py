@@ -24,6 +24,7 @@ from backend.app.api.routes import (
     hardware,
     kiosk,
     layer_inspection,
+    maintenance_flow_route,
     maintenance_wear,
     monthly_report,
     plate_calibration,
@@ -93,3 +94,4 @@ def register_fork_routers(app: FastAPI, prefix: str) -> None:
     app.include_router(quality.router, prefix=prefix)
     app.include_router(accounting.router, prefix=prefix)
     app.include_router(kiosk.router, prefix=prefix)
+    app.include_router(maintenance_flow_route.router, prefix=prefix)
