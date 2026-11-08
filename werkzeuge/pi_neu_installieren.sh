@@ -102,6 +102,8 @@ Environment=DATA_DIR=%h/printlab/data
 Environment=LOG_DIR=%h/printlab/logs
 # Nach einem Update in PrintLab beendet sich der Dienst sauber; Restart=always startet ihn mit dem neuen Stand
 Environment=PRINTLAB_AUTO_RESTART=1
+# Verhindert, dass beim Systemstart automatisch ein großes KI-Sprachmodell (Ollama) in den RAM geladen wird
+Environment=PRINTLAB_DISABLE_ASSISTANT_AUTOSETUP=1
 # Anmeldung vorgeschrieben: bis das Passwort angelegt ist, ist die Schnittstelle gesperrt (nur /setup ist erreichbar)
 Environment=PRINTLAB_REQUIRE_AUTH=1
 EnvironmentFile=-%h/.config/printlab.env
@@ -112,6 +114,7 @@ ExecStartPre=-%h/printlab/.venv/bin/python %h/printlab/werkzeuge/update_guard.py
 ExecStart=%h/printlab/.venv/bin/python -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --loop asyncio
 Restart=always
 RestartSec=5
+KillMode=process
 OOMScoreAdjust=-200
 
 [Install]

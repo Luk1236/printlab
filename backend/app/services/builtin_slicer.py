@@ -298,8 +298,8 @@ def _port_listening(port: int) -> bool:
         sock.close()
 
 
-def ensure_builtin_slicer_running(ports: tuple[int, ...] = (3001, 3003)) -> None:
-    """Startet das integrierte Slicer-Sidecar (`backend.app.pc_slicer:app`) im Hintergrund auf Port 3001/3003."""
+def ensure_builtin_slicer_running(ports: tuple[int, ...] = (3001,)) -> None:
+    """Startet das integrierte Slicer-Sidecar (`backend.app.pc_slicer:app`) im Hintergrund auf Port 3001."""
     with _server_lock:
         for port in ports:
             if port in _started_ports or _port_listening(port):

@@ -306,9 +306,10 @@ async def stop_background_services() -> None:
     """Stop all background workers, schedulers, watchdogs, close connections, and dispose engine."""
     rt = _rt()
 
-    from backend.app.services import remote_access as remote_access_service
-
-    remote_access_service.stop_daemon()
+    # Wichtig: remote_access_service.stop_daemon() hier NICHT aufrufen!
+    # Wenn PrintLab neu startet (z. B. nach einem Update oder systemd-Restart),
+    # soll das abgekoppelte tailscaled (start_new_session=True) weiterlaufen,
+    # damit der Raspberry Pi im Tailnet durchgehend erreichbar bleibt.
     rt.print_scheduler.stop()
     rt.smart_plug_manager.stop_scheduler()
     rt.ha_sensor_manager.stop()

@@ -125,7 +125,9 @@ StartLimitIntervalSec=0
 [Service]
 Restart=always
 RestartSec=5s
+KillMode=process
 OOMScoreAdjust=-200
+Environment=PRINTLAB_DISABLE_ASSISTANT_AUTOSETUP=1
 EOF
         chown -R "$TARGET_USER:$TARGET_USER" "$USER_HOME/.config/systemd/user/printlab.service.d"
         sudo -u "$TARGET_USER" XDG_RUNTIME_DIR="/run/user/$USER_UID" systemctl --user daemon-reload 2>/dev/null || true
@@ -134,6 +136,20 @@ EOF
         sudo -u "$TARGET_USER" XDG_RUNTIME_DIR="/run/user/$USER_UID" systemctl --user enable --now printlab-watch.timer 2>/dev/null || true
         echo "[OK] PrintLab User-Service & Watch-Timer fuer '$TARGET_USER' abgesichert und neu geladen."
     fi
+fi
+
+# 7b. Falls Ollama auf dem Pi installiert ist: RAM-Fresser beim Booten begrenzen
+if systemctl list-unit-files ollama.service &>/dev/null; then
+    mkdir -p /etc/systemd/system/ollama.service.d
+    cat > /etc/systemd/system/ollama.service.d/pi-memory.conf << 'EOF'
+[Service]
+Environment="OLLAMA_KEEP_ALIVE=2m"
+Environment="OLLAMA_MAX_LOADED_MODELS=1"
+Environment="OLLAMA_NUM_PARALLEL=1"
+OOMScoreAdjust=500
+EOF
+    systemctl daemon-reload
+    echo "[OK] Ollama Speicherschutz (OLLAMA_KEEP_ALIVE=2m, OOMScoreAdjust=500) gesetzt."
 fi
 
 # 8. Status-Check Hardware

@@ -3,6 +3,17 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.42 (08.11.2026) — Raspberry Pi Boot-Crash-Fix (Ollama LLM-Warmup-Sperre & Tailscale-Persistenz)
+
+- **Kein automatisches Ollama-LLM-Warmup mehr beim Systemstart (`backend/app/services/assistant_autoconfig.py`):**
+  - `ensure_on_startup()` hat bisher bei jedem Start von PrintLab automatisch `await warmup()` (`POST /api/generate`) an Ollama gesendet und dadurch ein 3B–8B-Sprachmodell (2,5–4,5 GB RAM + 100 % Last auf allen 4 CPU-Kernen) sofort nach dem Booten in den Arbeitsspeicher geladen. Das führte wenige Sekunden nach dem Start von `printlab.service` zum sofortigen OOM-/Spannungs-Absturz des Raspberry Pi.
+  - Das automatische Vorladen beim Booten ist jetzt standardmäßig deaktiviert (nur noch auf explizite Anforderung über `PRINTLAB_ASSISTANT_WARMUP=1`).
+- **Halbierung der Slicer-Sidecar-Threads beim Start (`backend/app/services/builtin_slicer.py`):**
+  - `ensure_builtin_slicer_running()` startet standardmäßig nur noch eine Sidecar-Instanz (`Port 3001`) statt zwei redundanter Uvicorn-Server (`3001` und `3003`).
+- **Tailscale bleibt bei Dienst-Neustarts online (`backend/app/services/lifespan_flow.py`, `werkzeuge/pi_neu_installieren.sh`, `werkzeuge/pi_absturzschutz.sh`):**
+  - `stop_background_services()` beendet das abgekoppelte `tailscaled` (`start_new_session=True`) beim Neustart von PrintLab nicht mehr, und `KillMode=process` in `printlab.service` verhindert, dass systemd den Tailscale-Daemon beim Neustart von PrintLab mitbeendet.
+  - `pi_absturzschutz.sh` begrenzt zudem eine eventuell installierte `ollama.service`-Instanz (`OLLAMA_KEEP_ALIVE=2m`, `OOMScoreAdjust=500`).
+
 ## v2.0.41 (08.11.2026) — 2D Auto-Nesting, 3D-Orientierungs-Analyse, M486-Injektor & Farm-Seriensplit (Phase 13)
 
 - **Kollisionsfreies 2D-Multi-Plate-Bin-Packing (`backend/app/services/auto_nesting.py`, `POST /api/v1/fleet/auto-nest`):**

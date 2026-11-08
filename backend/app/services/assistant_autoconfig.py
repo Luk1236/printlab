@@ -17,6 +17,7 @@ Adresse) ein Modell-Server läuft.
 from __future__ import annotations
 
 import logging
+import os
 import re
 from collections.abc import Awaitable, Callable
 from pathlib import Path
@@ -153,18 +154,26 @@ def _needs_startup_setup(data_dir: Path | str) -> bool:
     """Beim Start nur eingreifen, wenn der Benutzer noch nichts entschieden hat oder das Modell fehlen könnte."""
     if not Path(data_dir).joinpath(assistant_config.FILE_NAME).is_file():  # SEC-PATH-OK: feste Namenskonstante
         return True
-    return bool(assistant_config.read(data_dir).get("enabled"))
+    cfg = assistant_config.read(data_dir)
+    return bool(cfg.get("enabled")) and not str(cfg.get("model") or "").strip()
 
 
 async def ensure_on_startup(data_dir: Path | str, status_fn: StatusFn | None = None) -> dict[str, Any]:
-    """Beim Start: Assistent einrichten (falls nicht ausdrücklich aus) und Modell vorladen. Wirft nie."""
+    """Beim Start: Assistent einrichten (falls noch kein Modell gewählt).
+
+    WICHTIG: Kein automatisches ``warmup()`` beim Systemstart! Das Vorladen eines
+    3B–8B-Sprachmodells über Ollama belegt auf einem Raspberry Pi sofort 2,5–4,5 GB RAM
+    und 100 % CPU auf allen Kernen, was unmittelbar nach dem Booten zum OOM-Freeze oder
+    Unterspannungs-Reset führt. Optional erzwingbar via ``PRINTLAB_ASSISTANT_WARMUP=1``.
+    """
     try:
         if not _needs_startup_setup(data_dir):
             return {"state": "skipped"}
         result = await autoconfigure(data_dir, status_fn)
         if result["state"] == "ready":
             logger.info("[PrintLab] KI-Assistent bereit: %s unter %s", result["model"], result["base_url"])
-            await warmup(result["config"])
+            if os.environ.get("PRINTLAB_ASSISTANT_WARMUP", "").strip().lower() in ("1", "true", "yes"):
+                await warmup(result["config"])
         else:
             logger.info("[PrintLab] KI-Assistent nicht eingerichtet (%s)", result["state"])
         return result
