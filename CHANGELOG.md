@@ -3,6 +3,33 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.34 (08.11.2026) — Kundenportal 2.0 & Sofort-Kalkulator mit 3D-Upload, Lieferschein & Thermo-Labels (Phase 7)
+
+- **3D-Mesh- und Geometrieanalyse (`mesh_analysis.py`):**
+  - **STL, 3MF & OBJ Geometrieextraktion:** Automatisches Auslesen von Nettovolumen (cm³), Bounding-Box-Abmessungen (X × Y × Z in mm), Oberfläche (cm²), Dreiecksanzahl und Wasserdichtigkeit via `trimesh`.
+  - **Bambu Lab Bauraum-Prüfung:** Automatischer Abgleich gegen den 256 × 256 × 256 mm Druckbereich mit visueller Warnung bei Übergröße.
+  - **3D-Thumbnail-Vorschau:** Generierung eines 2D-Isometrie-Renderings direkt aus den Mesh-Daten für Kundenportal und Auftragsübersicht.
+- **Lieferschein- & Thermo-Versandetiketten-Dienst (`delivery_note_service.py`):**
+  - **DIN A4 Lieferschein (PDF):** Druckfertiges Warenbegleitdokument mit Firmenkopf, Kundendaten, detaillierter Positionstabelle, Material-/Gewichtsdaten und rechtssicherem Empfangsbestätigungsfeld.
+  - **Thermo-Versandetiketten (PDF):** Vorkonfektioniert für Standard-Thermo-Versandaufkleber (100 × 150 mm / DHL/UPS) sowie Brother QL / Dymo Kompakt-Etiketten (62 × 29 mm).
+  - **Dynamischer Tracking-QR-Code:** Auf allen Begleitdokumenten eingebettet; führt direkt zum hinterlegten Auftrag im Kundenportal.
+- **Erweiterte Kundenportal-API (`customer_portal_route.py`):**
+  - `POST /api/v1/portal/analyze-model`: Analysiert hochgeladene 3D-Modelle ohne vorheriges Speichern.
+  - `POST /api/v1/portal/quote-from-model`: Erzeugt aus 3D-Modell und Parametern ein verbindliches Sofort-Angebot (`SQ-XXXXXXXX`).
+  - `GET /api/v1/portal/quote/{quote_id}`: Ruft gespeicherte Kalkulationen ab.
+  - `GET /api/v1/portal/delivery-note/{quote_id}/pdf`: Generiert und liefert den Lieferschein als PDF.
+  - `GET /api/v1/portal/shipping-label/{quote_id}/pdf`: Liefert das passende Thermo-Versandetikett als PDF.
+- **Web-Frontend Kundenportal 2.0 (`CustomerPortalPage.tsx`):**
+  - **Drag-and-Drop 3D-Upload:** Barrierefreie Dateiauswahl mit Live-Statistiken (Volumen, Maße, Bauraum-Check).
+  - **Interaktiver Konfigurator:** Materialprofile (PLA, PETG, ABS, ASA, TPU, PLA-CF), Infill-Schieberegler (5–100%), Schichthöhen (0.12–0.28 mm) und Mengenstaffel mit Rabatten (5% ab 5 Stk., 10% ab 10 Stk., 15% ab 25 Stk.).
+  - **Transparente Preiskalkulation:** Live-Aufschlüsselung von Material-, Maschinenlaufzeit- und Rüstkosten sowie MwSt. und Gesamtsumme.
+  - **Bestellabschluss & Dokumente:** Integrierter Stripe Checkout sowie direkte 1-Klick-Downloads für Lieferschein und Thermo-Labels.
+  - Öffentliche Zugänglichkeit unter `/portal` und `/kalkulation` sowie Direktlink auf `FinancePage.tsx`.
+- **Test-Suite:**
+  - `test_mesh_analysis.py`: 4 Unit-Tests für Volumen, Bauraumgrenzen, fehlerhafte und leere Dateien.
+  - `test_delivery_note_service.py`: 3 Unit-Tests für DIN A4 Lieferschein und Thermo-Labels (100x150 mm & 62x29 mm).
+  - `test_customer_portal_v2_api.py`: 4 Integrationstests für Analyse, Sofortkalkulation, Lieferschein- und Label-PDF-Routen.
+
 ## v2.0.33 (07.11.2026) — KI & Kamera: Kontinuierliche Schichtanalyse & Edge-Spaghetti-Detektor (Phase 6)
 
 - **Schneller lokaler Edge-Spaghetti-Detektor (`spaghetti_detector.py`):**

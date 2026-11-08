@@ -17,17 +17,23 @@ import logging
 import time
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.core.database import get_db
+from backend.app.services import company_profile
 from backend.app.services.customer_portal import (
     MATERIAL_PROFILES,
     calculate_instant_quote,
     create_stripe_checkout_session,
     validate_redirect_url,
 )
+from backend.app.services.delivery_note_service import (
+    generate_delivery_note_pdf,
+    generate_thermal_label_pdf,
+)
+from backend.app.services.mesh_analysis import analyze_mesh_data
 from backend.app.services.portal_quote_store import get_quote, store_quote
 
 logger = logging.getLogger(__name__)
@@ -40,6 +46,7 @@ router = APIRouter(prefix="/portal", tags=["portal"])
 RATE_WINDOW_SECONDS = 60.0
 RATE_MAX_QUOTE_REQUESTS = 20
 RATE_MAX_CHECKOUT_REQUESTS = 6
+RATE_MAX_ANALYZE_REQUESTS = 30
 _hits: dict[str, dict[str, list[float]]] = {}
 
 
@@ -145,3 +152,107 @@ async def initiate_checkout(
         )
     except ValueError as exc:
         raise HTTPException(400, str(exc))
+
+
+@router.post("/analyze-model")
+async def analyze_model(
+    request: Request,
+    file: UploadFile = File(...),
+) -> dict[str, Any]:
+    """Analysiert eine 3D-Modelldatei (STL, 3MF, OBJ) und liefert Geometriedaten."""
+    if not _allow_client(request, "analyze", RATE_MAX_ANALYZE_REQUESTS):
+        raise HTTPException(429, "Zu viele Analyse-Anfragen. Bitte kurz warten.")
+    if not file.filename:
+        raise HTTPException(400, "Keine Datei übergeben.")
+    content = await file.read()
+    try:
+        result = analyze_mesh_data(content, file.filename)
+        return result.to_dict()
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@router.post("/quote-from-model")
+async def create_quote_from_model(
+    request: Request,
+    file: UploadFile = File(...),
+    filament_type: str = Form("PLA"),
+    infill_percent: int = Form(15),
+    layer_height: float = Form(0.20),
+    quantity: int = Form(1),
+    customer_name: str = Form(""),
+    customer_address: str = Form(""),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Analysiert das 3D-Modell und erzeugt sofort ein verbindliches Angebot."""
+    if not _allow_client(request, "quote", RATE_MAX_QUOTE_REQUESTS):
+        raise HTTPException(429, "Zu viele Kalkulationen in kurzer Zeit. Bitte einen Moment warten.")
+    if not file.filename:
+        raise HTTPException(400, "Keine Datei übergeben.")
+    content = await file.read()
+    try:
+        analysis = analyze_mesh_data(content, file.filename)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+    quote = calculate_instant_quote(
+        volume_cm3=analysis.volume_cm3,
+        filament_type=filament_type,
+        infill_percent=infill_percent,
+        layer_height=layer_height,
+        quantity=quantity,
+    )
+    quote["filename"] = file.filename
+    quote["customer_name"] = customer_name.strip()
+    quote["customer_address"] = customer_address.strip()
+    quote["analysis"] = analysis.to_dict()
+
+    await store_quote(db, quote)
+    return quote
+
+
+@router.get("/quote/{quote_id}")
+async def get_stored_quote(quote_id: str, db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
+    """Liefert die Details einer bestehenden Kalkulation."""
+    quote = await get_quote(db, quote_id)
+    if not quote:
+        raise HTTPException(404, f"Angebot '{quote_id}' nicht gefunden oder abgelaufen.")
+    return quote
+
+
+@router.get("/delivery-note/{quote_id}/pdf")
+async def download_delivery_note_pdf(
+    quote_id: str,
+    lang: str = "de",
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """Erzeugt ein druckfähiges Lieferschein-PDF für den Druckauftrag."""
+    quote = await get_quote(db, quote_id)
+    if not quote:
+        raise HTTPException(404, f"Angebot '{quote_id}' nicht gefunden.")
+    company = company_profile.read()
+    pdf_bytes = generate_delivery_note_pdf(quote, company=company, lang=lang)
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="Lieferschein_{quote_id}.pdf"'},
+    )
+
+
+@router.get("/shipping-label/{quote_id}/pdf")
+async def download_shipping_label_pdf(
+    quote_id: str,
+    format: str = "100x150",
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """Erzeugt ein Thermo-Versand- oder Paket-Etikett (PDF) mit Barcode/QR-Code."""
+    quote = await get_quote(db, quote_id)
+    if not quote:
+        raise HTTPException(404, f"Angebot '{quote_id}' nicht gefunden.")
+    company = company_profile.read()
+    pdf_bytes = generate_thermal_label_pdf(quote, company=company, format_size=format)
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="Paket_Etikett_{quote_id}.pdf"'},
+    )

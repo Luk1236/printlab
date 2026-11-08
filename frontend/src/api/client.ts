@@ -1,7 +1,8 @@
 import { API_BASE, authToken, parseContentDispositionFilename, request } from './core';
 export * from './core';
 export * from './types';
-export type { LayerInspectionConfig, LayerInspectionStatus, LayerInspectionHistoryItem, LayerInspectionTestResult } from './types_finance';
+export type { LayerInspectionConfig, LayerInspectionStatus, LayerInspectionHistoryItem, LayerInspectionTestResult, MeshAnalysisResult, MaterialProfile, QuotePricing, InstantQuote } from './types_finance';
+export { portalEndpoints } from './portal_endpoints';
 export { api } from './endpoints';
 import type {
   AnnouncementList,

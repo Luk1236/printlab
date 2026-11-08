@@ -42,6 +42,7 @@ const SetupGuidePage = lazy(() =>
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage').then((m) => ({ default: m.NotificationsPage })));
 const GCodeViewerPage = lazy(() => import('./pages/GCodeViewerPage').then((m) => ({ default: m.GCodeViewerPage })));
 const KioskModePage = lazy(() => import('./pages/KioskModePage').then((m) => ({ default: m.KioskModePage })));
+const CustomerPortalPage = lazy(() => import('./pages/CustomerPortalPage').then((m) => ({ default: m.CustomerPortalPage })));
 import { useWebSocket } from './hooks/useWebSocket';
 import { usePrintProgressTitle } from './hooks/usePrintProgressTitle';
 import { useStreamTokenSync } from './hooks/useCameraStreamToken';
@@ -192,6 +193,8 @@ function App() {
 
                 {/* Pi 5 Touch Kiosk */}
                 <Route path="/kiosk" element={<KioskModePage />} />
+                <Route path="/portal" element={<CustomerPortalPage />} />
+                <Route path="/kalkulation" element={<CustomerPortalPage />} />
 
                 {/* SpoolBuddy kiosk UI */}
                 <Route element={<ProtectedRoute><WebSocketProvider><SpoolBuddyLayout /></WebSocketProvider></ProtectedRoute>}>
@@ -215,6 +218,8 @@ function App() {
                   <Route path="stats" element={<StatsPage />} />
                   <Route path="profiles" element={<ProfilesPage />} />
                   <Route path="finance" element={<PermissionRoute permission="cost_centers:read_own"><FinancePage /></PermissionRoute>} />
+                  <Route path="portal" element={<CustomerPortalPage />} />
+                  <Route path="kalkulation" element={<CustomerPortalPage />} />
                   <Route path="maintenance" element={<MaintenancePage />} />
                   <Route path="assistant" element={<AssistantPage />} />
                   <Route path="einrichtung" element={<PermissionRoute permission="settings:read"><Navigate to="/settings?tab=setup" replace /></PermissionRoute>} />

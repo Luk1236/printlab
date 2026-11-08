@@ -6,6 +6,7 @@
 
 import { createForkApi } from './forkApi';
 import { hardwareEndpoints } from './hardware_endpoints';
+import { portalEndpoints } from './portal_endpoints';
 import type { ArchivePlatesResponse, LibraryFilePlatesResponse } from '../types/plates';
 import { API_BASE, authToken, buildSlicerUrlFilename, parseContentDispositionFilename, postForBlob, request, uploadSpoolsCsv, withMediaToken, withStreamToken } from './core';
 import type {
@@ -2849,6 +2850,7 @@ export const api = {
     request<HardwareActionResponse>(`/printers/${printerId}/hardware/emergency-stop/reset`, { method: 'POST' }),
 
   ...hardwareEndpoints,
+  ...portalEndpoints,
   resolveIncompleteChange: (printerId: number) =>
     request<HardwareActionResponse>(`/printers/${printerId}/hardware/incomplete/resolve`, { method: 'POST' }),
   cancelAutoPlateChange: (printerId: number) =>

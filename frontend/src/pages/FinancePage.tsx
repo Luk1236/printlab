@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Building2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Clock3, Pencil, Trash2, Wallet } from 'lucide-react';
+import { Building2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Clock3, ExternalLink, Pencil, Sparkles, Trash2, Wallet } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, type ManualPrintRequest, type TransactionEditRequest, type WalletTransaction } from '../api/client';
@@ -684,6 +684,30 @@ export function FinancePage() {
   return (
     <div className="p-4 md:p-8 space-y-8">
       {/* Angebotskalkulator (gewerbliche Nutzung): Material, Energie, Arbeit, Aufschlag */}
+      {/* Kundenportal 2.0 & Sofortkalkulator Direktlink */}
+      <div className="rounded-xl border border-bambu-green/30 bg-gradient-to-r from-bambu-green/10 via-bambu-dark to-bambu-dark p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-lg bg-bambu-green/20 text-bambu-green shrink-0">
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="font-semibold text-white text-base">Kundenportal 2.0 & Sofort-Kalkulator</div>
+            <div className="text-xs text-bambu-gray mt-0.5">
+              3D-Modell-Upload (STL, 3MF, OBJ), automatische Volumenanalyse, Lieferschein (A4) & Thermo-Versandetiketten (100×150 mm).
+            </div>
+          </div>
+        </div>
+        <a
+          href="/portal"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-bambu-green text-black font-semibold text-sm hover:bg-bambu-green-hover transition-colors shrink-0 shadow-md shadow-bambu-green/20"
+        >
+          <span>Kundenportal öffnen</span>
+          <ExternalLink className="w-4 h-4" />
+        </a>
+      </div>
+
       <QuoteCalculator />
       <CustomersCard canEdit />
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">

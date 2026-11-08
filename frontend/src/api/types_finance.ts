@@ -204,3 +204,54 @@ export interface ManualPrintRequest {
   description?: string | null;
   created_at?: string | null;
 }
+
+
+// Phase 7: Kundenportal 2.0 & Sofort-Kalkulator
+export interface MeshAnalysisResult {
+  filename: string;
+  volume_cm3: number;
+  dimensions_mm: { x: number; y: number; z: number };
+  surface_area_cm2: number;
+  triangle_count: number;
+  is_watertight: boolean;
+  fits_bed: boolean;
+  has_thumbnail: boolean;
+  thumbnail_b64: string | null;
+  warnings: string[];
+}
+
+export interface MaterialProfile {
+  name: string;
+  density: number;
+  cost_per_kg: number;
+}
+
+export interface QuotePricing {
+  material_cost_eur: number;
+  machine_cost_eur: number;
+  setup_cost_eur: number;
+  discount_percent: number;
+  discount_amount_eur: number;
+  net_total_eur: number;
+  vat_19_eur: number;
+  gross_total_eur: number;
+  currency: string;
+}
+
+export interface InstantQuote {
+  quote_id: string;
+  filament_type: string;
+  material_name: string;
+  quantity: number;
+  volume_cm3: number;
+  infill_percent: number;
+  layer_height_mm: number;
+  single_weight_grams: number;
+  total_weight_grams: number;
+  total_print_hours: number;
+  pricing: QuotePricing;
+  filename?: string;
+  customer_name?: string;
+  customer_address?: string;
+  analysis?: MeshAnalysisResult;
+}
