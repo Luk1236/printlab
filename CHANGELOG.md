@@ -3,6 +3,17 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.50 (08.11.2026) — HX711 Spulen-Wägezelle & Barcode Handscanner Scan-to-Action (Phase 21)
+
+- **HX711 24-Bit ADC Spulen-Wägezelle (`backend/app/services/spool_scale_hx711.py`, `/api/v1/hardware/scale/*`):**
+  - Live-Gewichtserfassung und automatische Netto-Gramm-Eichung über Tara-Abzug nach Spulenkörper-Hersteller (Bambu Reusable 230g, Polymaker 240g, Prusament 195g, Cardboard 180g).
+  - Tare- und Referenzgewichts-Kalibrierung (`POST /api/v1/hardware/scale/calibrate`).
+  - Preflight-Gewichtsprüfung vor dem Druckstart (`POST /api/v1/hardware/scale/verify-preflight`): Vergleicht vorhandenes Netto-Filament gegen den Job-Bedarf und warnt zuverlässig vor Materialmangel.
+- **Handscanner 'Scan-to-Action' Workflow-Engine (`backend/app/services/handheld_scanner.py`, `/api/v1/hardware/scanner/*`):**
+  - Intelligente Mustererkennung für Barcodes, QR-Codes und RFID-Tags.
+  - Spulen-Erkennung (`spool_identify`) mit Ein-Klick-Zuweisung an AMS-Slots (`POST /api/v1/hardware/scanner/assign-spool-to-slot`).
+  - Auftrags-Aufruf (`job_inspect`) und Versand-Statusaktualisierung (`order_update`).
+
 ## v2.0.49 (08.11.2026) — Düsenwechsel-Wartungsposition & Überholte Drucker-Reinigungsroutinen
 
 - **Ergonomische Düsenwechsel- & Wartungsposition (`backend/app/services/maintenance_service_flow.py`, `POST /api/v1/maintenance/printers/{id}/service-position`):**

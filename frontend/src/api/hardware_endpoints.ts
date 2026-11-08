@@ -375,4 +375,219 @@ export const maintenanceWearApi = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+
+  // Phase 19: Purge Optimizer & Bed Damage Exclusion Zones
+  optimizePurgeVolume: (payload: {
+    gcode: string;
+    flush_multiplier?: number;
+    enable_purge_to_infill?: boolean;
+    infill_purge_ratio?: number;
+    cost_per_kg_eur?: number;
+  }) =>
+    request<{
+      analysis: Record<string, any>;
+      optimized: boolean;
+      flush_multiplier_applied?: number;
+      purge_to_infill_enabled?: boolean;
+      original_purge_grams: number;
+      optimized_purge_grams: number;
+      saved_grams: number;
+      saved_eur: number;
+      savings_percent: number;
+      message: string;
+    }>("/fleet/purge-optimize", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  autoNestParts: (payload: {
+    parts: Array<{
+      part_id: string;
+      name: string;
+      width_mm: number;
+      depth_mm: number;
+      height_mm?: number;
+      copies?: number;
+      allow_rotation?: boolean;
+      filament_grams_per_copy?: number;
+      print_minutes_per_copy?: number;
+    }>;
+    bed_width_mm?: number;
+    bed_depth_mm?: number;
+    bed_height_mm?: number;
+    margin_mm?: number;
+    spacing_mm?: number;
+    exclusion_zones?: Array<{
+      min_x: number;
+      min_y: number;
+      max_x: number;
+      max_y: number;
+      reason?: string;
+    }>;
+  }) =>
+    request<{
+      total_parts_requested: number;
+      total_parts_placed: number;
+      total_plates: number;
+      average_utilization_percent: number;
+      collision_free: boolean;
+      exclusion_safe: boolean;
+      exclusion_zones_applied: Array<any>;
+      total_filament_grams: number;
+      total_estimated_minutes: number;
+      plates: Array<any>;
+      oversized_parts: Array<any>;
+    }>("/fleet/auto-nest", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  // Service-Position & Wartungs-Routinen (Düsenwechsel & Reinigung)
+  moveToServicePosition: (printerId: string, payload?: {
+    preheat_nozzle_c?: number;
+    lower_bed_mm?: number;
+  }) =>
+    request<{
+      printer_id: string;
+      action: string;
+      success: boolean;
+      nozzle_target_temp_c: number;
+      bed_z_pos_mm: number;
+      safety_instructions: string[];
+      steps: string[];
+    }>(`/maintenance/printers/${printerId}/service-position`, {
+      method: "POST",
+      body: JSON.stringify(payload || {}),
+    }),
+  exitServicePosition: (printerId: string, payload?: { perform_home?: boolean }) =>
+    request<{
+      printer_id: string;
+      action: string;
+      success: boolean;
+      message: string;
+    }>(`/maintenance/printers/${printerId}/exit-service-position`, {
+      method: "POST",
+      body: JSON.stringify(payload || {}),
+    }),
+  runColdPullRoutine: (printerId: string, payload: {
+    step: "heat" | "cooldown" | "pull" | "inspect";
+    filament_type?: string;
+  }) =>
+    request<{
+      printer_id: string;
+      step: string;
+      target_temp_c: number;
+      status_message: string;
+      next_action: string;
+      is_completed: boolean;
+    }>(`/maintenance/printers/${printerId}/cold-pull`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  runCleaningMotion: (printerId: string, payload: {
+    routine: "carbon_rods" | "z_lead_screws" | "nozzle_wipe";
+    cycles?: number;
+  }) =>
+    request<{
+      printer_id: string;
+      routine: string;
+      cycles: number;
+      status: string;
+      instructions: string;
+    }>(`/maintenance/printers/${printerId}/cleaning-motion`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  completeMaintenanceCleaningTask: (printerId: string, payload: {
+    component: "nozzle" | "ptfe" | "z_spindle" | "steel_rods" | "carbon_filter";
+    notes?: string;
+  }) =>
+    request<{
+      success: boolean;
+      printer_id: string;
+      component: string;
+      message: string;
+      wear_status: Record<string, any>;
+    }>(`/maintenance/printers/${printerId}/complete-task`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  // Phase 21: HX711 Spool Scale & Barcode Scanner
+  getScaleStatus: () =>
+    request<{
+      is_active: boolean;
+      is_simulated: boolean;
+      pins: { dt_pin: number; sck_pin: number };
+      tare_offset: number;
+      calibration_factor: number;
+      last_gross_weight_grams: number;
+      spool_profiles: Record<string, number>;
+    }>("/hardware/scale/status"),
+  tareScale: () =>
+    request<{
+      success: boolean;
+      tare_offset: number;
+      message: string;
+    }>("/hardware/scale/tare", { method: "POST" }),
+  calibrateScale: (payload: { known_weight_grams: number }) =>
+    request<{
+      success: boolean;
+      calibration_factor: number;
+      message: string;
+    }>("/hardware/scale/calibrate", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  readSpoolWeight: (payload?: { spool_type?: string; custom_tare_grams?: number }) =>
+    request<{
+      gross_weight_grams: number;
+      tare_weight_grams: number;
+      net_filament_grams: number;
+      spool_type: string;
+      timestamp: string;
+    }>("/hardware/scale/read-spool", {
+      method: "POST",
+      body: JSON.stringify(payload || {}),
+    }),
+  verifySpoolPreflight: (payload: {
+    required_grams: number;
+    spool_type?: string;
+    safety_margin_grams?: number;
+  }) =>
+    request<{
+      can_safely_print: boolean;
+      net_filament_grams: number;
+      required_grams: number;
+      remaining_after_job_grams: number;
+      deficit_grams: number;
+      warning: string | null;
+    }>("/hardware/scale/verify-preflight", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  processScannerInput: (payload: { raw_barcode: string }) =>
+    request<{
+      action_type: "spool_identify" | "job_inspect" | "order_update" | "unknown";
+      code: string;
+      matched_entity: Record<string, any>;
+      message: string;
+    }>("/hardware/scanner/scan", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  assignSpoolViaScan: (payload: {
+    spool_id: string;
+    printer_id: string;
+    tray_slot: number;
+  }) =>
+    request<{
+      success: boolean;
+      printer_id: string;
+      tray_slot: number;
+      spool: Record<string, any>;
+      message: string;
+    }>("/hardware/scanner/assign-spool-to-slot", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
 };
