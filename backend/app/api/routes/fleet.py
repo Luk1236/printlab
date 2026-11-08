@@ -27,6 +27,13 @@ from backend.app.core.auth import RequirePermissionIfAuthEnabled
 from backend.app.core.database import get_db
 from backend.app.core.permissions import Permission
 from backend.app.models.printer import Printer
+from backend.app.schemas.fleet import (
+    FleetCommandRequest,
+    FleetCommandResponse,
+    FleetCommandResultItem,
+    FleetJobSummary,
+    FleetOverviewResponse,
+)
 from backend.app.services.fleet_load_balancer import (
     MIN_DISPATCH_SCORE,
     calculate_printer_fitness,
@@ -38,6 +45,13 @@ from backend.app.services.wear_tracker import get_printer_wear
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/fleet", tags=["fleet"])
+
+# Operativer Wartungsstatus fr Flotten-Workflows
+_maintenance_printers: set[int] = set()
+
+
+def _is_printer_in_maintenance(p: Printer) -> bool:
+    return p.id in _maintenance_printers or bool(getattr(p, "in_maintenance", False))
 
 
 class DispatchJobRequest(BaseModel):
@@ -230,3 +244,237 @@ async def evaluate_printer_fitness(
         "can_start_immediately": score >= MIN_DISPATCH_SCORE,
         "reasons": reasons,
     }
+
+
+@router.get("/overview", response_model=FleetOverviewResponse)
+async def get_fleet_overview(
+    _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_READ),
+    db: AsyncSession = Depends(get_db),
+) -> FleetOverviewResponse:
+    """Aggregierte Echtzeit-Übersicht aller aktiven Drucker, Jobs und Betriebszustände."""
+    result = await db.execute(select(Printer).where(Printer.is_active.is_(True)))
+    printers = list(result.scalars().all())
+
+    total = len(printers)
+    online = 0
+    printing = 0
+    paused = 0
+    idle = 0
+    in_maintenance = 0
+    hms_errors = 0
+    active_jobs: list[FleetJobSummary] = []
+    locations: dict[str, int] = {}
+
+    for p in printers:
+        loc = p.location or "Standard"
+        locations[loc] = locations.get(loc, 0) + 1
+
+        if _is_printer_in_maintenance(p):
+            in_maintenance += 1
+
+        status = printer_manager.get_status(p.id)
+        if not status:
+            idle += 1
+            continue
+
+        if getattr(status, "connected", False):
+            online += 1
+
+        state = str(getattr(status, "state", "IDLE") or "IDLE").upper()
+        if state in ("PREPARE", "SLICING", "RUNNING"):
+            printing += 1
+            active_jobs.append(
+                FleetJobSummary(
+                    printer_id=p.id,
+                    printer_name=p.name or f"Drucker {p.id}",
+                    model=getattr(p, "model", None),
+                    location=p.location,
+                    state=state,
+                    subtask_name=getattr(status, "subtask_name", None) or getattr(status, "gcode_file", None),
+                    gcode_file=getattr(status, "gcode_file", None),
+                    progress=int(getattr(status, "progress", 0) or 0),
+                    remaining_time_minutes=getattr(status, "remaining_time", None),
+                    current_layer=int(getattr(status, "layer_num", 0) or 0),
+                    total_layers=int(getattr(status, "total_layers", 0) or 0),
+                )
+            )
+        elif state == "PAUSE":
+            paused += 1
+        elif state in ("IDLE", "FINISH", "FAILED"):
+            idle += 1
+
+        if getattr(status, "hms_errors", None):
+            hms_errors += 1
+
+    return FleetOverviewResponse(
+        total_printers=total,
+        online_printers=online,
+        printing_count=printing,
+        paused_count=paused,
+        idle_count=idle,
+        maintenance_count=in_maintenance,
+        hms_error_count=hms_errors,
+        active_jobs=active_jobs,
+        locations=locations,
+    )
+
+
+@router.post("/command", response_model=FleetCommandResponse)
+async def execute_fleet_command(
+    req: FleetCommandRequest,
+    _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_CONTROL),
+    db: AsyncSession = Depends(get_db),
+) -> FleetCommandResponse:
+    """Führt Batch-Befehle (pause, resume, stop, emergency_stop, lights, maintenance) über die Flotte aus."""
+    query = select(Printer).where(Printer.is_active.is_(True))
+    if req.printer_ids:
+        query = query.where(Printer.id.in_(req.printer_ids))
+    if req.location:
+        query = query.where(Printer.location == req.location)
+
+    result = await db.execute(query)
+    printers = list(result.scalars().all())
+
+    succeeded: list[int] = []
+    failed: list[FleetCommandResultItem] = []
+    skipped: list[FleetCommandResultItem] = []
+
+    for p in printers:
+        client = printer_manager.get_client(p.id)
+        status = printer_manager.get_status(p.id)
+        state = str(getattr(status, "state", "IDLE") or "IDLE").upper() if status else "OFFLINE"
+
+        try:
+            if req.action == "pause":
+                if state != "RUNNING":
+                    skipped.append(
+                        FleetCommandResultItem(
+                            printer_id=p.id, name=p.name, reason=f"Drucker nicht im Status RUNNING ({state})"
+                        )
+                    )
+                    continue
+                if not client or not getattr(client, "connected", False):
+                    failed.append(
+                        FleetCommandResultItem(printer_id=p.id, name=p.name, reason="Nicht mit Drucker verbunden")
+                    )
+                    continue
+                if client.pause_print():
+                    succeeded.append(p.id)
+                else:
+                    failed.append(
+                        FleetCommandResultItem(printer_id=p.id, name=p.name, reason="Pause-Kommando abgelehnt")
+                    )
+
+            elif req.action == "resume":
+                if state != "PAUSE":
+                    skipped.append(
+                        FleetCommandResultItem(printer_id=p.id, name=p.name, reason=f"Drucker nicht pausiert ({state})")
+                    )
+                    continue
+                if not client or not getattr(client, "connected", False):
+                    failed.append(
+                        FleetCommandResultItem(printer_id=p.id, name=p.name, reason="Nicht mit Drucker verbunden")
+                    )
+                    continue
+                if client.resume_print():
+                    succeeded.append(p.id)
+                else:
+                    failed.append(
+                        FleetCommandResultItem(printer_id=p.id, name=p.name, reason="Resume-Kommando abgelehnt")
+                    )
+
+            elif req.action in ("stop", "emergency_stop"):
+                if state not in ("PREPARE", "SLICING", "RUNNING", "PAUSE"):
+                    skipped.append(
+                        FleetCommandResultItem(printer_id=p.id, name=p.name, reason=f"Kein aktiver Drucklauf ({state})")
+                    )
+                    continue
+                if not client or not getattr(client, "connected", False):
+                    failed.append(
+                        FleetCommandResultItem(printer_id=p.id, name=p.name, reason="Nicht mit Drucker verbunden")
+                    )
+                    continue
+                ok = client.stop_print()
+                if req.action == "emergency_stop":
+                    client.send_gcode("M112\n")
+                if ok:
+                    succeeded.append(p.id)
+                else:
+                    failed.append(
+                        FleetCommandResultItem(printer_id=p.id, name=p.name, reason="Stopp-Kommando fehlgeschlagen")
+                    )
+
+            elif req.action == "chamber_light_on":
+                if not client or not getattr(client, "connected", False):
+                    failed.append(
+                        FleetCommandResultItem(printer_id=p.id, name=p.name, reason="Nicht mit Drucker verbunden")
+                    )
+                    continue
+                if client.set_chamber_light(True):
+                    succeeded.append(p.id)
+                else:
+                    failed.append(
+                        FleetCommandResultItem(printer_id=p.id, name=p.name, reason="Lichtsteuerung fehlgeschlagen")
+                    )
+
+            elif req.action == "chamber_light_off":
+                if not client or not getattr(client, "connected", False):
+                    failed.append(
+                        FleetCommandResultItem(printer_id=p.id, name=p.name, reason="Nicht mit Drucker verbunden")
+                    )
+                    continue
+                if client.set_chamber_light(False):
+                    succeeded.append(p.id)
+                else:
+                    failed.append(
+                        FleetCommandResultItem(printer_id=p.id, name=p.name, reason="Lichtsteuerung fehlgeschlagen")
+                    )
+
+            elif req.action == "maintenance_enter":
+                if _is_printer_in_maintenance(p):
+                    skipped.append(
+                        FleetCommandResultItem(printer_id=p.id, name=p.name, reason="Bereits im Wartungsmodus")
+                    )
+                    continue
+                _maintenance_printers.add(p.id)
+                printer_manager.disconnect_printer(p.id)
+                succeeded.append(p.id)
+
+            elif req.action == "maintenance_exit":
+                if not _is_printer_in_maintenance(p):
+                    skipped.append(
+                        FleetCommandResultItem(printer_id=p.id, name=p.name, reason="Nicht im Wartungsmodus")
+                    )
+                    continue
+                _maintenance_printers.discard(p.id)
+                await printer_manager.connect_printer(p)
+                succeeded.append(p.id)
+
+        except Exception as ex:
+            logger.exception("Fehler beim Flottenkommando %s fuer Drucker %s: %s", req.action, p.id, ex)
+            failed.append(FleetCommandResultItem(printer_id=p.id, name=p.name, reason=str(ex)))
+
+    return FleetCommandResponse(
+        action=req.action,
+        total_targeted=len(printers),
+        succeeded=succeeded,
+        failed=failed,
+        skipped=skipped,
+    )
+
+
+@router.post("/sync", response_model=dict[str, Any])
+async def sync_fleet_telemetry(
+    _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_CONTROL),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Fragt synchrone Telemetrie-Aktualisierungen für alle aktiven Drucker an."""
+    result = await db.execute(select(Printer).where(Printer.is_active.is_(True)))
+    printers = list(result.scalars().all())
+
+    requested = 0
+    for p in printers:
+        if printer_manager.request_status_update(p.id):
+            requested += 1
+
+    return {"total_printers": len(printers), "updates_requested": requested}

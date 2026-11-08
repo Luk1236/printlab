@@ -3,6 +3,22 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.37 (08.11.2026) — Erweitertes Drucker-Flottenmanagement & Batch-Steuerung (Phase 10)
+
+- **Echtzeit-Flottenübersicht (`GET /api/v1/fleet/overview`):**
+  - Aggregierte Live-Kennzahlen über alle aktiven Drucker (`total_printers`, `online_printers`, `printing_count`, `paused_count`, `idle_count`, `maintenance_count`, `hms_error_count`).
+  - Detaillierte Job-Zusammenfassung (`FleetJobSummary`) für alle laufenden Druckaufträge inklusive Fortschritt, verbleibender Druckzeit, aktuellem Layer und Standort-Gruppierung (`locations`).
+- **Batch-Kommandosteuerung über die gesamte Flotte (`POST /api/v1/fleet/command`):**
+  - Unterstützung für flottenweite Sammelaktionen: `pause`, `resume`, `stop`, `emergency_stop` (inkl. `M112`), `chamber_light_on`, `chamber_light_off`, `maintenance_enter` und `maintenance_exit`.
+  - Flexible Zielauswahl über explizite `printer_ids` oder Standortfilter (`location`), mit detaillierter Ergebnisrückmeldung (`succeeded`, `failed`, `skipped`).
+- **Synchrone Flotten-Telemetrie-Aktualisierung (`POST /api/v1/fleet/sync`):**
+  - Erzwingt sofortige Status-Updates über `printer_manager.request_status_update` für alle aktiven Drucker der Farm.
+- **Pydantic-Schemas & Frontend-API-Anbindung:**
+  - Neues Schema-Modul `backend/app/schemas/fleet.py` (`FleetCommandRequest`, `FleetCommandResponse`, `FleetCommandResultItem`, `FleetJobSummary`, `FleetOverviewResponse`).
+  - Frontend-Integration in `frontend/src/api/hardware_endpoints.ts` (`getFleetOverview`, `executeFleetCommand`, `syncFleetTelemetry`).
+- **Tests & Qualitätssicherung:**
+  - Neue Unit-Test-Suite `backend/tests/unit/test_fleet_routes.py` für Flottenübersicht, Pause/Resume-Batch, Not-Halt (`M112`), Bauraumlicht, Wartungsmodus und Telemetrie-Sync (100% grün).
+
 ## v2.0.36 (08.11.2026) — Vollständige Barrierefreiheit & WCAG 2.1 AA Audits (Phase 9)
 
 - **Zentraler Focus-Trap & Keyboard-Management Hook (`useFocusTrap.ts`):**

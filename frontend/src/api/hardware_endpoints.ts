@@ -73,4 +73,58 @@ export const hardwareEndpoints = {
       method: 'POST',
     });
   },
+
+  // Phase 10: Fleet Management (Overview, Batch Commands, Telemetry Sync)
+  getFleetOverview: () =>
+    request<{
+      total_printers: number;
+      online_printers: number;
+      printing_count: number;
+      paused_count: number;
+      idle_count: number;
+      maintenance_count: number;
+      hms_error_count: number;
+      active_jobs: Array<{
+        printer_id: number;
+        printer_name: string;
+        model?: string | null;
+        location?: string | null;
+        state: string;
+        subtask_name?: string | null;
+        gcode_file?: string | null;
+        progress: number;
+        remaining_time_minutes?: number | null;
+        current_layer: number;
+        total_layers: number;
+      }>;
+      locations: Record<string, number>;
+    }>('/fleet/overview'),
+  executeFleetCommand: (payload: {
+    action:
+      | 'pause'
+      | 'resume'
+      | 'stop'
+      | 'emergency_stop'
+      | 'chamber_light_on'
+      | 'chamber_light_off'
+      | 'maintenance_enter'
+      | 'maintenance_exit';
+    printer_ids?: number[] | null;
+    location?: string | null;
+    reason?: string | null;
+  }) =>
+    request<{
+      action: string;
+      total_targeted: number;
+      succeeded: number[];
+      failed: Array<{ printer_id: number; name: string; reason: string }>;
+      skipped: Array<{ printer_id: number; name: string; reason: string }>;
+    }>('/fleet/command', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  syncFleetTelemetry: () =>
+    request<{ total_printers: number; updates_requested: number }>('/fleet/sync', {
+      method: 'POST',
+    }),
 };
