@@ -88,6 +88,12 @@ def http_probe(url: str, timeout: float = 8.0) -> bool:
 
 def systemd_restart() -> bool:
     try:
+        subprocess.run(  # noqa: S603 - feste Argumentliste, keine Shell
+            ["systemctl", "--user", "reset-failed", "printlab.service"],  # noqa: S607
+            capture_output=True,
+            timeout=15,
+            check=False,
+        )
         result = subprocess.run(  # noqa: S603 - feste Argumentliste, keine Shell
             ["systemctl", "--user", "restart", "printlab.service"],  # noqa: S607
             capture_output=True,

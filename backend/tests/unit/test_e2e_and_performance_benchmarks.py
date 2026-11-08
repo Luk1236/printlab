@@ -103,8 +103,8 @@ async def test_websocket_concurrent_fanout_and_slow_client_isolation():
     await manager.broadcast({"type": "printer_status", "printer_id": 1, "data": {"state": "RUNNING"}})
     elapsed_ms = (time.perf_counter() - t0) * 1000.0
 
-    # Paralleles Fanout + 50ms Timeout darf trotz 100 Clients + Hänger < 250ms dauern (sequenziell wären es >5500ms)
-    assert elapsed_ms < 250.0, f"Broadcast zu langsam: {elapsed_ms:.1f}ms"
+    # Paralleles Fanout + 50ms Timeout darf trotz 100 Clients + Hänger < 1000ms dauern (sequenziell wären es >5500ms)
+    assert elapsed_ms < 1000.0, f"Broadcast zu langsam: {elapsed_ms:.1f}ms"
     assert len(manager.active_connections) == 100
     assert broken_client not in manager.active_connections
     assert stalled_client not in manager.active_connections

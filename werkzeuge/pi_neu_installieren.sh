@@ -94,6 +94,7 @@ cat > "$HOME/.config/systemd/user/printlab.service" <<'EOF'
 [Unit]
 Description=PrintLab
 After=network-online.target
+StartLimitIntervalSec=0
 
 [Service]
 WorkingDirectory=%h/printlab
@@ -111,6 +112,7 @@ ExecStartPre=-%h/printlab/.venv/bin/python %h/printlab/werkzeuge/update_guard.py
 ExecStart=%h/printlab/.venv/bin/python -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --loop asyncio
 Restart=always
 RestartSec=5
+OOMScoreAdjust=-200
 
 [Install]
 WantedBy=default.target
@@ -161,7 +163,11 @@ Persistent=true
 [Install]
 WantedBy=timers.target
 EOF
+# Linger aktivieren, damit systemd --user die Dienste (printlab.service & Timer) beim Booten
+# automatisch ohne aktive SSH-Sitzung startet und beim Ausloggen nicht beendet:
+loginctl enable-linger "$USER" 2>/dev/null || sudo -n loginctl enable-linger "$USER" 2>/dev/null || true
 systemctl --user daemon-reload
+systemctl --user reset-failed printlab.service 2>/dev/null || true
 systemctl --user enable --now printlab.service
 systemctl --user enable --now printlab-watch.timer
 systemctl --user enable --now printlab-backup.timer

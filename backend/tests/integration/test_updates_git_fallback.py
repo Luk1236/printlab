@@ -163,3 +163,63 @@ class TestTargetDiscoveryFallsBack:
     async def test_no_target_when_git_has_nothing(self, db_session):
         with limited_api(), patch.object(updates_module, "_git_tag_releases", AsyncMock(return_value=[])):
             assert await updates_module._discover_target_release(db_session) is None
+
+    @pytest.mark.asyncio
+    async def test_target_tag_comes_from_git_on_http_error(self, db_session):
+        import httpx
+
+        class _ErrClient:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *_):
+                return None
+
+            async def get(self, *_, **__):
+                raise httpx.ConnectError("network down")
+
+        with (
+            patch.object(httpx, "AsyncClient", _ErrClient),
+            patch.object(updates_module, "_git_tag_releases", AsyncMock(return_value=FAKE)),
+        ):
+            assert await updates_module._discover_target_release(db_session) == "v1.9.0"
+
+    @pytest.mark.asyncio
+    async def test_perform_update_skips_npm_build_when_prebuilt_static_exists(self, tmp_path):
+        from unittest.mock import MagicMock
+
+        app_dir = tmp_path / "app"
+        data_dir = app_dir / "data"
+        (app_dir / "frontend").mkdir(parents=True)
+        (app_dir / "static").mkdir(parents=True)
+        (app_dir / "static" / "index.html").write_text("<html></html>")
+        data_dir.mkdir(parents=True)
+        (app_dir / "requirements.txt").write_text("fastapi\n")
+
+        calls: list[tuple] = []
+
+        async def fake_exec(*args, **kwargs):
+            calls.append(args)
+            proc = MagicMock()
+            proc.communicate = AsyncMock(return_value=(b"", b""))
+            proc.returncode = 0
+            return proc
+
+        with (
+            patch.object(updates_module.settings, "base_dir", data_dir),
+            patch.object(updates_module.settings, "app_dir", app_dir),
+            patch.object(
+                updates_module,
+                "_find_executable",
+                side_effect=lambda name: f"/usr/bin/{name}",
+            ),
+            patch.object(updates_module.asyncio, "create_subprocess_exec", side_effect=fake_exec),
+            patch("backend.app.services.update_guard.prepare", return_value={"backup_dir": "x"}),
+            patch("backend.app.services.update_guard.ensure_systemd_guard", return_value=False),
+            patch.object(updates_module.update_signature, "policy", return_value={"enforced": False, "reason": None}),
+        ):
+            await updates_module._perform_update("v2.0.40")
+
+        npm_calls = [c for c in calls if c and "npm" in str(c[0])]
+        assert not npm_calls, f"npm build must be skipped when static/index.html exists; got {npm_calls}"
+

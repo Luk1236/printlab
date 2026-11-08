@@ -51,16 +51,20 @@ KExecWatchdogSec=2min
 EOF
 echo "[OK] Systemd Runtime-Watchdog auf 15s konfiguriert."
 
-# 4. Automatischer Kernel-Reboot bei Panic / Freeze
+# 4. Automatischer Kernel-Reboot bei Panic / Freeze / Deadlock
 cat > /etc/sysctl.d/99-crash-reboot.conf << 'EOF'
-# Nach einem Kernel-Panic wartet das System 10 Sekunden und rebootet dann sauber
+# Nach einem Kernel-Panic oder Softlockup wartet das System 10 Sekunden und rebootet dann sauber
 kernel.panic = 10
 kernel.panic_on_oops = 1
-# OOM-Killer beendet speicherhungrige Prozesse statt sofort den Kernel crashen zu lassen
+kernel.softlockup_panic = 1
+kernel.hung_task_panic = 1
+kernel.hung_task_timeout_secs = 120
+# OOM-Killer beendet sofort den speicherhungrigen Prozess statt das System im Swap-Thrashing einzufrieren
 vm.panic_on_oom = 0
+vm.oom_kill_allocating_task = 1
 EOF
 sysctl -p /etc/sysctl.d/99-crash-reboot.conf 2>/dev/null || true
-echo "[OK] Kernel-Panic Auto-Reboot auf 10s gesetzt."
+echo "[OK] Kernel-Panic & Deadlock Auto-Reboot auf 10s sowie OOM-Sofort-Schutz gesetzt."
 
 # 5. Persistentes systemd-Journal (damit Crash-Logs nach Reboot erhalten bleiben)
 mkdir -p /etc/systemd/journald.conf.d
@@ -89,16 +93,47 @@ if [[ -f /etc/dphys-swapfile ]]; then
     fi
 fi
 
-# 7. PrintLab Service Auto-Restart absichern
+# 7. PrintLab Service Auto-Restart & User-Linger absichern (System- und User-Units)
 if systemctl list-unit-files printlab.service &>/dev/null; then
     mkdir -p /etc/systemd/system/printlab.service.d
     cat > /etc/systemd/system/printlab.service.d/restart.conf << 'EOF'
+[Unit]
+StartLimitIntervalSec=0
+
 [Service]
 Restart=always
 RestartSec=3s
+OOMScoreAdjust=-200
 EOF
     systemctl daemon-reload
-    echo "[OK] PrintLab Service Auto-Restart abgesichert (Restart=always)."
+    systemctl reset-failed printlab.service 2>/dev/null || true
+    echo "[OK] PrintLab System-Service Auto-Restart abgesichert (Restart=always, StartLimitIntervalSec=0)."
+fi
+
+TARGET_USER="${SUDO_USER:-$(logname 2>/dev/null || echo pi)}"
+if id "$TARGET_USER" &>/dev/null; then
+    loginctl enable-linger "$TARGET_USER" 2>/dev/null || true
+    echo "[OK] systemd Linger fuer Benutzer '$TARGET_USER' aktiviert (Dienst startet beim Booten ohne Login)."
+    USER_HOME=$(getent passwd "$TARGET_USER" | cut -d: -f6)
+    USER_UID=$(id -u "$TARGET_USER")
+    if [[ -n "$USER_HOME" && -d "$USER_HOME/.config/systemd/user" ]]; then
+        mkdir -p "$USER_HOME/.config/systemd/user/printlab.service.d"
+        cat > "$USER_HOME/.config/systemd/user/printlab.service.d/restart.conf" << 'EOF'
+[Unit]
+StartLimitIntervalSec=0
+
+[Service]
+Restart=always
+RestartSec=5s
+OOMScoreAdjust=-200
+EOF
+        chown -R "$TARGET_USER:$TARGET_USER" "$USER_HOME/.config/systemd/user/printlab.service.d"
+        sudo -u "$TARGET_USER" XDG_RUNTIME_DIR="/run/user/$USER_UID" systemctl --user daemon-reload 2>/dev/null || true
+        sudo -u "$TARGET_USER" XDG_RUNTIME_DIR="/run/user/$USER_UID" systemctl --user reset-failed printlab.service 2>/dev/null || true
+        sudo -u "$TARGET_USER" XDG_RUNTIME_DIR="/run/user/$USER_UID" systemctl --user enable --now printlab.service 2>/dev/null || true
+        sudo -u "$TARGET_USER" XDG_RUNTIME_DIR="/run/user/$USER_UID" systemctl --user enable --now printlab-watch.timer 2>/dev/null || true
+        echo "[OK] PrintLab User-Service & Watch-Timer fuer '$TARGET_USER' abgesichert und neu geladen."
+    fi
 fi
 
 # 8. Status-Check Hardware

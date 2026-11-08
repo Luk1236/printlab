@@ -3,6 +3,19 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.40 (08.11.2026) — Raspberry Pi OOM-Absturzschutz beim Update & systemd Auto-Restart-Härtung
+
+- **Vermeidung von OOM-Kernel-Freezes bei In-App-Updates (`backend/app/api/routes/updates.py`):**
+  - `_perform_update` überspringt `npm install` und `npm run build` (`vite build`) auf dem Zielgerät automatisch, sobald das vorab gebaute Frontend (`static/index.html`) bereits im Repository liegt (optional erzwingbar über `PRINTLAB_FORCE_FRONTEND_BUILD=1`).
+  - Verhindert den >2,5-GB-RAM-Peak beim Kompilieren von >3.000 Vite-Modulen auf dem Raspberry Pi sowie das Löschen von `static/` (`emptyOutDir`) bei einem Abbruch mitten im Build.
+- **Zuverlässiger Git-Tag-Fallback bei Updates (`backend/app/api/routes/updates.py`):**
+  - Doppeltes `return None` im `HTTPError`-Fallback von `_discover_target_release` entfernt und automatischen Fallback auf `_git_tag_releases()` ergänzt, wenn GitHub `/releases` eine leere Liste oder `404` liefert.
+- **Automatischer Neustart nach Boot & Absturz (`werkzeuge/pi_neu_installieren.sh`, `werkzeuge/pi_absturzschutz.sh`, `werkzeuge/ueberwachung.py`):**
+  - `loginctl enable-linger` wird sowohl bei der Installation als auch im Absturzschutz-Skript aktiviert, damit `systemd --user` den Dienst `printlab.service` und `printlab-watch.timer` beim Booten ohne offene SSH-Sitzung startet.
+  - `StartLimitIntervalSec=0` und `OOMScoreAdjust=-200` in `printlab.service` sowie Drop-In `restart.conf` für User- und System-Units eingetragen, damit systemd nach mehreren Startfehlern nicht dauerhaft in `start-limit-hit` stehen bleibt.
+  - `systemctl --user reset-failed printlab.service` vor jedem Neustart in `werkzeuge/ueberwachung.py` ergänzt.
+  - Kernel-Sysctl (`vm.oom_kill_allocating_task=1`, `kernel.softlockup_panic=1`, `kernel.hung_task_panic=1`) in `werkzeuge/pi_absturzschutz.sh` verschärft, damit der Pi bei Speicherknappheit nicht im SD-Swap-Thrashing einfriert.
+
 ## v2.0.39 (08.11.2026) — Finaler Gesamttest & Exzellenz-Zertifizierung aller 10 Domänen (Phase 12)
 
 - **Vollständige Verifikation aller 12 Ausbauphasen (v2.0.28 bis v2.0.39):**

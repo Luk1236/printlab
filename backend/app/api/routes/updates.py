@@ -704,6 +704,9 @@ async def check_for_updates(
                 }
 
             if response.status_code == 404:
+                via_git = await _git_tag_releases()
+                if via_git:
+                    return _build_update_info(via_git, include_beta)
                 # No releases yet — or a private repo that needs a token to be seen at all
                 no_token = not (os.environ.get("PRINTLAB_GITHUB_TOKEN") or "").strip()
                 hint = (
@@ -727,6 +730,10 @@ async def check_for_updates(
 
             response.raise_for_status()
             releases = response.json()
+            if not releases:
+                via_git = await _git_tag_releases()
+                if via_git:
+                    releases = via_git
 
             return _build_update_info(releases, include_beta)
 
@@ -789,12 +796,15 @@ async def _discover_target_release(db: AsyncSession) -> str | None:
                 else:
                     response.raise_for_status()
                     releases = response.json()
+                    if not releases:
+                        releases = await _git_tag_releases()
+                        if not releases:
+                            return None
         except (httpx.HTTPError, ValueError) as exc:
             logger.warning("Could not fetch GitHub releases for update target (%s); falling back to git tags", exc)
             releases = await _git_tag_releases()
             if not releases:
                 return None
-            return None
 
     for release in releases:
         tag = release.get("tag_name", "")
@@ -1073,11 +1083,20 @@ async def _perform_update(target_ref: str):
         if process.returncode != 0:
             logger.warning("pip install warning: %s", stderr.decode() if stderr else "unknown")
 
-        # Try to build frontend if npm is available (optional - static files are pre-built)
+        # Only rebuild frontend on the device if pre-built static/index.html is missing
+        # or PRINTLAB_FORCE_FRONTEND_BUILD=1 is explicitly set. Running `npm install` +
+        # `vite build` on a Raspberry Pi consumes >2.5 GB RAM (OOM-freezing the system)
+        # and wipes `static/` at build start via emptyOutDir.
         npm_path = _find_executable("npm")
         frontend_dir = app_dir / "frontend"
+        prebuilt_index = app_dir / "static" / "index.html"
+        force_frontend_build = (os.environ.get("PRINTLAB_FORCE_FRONTEND_BUILD") or "").strip().lower() in (
+            "1",
+            "true",
+            "yes",
+        )
 
-        if npm_path and frontend_dir.exists():
+        if npm_path and frontend_dir.exists() and (force_frontend_build or not prebuilt_index.is_file()):
             _update_status = {
                 "status": "installing",
                 "progress": 70,
@@ -1109,7 +1128,7 @@ async def _perform_update(target_ref: str):
             if process.returncode != 0:
                 logger.warning("Frontend build warning: %s", stderr.decode() if stderr else "unknown")
         else:
-            logger.info("npm not found or frontend dir missing - using pre-built static files")
+            logger.info("Using pre-built static files from repository (skipping on-device npm build)")
 
         restarting = _schedule_restart_after_update()
         _update_status = {
