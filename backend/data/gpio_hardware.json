@@ -1,0 +1,12 @@
+{
+  "enabled": false,
+  "is_simulation": false,
+  "estop_pin": 26,
+  "estop_mode": "nc",
+  "button_ack_pin": 16,
+  "button_pause_pin": 20,
+  "status_led_pin": 21,
+  "debounce_ms": 50,
+  "door_servo_min_angle": 12.0,
+  "door_servo_max_angle": 150.0
+}

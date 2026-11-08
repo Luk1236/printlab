@@ -3,6 +3,17 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.43 (08.11.2026) — B2B & ISO-9001 Qualitätszertifikat PDF & Auto-Skip Defekt-Ausschluss (Phase 14)
+
+- **DIN A4 ISO-9001 Werks- und Qualitätsprüfzertifikat (`backend/app/services/quality_certificate.py`, `backend/app/api/routes/quality.py`):**
+  - Automatisierte PDF-Generierung für Industrie- und B2B-Kunden nach DIN EN 10204 2.1 / ISO-9001.
+  - Enthält Druckparameter (Druckzeit, Schichtdicke, Filamentcharge, Nozzle-Ø, Betttemperatur), Qualitätsindex-Score (0–100), Güteklasse (A+, A, B, C), First-Layer-Score, Temperaturabweichung, kryptografischen SHA-256 Prüfhash und QR-Code zur Verifizierung.
+  - Endpunkte: `POST /api/v1/quality/certificate/preview`, `POST /api/v1/quality/certificate/pdf`, `GET /api/v1/quality/certificate/{archive_id}/pdf`.
+- **Echtzeit-Ausschluss defekter Einzelteile auf dem Druckbett (`backend/app/services/auto_skip_objects.py`):**
+  - 2D-Objekt-Mapping von optisch oder per Sensor erkannten Fehlerkoordinaten (`defect_x_mm`, `defect_y_mm`) auf die Bounding-Boxen der platzierten Druckobjekte.
+  - Bambu Lab MQTT-Befehlsinjektion (`skip_objects([id])`) zur selektiven Fortsetzung des Restdrucks ohne Abbruch der gesamten Bauplatte.
+  - Endpunkte: `POST /api/v1/quality/printers/{printer_id}/skip-objects`, `POST /api/v1/quality/printers/{printer_id}/detect-and-skip`.
+
 ## v2.0.42 (08.11.2026) — Raspberry Pi Boot-Crash-Fix (Ollama LLM-Warmup-Sperre & Tailscale-Persistenz)
 
 - **Kein automatisches Ollama-LLM-Warmup mehr beim Systemstart (`backend/app/services/assistant_autoconfig.py`):**

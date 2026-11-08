@@ -215,3 +215,47 @@ export const hardwareEndpoints = {
       body: JSON.stringify(payload),
     }),
 };
+
+export const qualityApi = {
+  previewCertificate: (payload: {
+    first_layer_score?: number;
+    temp_dev_c?: number;
+    anomaly_count?: number;
+  }) =>
+    request<{
+      quality_score: number;
+      quality_grade: string;
+      status: string;
+    }>('/quality/certificate/preview', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  skipObjects: (printerId: number, payload: { object_ids: number[]; reason?: string }) =>
+    request<{
+      success: boolean;
+      printer_id: number;
+      skipped_object_ids: number[];
+      message: string;
+    }>(`/quality/printers/${printerId}/skip-objects`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  detectAndSkip: (
+    printerId: number,
+    payload: {
+      defect_x_mm: number;
+      defect_y_mm: number;
+      plate_objects: Array<{ id: number; name?: string; min_x: number; max_x: number; min_y: number; max_y: number }>;
+      reason?: string;
+    }
+  ) =>
+    request<{
+      success: boolean;
+      printer_id: number;
+      matched_object_id: number | null;
+      message: string;
+    }>(`/quality/printers/${printerId}/detect-and-skip`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+};
