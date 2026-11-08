@@ -1,16 +1,46 @@
 import asyncio
 import json
+import time
 from typing import Any
 
 from fastapi import WebSocket
 
 
 class ConnectionManager:
-    """Manages WebSocket connections and broadcasts."""
+    """Manages WebSocket connections and broadcasts with concurrent fan-out and slow-client isolation."""
 
-    def __init__(self):
+    def __init__(self, send_timeout: float = 2.0):
         self.active_connections: list[WebSocket] = []
         self._lock = asyncio.Lock()
+        self.send_timeout: float = send_timeout
+        self.total_broadcasts: int = 0
+        self.total_messages_sent: int = 0
+        self.dropped_connections: int = 0
+        self.last_broadcast_ms: float = 0.0
+        self.max_broadcast_ms: float = 0.0
+        self._cumulative_broadcast_ms: float = 0.0
+
+    def reset_metrics(self) -> None:
+        """Reset broadcast telemetry counters."""
+        self.total_broadcasts = 0
+        self.total_messages_sent = 0
+        self.dropped_connections = 0
+        self.last_broadcast_ms = 0.0
+        self.max_broadcast_ms = 0.0
+        self._cumulative_broadcast_ms = 0.0
+
+    def get_metrics(self) -> dict[str, Any]:
+        """Return live WebSocket fan-out performance and health telemetry."""
+        avg_ms = self._cumulative_broadcast_ms / self.total_broadcasts if self.total_broadcasts > 0 else 0.0
+        return {
+            "active_connections": len(self.active_connections),
+            "total_broadcasts": self.total_broadcasts,
+            "total_messages_sent": self.total_messages_sent,
+            "dropped_connections": self.dropped_connections,
+            "last_broadcast_ms": round(self.last_broadcast_ms, 3),
+            "avg_broadcast_ms": round(avg_ms, 3),
+            "max_broadcast_ms": round(self.max_broadcast_ms, 3),
+        }
 
     async def connect(self, websocket: WebSocket):
         """Accept a new WebSocket connection."""
@@ -24,24 +54,50 @@ class ConnectionManager:
             if websocket in self.active_connections:
                 self.active_connections.remove(websocket)
 
+    async def _send_with_timeout(self, connection: WebSocket, data: str) -> WebSocket | None:
+        """Send payload to a single client with timeout protection; returns connection on failure."""
+        try:
+            await asyncio.wait_for(connection.send_text(data), timeout=self.send_timeout)
+            return None
+        except Exception:
+            return connection
+
+    async def _fanout(self, targets: list[WebSocket], data: str) -> None:
+        """Concurrently deliver *data* to *targets* outside the connection lock and prune failed sockets."""
+        if not targets:
+            return
+
+        t0 = time.perf_counter()
+        results = await asyncio.gather(*(self._send_with_timeout(conn, data) for conn in targets))
+        elapsed_ms = (time.perf_counter() - t0) * 1000.0
+
+        disconnected = [conn for conn in results if conn is not None]
+        delivered = len(targets) - len(disconnected)
+
+        self.total_broadcasts += 1
+        self.total_messages_sent += delivered
+        self.last_broadcast_ms = elapsed_ms
+        self._cumulative_broadcast_ms += elapsed_ms
+        if elapsed_ms > self.max_broadcast_ms:
+            self.max_broadcast_ms = elapsed_ms
+
+        if disconnected:
+            async with self._lock:
+                for conn in disconnected:
+                    if conn in self.active_connections:
+                        self.active_connections.remove(conn)
+                        self.dropped_connections += 1
+
     async def broadcast(self, message: dict[str, Any]):
-        """Broadcast a message to all connected clients."""
+        """Broadcast a message concurrently to all connected clients."""
         if not self.active_connections:
             return
 
         data = json.dumps(message)
         async with self._lock:
-            disconnected = []
-            for connection in self.active_connections:
-                try:
-                    await connection.send_text(data)
-                except Exception:
-                    disconnected.append(connection)
+            targets = list(self.active_connections)
 
-            # Clean up disconnected clients
-            for conn in disconnected:
-                if conn in self.active_connections:
-                    self.active_connections.remove(conn)
+        await self._fanout(targets, data)
 
     async def broadcast_to_user(self, user_id: int | None, message: dict[str, Any]):
         """Send a message to every connection authenticated as the given user.
@@ -65,19 +121,13 @@ class ConnectionManager:
 
         data = json.dumps(message)
         async with self._lock:
-            disconnected = []
-            for connection in self.active_connections:
-                conn_uid = getattr(connection.state, "printlab_principal_user_id", None)
-                if conn_uid != user_id:
-                    continue
-                try:
-                    await connection.send_text(data)
-                except Exception:
-                    disconnected.append(connection)
+            targets = [
+                conn
+                for conn in self.active_connections
+                if getattr(getattr(conn, "state", None), "printlab_principal_user_id", None) == user_id
+            ]
 
-            for conn in disconnected:
-                if conn in self.active_connections:
-                    self.active_connections.remove(conn)
+        await self._fanout(targets, data)
 
     async def send_printer_status(self, printer_id: int, status: dict):
         """Send printer status update to all clients."""

@@ -3,6 +3,22 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.38 (08.11.2026) — E2E Integration, WebSocket-Parallelauslieferung & Performance-Benchmarks (Phase 11)
+
+- **Paralleler WebSocket-Fanout & Slow-Client-Isolierung (`backend/app/core/websocket.py`):**
+  - Umstellung von `ConnectionManager.broadcast()` und `broadcast_to_user()` von sequenzieller Auslieferung unter `self._lock` auf paralleles `asyncio.gather()` außerhalb des Verbindungs-Locks.
+  - Pro-Client Sende-Timeout (`send_timeout=2.0s` via `asyncio.wait_for`), sodass langsame oder hängende TCP-Clients weder den Broadcast noch neue `connect`/`disconnect`-Vorgänge blockieren.
+  - Automatische Bereinigung abgebrochener oder in ein Timeout gelaufener Sockets sowie Echtzeit-Latenzmessung (`last_broadcast_ms`, `avg_broadcast_ms`, `max_broadcast_ms`, `dropped_connections`).
+- **Echtzeit-Telemetrie-Endpunkt (`GET /api/v1/fleet/metrics`):**
+  - Neues Schema `FleetMetricsResponse` (`backend/app/schemas/fleet.py`) und Route in `backend/app/api/routes/fleet.py` sowie Frontend-Client `getFleetMetrics()` in `frontend/src/api/hardware_endpoints.ts`.
+- **Präziseres Farb-Matching im Flotten-Load-Balancer (`backend/app/services/fleet_load_balancer.py`):**
+  - Differenzierung zwischen exaktem Material- + Farb-Treffer (`+25.0` Punkte) und reinem Material-Treffer bei abweichender Spulenfarbe (`+15.0` Punkte).
+- **E2E-Integrations- & Performance-Benchmark-Suite (`backend/tests/unit/test_e2e_and_performance_benchmarks.py`):**
+  - **WebSocket-Stresstest:** 100 parallele Clients + 2 fehlerhafte/hängende Clients in <250ms inkl. automatischer Eviction.
+  - **Load-Balancer-Benchmark:** Vollständiges Fitness-Scoring und Dispatching über 50 Farm-Drucker in <50ms.
+  - **E2E-Dokumentenpipeline:** Binäres STL -> 3D-Mesh-Analyse -> Sofort-Kalkulation -> DIN A4 Lieferschein-PDF + 2 Thermo-Versandetiketten (`100x150` & `62x29`) in <1.5s.
+  - **E2E-Flotten-API-Workflow:** WebSocket-Broadcast -> Fleet Overview -> Batch-Pause nach Standort -> Metrik-Verifikation.
+
 ## v2.0.37 (08.11.2026) — Erweitertes Drucker-Flottenmanagement & Batch-Steuerung (Phase 10)
 
 - **Echtzeit-Flottenübersicht (`GET /api/v1/fleet/overview`):**

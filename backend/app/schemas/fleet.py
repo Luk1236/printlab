@@ -73,3 +73,16 @@ class FleetOverviewResponse(BaseModel):
     hms_error_count: int
     active_jobs: list[FleetJobSummary]
     locations: dict[str, int]
+
+
+class FleetMetricsResponse(BaseModel):
+    """Real-time WebSocket and fleet telemetry metrics."""
+
+    active_ws_connections: int
+    total_ws_broadcasts: int
+    total_ws_messages_sent: int
+    dropped_ws_connections: int
+    last_broadcast_ms: float
+    avg_broadcast_ms: float
+    max_broadcast_ms: float
+    maintenance_printers_count: int

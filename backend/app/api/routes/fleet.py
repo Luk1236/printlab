@@ -26,12 +26,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.core.auth import RequirePermissionIfAuthEnabled
 from backend.app.core.database import get_db
 from backend.app.core.permissions import Permission
+from backend.app.core.websocket import ws_manager
 from backend.app.models.printer import Printer
 from backend.app.schemas.fleet import (
     FleetCommandRequest,
     FleetCommandResponse,
     FleetCommandResultItem,
     FleetJobSummary,
+    FleetMetricsResponse,
     FleetOverviewResponse,
 )
 from backend.app.services.fleet_load_balancer import (
@@ -478,3 +480,21 @@ async def sync_fleet_telemetry(
             requested += 1
 
     return {"total_printers": len(printers), "updates_requested": requested}
+
+
+@router.get("/metrics", response_model=FleetMetricsResponse)
+async def get_fleet_metrics(
+    _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_READ),
+) -> FleetMetricsResponse:
+    """Liefert Echtzeit-Metriken des WebSocket-Fanouts und der Flotten-Steuerung."""
+    ws = ws_manager.get_metrics()
+    return FleetMetricsResponse(
+        active_ws_connections=ws["active_connections"],
+        total_ws_broadcasts=ws["total_broadcasts"],
+        total_ws_messages_sent=ws["total_messages_sent"],
+        dropped_ws_connections=ws["dropped_connections"],
+        last_broadcast_ms=ws["last_broadcast_ms"],
+        avg_broadcast_ms=ws["avg_broadcast_ms"],
+        max_broadcast_ms=ws["max_broadcast_ms"],
+        maintenance_printers_count=len(_maintenance_printers),
+    )

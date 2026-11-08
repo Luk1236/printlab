@@ -86,13 +86,14 @@ def calculate_printer_fitness(
 
     # 4. AMS-Material- und Farb-Matching
     req_mat = str(job.get("material", "PLA")).upper()
-    req_color = str(job.get("color", "")).lower()
+    req_color = str(job.get("color", "")).lower().lstrip("#")
     req_weight = _as_float(job.get("filament_grams"), 30.0)
 
     ams_slots = printer.get("ams_slots", [])
     if not isinstance(ams_slots, list):
         ams_slots = []
     matched_slot: dict[str, Any] | None = None
+    exact_color_match = False
 
     for slot in ams_slots:
         if not isinstance(slot, dict):
@@ -100,15 +101,16 @@ def calculate_printer_fitness(
         slot_mat = str(slot.get("material", "")).upper()
         slot_remain = _as_float(slot.get("remaining_grams"), 0.0)
         if slot_mat == req_mat and slot_remain >= req_weight:
-            slot_color = str(slot.get("color", "")).lower()
+            slot_color = str(slot.get("color", "")).lower().lstrip("#")
             if not req_color or slot_color == req_color:
                 matched_slot = slot
+                exact_color_match = True
                 break
             elif not matched_slot:
                 matched_slot = slot  # Material passt, Farbe weicht leicht ab
 
     if matched_slot:
-        score += 25.0
+        score += 25.0 if exact_color_match else 15.0
         reasons.append(
             f"Passendes Filament in AMS Slot {matched_slot.get('slot_id', 1)} "
             f"({matched_slot.get('material')} {matched_slot.get('color', '')}, {matched_slot.get('remaining_grams', 0):.0f}g vorhanden)"

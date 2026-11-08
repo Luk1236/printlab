@@ -127,4 +127,15 @@ export const hardwareEndpoints = {
     request<{ total_printers: number; updates_requested: number }>('/fleet/sync', {
       method: 'POST',
     }),
+  getFleetMetrics: () =>
+    request<{
+      active_ws_connections: number;
+      total_ws_broadcasts: number;
+      total_ws_messages_sent: number;
+      dropped_ws_connections: number;
+      last_broadcast_ms: number;
+      avg_broadcast_ms: number;
+      max_broadcast_ms: number;
+      maintenance_printers_count: number;
+    }>('/fleet/metrics'),
 };
