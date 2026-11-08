@@ -314,3 +314,65 @@ export const kioskApi = {
       method: "POST",
     }),
 };
+
+export const maintenanceWearApi = {
+  forecastWear: (payload: {
+    printer_id: string;
+    filament_type: string;
+    print_time_hours: number;
+    nozzle_type?: string;
+  }) =>
+    request<{
+      printer_id: string;
+      filament_type: string;
+      is_abrasive: boolean;
+      abrasive_multiplier: number;
+      print_time_hours: number;
+      effective_wear_hours: number;
+      can_safely_print: boolean;
+      warning_level: string;
+      nozzle: Record<string, any>;
+      ptfe: Record<string, any>;
+      extruder: Record<string, any>;
+      recommendations: string[];
+    }>("/maintenance/wear/forecast", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  checkAmsDrying: (payload: {
+    temp_c: number;
+    humidity_pct: number;
+    loaded_filaments: string[];
+  }) =>
+    request<{
+      ambient_temp_c: number;
+      humidity_pct: number;
+      dew_point_c: number;
+      condensation_margin_c: number;
+      condensation_risk: boolean;
+      overall_drying_recommended: boolean;
+      critical_spools_count: number;
+      spools: Array<any>;
+    }>("/maintenance/ams/drying-guard", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  preflightCheck: (payload: {
+    printer_id: string;
+    filament_type: string;
+    print_time_hours: number;
+    ams_temp_c?: number;
+    ams_humidity_pct?: number;
+    nozzle_type?: string;
+  }) =>
+    request<{
+      preflight_passed: boolean;
+      can_start_immediately: boolean;
+      critical_warnings: string[];
+      wear_prediction: Record<string, any>;
+      humidity_analysis: Record<string, any>;
+    }>("/maintenance/preflight-check", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+};

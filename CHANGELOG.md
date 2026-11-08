@@ -3,6 +3,17 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.47 (08.11.2026) — Abrasive Filament Wear Predictor & AMS Taupunkt-Trocknungswächter (Phase 18)
+
+- **Abrasive Filament Wear Predictor (`backend/app/services/wear_predictor.py`, `POST /api/v1/maintenance/wear/forecast`):**
+  - Präzise Vorausberechnung der beschleunigten Abnutzung von Druckdüsen, Extruder-Zahnrädern und PTFE-Führungsschläuchen durch abrasive Füllstoffe (PA-CF 6x, PETG-CF 5x, PLA-CF/GF 5x, Glow 4x, Holz 2x).
+  - Früherkennung vor Druckauftragsstart: Verhindert Düsenverschleiß-Abbrüche bei langen Druckaufträgen und sperrt unzulässige Messingdüsen bei abrasivem Filament.
+- **AMS Taupunkt- & Feuchtigkeitswächter (`backend/app/services/humidity_guard.py`, `POST /api/v1/maintenance/ams/drying-guard`):**
+  - Psychrometrische Taupunkt- und Kondensationsrisikoberechnung nach der Magnus-Formel aus AMS-Temperatur und relativer Feuchte.
+  - Materialspezifische Feuchtigkeitsüberwachung für hygroskopische Filamente (PA max. 20 %, TPU max. 25 %, PVA/BVOH max. 15 %, PETG max. 35 %) mit gezielten Trocknungsempfehlungen (Temperatur in °C und Dauer in Stunden).
+- **Integrierter Druckauftrag-Preflight-Check (`POST /api/v1/maintenance/preflight-check`):**
+  - Kombinierte Vorab-Prüfung vor dem Absenden an die Druckfarm: Stellt sicher, dass das geladene Material ausreichend trocken ist und die Düse über die gesamte geplante Druckzeit standhält.
+
 ## v2.0.46 (08.11.2026) — Raspberry Pi 7" Touch-Kiosk Modus & SD-Card Wear Guard (Phase 17)
 
 - **Raspberry Pi 7" Touch-Kiosk-Modus (`backend/app/api/routes/kiosk.py`, `frontend/src/pages/KioskModePage.tsx`):**
