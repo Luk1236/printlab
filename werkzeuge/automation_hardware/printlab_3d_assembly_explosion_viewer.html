@@ -138,15 +138,15 @@ const hexRgb = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), p
 // ============================================================================
 const PW = 194.5;                 // halbe Außenbreite/-tiefe X1C (389 mm)
 const PH = 457;                   // Außenhöhe X1C
-const DOOR = { hinge: [175, 196.5], width: 350, z0: 70, z1: 437, open: 115 * Math.PI / 180 };
+const DOOR = { hinge: [-175, 196.5], width: 350, z0: 70, z1: 437, open: 115 * Math.PI / 180 };
 const PLATE = 128.5;              // halbe Plattenkante (≈257 mm)
 const NOZZLE_Z = 338;             // Düsenspitze
 const PUSH_Z = 336.5;             // Bett-Z zum Abschieben (Keil 3 mm über Platte)
 const HOME_Z = 300;               // Bett-Ruheposition
 const SLOT_Z = [180, 215, 250, 285];  // Plattenoberkante je Magazinfach (oben im Kompakt-Turm)
-const MAG_X = -355, MAG_Y = 0;        // Kompakt-Turm (Plattenregal + Waschstation darunter) links neben dem Drucker
-const TRANSFER_Y = 345, RAIL_Y = 550; // Vorzone für Plattenauszug (+Y) und Shuttle-Schiene
-const PARK = { cx: MAG_X, gy: 515, sz: 215 };
+const MAG_X = 355, MAG_Y = 0;         // Kompakt-Turm (Plattenregal + Waschstation darunter) rechts neben dem Drucker
+const TRANSFER_Y = 345, RAIL_Y = 560; // Vorzone für Plattenauszug (+Y) und Shuttle-Schiene (vor Tür-Radius 546,5 mm)
+const PARK = { cx: MAG_X, gy: 525, sz: 215 };
 const WASH_Z = 44;                    // Waschhöhe auf den Walzen direkt unter dem Plattenregal
 
 const PLATE_TYPES = {
@@ -174,17 +174,17 @@ let speed = 1;
 // Kamera
 // ============================================================================
 const PRESETS = {
-  iso:      { yaw: -0.42, pitch: 0.44, dist: 1850, t: [-110, 80, 185] },
-  door:     { yaw: 0.28,  pitch: 0.32, dist: 1000, t: [60, 210, 290] },
-  magazine: { yaw: -0.45, pitch: 0.36, dist: 980,  t: [-355, 0, 230] },
-  shuttle:  { yaw: -0.25, pitch: 0.50, dist: 1300, t: [-175, 320, 200] },
-  washer:   { yaw: -0.48, pitch: 0.42, dist: 920,  t: [-355, 20, 55] },
-  toolhead: { yaw: -0.22, pitch: 0.24, dist: 760,  t: [0, 20, 360] },
-  chute:    { yaw: 0.18,  pitch: 0.28, dist: 720,  t: [0, 150, 270] },
-  scale:    { yaw: 0.72,  pitch: 0.45, dist: 850,  t: [320, -60, 90] },
-  dock:     { yaw: 0.82,  pitch: 0.26, dist: 700,  t: [215, 95, 280] },
+  iso:      { yaw: 0.42,  pitch: 0.44, dist: 1850, t: [110, 80, 185] },
+  door:     { yaw: -0.28, pitch: 0.32, dist: 1000, t: [-60, 210, 290] },
+  magazine: { yaw: 0.45,  pitch: 0.36, dist: 980,  t: [355, 0, 230] },
+  shuttle:  { yaw: 0.25,  pitch: 0.50, dist: 1300, t: [175, 320, 200] },
+  washer:   { yaw: 0.48,  pitch: 0.42, dist: 920,  t: [355, 20, 55] },
+  toolhead: { yaw: 0.22,  pitch: 0.24, dist: 760,  t: [0, 20, 360] },
+  chute:    { yaw: -0.18, pitch: 0.28, dist: 720,  t: [0, 150, 270] },
+  scale:    { yaw: -0.72, pitch: 0.45, dist: 850,  t: [-320, -60, 90] },
+  dock:     { yaw: -0.82, pitch: 0.26, dist: 700,  t: [-215, -45, 280] },
 };
-const cam = { yaw: -0.42, pitch: 0.44, dist: 1850, tx: -110, ty: 80, tz: 185 };
+const cam = { yaw: 0.42, pitch: 0.44, dist: 1850, tx: 110, ty: 80, tz: 185 };
 let camGoal = null;
 
 function setPreset(name) {
@@ -434,22 +434,22 @@ function buildScene(P, e) {
   box(-PW, -PW + 20, PH - 20, -PW + 20, PW - 20, PH, '#374151'); box(PW - 20, -PW + 20, PH - 20, PW, PW - 20, PH, '#374151');
   box(-PW + 20, -PW + 20, PH - 6, PW - 20, PW - 20, PH - 2, '#0f172a', { alpha: xray ? 0.05 : 0.25 });
 
-  // ---- Tür: Scharnier rechts, öffnet nach vorne-rechts ----
-  const th = P.door, u = [-Math.cos(th), Math.sin(th), 0], nr = [Math.sin(th), Math.cos(th), 0];
+  // ---- Tür: Scharnier links, öffnet nach vorne-links ----
+  const th = P.door, u = [Math.cos(th), Math.sin(th), 0], nr = [-Math.sin(th), Math.cos(th), 0];
   const hp = [DOOR.hinge[0], DOOR.hinge[1], DOOR.z0];
   pbox(hp, mul(u, DOOR.width), mul(nr, 4), [0, 0, DOOR.z1 - DOOR.z0], '#7dd3fc', { alpha: xray ? 0.06 : 0.16 });
   pbox(add([DOOR.hinge[0], DOOR.hinge[1], 200], add(mul(u, 318), mul(nr, 4))), mul(u, 12), mul(nr, 14), [0, 0, 90], '#e5e7eb');
   cyl([DOOR.hinge[0], DOOR.hinge[1] + 2, 90], 'z', 5, 22, '#9ca3af'); cyl([DOOR.hinge[0], DOOR.hinge[1] + 2, 395], 'z', 5, 22, '#9ca3af');
 
-  // ---- Schritt 1: Tür-Servo + Hebel (oben rechts) ----
+  // ---- Schritt 1: Tür-Servo + Hebel (oben links über Scharnier) ----
   const ez = 90 * e;
-  box(135, 162, PH + ez, 185, 202, PH + 26 + ez, '#d97706');            // Halter + Servo
-  const hornAng = -0.4 + th * 0.9, horn = [150 + 28 * Math.cos(hornAng), 200 + 28 * Math.sin(hornAng), PH + 30 + ez];
-  beam([150, 200, PH + 30 + ez], horn, 8, 4, '#f59e0b');
+  box(-185, 162, PH + ez, -135, 202, PH + 26 + ez, '#d97706');            // Halter + Servo
+  const hornAng = -0.4 + th * 0.9, horn = [-150 - 28 * Math.cos(hornAng), 200 + 28 * Math.sin(hornAng), PH + 30 + ez];
+  beam([-150, 200, PH + 30 + ez], horn, 8, 4, '#f59e0b');
   const att = add([DOOR.hinge[0], DOOR.hinge[1], DOOR.z1], add(mul(u, 70), mul(nr, 4)));
   beam(horn, add(att, [0, 0, ez * 0.55]), 7, 5, '#fbbf24');
-  pin([160, 182, PH + 40 + ez], '1 · Tür-Servo & Hebel', 'MG90S · GPIO 18', 1);
-  if (e > 0.03) guide([160, 182, PH], [160, 182, PH + ez], '#f59e0b');
+  pin([-160, 182, PH + 40 + ez], '1 · Tür-Servo & Hebel', 'MG90S · Scharnier links', 1);
+  if (e > 0.03) guide([-160, 182, PH], [-160, 182, PH + ez], '#f59e0b');
 
   // ---- Bett, Z-Führung, Platte ----
   const bz = P.bedZ;
@@ -483,66 +483,66 @@ function buildScene(P, e) {
   pin([hx + 40, by + 6, 352], '5 · Abschub-Keil', '2× M3×12 + Ruthex', 5);
   if (e > 0.03) guide([hx, hy + 25, 345], [hx, by, 345], '#f59e0b');
 
-  // ---- Schritt 2: Kompakt-Turm OBEN – Plattenregal (4 Fächer, links neben dem Drucker) ----
-  const mx = -140 * e, mz = 65 * e;
-  [[-495, -145], [-495, 135], [-225, -145], [-225, 135]].forEach(([lx, ly]) => box(lx + mx, ly, 0, lx + 10 + mx, ly + 10, 150 + mz, '#065f46'));
-  box(-495 + mx, -145, 148 + mz, -215 + mx, 145, 156 + mz, '#047857');
-  box(-495 + mx, -145, 305 + mz, -215 + mx, 145, 313 + mz, '#047857');
-  box(-495 + mx, -145, 156 + mz, -488 + mx, 145, 305 + mz, '#10b981', { alpha: 0.45 });
-  box(-222 + mx, -145, 156 + mz, -215 + mx, 145, 305 + mz, '#10b981', { alpha: 0.45 });
-  box(-488 + mx, -145, 156 + mz, -222 + mx, -138, 305 + mz, '#10b981', { alpha: 0.45 });
+  // ---- Schritt 2: Kompakt-Turm OBEN – Plattenregal (4 Fächer, rechts neben dem Drucker) ----
+  const mx = 140 * e, mz = 65 * e;
+  [[215, -145], [215, 135], [485, -145], [485, 135]].forEach(([lx, ly]) => box(lx + mx, ly, 0, lx + 10 + mx, ly + 10, 150 + mz, '#065f46'));
+  box(215 + mx, -145, 148 + mz, 495 + mx, 145, 156 + mz, '#047857');
+  box(215 + mx, -145, 305 + mz, 495 + mx, 145, 313 + mz, '#047857');
+  box(215 + mx, -145, 156 + mz, 222 + mx, 145, 305 + mz, '#10b981', { alpha: 0.45 });
+  box(488 + mx, -145, 156 + mz, 495 + mx, 145, 305 + mz, '#10b981', { alpha: 0.45 });
+  box(222 + mx, -145, 156 + mz, 488 + mx, -138, 305 + mz, '#10b981', { alpha: 0.45 });
   SLOT_Z.forEach((z, k) => {
-    box(-488 + mx, -135, z - 5.5 + mz, -472 + mx, 135, z - 1.5 + mz, '#34d399');
-    box(-238 + mx, -135, z - 5.5 + mz, -222 + mx, 135, z - 1.5 + mz, '#34d399');
+    box(222 + mx, -135, z - 5.5 + mz, 238 + mx, 135, z - 1.5 + mz, '#34d399');
+    box(472 + mx, -135, z - 5.5 + mz, 488 + mx, 135, z - 1.5 + mz, '#34d399');
     if (P.slots[k]) plateMesh(MAG_X + mx, MAG_Y, z + mz, P.slots[k]);
   });
-  pin([MAG_X + mx, 140, 313 + mz], '2 · Plattenregal (oben)', '4 Fächer · im Kompakt-Turm', 2);
+  pin([MAG_X + mx, 140, 313 + mz], '2 · Plattenregal (oben)', '4 Fächer · rechts im Kompakt-Turm', 2);
   if (e > 0.03) guide([MAG_X, 0, 313], [MAG_X + mx, 0, 313 + mz], '#10b981');
 
   // ---- Schritt 4: Kompakt-Turm UNTEN – Waschstation (direkt unter dem Plattenregal) ----
-  const wx = -140 * e, wy = 160 * e;
-  box(-485 + wx, -140 + wy, 0, -225 + wx, 140 + wy, 5, '#4c1d95');
-  box(-485 + wx, -140 + wy, 5, -479 + wx, 140 + wy, 64, '#7c3aed', { alpha: 0.65 });
-  box(-231 + wx, -140 + wy, 5, -225 + wx, 140 + wy, 64, '#7c3aed', { alpha: 0.65 });
-  box(-479 + wx, -140 + wy, 5, -231 + wx, -134 + wy, 64, '#7c3aed', { alpha: 0.65 });
-  box(-479 + wx, 134 + wy, 5, -231 + wx, 140 + wy, 32, '#7c3aed', { alpha: 0.65 });
-  box(-479 + wx, -134 + wy, 5, -231 + wx, 134 + wy, 20, '#22d3ee', { alpha: 0.35, edge: false });
-  cyl([-478 + wx, -45 + wy, 32], 'x', 12, 246, '#c084fc', { stripe: '#7e22ce', rot: P.roll }, 16);
-  cyl([-478 + wx,  45 + wy, 32], 'x', 12, 246, '#c084fc', { stripe: '#7e22ce', rot: -P.roll }, 16);
-  box(-538 + wx, -65 + wy, 0, -498 + wx, -5 + wy, 48, '#6d28d9');               // Peristaltikpumpe
-  cyl([-518 + wx, 30 + wy, 0], 'z', 18, 64, '#e0f2fe', { alpha: 0.55 }, 14);     // IPA-Flasche
-  box(-538 + wx, 65 + wy, 12, -498 + wx, 130 + wy, 66, '#4c1d95');              // Lüfter 5015
+  const wx = 140 * e, wy = 160 * e;
+  box(225 + wx, -140 + wy, 0, 485 + wx, 140 + wy, 5, '#4c1d95');
+  box(225 + wx, -140 + wy, 5, 231 + wx, 140 + wy, 64, '#7c3aed', { alpha: 0.65 });
+  box(479 + wx, -140 + wy, 5, 485 + wx, 140 + wy, 64, '#7c3aed', { alpha: 0.65 });
+  box(231 + wx, -140 + wy, 5, 479 + wx, -134 + wy, 64, '#7c3aed', { alpha: 0.65 });
+  box(231 + wx, 134 + wy, 5, 479 + wx, 140 + wy, 32, '#7c3aed', { alpha: 0.65 });
+  box(231 + wx, -134 + wy, 5, 479 + wx, 134 + wy, 20, '#22d3ee', { alpha: 0.35, edge: false });
+  cyl([232 + wx, -45 + wy, 32], 'x', 12, 246, '#c084fc', { stripe: '#7e22ce', rot: P.roll }, 16);
+  cyl([232 + wx,  45 + wy, 32], 'x', 12, 246, '#c084fc', { stripe: '#7e22ce', rot: -P.roll }, 16);
+  box(498 + wx, -65 + wy, 0, 538 + wx, -5 + wy, 48, '#6d28d9');               // Peristaltikpumpe
+  cyl([518 + wx, 30 + wy, 0], 'z', 18, 64, '#e0f2fe', { alpha: 0.55 }, 14);     // IPA-Flasche
+  box(498 + wx, 65 + wy, 12, 538 + wx, 130 + wy, 66, '#4c1d95');              // Lüfter 5015
   if (P.spray) effects.push({ type: 'spray', x: wx, y: wy });
   if (P.fan) effects.push({ type: 'fan', x: wx, y: wy });
   pin([MAG_X + wx, 140 + wy, 64], '4 · Waschstation (unten)', 'direkt unter dem Plattenregal', 4);
   if (e > 0.03) guide([MAG_X, 140, 32], [MAG_X + wx, 140 + wy, 32], '#a855f7');
 
-  // ---- Schritt 3: Wechsler-Shuttle (Schiene vor Drucker & Kompakt-Turm) ----
+  // ---- Schritt 3: Wechsler-Shuttle (Schiene vor Drucker & Kompakt-Turm rechts) ----
   const sy = 140 * e, cx = P.cx, sz = P.sz, gy = P.gy;
-  box(-520, RAIL_Y - 8 + sy, 0, -505, RAIL_Y + 8 + sy, 330, '#64748b'); box(145, RAIL_Y - 8 + sy, 0, 160, RAIL_Y + 8 + sy, 330, '#64748b');
-  box(-520, RAIL_Y - 10 + sy, sz + 12, 160, RAIL_Y + 10 + sy, sz + 24, '#94a3b8');
+  box(-160, RAIL_Y - 8 + sy, 0, -145, RAIL_Y + 8 + sy, 330, '#64748b'); box(505, RAIL_Y - 8 + sy, 0, 520, RAIL_Y + 8 + sy, 330, '#64748b');
+  box(-160, RAIL_Y - 10 + sy, sz + 12, 520, RAIL_Y + 10 + sy, sz + 24, '#94a3b8');
   box(cx - 22, RAIL_Y - 18 + sy, sz - 4, cx + 22, RAIL_Y + 16 + sy, sz + 30, '#475569');
   box(cx - 7, gy + sy, sz + 1, cx + 7, RAIL_Y - 18 + sy, sz + 6, '#cbd5e1');
   box(cx - 30, gy - 6 + sy, sz - 3, cx + 30, gy + sy, sz + 8, '#0ea5e9');
   if (P.moving) plateMesh(P.moving.pos[0], P.moving.pos[1], P.moving.pos[2], P.moving.plate, P.moving.state);
   pin([cx, RAIL_Y + sy, sz + 34], '3 · Wechsler-Shuttle', 'X-Schlitten · Y-Arm · Z-Hub', 3);
-  if (e > 0.03) guide([-180, RAIL_Y, 150], [-180, RAIL_Y + sy, 150], '#38bdf8');
+  if (e > 0.03) guide([180, RAIL_Y, 150], [180, RAIL_Y + sy, 150], '#38bdf8');
 
-  // ---- Schritt 7: HX711-Spulenwaage (rechts neben dem Drucker) ----
-  box(275, -80, 0, 365, -40, 16, '#7e22ce');
-  const z1 = 16 + 30 * e; box(285, -66, z1, 355, -54, z1 + 12, '#cbd5e1');
-  const z2 = z1 + 12 + 40 * e; box(270, -110, z2, 370, -10, z2 + 8, '#a855f7'); cyl([320, -60, z2 + 8], 'z', 26, 12, '#9333ea', {}, 16);
+  // ---- Schritt 7: HX711-Spulenwaage (links neben dem Drucker) ----
+  box(-365, -80, 0, -275, -40, 16, '#7e22ce');
+  const z1 = 16 + 30 * e; box(-355, -66, z1, -285, -54, z1 + 12, '#cbd5e1');
+  const z2 = z1 + 12 + 40 * e; box(-370, -110, z2, -270, -10, z2 + 8, '#a855f7'); cyl([-320, -60, z2 + 8], 'z', 26, 12, '#9333ea', {}, 16);
   const z3 = z2 + 8 + 80 * e;
-  cyl([320, -60, z3], 'z', 100, 4, '#1f2937', {}, 28); cyl([320, -60, z3 + 4], 'z', 90, 58, '#0284c7', {}, 28); cyl([320, -60, z3 + 62], 'z', 100, 4, '#1f2937', {}, 28);
-  pin([370, -60, z2 + 4], '7 · HX711-Waage', 'Sockel + Teller Ø100 / Bund 52', 7);
-  if (e > 0.03) guide([320, -60, 16], [320, -60, z3], '#a855f7');
+  cyl([-320, -60, z3], 'z', 100, 4, '#1f2937', {}, 28); cyl([-320, -60, z3 + 4], 'z', 90, 58, '#0284c7', {}, 28); cyl([-320, -60, z3 + 62], 'z', 100, 4, '#1f2937', {}, 28);
+  pin([-370, -60, z2 + 4], '7 · HX711-Waage', 'Sockel + Teller Ø100 / Bund 52', 7);
+  if (e > 0.03) guide([-320, -60, 16], [-320, -60, z3], '#a855f7');
 
-  // ---- Schritt 8: Scanner-Halter an rechter Seitenwand ----
-  const dx = 90 * e;
-  box(PW + dx, 60, 230, PW + 40 + dx, 130, 300, '#047857');
-  box(PW + 6 + 1.6 * dx, 80, 250, PW + 34 + 1.6 * dx, 110, 345, '#e5e7eb');
-  pin([PW + 40 + dx, 95, 300], '8 · Scanner-Halter', '2× M4 · Seitenwand rechts', 8);
-  if (e > 0.03) guide([PW, 95, 265], [PW + dx, 95, 265], '#34d399');
+  // ---- Schritt 8: Scanner-Halter an linker Seitenwand (hinten, außerhalb Tür-Radius) ----
+  const dx = -90 * e;
+  box(-PW - 40 + dx, -80, 230, -PW + dx, -10, 300, '#047857');
+  box(-PW - 34 + 1.6 * dx, -60, 250, -PW - 6 + 1.6 * dx, -30, 345, '#e5e7eb');
+  pin([-PW - 40 + dx, -45, 300], '8 · Scanner-Halter', '2× M4 · Seitenwand links', 8);
+  if (e > 0.03) guide([-PW, -45, 265], [-PW + dx, -45, 265], '#34d399');
 }
 
 function render() {
@@ -593,7 +593,7 @@ function render() {
       ctx.strokeStyle = 'rgba(226, 232, 240, 0.55)'; ctx.lineWidth = 1.5;
       for (let i = 0; i < 6; i++) {
         const y = -60 + i * 24 + (fx.y || 0), s = (now * 1.5 + i * 0.17) % 1;
-        const a = project([MAG_X - 135 + s * 130 + (fx.x || 0), y, 54]), b = project([MAG_X - 95 + s * 130 + (fx.x || 0), y, 50]);
+        const a = project([MAG_X + 135 - s * 130 + (fx.x || 0), y, 54]), b = project([MAG_X + 95 - s * 130 + (fx.x || 0), y, 50]);
         if (a && b) { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
       }
     }
@@ -627,17 +627,17 @@ function render() {
 // Bauanleitung (Seitenleiste)
 // ============================================================================
 const STEPS = [
-  { t: 'Tür-Servo & Hebel', c: 'text-amber-300', tag: 'MG90S · GPIO 18', preset: 'door',
-    d: 'Halter oben rechts über dem Original-Scharnier. Hebel greift 70 mm neben dem Scharnier an der Türoberkante und öffnet die Tür nach vorne-rechts auf 115°. Hebellängen sind schematisch – am Gerät einmessen.',
+  { t: 'Tür-Servo & Hebel', c: 'text-amber-300', tag: 'MG90S · Scharnier links', preset: 'door',
+    d: 'Halter oben links über dem Original-Türscharnier (X = −175 mm). Der Kniehebel greift 70 mm neben dem Scharnier an der Türoberkante und öffnet die Glastür nach vorne-links auf 115°.',
     p: 'models_stl/bambu_door_opener_servo_bracket.stl + bambu_door_push_pull_linkage.stl' },
-  { t: 'Plattenregal (Kompakt-Turm oben)', c: 'text-emerald-300', tag: '4 Fächer · oben', preset: 'magazine',
-    d: 'Sitzt im oberen Teil des Kompakt-Turms links neben dem Drucker (X = −355 mm). 4 Fächer auf Z 180 / 215 / 250 / 285 mm, nach vorne (+Y) offen zum Wechsler-Shuttle.',
+  { t: 'Plattenregal (Kompakt-Turm oben)', c: 'text-emerald-300', tag: '4 Fächer · rechts', preset: 'magazine',
+    d: 'Sitzt im oberen Teil des Kompakt-Turms rechts neben dem Drucker (X = +355 mm, gegenüber der nach links öffnenden Tür). 4 Fächer auf Z 180 / 215 / 250 / 285 mm, nach vorne (+Y) offen zum Shuttle.',
     p: 'models_stl/plate_magazine_rack_tower.stl' },
   { t: 'Wechsler-Shuttle', c: 'text-cyan-300', tag: '3 Achsen', preset: 'shuttle',
-    d: 'Linearschiene vor Drucker und Kompakt-Turm (Y = 550 mm). Zieht Platten nach vorne aus dem Drucker bzw. Plattenregal, verfährt in X/Z und senkt verschmutzte Platten direkt in die Waschstation unter dem Regal ab.',
+    d: 'Linearschiene vor Drucker und dem rechts stehenden Kompakt-Turm (Y = 560 mm). Zieht Platten nach vorne aus dem Drucker bzw. Plattenregal, verfährt nach rechts und senkt verschmutzte Platten direkt in die Waschstation unter dem Regal ab.',
     p: 'Kein STL – Zukaufteile: Alu-Profil, Linearschiene, 3 Antriebe (X, Y, Z)' },
   { t: 'Waschstation (Kompakt-Turm unten)', c: 'text-purple-300', tag: 'IPA · unter Regal', preset: 'washer',
-    d: 'Sitzt platzsparend direkt unter dem Plattenregal im selben Kompakt-Turm (Z = 0..64 mm). Das Shuttle senkt die verschmutzte Platte aus dem Regal direkt nach unten auf die 2 Mikrofaser-Walzen ab, sprüht IPA und trocknet mit dem 5015-Gebläse.',
+    d: 'Sitzt platzsparend direkt unter dem Plattenregal im rechten Kompakt-Turm (Z = 0..64 mm). Das Shuttle senkt die verschmutzte Platte aus dem Regal direkt nach unten auf die 2 Mikrofaser-Walzen ab, sprüht IPA und trocknet mit dem 5015-Gebläse.',
     p: 'models_stl/plate_washer_station_basin.stl' },
   { t: 'Abschub-Keil am Werkzeugkopf', c: 'text-amber-300', tag: '2× M3×12', preset: 'toolhead',
     d: 'Keil vorn am Werkzeugkopf, Unterkante 1,5 mm über der Düsenspitze. Zum Abschieben fährt das Bett auf Z 336,5 mm, der Kopf schiebt das Teil nach vorne über die Bettkante.',
@@ -646,10 +646,10 @@ const STEPS = [
     d: 'Hängt an der Bettvorderkante und fährt mit dem Bett. Passt in den 56-mm-Spalt zwischen Bett und Tür; das Teil fällt über die Rutsche in die Schale. Liegt unter der Plattenebene, damit der Wechsler die Platte darüber ziehen kann.',
     p: 'models_stl/bambu_bed_ejection_chute.stl' },
   { t: 'HX711-Spulenwaage', c: 'text-purple-300', tag: '5-kg-Wägezelle', preset: 'scale',
-    d: 'Rechts neben dem Drucker. Sockel 90 × 40 mm, Wägezelle, Teller Ø 100 mm mit 52-mm-Bund; die Spule (Ø 200 mm) liegt flach darauf.',
+    d: 'Links neben dem Drucker (X = −320 mm, hinter dem Tür-Schwenkbereich). Sockel 90 × 40 mm, Wägezelle, Teller Ø 100 mm mit 52-mm-Bund; die Spule (Ø 200 mm) liegt flach darauf.',
     p: 'models_stl/hx711_loadcell_base.stl + hx711_spool_cradle.stl' },
   { t: 'Scanner-Halter', c: 'text-teal-300', tag: '2× M4', preset: 'dock',
-    d: 'An der rechten Seitenwand, außerhalb des Tür-Schwenkbereichs (der liegt vorne).',
+    d: 'An der linken Seitenwand hinten, außerhalb des vorderen Tür-Schwenkbereichs.',
     p: 'models_stl/barcode_scanner_wall_dock.stl' },
 ];
 
@@ -793,7 +793,7 @@ function loop(now) {
 }
 selectStep(1);
 setPreset('iso');
-Object.assign(cam, { yaw: -0.42, pitch: 0.44, dist: 1850, tx: -110, ty: 80, tz: 185 }); camGoal = null;
+Object.assign(cam, { yaw: 0.42, pitch: 0.44, dist: 1850, tx: 110, ty: 80, tz: 185 }); camGoal = null;
 const _q = new URLSearchParams(location.search);
 if (_q.get('act')) { startAction(_q.get('act')); if (_q.get('t') && action) action.t = parseFloat(_q.get('t')); }
 if (_q.get('expl')) { expl = explTarget = parseFloat(_q.get('expl')); $('sl-expl').value = Math.round(expl * 100); }
