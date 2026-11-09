@@ -23,8 +23,8 @@
     <div class="flex items-center gap-3 min-w-0">
       <div class="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-400 flex items-center justify-center text-cyan-300 font-bold text-sm shrink-0">3D</div>
       <div class="min-w-0">
-        <h1 class="text-sm font-bold text-white truncate">PrintLab – Tür, Plattenlager, Wechsler & Waschstation</h1>
-        <p class="text-xs text-slate-400 truncate">Bambu Lab X1C · Außenmaß 389 × 389 × 457 mm · alle Maße in mm</p>
+        <h1 class="text-sm font-bold text-white truncate">PrintLab – Bambu Lab P2S · Tür, Plattenlager, Wechsler & Waschstation</h1>
+        <p class="text-xs text-slate-400 truncate">Bambu Lab P2S · Außenmaß 392 × 406 × 478 mm · Bauraum 256³ mm · alle Maße in mm</p>
       </div>
     </div>
     <div class="flex items-center gap-2">
@@ -134,19 +134,21 @@ const lerp = (a, b, k) => a + (b - a) * k;
 const hexRgb = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
 
 // ============================================================================
-// Geometrie (mm). X = rechts, Y = vorne (Tür), Z = oben. Ursprung = Druckermitte am Boden.
+// Geometrie (mm) – Bambu Lab P2S (392 × 406 × 478 mm).
+// X = rechts, Y = vorne (Tür), Z = oben. Ursprung = Druckermitte am Boden.
 // ============================================================================
-const PW = 194.5;                 // halbe Außenbreite/-tiefe X1C (389 mm)
-const PH = 457;                   // Außenhöhe X1C
-const DOOR = { hinge: [-175, 196.5], width: 350, z0: 70, z1: 437, open: 115 * Math.PI / 180 };
-const PLATE = 128.5;              // halbe Plattenkante (≈257 mm)
-const NOZZLE_Z = 338;             // Düsenspitze
-const PUSH_Z = 336.5;             // Bett-Z zum Abschieben (Keil 3 mm über Platte)
-const HOME_Z = 300;               // Bett-Ruheposition
-const SLOT_Z = [180, 215, 250, 285];  // Plattenoberkante je Magazinfach (oben im Kompakt-Turm)
-const MAG_X = 355, MAG_Y = 0;         // Kompakt-Turm (Plattenregal + Waschstation darunter) rechts neben dem Drucker
-const TRANSFER_Y = 345, RAIL_Y = 560; // Vorzone für Plattenauszug (+Y) und Shuttle-Schiene (vor Tür-Radius 546,5 mm)
-const PARK = { cx: MAG_X, gy: 525, sz: 215 };
+const PW = 196.0;                 // halbe Außenbreite P2S (392 mm)
+const PD = 203.0;                 // halbe Außentiefe P2S (406 mm)
+const PH = 478;                   // Außenhöhe P2S (478 mm)
+const DOOR = { hinge: [-176.5, 205], width: 353, z0: 68, z1: 442, open: 115 * Math.PI / 180 };
+const PLATE = 128.5;              // halbe Plattenkante (257 × 257 mm für 256³ mm Bauraum)
+const NOZZLE_Z = 356;             // Düsenspitze P2S DynaSense Hotend
+const PUSH_Z = 354.5;             // Bett-Z zum Abschieben (Keil 3 mm über Platte)
+const HOME_Z = 310;               // Bett-Ruheposition P2S
+const SLOT_Z = [185, 220, 255, 290];  // Plattenoberkante je Magazinfach (oben im Kompakt-Turm, Fach 2 = Betthöhe 220 mm)
+const MAG_X = 360, MAG_Y = 0;         // Kompakt-Turm (Plattenregal + Waschstation darunter) rechts neben dem P2S
+const TRANSFER_Y = 355, RAIL_Y = 575; // Vorzone (+Y) und Shuttle-Schiene (17 mm vor P2S Tür-Radius 558 mm)
+const PARK = { cx: MAG_X, gy: 540, sz: 220 };
 const WASH_Z = 44;                    // Waschhöhe auf den Walzen direkt unter dem Plattenregal
 
 const PLATE_TYPES = {
@@ -174,15 +176,15 @@ let speed = 1;
 // Kamera
 // ============================================================================
 const PRESETS = {
-  iso:      { yaw: 0.40,  pitch: 0.44, dist: 1800, t: [125, 90, 185] },
-  door:     { yaw: -0.28, pitch: 0.32, dist: 1000, t: [-60, 210, 290] },
-  magazine: { yaw: 0.45,  pitch: 0.36, dist: 980,  t: [355, 0, 230] },
-  shuttle:  { yaw: 0.25,  pitch: 0.50, dist: 1300, t: [175, 320, 200] },
-  washer:   { yaw: 0.48,  pitch: 0.42, dist: 920,  t: [355, 20, 55] },
-  toolhead: { yaw: 0.22,  pitch: 0.24, dist: 760,  t: [0, 20, 360] },
-  chute:    { yaw: -0.18, pitch: 0.28, dist: 720,  t: [0, 150, 270] },
+  iso:      { yaw: 0.40,  pitch: 0.44, dist: 1840, t: [130, 95, 195] },
+  door:     { yaw: -0.28, pitch: 0.32, dist: 1020, t: [-65, 215, 310] },
+  magazine: { yaw: 0.45,  pitch: 0.36, dist: 980,  t: [360, 0, 235] },
+  shuttle:  { yaw: 0.25,  pitch: 0.50, dist: 1320, t: [180, 330, 205] },
+  washer:   { yaw: 0.48,  pitch: 0.42, dist: 920,  t: [360, 20, 55] },
+  toolhead: { yaw: 0.22,  pitch: 0.24, dist: 760,  t: [0, 20, 375] },
+  chute:    { yaw: -0.18, pitch: 0.28, dist: 740,  t: [0, 155, 275] },
 };
-const cam = { yaw: 0.40, pitch: 0.44, dist: 1800, tx: 125, ty: 90, tz: 185 };
+const cam = { yaw: 0.40, pitch: 0.44, dist: 1840, tx: 130, ty: 95, tz: 195 };
 let camGoal = null;
 
 function setPreset(name) {
@@ -335,7 +337,7 @@ function printPose(A, t) {
 
 function swapPose(A, t) {
   const p = idlePose();
-  const zE = SLOT_Z[A.empty], zF = SLOT_Z[A.fresh], zBed = 215;
+  const zE = SLOT_Z[A.empty], zF = SLOT_Z[A.fresh], zBed = 220;
   p.door = DOOR.open * ss(t, 0, 0.08) * (1 - ss(t, 0.92, 1));
   p.bedZ = pw(t, [[0.04, A.z0], [0.08, A.hasPart ? PUSH_Z : A.z0], [0.22, A.hasPart ? PUSH_Z : A.z0], [0.28, zBed], [0.90, zBed], [1, HOME_Z]]);
   // Werkzeugkopf: nach hinten, Keil schiebt nach vorne, dann Parkposition
@@ -419,111 +421,116 @@ function buildScene(P, e) {
   faces.length = 0; pins.length = 0; guides.length = 0; effects.length = 0;
   const shellA = xray ? 0.05 : 0.22;
 
-  // ---- Drucker-Gehäuse X1C (389 × 389 × 457) ----
-  box(-PW, -PW, 0, PW, PW, 20, '#1f2937');
+  // ---- Drucker-Gehäuse Bambu Lab P2S (392 × 406 × 478 mm) ----
+  box(-PW, -PD, 0, PW, PD, 20, '#1f2937');
   [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([sx, sy]) =>
-    box(sx > 0 ? PW - 20 : -PW, sy > 0 ? PW - 20 : -PW, 20, sx > 0 ? PW : -PW + 20, sy > 0 ? PW : -PW + 20, PH - 20, '#374151'));
-  box(-PW + 20, PW - 10, 20, PW - 20, PW, DOOR.z0, '#1f2937');                 // Front unten
-  box(-PW, -PW + 20, 20, -PW + 6, PW - 20, PH - 20, '#0f172a', { alpha: shellA }); // links
-  box(PW - 6, -PW + 20, 20, PW, PW - 20, PH - 20, '#0f172a', { alpha: shellA });   // rechts
-  box(-PW + 20, -PW, 20, PW - 20, -PW + 6, PH - 20, '#0f172a', { alpha: shellA }); // hinten
-  // Deckel: Rahmen + Glas
-  box(-PW, -PW, PH - 20, PW, -PW + 20, PH, '#374151'); box(-PW, PW - 20, PH - 20, PW, PW, PH, '#374151');
-  box(-PW, -PW + 20, PH - 20, -PW + 20, PW - 20, PH, '#374151'); box(PW - 20, -PW + 20, PH - 20, PW, PW - 20, PH, '#374151');
-  box(-PW + 20, -PW + 20, PH - 6, PW - 20, PW - 20, PH - 2, '#0f172a', { alpha: xray ? 0.05 : 0.25 });
+    box(sx > 0 ? PW - 20 : -PW, sy > 0 ? PD - 20 : -PD, 20, sx > 0 ? PW : -PW + 20, sy > 0 ? PD : -PD + 20, PH - 20, '#374151'));
+  box(-PW + 20, PD - 10, 20, PW - 20, PD, DOOR.z0, '#1f2937');                   // Front unten
+  box(-PW + 20, PD - 10, DOOR.z1, PW - 20, PD, PH - 20, '#1f2937');              // Obere Frontblende (P2S Bezel)
+  // P2S 5-Zoll Vollfarb-Touchscreen (oben links in der Frontblende)
+  box(-188, PD - 2, 444, -92, PD + 5, 475, '#0f172a');
+  box(-183, PD + 5, 448, -97, PD + 6.5, 471, '#0284c7');
+  box(-PW, -PD + 20, 20, -PW + 6, PD - 20, PH - 20, '#0f172a', { alpha: shellA }); // links
+  box(PW - 6, -PD + 20, 20, PW, PD - 20, PH - 20, '#0f172a', { alpha: shellA });   // rechts
+  box(-PW + 20, -PD, 20, PW - 20, -PD + 6, PH - 20, '#0f172a', { alpha: shellA }); // hinten
+  // Deckel: Rahmen + Glasplatte (P2S Top Cover)
+  box(-PW, -PD, PH - 20, PW, -PD + 20, PH, '#374151'); box(-PW, PD - 20, PH - 20, PW, PD, PH, '#374151');
+  box(-PW, -PD + 20, PH - 20, -PW + 20, PD - 20, PH, '#374151'); box(PW - 20, -PD + 20, PH - 20, PW, PD - 20, PH, '#374151');
+  box(-PW + 20, -PD + 20, PH - 6, PW - 20, PD - 20, PH - 2, '#0f172a', { alpha: xray ? 0.05 : 0.25 });
 
-  // ---- Tür: Scharnier links, öffnet nach vorne-links ----
+  // ---- Tür (P2S): Scharnier links, öffnet nach vorne-links ----
   const th = P.door, u = [Math.cos(th), Math.sin(th), 0], nr = [-Math.sin(th), Math.cos(th), 0];
   const hp = [DOOR.hinge[0], DOOR.hinge[1], DOOR.z0];
   pbox(hp, mul(u, DOOR.width), mul(nr, 4), [0, 0, DOOR.z1 - DOOR.z0], '#7dd3fc', { alpha: xray ? 0.06 : 0.16 });
-  pbox(add([DOOR.hinge[0], DOOR.hinge[1], 200], add(mul(u, 318), mul(nr, 4))), mul(u, 12), mul(nr, 14), [0, 0, 90], '#e5e7eb');
-  cyl([DOOR.hinge[0], DOOR.hinge[1] + 2, 90], 'z', 5, 22, '#9ca3af'); cyl([DOOR.hinge[0], DOOR.hinge[1] + 2, 395], 'z', 5, 22, '#9ca3af');
+  pbox(add([DOOR.hinge[0], DOOR.hinge[1], 210], add(mul(u, 320), mul(nr, 4))), mul(u, 12), mul(nr, 14), [0, 0, 90], '#e5e7eb');
+  cyl([DOOR.hinge[0], DOOR.hinge[1] + 2, 92], 'z', 5, 22, '#9ca3af'); cyl([DOOR.hinge[0], DOOR.hinge[1] + 2, 405], 'z', 5, 22, '#9ca3af');
 
-  // ---- Schritt 1: Tür-Servo + Hebel (oben links über Scharnier) ----
+  // ---- Schritt 1: Tür-Servo + Kniehebel (P2S Brücke über dem 5"-Touchscreen) ----
   const ez = 90 * e;
-  box(-185, 162, PH + ez, -135, 202, PH + 26 + ez, '#d97706');            // Halter + Servo
-  const hornAng = -0.4 + th * 0.9, horn = [-150 - 28 * Math.cos(hornAng), 200 + 28 * Math.sin(hornAng), PH + 30 + ez];
-  beam([-150, 200, PH + 30 + ez], horn, 8, 4, '#f59e0b');
-  const att = add([DOOR.hinge[0], DOOR.hinge[1], DOOR.z1], add(mul(u, 70), mul(nr, 4)));
+  box(-186, 170, PH + ez, -132, 212, PH + 26 + ez, '#d97706');            // P2S Halter + MG90S Servo mit 14-mm-Frontüberstand
+  const hornAng = -0.4 + th * 0.9, horn = [-148 - 28 * Math.cos(hornAng), 210 + 28 * Math.sin(hornAng), PH + 30 + ez];
+  beam([-148, 210, PH + 30 + ez], horn, 8, 4, '#f59e0b');
+  const att = add([DOOR.hinge[0], DOOR.hinge[1], DOOR.z1], add(mul(u, 75), mul(nr, 4)));
   beam(horn, add(att, [0, 0, ez * 0.55]), 7, 5, '#fbbf24');
-  pin([-160, 182, PH + 40 + ez], '1 · Tür-Servo & Hebel', 'MG90S · Scharnier links', 1);
-  if (e > 0.03) guide([-160, 182, PH], [-160, 182, PH + ez], '#f59e0b');
+  pin([-159, 191, PH + 40 + ez], '1 · P2S Tür-Servo & Hebel', 'MG90S · über 5"-Touchscreen', 1);
+  if (e > 0.03) guide([-159, 191, PH], [-159, 191, PH + ez], '#f59e0b');
 
   // ---- Bett, Z-Führung, Platte ----
   const bz = P.bedZ;
-  cyl([-160, -160, 20], 'z', 6, PH - 60, '#6b7280'); cyl([160, -160, 20], 'z', 6, PH - 60, '#6b7280');
-  box(-170, -170, bz - 22, -125, -125, bz - 14, '#4b5563'); box(125, -170, bz - 22, 170, -125, bz - 14, '#4b5563');
+  cyl([-162, -166, 20], 'z', 6, PH - 60, '#6b7280'); cyl([162, -166, 20], 'z', 6, PH - 60, '#6b7280');
+  box(-172, -176, bz - 22, -125, -125, bz - 14, '#4b5563'); box(125, -176, bz - 22, 172, -125, bz - 14, '#4b5563');
   box(-128, -128, bz - 14, 128, 128, bz - 1.5, '#111827');
   if (P.bedPlate) plateMesh(0, 0, bz, P.bedPlate);
 
   // ---- Druckteil ----
   if (P.part) box(P.part.x - 25, P.part.y - 25, P.part.z, P.part.x + 25, P.part.y + 25, P.part.z + P.part.h, '#06b6d4');
 
-  // ---- Schritt 6: Rutsche + Auffangschale an Bettvorderkante (fährt mit) ----
+  // ---- Schritt 6: P2S Rutsche + Auffangschale an Bettvorderkante (74,5 mm P2S Frontfreiraum) ----
   const tz = bz - 80 * e;
-  pbox([-60, PLATE, tz - 2.5], [120, 0, 0], [0, 38, -24], [0, 0, 2.5], '#10b981');
-  box(-62, 135, tz - 60, 62, 186, tz - 57, '#047857');
-  box(-62, 135, tz - 57, -58, 186, tz - 14, '#059669'); box(58, 135, tz - 57, 62, 186, tz - 14, '#059669');
-  box(-58, 182, tz - 57, 58, 186, tz - 14, '#059669'); box(-58, 135, tz - 57, 58, 139, tz - 34, '#059669');
+  pbox([-60, PLATE, tz - 2.5], [120, 0, 0], [0, 42, -24], [0, 0, 2.5], '#10b981');
+  box(-62, 136, tz - 60, 62, 192, tz - 57, '#047857');
+  box(-62, 136, tz - 57, -58, 192, tz - 14, '#059669'); box(58, 136, tz - 57, 62, 192, tz - 14, '#059669');
+  box(-58, 188, tz - 57, 58, 192, tz - 14, '#059669'); box(-58, 136, tz - 57, 58, 140, tz - 34, '#059669');
   const nTray = Math.min(3, world.tray + (P.trayExtra || 0));
-  for (let i = 0; i < nTray; i++) box(-50 + i * 34, 142, tz - 57, -22 + i * 34, 178, tz - 57 + 18, '#0891b2');
-  pin([0, 170, tz - 10], '6 · Rutsche & Schale', 'fährt mit dem Bett', 6);
-  if (e > 0.03) guide([0, 160, bz - 30], [0, 160, tz - 30], '#34d399');
+  for (let i = 0; i < nTray; i++) box(-50 + i * 34, 144, tz - 57, -22 + i * 34, 182, tz - 57 + 18, '#0891b2');
+  pin([0, 174, tz - 10], '6 · P2S Rutsche & Schale', 'fährt mit dem Bett (74,5 mm Freiraum)', 6);
+  if (e > 0.03) guide([0, 164, bz - 30], [0, 164, tz - 30], '#34d399');
 
-  // ---- Werkzeugkopf (CoreXY) + Schritt 5: Keil ----
+  // ---- P2S DynaSense Werkzeugkopf (CoreXY) + Schritt 5: Abschub-Keil ----
   const [hx, hy] = P.th;
-  box(-176, -170, 420, -164, 170, 432, '#4b5563'); box(164, -170, 420, 176, 170, 432, '#4b5563');
-  cyl([-170, hy - 12, 412], 'x', 4, 340, '#111827', {}, 10); cyl([-170, hy + 12, 412], 'x', 4, 340, '#111827', {}, 10);
-  box(hx - 30, hy - 25, 350, hx + 30, hy + 25, 420, '#d1d5db');
+  box(-178, -176, 438, -166, 176, 450, '#4b5563'); box(166, -176, 438, 178, 176, 450, '#4b5563');
+  cyl([-172, hy - 12, 430], 'x', 4, 344, '#111827', {}, 10); cyl([-172, hy + 12, 430], 'x', 4, 344, '#111827', {}, 10);
+  box(hx - 31, hy - 26, 368, hx + 31, hy + 26, 438, '#d1d5db');                 // P2S DynaSense Extruder-Kopf
+  box(hx - 24, hy + 24, 376, hx + 24, hy + 28, 428, '#1e293b');                 // Magnetisches P2S Front-Cover
   cyl([hx, hy, NOZZLE_Z], 'z', 3, 12, '#f59e0b', {}, 10);
-  const by = hy + 25 + 70 * e;
-  box(hx - 37.5, by, 339.5, hx + 37.5, by + 12, 352, '#f59e0b');
-  pin([hx + 40, by + 6, 352], '5 · Abschub-Keil', '2× M3×12 + Ruthex', 5);
-  if (e > 0.03) guide([hx, hy + 25, 345], [hx, by, 345], '#f59e0b');
+  const by = hy + 26 + 70 * e;
+  box(hx - 37.5, by, 357.5, hx + 37.5, by + 12, 370, '#f59e0b');
+  pin([hx + 40, by + 6, 370], '5 · P2S Abschub-Keil', 'Eddy-Sensor-Freigang · 2× M3×12', 5);
+  if (e > 0.03) guide([hx, hy + 26, 363], [hx, by, 363], '#f59e0b');
 
-  // ---- Schritt 2: Kompakt-Turm OBEN – Plattenregal (4 Fächer, rechts neben dem Drucker) ----
+  // ---- Schritt 2: Kompakt-Turm OBEN – Plattenregal (4 Fächer, rechts neben dem P2S) ----
   const mx = 140 * e, mz = 65 * e;
-  [[215, -145], [215, 135], [485, -145], [485, 135]].forEach(([lx, ly]) => box(lx + mx, ly, 0, lx + 10 + mx, ly + 10, 150 + mz, '#065f46'));
-  box(215 + mx, -145, 148 + mz, 495 + mx, 145, 156 + mz, '#047857');
-  box(215 + mx, -145, 305 + mz, 495 + mx, 145, 313 + mz, '#047857');
-  box(215 + mx, -145, 156 + mz, 222 + mx, 145, 305 + mz, '#10b981', { alpha: 0.45 });
-  box(488 + mx, -145, 156 + mz, 495 + mx, 145, 305 + mz, '#10b981', { alpha: 0.45 });
-  box(222 + mx, -145, 156 + mz, 488 + mx, -138, 305 + mz, '#10b981', { alpha: 0.45 });
+  [[220, -145], [220, 135], [490, -145], [490, 135]].forEach(([lx, ly]) => box(lx + mx, ly, 0, lx + 10 + mx, ly + 10, 155 + mz, '#065f46'));
+  box(220 + mx, -145, 153 + mz, 500 + mx, 145, 161 + mz, '#047857');
+  box(220 + mx, -145, 312 + mz, 500 + mx, 145, 320 + mz, '#047857');
+  box(220 + mx, -145, 161 + mz, 227 + mx, 145, 312 + mz, '#10b981', { alpha: 0.45 });
+  box(493 + mx, -145, 161 + mz, 500 + mx, 145, 312 + mz, '#10b981', { alpha: 0.45 });
+  box(227 + mx, -145, 161 + mz, 493 + mx, -138, 312 + mz, '#10b981', { alpha: 0.45 });
   SLOT_Z.forEach((z, k) => {
-    box(222 + mx, -135, z - 5.5 + mz, 238 + mx, 135, z - 1.5 + mz, '#34d399');
-    box(472 + mx, -135, z - 5.5 + mz, 488 + mx, 135, z - 1.5 + mz, '#34d399');
+    box(227 + mx, -135, z - 5.5 + mz, 243 + mx, 135, z - 1.5 + mz, '#34d399');
+    box(477 + mx, -135, z - 5.5 + mz, 493 + mx, 135, z - 1.5 + mz, '#34d399');
     if (P.slots[k]) plateMesh(MAG_X + mx, MAG_Y, z + mz, P.slots[k]);
   });
-  pin([MAG_X + mx, 140, 313 + mz], '2 · Plattenregal (oben)', '4 Fächer · rechts im Kompakt-Turm', 2);
-  if (e > 0.03) guide([MAG_X, 0, 313], [MAG_X + mx, 0, 313 + mz], '#10b981');
+  pin([MAG_X + mx, 140, 320 + mz], '2 · Plattenregal (oben)', '4 Fächer · rechts neben P2S', 2);
+  if (e > 0.03) guide([MAG_X, 0, 320], [MAG_X + mx, 0, 320 + mz], '#10b981');
 
   // ---- Schritt 4: Kompakt-Turm UNTEN – Waschstation (direkt unter dem Plattenregal) ----
   const wx = 140 * e, wy = 160 * e;
-  box(225 + wx, -140 + wy, 0, 485 + wx, 140 + wy, 5, '#4c1d95');
-  box(225 + wx, -140 + wy, 5, 231 + wx, 140 + wy, 64, '#7c3aed', { alpha: 0.65 });
-  box(479 + wx, -140 + wy, 5, 485 + wx, 140 + wy, 64, '#7c3aed', { alpha: 0.65 });
-  box(231 + wx, -140 + wy, 5, 479 + wx, -134 + wy, 64, '#7c3aed', { alpha: 0.65 });
-  box(231 + wx, 134 + wy, 5, 479 + wx, 140 + wy, 32, '#7c3aed', { alpha: 0.65 });
-  box(231 + wx, -134 + wy, 5, 479 + wx, 134 + wy, 20, '#22d3ee', { alpha: 0.35, edge: false });
-  cyl([232 + wx, -45 + wy, 32], 'x', 12, 246, '#c084fc', { stripe: '#7e22ce', rot: P.roll }, 16);
-  cyl([232 + wx,  45 + wy, 32], 'x', 12, 246, '#c084fc', { stripe: '#7e22ce', rot: -P.roll }, 16);
-  box(498 + wx, -65 + wy, 0, 538 + wx, -5 + wy, 48, '#6d28d9');               // Peristaltikpumpe
-  cyl([518 + wx, 30 + wy, 0], 'z', 18, 64, '#e0f2fe', { alpha: 0.55 }, 14);     // IPA-Flasche
-  box(498 + wx, 65 + wy, 12, 538 + wx, 130 + wy, 66, '#4c1d95');              // Lüfter 5015
+  box(230 + wx, -140 + wy, 0, 490 + wx, 140 + wy, 5, '#4c1d95');
+  box(230 + wx, -140 + wy, 5, 236 + wx, 140 + wy, 64, '#7c3aed', { alpha: 0.65 });
+  box(484 + wx, -140 + wy, 5, 490 + wx, 140 + wy, 64, '#7c3aed', { alpha: 0.65 });
+  box(236 + wx, -140 + wy, 5, 484 + wx, -134 + wy, 64, '#7c3aed', { alpha: 0.65 });
+  box(236 + wx, 134 + wy, 5, 484 + wx, 140 + wy, 32, '#7c3aed', { alpha: 0.65 });
+  box(236 + wx, -134 + wy, 5, 484 + wx, 134 + wy, 20, '#22d3ee', { alpha: 0.35, edge: false });
+  cyl([237 + wx, -45 + wy, 32], 'x', 12, 246, '#c084fc', { stripe: '#7e22ce', rot: P.roll }, 16);
+  cyl([237 + wx,  45 + wy, 32], 'x', 12, 246, '#c084fc', { stripe: '#7e22ce', rot: -P.roll }, 16);
+  box(503 + wx, -65 + wy, 0, 543 + wx, -5 + wy, 48, '#6d28d9');               // Peristaltikpumpe
+  cyl([523 + wx, 30 + wy, 0], 'z', 18, 64, '#e0f2fe', { alpha: 0.55 }, 14);     // IPA-Flasche
+  box(503 + wx, 65 + wy, 12, 543 + wx, 130 + wy, 66, '#4c1d95');              // Lüfter 5015
   if (P.spray) effects.push({ type: 'spray', x: wx, y: wy });
   if (P.fan) effects.push({ type: 'fan', x: wx, y: wy });
   pin([MAG_X + wx, 140 + wy, 64], '4 · Waschstation (unten)', 'direkt unter dem Plattenregal', 4);
   if (e > 0.03) guide([MAG_X, 140, 32], [MAG_X + wx, 140 + wy, 32], '#a855f7');
 
-  // ---- Schritt 3: Wechsler-Shuttle (Schiene vor Drucker & Kompakt-Turm rechts) ----
+  // ---- Schritt 3: Wechsler-Shuttle (Schiene bei Y = 575 mm vor P2S & Kompakt-Turm rechts) ----
   const sy = 140 * e, cx = P.cx, sz = P.sz, gy = P.gy;
-  box(-160, RAIL_Y - 8 + sy, 0, -145, RAIL_Y + 8 + sy, 330, '#64748b'); box(505, RAIL_Y - 8 + sy, 0, 520, RAIL_Y + 8 + sy, 330, '#64748b');
-  box(-160, RAIL_Y - 10 + sy, sz + 12, 520, RAIL_Y + 10 + sy, sz + 24, '#94a3b8');
+  box(-160, RAIL_Y - 8 + sy, 0, -145, RAIL_Y + 8 + sy, 335, '#64748b'); box(510, RAIL_Y - 8 + sy, 0, 525, RAIL_Y + 8 + sy, 335, '#64748b');
+  box(-160, RAIL_Y - 10 + sy, sz + 12, 525, RAIL_Y + 10 + sy, sz + 24, '#94a3b8');
   box(cx - 22, RAIL_Y - 18 + sy, sz - 4, cx + 22, RAIL_Y + 16 + sy, sz + 30, '#475569');
   box(cx - 7, gy + sy, sz + 1, cx + 7, RAIL_Y - 18 + sy, sz + 6, '#cbd5e1');
   box(cx - 30, gy - 6 + sy, sz - 3, cx + 30, gy + sy, sz + 8, '#0ea5e9');
   if (P.moving) plateMesh(P.moving.pos[0], P.moving.pos[1], P.moving.pos[2], P.moving.plate, P.moving.state);
-  pin([cx, RAIL_Y + sy, sz + 34], '3 · Wechsler-Shuttle', 'X-Schlitten · Y-Arm · Z-Hub', 3);
+  pin([cx, RAIL_Y + sy, sz + 34], '3 · Wechsler-Shuttle', 'X-Schlitten · Y-Arm · Z-Hub (Y = 575)', 3);
   if (e > 0.03) guide([180, RAIL_Y, 150], [180, RAIL_Y + sy, 150], '#38bdf8');
 }
 
@@ -606,38 +613,38 @@ function render() {
 }
 
 // ============================================================================
-// Bauanleitung (Seitenleiste) – 6 Kern-Baugruppen mit exakten Maßen
+// Bauanleitung (Seitenleiste) – 6 Kern-Baugruppen für den Bambu Lab P2S
 // ============================================================================
 const STEPS = [
-  { t: 'Tür-Servo & Kniehebel', c: 'text-amber-300', tag: 'MG90S · Scharnier links', preset: 'door',
-    d: 'Servohalterung oben links über der Original-Scharnierachse (X = −175 mm, Y = +196,5 mm, Z = 457 mm). Das 28-mm-Servohorn treibt die 85-mm-Schubstange an (Anschlagpunkt 70 mm vom Scharnier an der Türoberkante) und öffnet die 350 mm breite Glastür sanft um 115° nach vorne-links.',
-    dim: 'Halter 50×40×26 mm · Hebel 85×8×5 mm · Winkel 0°→115°',
+  { t: 'P2S Tür-Servo & Kniehebel', c: 'text-amber-300', tag: 'MG90S · über 5"-Touchscreen', preset: 'door',
+    d: 'Speziell für den Bambu Lab P2S (Höhe Z = 478 mm, Tiefe Y = +203 mm) mit 14-mm-Frontüberstand ausgelegt, damit die Schubstange frei vor dem 5-Zoll-Touchscreen an der Türoberkante (Z = 442 mm, 75 mm vom linken Scharnier X = −176,5 mm) angreift und die 353 mm breite Glastür um 115° nach vorne-links öffnet.',
+    dim: 'Halter 54×42×26 mm (Z = 478..504 mm) · Hebel 90×8×5 mm · Winkel 0°→115°',
     hw: '2× M3×12 (Halter), 2× M3×10 + Selbstsicherungsmutter (Gelenke), GPIO 18 PWM',
     p: 'models_stl/bambu_door_opener_servo_bracket.stl + bambu_door_push_pull_linkage.stl' },
-  { t: 'Plattenregal (Kompakt-Turm oben)', c: 'text-emerald-300', tag: '4 Fächer · rechts', preset: 'magazine',
-    d: 'Oberes Modul des Kompakt-Turms rechts neben dem Drucker (Mitte X = +355 mm, Y = 0 mm). Nimmt bis zu 4 Federstahlplatten (257 × 257 × 0,5 mm) auf seitlichen 8-mm-Auflageleisten mit 45°-Einlaufschräge auf.',
-    dim: 'Außen 280×290×165 mm (Z = 148..313 mm) · 4 Slots: Z = 180 / 215 / 250 / 285 mm (Raster 35 mm)',
-    hw: '4× Alu-Profil 2020 (L = 313 mm), 16× M4×10 + Nutenstein, 4× Gabellichtschranke TCST2103',
+  { t: 'Plattenregal (Kompakt-Turm oben)', c: 'text-emerald-300', tag: '4 Fächer · X = +360', preset: 'magazine',
+    d: 'Oberes Modul des Kompakt-Turms rechts neben dem Bambu Lab P2S (Mitte X = +360 mm, 24 mm Vibrationsabstand zur rechten P2S-Seitenwand bei X = +196 mm). Nimmt 4 Federstahlplatten (257 × 257 × 0,5 mm) auf; Fach 2 liegt exakt auf der P2S-Bettübergabehöhe (Z = 220 mm).',
+    dim: 'Außen 280×290×167 mm (Z = 153..320 mm) · 4 Slots: Z = 185 / 220 / 255 / 290 mm (Raster 35 mm)',
+    hw: '4× Alu-Profil 2020 (L = 320 mm), 16× M4×10 + Nutenstein, 4× Gabellichtschranke TCST2103',
     p: 'models_stl/plate_magazine_rack_tower.stl' },
-  { t: '3-Achs-Wechsler-Shuttle', c: 'text-cyan-300', tag: 'X/Y/Z-Portal · Y = 560', preset: 'shuttle',
-    d: 'Frontportal außerhalb des 350-mm-Türschwenkradius (Y = 560 mm). X-Achse verfährt zwischen Drucker (X = 0) und Kompakt-Turm (X = +355 mm); Z-Achse fährt Betthöhe (Z = 215 mm), Regalfächer (Z = 180..285 mm) und Waschstation (Z = 44 mm) an; Y-Teleskoparm (Hub 430 mm) greift die Plattenvorderkante per Elektromagnet/Klemmbacke.',
-    dim: 'X-Träger 680 mm (X = −160..+520) · Z-Steher 2× 330 mm · Y-Teleskoparm 430 mm',
-    hw: 'Alu 2020 (1× 680 mm, 2× 330 mm), MGN12H (600 mm + 400 mm), T8×8 Spindel (300 mm), 3× NEMA17',
+  { t: '3-Achs-Wechsler-Shuttle (P2S)', c: 'text-cyan-300', tag: 'X/Y/Z-Portal · Y = 575', preset: 'shuttle',
+    d: 'Wegen der größeren P2S-Gehäusetiefe (406 mm, Türschwenkradius bis Y = 558 mm) auf Y = 575 mm positioniert (17 mm Sicherheitsabstand vor der offenen P2S-Tür). X-Achse verfährt zwischen P2S-Mitte (X = 0) und Kompakt-Turm (X = +360 mm); Y-Teleskoparm (Hub 440 mm) greift die Plattenvorderkante.',
+    dim: 'X-Träger 685 mm (X = −160..+525) · Z-Steher 2× 335 mm · Y-Teleskoparm 440 mm',
+    hw: 'Alu 2020 (1× 685 mm, 2× 335 mm), MGN12H (600 mm + 2× 300 mm), MGN9H (440 mm), T8×8 (300 mm), 3× NEMA17',
     p: 'Zukauf-Linearportal (2020 Alu + MGN12H) + Greiferaufnahme' },
   { t: 'IPA-Waschstation (Kompakt-Turm unten)', c: 'text-purple-300', tag: 'Z = 0..64 mm · unten', preset: 'washer',
-    d: 'Sitzt platzsparend im Untergeschoss des Kompakt-Turms (X = +355 mm, Y = 0 mm, Z = 0..64 mm) direkt unter dem Plattenregal. Shuttle senkt die verschmutzte Platte senkrecht auf Z = 44 mm ab, führt sie ±26 mm über 2 gegenläufige Mikrofaser-Walzen (Ø 24 × 246 mm) unter 99,9 % IPA-Sprühung und 5015-Gebläsetrocknung.',
+    d: 'Sitzt im Untergeschoss des rechten Kompakt-Turms (X = +360 mm, Y = 0 mm, Z = 0..64 mm) direkt unter dem Plattenregal. Shuttle senkt die verschmutzte Platte senkrecht auf Z = 44 mm ab und führt sie ±26 mm über 2 gegenläufige Mikrofaser-Walzen (Ø 24 × 246 mm) unter 99,9 % IPA-Sprühung und 5015-Gebläsetrocknung.',
     dim: 'Wanne 260×280×64 mm (Wandstärke 6 mm) · 2× Walze Ø24×246 mm (Y = −45 / +45 mm, Z = 32 mm)',
     hw: '4× Kugellager 608ZZ (8×22×7 mm), 12V Peristaltikpumpe (Relais GPIO 19), N20 Getriebemotor (GPIO 26), 5015 Lüfter (GPIO 13)',
     p: 'models_stl/plate_washer_station_basin.stl' },
-  { t: 'Werkzeugkopf-Abschubkeil', c: 'text-amber-300', tag: '75×30×12 mm · 35°', preset: 'toolhead',
-    d: 'An der unteren Vorderkante des X1C/P1S-Werkzeugkopfs verschraubter 35°-Räumkeil. Unterkante liegt exakt 1,5 mm über der Düsenspitze (Z = 339,5 mm), sodass der Keil beim Drucken nie das Bauteil berührt und beim Abschub (Bett auf Z = 336,5 mm) das Teil sauber an der Basis abscheren kann.',
-    dim: '75 × 30 × 12 mm · Keilwinkel 35° · Lochabstand 40 mm · Bodenfreiheit +1,5 mm zur Düse',
-    hw: '2× M3×12 Zylinderschraube + 2× Ruthex M3-Gewindeeinsatz (0,8 Nm, Material ASA/PETG)',
+  { t: 'P2S DynaSense Abschubkeil', c: 'text-amber-300', tag: '75×32×12,5 mm · 35°', preset: 'toolhead',
+    d: 'Speziell auf den Bambu Lab P2S DynaSense-Werkzeugkopf abgestimmter 35°-Räumkeil mit rückseitiger 24×14-mm-Freisparung für den P2S Eddy-Wirbelstromsensor und die Bauteilkühlung. Unterkante liegt bei Z = 357,5 mm (+1,5 mm über der P2S-Düsenspitze Z = 356 mm); Abschub erfolgt bei Bett-Z = 354,5 mm.',
+    dim: '75 × 32 × 12,5 mm · Keilwinkel 35° · Eddy-Sensor-Freisparung 24×14 mm · +1,5 mm zur Düse',
+    hw: '2× M3×12 Zylinderschraube + 2× Ruthex M3-Gewindeeinsatz (0,8 Nm, Material ASA)',
     p: 'models_stl/bambu_toolhead_sweeper_blade.stl' },
-  { t: 'Mitfahrende Rutsche & Auffangschale', c: 'text-emerald-300', tag: 'an Bettvorderkante', preset: 'chute',
-    d: 'Wird an der vorderen Kante des Heizbett-Trägers eingeklickt und fährt in Z mit dem Bett mit. Nutzt den 56-mm-Freiraum zwischen Bettvorderkante (Y = +128,5 mm) und Glastür (Y = +196,5 mm). Liegt komplett unterhalb der Plattenebene (Z ≤ bz − 2,5 mm), damit das Shuttle die Platte frei darüber hinwegziehen kann.',
-    dim: 'Rutsche 120×38×24 mm (32° Gefälle) · Auffangschale 124×51×46 mm (Y = 135..186 mm)',
-    hw: 'Werkzeuglose Klick-Rastnasen am Bettträger + 2× M3×8 Sicherungsschraube (Material PETG)',
+  { t: 'P2S Mitfahrende Rutsche & Schale', c: 'text-emerald-300', tag: '74,5 mm P2S-Freiraum', preset: 'chute',
+    d: 'Nutzt den beim Bambu Lab P2S vergrößerten vorderen Bauraum-Freiraum von 74,5 mm zwischen Plattenvorderkante (Y = +128,5 mm) und Glastür-Innenseite (Y = +203 mm). Fährt am P2S-Heizbettträger in Z mit und bleibt komplett unterhalb der Plattenebene (Z ≤ bz − 2,5 mm), sodass das Shuttle die Platte frei darüber hinwegzieht.',
+    dim: 'Rutsche 120×42×24 mm (30° Gefälle) · Auffangschale 124×56×46 mm (Y = 136..192 mm)',
+    hw: 'Werkzeuglose Klick-Rastnasen am P2S-Bettträger + 2× M3×8 Sicherungsschraube (Material PETG)',
     p: 'models_stl/bambu_bed_ejection_chute.stl' },
 ];
 
@@ -783,7 +790,7 @@ function loop(now) {
 }
 selectStep(1);
 setPreset('iso');
-Object.assign(cam, { yaw: 0.40, pitch: 0.44, dist: 1800, tx: 125, ty: 90, tz: 185 }); camGoal = null;
+Object.assign(cam, { yaw: 0.40, pitch: 0.44, dist: 1840, tx: 130, ty: 95, tz: 195 }); camGoal = null;
 const _q = new URLSearchParams(location.search);
 if (_q.get('act')) { startAction(_q.get('act')); if (_q.get('t') && action) action.t = parseFloat(_q.get('t')); }
 if (_q.get('expl')) { expl = explTarget = parseFloat(_q.get('expl')); $('sl-expl').value = Math.round(expl * 100); }
