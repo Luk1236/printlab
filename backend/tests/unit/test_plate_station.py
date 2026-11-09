@@ -21,6 +21,16 @@ def fresh_station(tmp_path):
     return srv
 
 
+@pytest.fixture
+def isolated_singleton(tmp_path, monkeypatch):
+    """Die Schnittstelle benutzt die gemeinsame Instanz: Zustand und Datei vom Entwicklungsstand trennen."""
+    from backend.app.services.plate_station_service import plate_station_service
+
+    monkeypatch.setattr(plate_station_service, "state_file", tmp_path / "plate_station_state.json")
+    monkeypatch.setattr(plate_station_service, "state", PlateStationState())
+    return plate_station_service
+
+
 @pytest.mark.asyncio
 async def test_door_open_and_close(fresh_station):
     srv = fresh_station
@@ -56,9 +66,9 @@ async def test_swap_plate_lifecycle(fresh_station):
     assert res["status"] == "ok"
     assert "erfolgreich" in res["message"]
 
-    # Prüfen, dass alte Platte in Slot 4 abgelegt wurde und jetzt DIRTY ist
+    # Prüfen, dass alte Platte samt Teilen in Slot 4 abgelegt wurde (FULL: Teile liegen noch drauf)
     slot4 = next(s for s in srv.state.magazine_slots if s.slot_id == res["stored_dirty_slot"])
-    assert slot4.status == PlateSlotStatus.DIRTY
+    assert slot4.status == PlateSlotStatus.FULL
 
     # Tür muss nach Swap wieder sicher geschlossen sein
     assert srv.state.door_state == DoorState.CLOSED
@@ -85,7 +95,7 @@ async def test_wash_plate_cycle(fresh_station):
 
 
 @pytest.mark.asyncio
-async def test_plate_station_api_endpoints(async_client: AsyncClient):
+async def test_plate_station_api_endpoints(async_client: AsyncClient, isolated_singleton):
     # Status abrufen
     resp = await async_client.get("/api/v1/fleet/plate-station/status")
     assert resp.status_code == 200
@@ -108,11 +118,11 @@ async def test_plate_station_api_endpoints(async_client: AsyncClient):
     resp_swap = await async_client.post("/api/v1/fleet/plate-station/swap", json={"desired_plate_type": "textured_pei"})
     assert resp_swap.status_code == 200
     assert resp_swap.json()["status"] == "ok"
+    assert resp_swap.json()["simulated"] is True
 
     # Slot manuell updaten
     resp_slot = await async_client.post(
-        "/api/v1/fleet/plate-station/slots/2",
-        json={"status": "dirty", "label": "Fach 2 - Benutzt"}
+        "/api/v1/fleet/plate-station/slots/2", json={"status": "dirty", "label": "Fach 2 - Benutzt"}
     )
     assert resp_slot.status_code == 200
     assert resp_slot.json()["slot"]["status"] == "dirty"

@@ -1,8 +1,15 @@
-# PrintLab – Konstruktions- & Maßplan für Bambu Lab P2S (Baugruppen 1 bis 6)
-## Punkt-für-Punkt-Auslegung für den Bambu Lab P2S (`392 × 406 × 478 mm`): Türöffner (links über 5"-Touchscreen), Kompakt-Turm rechts (Plattenregal + Waschstation), 3-Achs-Shuttle & DynaSense-Bauteilabschub
+# PrintLab – Konstruktions- & Maßplan für Bambu Lab P2S (Baugruppen 1 bis 4)
+> [!IMPORTANT]
+> **Ablauf: Die fertigen Teile bleiben auf der Platte.** Der Wechsler zieht die Platte samt Teilen aus dem Drucker und stellt sie
+> ins Plattenregal; die Teile werden dort von Hand entnommen. Es wird nichts abgeschoben, deshalb gibt es **keinen Abschubkeil und
+> keine Rutsche mit Schale**: Der Bauplan hat **4 Baugruppen**. Die STL-Dateien `bambu_toolhead_sweeper_blade.stl` und
+> `bambu_bed_ejection_chute.stl` liegen noch im Ordner, gehören aber nicht mehr zum Bauplan. Die Teilehöhe ist durch das Regal
+> begrenzt, siehe Abschnitt 4.
+
+## Punkt-für-Punkt-Auslegung für den Bambu Lab P2S (`392 × 406 × 478 mm`): Türöffner (links über 5"-Touchscreen), Kompakt-Turm rechts (Plattenregal + Waschstation), 3-Achs-Wechsler-Shuttle
 
 > [!IMPORTANT]
-> **Spezifische Anpassungen für den Bambu Lab P2S (Stand v2.3 – 6 Kernbaugruppen):**
+> **Spezifische Anpassungen für den Bambu Lab P2S (Stand v2.4 – 4 Baugruppen):**
 > * **Drucker-Außenmaße Bambu Lab P2S:** **$392\text{ mm}$ (Breite $X$) $\times 406\text{ mm}$ (Tiefe $Y$) $\times 478\text{ mm}$ (Höhe $Z$)** bei **$256 \times 256 \times 256\text{ mm}$** Bauraum ($257 \times 257\text{ mm}$ Federstahlplatten).
 > * **Ursprung $(0, 0, 0)$:** Bodenmitte des Bambu Lab P2S ($X \in [-196{,}0, +196{,}0]\text{ mm}$, $Y \in [-203{,}0, +203{,}0]\text{ mm}$, $Z \in [0, 478{,}0]\text{ mm}$).
 > * **Baugruppe 1 (P2S Glastür & Servo-Brücke links):** Scharnier links bei $X = -176{,}5\text{ mm}, Y = +205{,}0\text{ mm}$ (Türbreite $353\text{ mm}$). Der Servohalter auf $Z = 478\text{ mm}$ besitzt einen **$14\text{ mm}$ Frontüberstand**, damit die $90\text{ mm}$ Schubstange frei vor dem **5-Zoll-Touchscreen** des P2S ($Z = 444\dots 475\text{ mm}$) läuft.
@@ -10,8 +17,6 @@
 >   * **Oben ($Z = 153\dots 320\text{ mm}$):** 4-Fach-Plattenregal (`Baugruppe 2`) mit **Fach 2 exakt auf P2S-Bettübergabehöhe ($Z = 220\text{ mm}$)**.
 >   * **Unten ($Z = 0\dots 64\text{ mm}$):** Integrierte IPA-Waschstation (`Baugruppe 4`) direkt unter dem Plattenregal.
 > * **Baugruppe 3 (3-Achs-Wechsler-Shuttle):** Wegen der größeren P2S-Gehäusetiefe ($406\text{ mm}$, Türschwenkbogen bis $Y = +558\text{ mm}$) auf **$Y_{\text{Rail}} = +575\text{ mm}$** vorgerückt ($17\text{ mm}$ Sicherheitsabstand vor der offenen P2S-Glastür).
-> * **Baugruppe 5 (P2S DynaSense-Abschubkeil):** Mit rückseitiger **$24 \times 14\text{ mm}$ Freisparung** für den **P2S Eddy-Wirbelstromsensor** und die Bauteilkühlung am DynaSense-Extruderkopf ($Z_{\text{Düse}} = 356{,}0\text{ mm}$, Keil-Unterkante $Z = 357{,}5\text{ mm}$).
-> * **Baugruppe 6 (P2S Rutsche & Schale am Heizbett):** Nutzt den beim P2S um $+6{,}5\text{ mm}$ größeren vorderen Kammer-Freiraum von **$74{,}5\text{ mm}$** ($Y = +128{,}5\dots +203{,}0\text{ mm}$) für eine flachere $30^\circ$-Rutsche und eine $56\text{ mm}$ tiefe Auffangschale.
 
 ---
 
@@ -23,7 +28,7 @@ flowchart LR
         D["Baugruppe 1: P2S Glastür + Servo-Brücke\nScharnier X = -176,5, Y = +205,0\nÜberbrückt P2S 5-Zoll-Touchscreen (115° Öffnung)"]
     end
     subgraph MITTE["Drucker-Zentrum (X = -196 .. +196 mm)"]
-        P["Bambu Lab P2S\n392 × 406 × 478 mm (Bauraum 256³ mm)\nBaugruppe 5 (DynaSense-Keil) & Baugruppe 6 (P2S-Rutsche)"]
+        P["Bambu Lab P2S\n392 × 406 × 478 mm (Bauraum 256³ mm)"]
     end
     subgraph RECHTS["Rechte Seite: Kompakt-Turm (X = +220 .. +543 mm)"]
         M["Baugruppe 2: Plattenregal (OBEN)\nZ = 153 .. 320 mm (4 Fächer: 185/220/255/290 mm)"]
@@ -47,12 +52,10 @@ flowchart LR
 | **Transfer-Korridor $Y_{\text{Transfer}}$** | $Y = +345{,}0\text{ mm}$ | **$Y = +355{,}0\text{ mm}$** | Plattenhinterkante bei $226{,}5\text{ mm}$ ($21{,}5\text{ mm}$ frei vor P2S-Front $205\text{ mm}$) |
 | **Kompakt-Turm-Mitte $X_{\text{Mag}}$** | $X = +355{,}0\text{ mm}$ | **$X = +360{,}0\text{ mm}$** | $24{,}0\text{ mm}$ Vibrationsabstand zur rechten P2S-Seitenwand ($X = +196\text{ mm}$) |
 | **4 Regalfach-Höhen `SLOT_Z`** | $180 / 215 / 250 / 285\text{ mm}$ | **$185 / 220 / 255 / 290\text{ mm}$** | Fach 2 liegt exakt auf P2S-Bettübergabehöhe $Z_{\text{Swap}} = 220{,}0\text{ mm}$ |
-| **Düsenspitze $Z_{\text{Nozzle}}$ & Keil $Z_{\text{Blade}}$** | $338{,}0\text{ mm} \;/\; 339{,}5\text{ mm}$ | **$356{,}0\text{ mm} \;/\; 357{,}5\text{ mm}$** | Angepasst an P2S Bauhöhe ($478\text{ mm}$) und DynaSense-Hotend |
-| **Kammer-Freiraum vor dem Heizbett** | $68{,}0\text{ mm}$ ($128{,}5 \to 196{,}5$) | **$74{,}5\text{ mm}$ ($128{,}5 \to 203{,}0$)** | Erlaubt größere P2S-Auffangschale ($56\text{ mm}$ tief statt $51\text{ mm}$) |
 
 ---
 
-## 2. Punkt-für-Punkt-Planung der 6 Baugruppen für den Bambu Lab P2S
+## 2. Punkt-für-Punkt-Planung der 4 Baugruppen für den Bambu Lab P2S
 
 ### Baugruppe 1: P2S Automatischer Türöffner (Scharnier links, über 5"-Touchscreen)
 * **Einbauposition am P2S:** Oben links auf dem P2S-Rahmenprofil direkt über der linken Tür-Drehachse ($X = -186\dots -132\text{ mm}$, $Y = +170\dots +212\text{ mm}$, $Z = 478\dots 504\text{ mm}$).
@@ -102,7 +105,7 @@ flowchart LR
        * Regalfächer 1–4: $Z = 185{,}0 / 220{,}0 / 255{,}0 / 290{,}0\text{ mm}$
        * P2S-Heizbett-Übergabehöhe: $Z_{\text{Swap}} = 220{,}0\text{ mm}$
   3. **Y-Achse (Teleskop-Greiferarm durch die offene P2S-Fronttür):**
-     * **Führung:** Leichtbau-Linearschiene **MGN9H ($440\text{ mm}$)** auf dem X-Schlitten.
+     * **Führung:** Leichtbau-Linearschiene **MGN9H ($500\text{ mm}$)** auf dem X-Schlitten (mit $440\text{ mm}$ blieben nur $400{,}1\text{ mm}$ Hub, es fehlten $5{,}4\text{ mm}$).
      * **Verfahrweg Y (Greifspitze `gy`):**
        * Parkposition: **$Y_{\text{Park}} = +540{,}0\text{ mm}$** (hinter dem P2S-Türschwenkbogen geparkt).
        * Vorzone (Transferkorridor): Plattenmitte bei **$Y_{\text{Transfer}} = +355{,}0\text{ mm}$** ($21{,}5\text{ mm}$ Sicherheitsabstand zwischen Plattenhinterkante $Y = +226{,}5\text{ mm}$ und P2S-Frontrahmen $Y = +205{,}0\text{ mm}$).
@@ -122,32 +125,6 @@ flowchart LR
 
 ---
 
-### Baugruppe 5: P2S DynaSense Werkzeugkopf-Abschubkeil (mit Eddy-Sensor-Freisparung)
-* **Einbauposition:** Untere Vorderseite des **Bambu Lab P2S DynaSense-Werkzeugkopfs** ($X_{\text{Head}} \pm 37{,}5\text{ mm}$, $Y = Y_{\text{Head}} + 26\dots +38\text{ mm}$, $Z = 357{,}5\dots 370{,}0\text{ mm}$).
-* **Spezifische Anpassung an den P2S DynaSense-Extruder (`bambu_toolhead_sweeper_blade.stl`):**
-  * Der P2S-Werkzeugkopf verfügt über das magnetische *Toolhead Front Cover*, das Schnellwechsel-Hotend und einen integrierten **Eddy-Wirbelstromsensor** an der Unterseite.
-  * Damit weder der Eddy-Sensor noch die beiden seitlichen Bauteil-Kühlluftkanäle verdeckt werden, besitzt der hintere Montageflansch eine zentrale **$24{,}0 \times 14{,}0\text{ mm}$ Freisparung** ($X = -12\dots +12\text{ mm}$) und wird nur über die beiden äußeren Flanschblöcke ($X = \pm 12\dots \pm 37{,}5\text{ mm}$) verschraubt.
-* **Exakte Bauteilmaße:**
-  * **Außenmaße:** **$75{,}0 \times 32{,}0 \times 12{,}5\text{ mm}$** (mit seitlichen M3-Befestigungslaschen $90{,}0\text{ mm}$ Gesamtbreite, Keilwinkel **$35^\circ$**, Material **ASA**).
-  * **Düsen-Freigang beim P2S:**
-    * P2S-Düsenspitze: $Z_{\text{Nozzle}} = 356{,}0\text{ mm}$.
-    * Keil-Unterkante: **$Z_{\text{Blade}} = 357{,}5\text{ mm}$** (**$+1{,}5\text{ mm}$ höher als die P2S-Düsenspitze**).
-    * Abschub-Betthöhe: **$Z_{\text{Push}} = 354{,}5\text{ mm}$** (Keil trifft das Bauteil exakt $3{,}0\text{ mm}$ über der Federstahlplatte).
-
----
-
-### Baugruppe 6: P2S Mitfahrende Auswurfrutsche & Auffangschale am Heizbett
-* **Einbauposition:** An der Vorderkante des P2S-Heizbettträgers eingeklickt ($X = -62\dots +62\text{ mm}$, $Y = +128{,}5\dots +192{,}0\text{ mm}$, fährt in $Z$ mit dem Heizbett mit).
-* **Vorteil des größeren P2S-Gehäuses ($406\text{ mm}$ Tiefe):**
-  * Durch die um $17\text{ mm}$ tiefere Bauweise des Bambu Lab P2S stehen zwischen der Vorderkante der $257\text{ mm}$ Bauplatte ($Y = +128{,}5\text{ mm}$) und der Innenseite der geschlossenen Glastür ($Y = +203{,}0\text{ mm}$) volle **$74{,}5\text{ mm}$ Freiraum** zur Verfügung (statt $68{,}0\text{ mm}$ beim X1C/P1S).
-* **Exakte Bauteilmaße (`bambu_bed_ejection_chute.stl`):**
-  1. **30°-Abgleitrampe (Rutsche):**
-     * Breite $120{,}0\text{ mm}$ ($X = -60\dots +60\text{ mm}$), horizontale Länge **$42{,}0\text{ mm}$** ($Y = +128{,}5\dots +170{,}5\text{ mm}$), Höhenabfall $\Delta Z = -24{,}0\text{ mm}$, Oberkante $2{,}5\text{ mm}$ unter der Plattenebene.
-  2. **Vergrößerte P2S-Auffangschale:**
-     * Außenmaß: **$124{,}0 \times 56{,}0 \times 46{,}0\text{ mm}$** ($Y = +136{,}0\dots +192{,}0\text{ mm}$, Wandstärke $4{,}0\text{ mm}$, Bodenstärke $3{,}0\text{ mm}$, lässt **$11{,}0\text{ mm}$ Sicherheitsabstand** zur geschlossenen P2S-Glastür bei $Y = +203{,}0\text{ mm}$).
-
----
-
 ## 3. Vollständige Zuschnitt- & Stückliste (BOM für Bambu Lab P2S)
 
 ### A. 3D-Druckteile (für Bambu Lab P2S generiert in `werkzeuge/automation_hardware/models_stl/`)
@@ -158,8 +135,6 @@ flowchart LR
 | **1b** | 1 · P2S Türöffner | [`bambu_door_push_pull_linkage.stl`](file:///C:/Users/lukas/OneDrive/Desktop/Bambuddy-Fork/werkzeuge/automation_hardware/models_stl/bambu_door_push_pull_linkage.stl) | **$90\text{ mm}$** Stichmaß ($101 \times 16 \times 7\text{ mm}$) | ASA / PETG | 5 Wände · 50 % Linien |
 | **2** | 2 · Plattenregal | [`plate_magazine_rack_tower.stl`](file:///C:/Users/lukas/OneDrive/Desktop/Bambuddy-Fork/werkzeuge/automation_hardware/models_stl/plate_magazine_rack_tower.stl) | **$280 \times 290 \times 167\text{ mm}$** (Slots 185..290) | PETG | 4 Wände · 30 % Gyroid |
 | **4** | 4 · Waschstation | [`plate_washer_station_basin.stl`](file:///C:/Users/lukas/OneDrive/Desktop/Bambuddy-Fork/werkzeuge/automation_hardware/models_stl/plate_washer_station_basin.stl) | **$260 \times 280 \times 64\text{ mm}$** | PETG / PP | 5 Wände · 35 % (dicht) |
-| **5** | 5 · P2S Abschubkeil | [`bambu_toolhead_sweeper_blade.stl`](file:///C:/Users/lukas/OneDrive/Desktop/Bambuddy-Fork/werkzeuge/automation_hardware/models_stl/bambu_toolhead_sweeper_blade.stl) | **$75 \times 32 \times 12{,}5\text{ mm}$** (Eddy-Freisparung) | ASA | 4 Wände · 35 % Gyroid |
-| **6** | 6 · P2S Rutsche & Schale | [`bambu_bed_ejection_chute.stl`](file:///C:/Users/lukas/OneDrive/Desktop/Bambuddy-Fork/werkzeuge/automation_hardware/models_stl/bambu_bed_ejection_chute.stl) | **$124 \times 63{,}5 \times 60\text{ mm}$** (Schale 56 mm tief) | PETG | 3 Wände · 25 % Gyroid |
 
 ### B. Aluminium-Profile, Lineartechnik & Mechanik (P2S-Zuschnittliste)
 
@@ -170,13 +145,13 @@ flowchart LR
 | **M3** | Alu-Profil 2020 Nut 5 | Länge **$685{,}0\text{ mm}$** | 1 Stk. | Horizontaler X-Querträger Shuttle ($Y = +575$) |
 | **M4** | Linearschiene MGN12H | Länge **$600{,}0\text{ mm}$** inkl. 1× Wagen MGN12H | 1 Satz | X-Achse Wechsler-Shuttle ($\Delta X = 360\text{ mm}$) |
 | **M5** | Linearschiene MGN12H | Länge **$300{,}0\text{ mm}$** inkl. je 1× Wagen MGN12H | 2 Sätze | Z-Achse Vertikalhub Shuttle (links & rechts) |
-| **M6** | Linearschiene MGN9H | Länge **$440{,}0\text{ mm}$** inkl. 1× Wagen MGN9H | 1 Satz | Y-Teleskoparm ($\Delta Y = 405{,}5\text{ mm}$ in den P2S) |
+| **M6** | Linearschiene MGN9H | Länge **$500{,}0\text{ mm}$** inkl. 1× Wagen MGN9H | 1 Satz | Y-Teleskoparm ($\Delta Y = 405{,}5\text{ mm}$ in den P2S) |
 | **M7** | Trapezgewindespindel | **T8×8**, Länge **$300{,}0\text{ mm}$** + Anti-Backlash-Mutter | 1 Satz | Z-Hub-Antrieb Shuttle ($Z = 44\dots 290\text{ mm}$) |
 | **M8** | GT2 Zahnriemen + Pulleys | Breite $6\text{ mm}$, Länge **$2500\text{ mm}$** + $2 \times$ 20T Pulley ($\varnothing 5\text{ mm}$) | 1 Satz | Antrieb X-Achse & Y-Teleskoparm |
 | **M9** | Edelstahlwellen $\varnothing 8\text{ mm}$ | Länge **$260{,}0\text{ mm}$** (Passung h6) | 2 Stk. | Walzenachsen in der IPA-Waschstation |
 | **M10** | Kugellager 608ZZ | $\varnothing 8 \times \varnothing 22 \times 7\text{ mm}$ (gedichtet) | 4 Stk. | Walzenlagerung in der Waschstation |
 | **M11** | Mikrofaser-Hülsen | $\varnothing_{\text{außen}} 24\text{ mm}$, $\varnothing_{\text{innen}} 8\text{ mm}$, Länge **$246\text{ mm}$** | 2 Stk. | Gegenläufige Reinigungs-Walzen |
-| **M12** | Schraubensatz & Inserts | Ruthex M3 (10×), M3×10/12 (20×), M4×10 + Nutenstein (30×) | 1 Satz | Gesamtverschraubung Baugruppen 1–6 |
+| **M12** | Schraubensatz & Inserts | Ruthex M3 (10×), M3×10/12 (20×), M4×10 + Nutenstein (30×) | 1 Satz | Gesamtverschraubung Baugruppen 1–4 |
 
 ### C. Aktuatorik, Pumpen & Elektronik (GPIO-Zuordnung)
 
@@ -190,3 +165,73 @@ flowchart LR
 | **E6** | **Radiallüfter 5015 12V** | $50 \times 50 \times 15\text{ mm}$, $6000\text{ U/min}$ | **BCM 13 (Pin 33)** – Relais Kanal 3 | Trocknet die gewaschene Platte in $15\text{ s}$ |
 | **E7** | 4× Lichtschranke **TCST2103** | Optischer Slot-Sensor $3{,}3\text{ V}$ | GPIO-Eingänge (Fächer 1–4) | Erkennt belegte/freie Fächer im Plattenregal |
 | **E8** | Netzteil MeanWell **LRS-100-12** | 12V DC / $8{,}5\text{ A}$ ($100\text{ W}$) + 5V/3A Buck-Converter | Primärversorgung | Versorgt Motoren, Pumpe, Magnet, Lüfter & Servo |
+
+---
+
+## 4. Wechselzyklus und Konstruktionsprüfung (Baugruppe 3)
+
+Die Maße und der Ablauf stehen **einmal** im Code: `backend/app/services/plate_changer.py`. Die Plattenstation fährt diese Phasen ab,
+die 3D-Ansicht trägt eine Kopie und ein Test (`test_plate_changer.py`) schlägt fehl, wenn beide auseinanderlaufen. Nach einer
+Änderung der Maße oder Phasen: `python werkzeuge/automation_hardware/sync_viewer.py` und die HTML-Datei mitcommitten.
+Die Maße stammen aus diesem Plan und sind **nicht am Gerät nachgemessen**.
+
+### 4.1 Die 11 Phasen eines Wechsels
+
+| Nr. | Phase | Was passiert | Magnet |
+| :---: | :--- | :--- | :---: |
+| 1 | Tür öffnet | Servo öffnet die Glastür auf $115^\circ$ | – |
+| 2 | Bett fährt auf Wechselhöhe | Bett senkt sich auf $Z = 220$, die Teile bleiben auf der Platte | – |
+| 3 | Shuttle vor den Drucker | Shuttle $X$ $360 \to 0$, Arm fährt vor | – |
+| 4 | Alte Platte herausziehen | Platte samt Teilen bis $Y = 355$ in den Übergabekorridor | an |
+| 5 | Zum Plattenregal | $X$ $0 \to 360$, $Z$ auf das leere Fach | – |
+| 6 | Alte Platte ablegen | Platte samt Teilen ins freie Fach schieben | aus |
+| 7 | Zur frischen Platte | Arm löst, $Z$ auf das Fach mit der frischen Platte | – |
+| 8 | Frische Platte holen | Platte bis $Y = 355$ herausziehen | an |
+| 9 | Zurück zum Drucker | $X$ $360 \to 0$, $Z$ auf Wechselhöhe $220$ | – |
+| 10 | Platte auf das Bett legen | Platte auf das Heizbett schieben | aus |
+| 11 | Parken, Tür schließt | Arm auf $Y = 540$, Shuttle zum Turm, Tür zu, Bett auf Ruhe-$Z$ | – |
+
+**Teile bleiben auf der Platte:** Die Platte kommt mit Status `full` („mit Teilen“) ins Fach. Sie wird erst gewaschen, wenn die Teile
+von Hand entnommen und im System als entnommen gemeldet sind (`POST /api/v1/fleet/plate-station/slots/{id}/unload-parts`, in der
+3D-Ansicht „entnehmen“); danach ist sie `dirty`. Das Waschen verweigert Platten mit Teilen.
+
+**Reihenfolge ist Pflicht:** Die Tür muss ganz offen sein (Phase 1), bevor die Platte den Drucker verlässt (Phase 4). Bei halber
+Öffnung schneidet die Tür den Übergabekorridor. Das rechnet die Prüfung unten nach, die 3D-Ansicht zeigt den Abstand live.
+
+### 4.2 Sperren (Software)
+
+Tür öffnen und Plattenwechsel laufen nur, wenn **kein Druck läuft** (Zustand weder `PREPARE`, `SLICING`, `RUNNING` noch `PAUSE`,
+bei unbekanntem Zustand ebenfalls nicht), das **Bett höchstens $36\,^\circ\text{C}$** hat und der **Not-Halt nicht aktiv** ist.
+Beim Wechsel prüft die Software außerdem die **Teilehöhe** (`part_height_mm`): Die Teile müssen unter die nächste Platte im Regal passen,
+sonst bewegt sich nichts. Ohne Angabe der Höhe wird nicht geprüft; `with_parts: false` für eine Platte ohne Teile.
+Waschen und Tür schließen sperrt nur der Not-Halt. Alle Bewegungen verlangen das Recht `printers:control` und werden im
+Audit-Protokoll festgehalten. Bei mehreren Druckern muss `printer_id` angegeben werden.
+
+> [!WARNING]
+> Die Plattenstation ist derzeit eine **Simulation**: `driver.simulated` ist `true`, es werden keine Motoren, Magnete oder Pumpen
+> angesteuert. Ein echter Treiber ersetzt `SimulatedDriver.run_phase` und `abort`; erst dann bewegt sich Hardware.
+
+### 4.3 Konstruktionsprüfung
+
+Erzeugt mit `python werkzeuge/automation_hardware/sync_viewer.py --report` (rechnet nur nach, ob die Maße zueinander passen).
+
+| Prüfung | Wert | Empfohlen | Status | Hinweis |
+| :--- | ---: | ---: | :---: | :--- |
+| Tür ↔ Portalprofil (Draufsicht, ganzer Öffnungsweg) | 7,3 mm | 15 mm | **KNAPP** | Die 17 mm gelten bis zur Schienenmitte ($Y = 575$), die Profilvorderkante liegt bei $Y = 565$: Schiene auf $Y \ge 583$ setzen oder die Türöffnung am Gerät auf unter $90^\circ$ begrenzen. |
+| Tür ($115^\circ$) ↔ Platte im Übergabekorridor | 52,6 mm | 15 mm | ok | Gilt nur bei ganz offener Tür. |
+| Plattenhinterkante ↔ Druckerfront im Korridor | 21,5 mm | 15 mm | ok | |
+| Turm ↔ rechte Druckerwand | 24,0 mm | 15 mm | ok | |
+| Reserve Verfahrweg X | 194,6 mm | 5 mm | ok | |
+| Reserve Verfahrweg Y-Arm | 54,6 mm | 5 mm | ok | **Schiene von 440 auf 500 mm geändert**, sonst fehlten 5,4 mm. |
+| Reserve Verfahrweg Z | 8,6 mm | 5 mm | ok | Knapp: Spindelmutter und Anschläge brauchen Platz, am Gerät prüfen. |
+| Höhe der Teile auf der Platte im niedrigsten Fach | 17,0 mm | 30 mm | **KNAPP** | Fach 1 bis 3: je 29,5 mm (35-mm-Raster minus Platte und 5 mm Luft), Fach 4 unter der Deckplatte: 17 mm. Höhere Teile: Raster vergrößern, Fächer streichen oder das oberste Fach nicht für Platten mit Teilen nutzen. Die gewünschten 30 mm sind eine **Annahme** (Beispielteil der 3D-Ansicht), bitte durch die echte Höchsthöhe ersetzen. |
+| Backe in Fach 4 ↔ Deckplatte des Turms | 14,0 mm | 15 mm | **KNAPP** | Backenoberkante 8 mm über der Plattenoberkante, Deckplatte ab $Z = 312$. |
+| Haltekraft Magnet ÷ Plattengewicht | 31,5 × | 5 × | ok | Nennwert bei 80 N: Eine dünne Platte nutzt nur einen Bruchteil, mit der Federwaage prüfen. |
+
+### 4.4 Noch nicht ausgearbeitet
+
+* Für das Shuttle gibt es **keine gedruckten Teile** (Wagenplatten, Greiferkopf mit Magnettasche, Riemenhalter, Endschalter-Fahnen,
+  Kettenaufnahme). Der Greifer ist in der 3D-Ansicht nur als Block gezeichnet.
+* Die Teile werden **von Hand** von den Platten im Regal genommen; eine Entnahme-Automatik gibt es nicht.
+* Referenzfahrt, Endschalter und Schrittverluste sind nicht beschrieben; ohne sie darf der echte Treiber nicht in Betrieb gehen.
+* Die Fahrgeschwindigkeiten und damit die Dauer eines Wechsels sind nicht festgelegt; die Dauer in der 3D-Ansicht ist nur Anschauung.

@@ -28,14 +28,19 @@ flowchart TD
     A["1. ERP / Webhook Auftragseingang (Shopify/SAP)"] --> B["2. Druckauftrag startet (Auto-Nesting & Purge-Opt)"]
     B --> C["3. Druck beendet (Z-Achse senkt ab)"]
     C --> D["4. Thermisches Lösen: Bett kühlt auf <32°C ab"]
-    D --> E["5. Mechanischer Abschub: Toolhead Sweeper Blade / Servo"]
-    E --> F["6. Bauteil gleitet über Bed Chute in Auffangbehälter"]
+    D --> E["5. Plattenwechsler zieht die Platte samt Teilen aus dem Drucker"]
+    E --> F["6. Platte mit Teilen ins Regal, frische Platte auf das Bett"]
     F --> G["7. KI-Clearance-Scan: Bett 100% splitterfrei?"]
     G -- "Ja (100% frei)" --> H["8. HX711 Spulen-Verwiegung & Tara-Korrektur"]
     G -- "Nein (Partikel erkannt)" --> I["Alarm & Warteschleife (Kollisionsschutz)"]
     H --> J["9. Neuer Druckauftrag startet sofort automatisch"]
     J --> B
 ```
+
+> [!NOTE]
+> Die Teile bleiben auf der Platte und wandern mit ihr ins Plattenregal, sie werden dort von Hand entnommen. Abschubkeil und
+> Rutsche mit Schale sind aus dem Bauplan gestrichen (die Dateien bleiben liegen). Wechselzyklus, Sperren und
+> Konstruktionsprüfung: `TUER_MAGAZIN_WASCHSTATION.md`, Abschnitt 4.
 
 ---
 
@@ -45,8 +50,8 @@ Alle Bauteile wurden im Hinblick auf maximale mechanische Festigkeit, thermische
 
 | Nr. | Bauteil-Dateiname (STL) | Abmessungen | Material | Infill | Wände | Stützstruktur |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **1** | [`bambu_toolhead_sweeper_blade.stl`](file:///C:/Users/lukas/OneDrive/Desktop/Bambuddy-Fork/werkzeuge/automation_hardware/models_stl/bambu_toolhead_sweeper_blade.stl) | 75 × 30 × 12 mm | **ASA / PETG** | 35% Gyroid | 4 Wände | Keine (flach) |
-| **2** | [`bambu_bed_ejection_chute.stl`](file:///C:/Users/lukas/OneDrive/Desktop/Bambuddy-Fork/werkzeuge/automation_hardware/models_stl/bambu_bed_ejection_chute.stl) | 130 × 50 × 22 mm | **PETG** | 20% Grid | 3 Wände | An Klemmnasen |
+| **1 (entfällt)** | [`bambu_toolhead_sweeper_blade.stl`](file:///C:/Users/lukas/OneDrive/Desktop/Bambuddy-Fork/werkzeuge/automation_hardware/models_stl/bambu_toolhead_sweeper_blade.stl) | 75 × 30 × 12 mm | **ASA / PETG** | 35% Gyroid | 4 Wände | Keine (flach) |
+| **2 (entfällt)** | [`bambu_bed_ejection_chute.stl`](file:///C:/Users/lukas/OneDrive/Desktop/Bambuddy-Fork/werkzeuge/automation_hardware/models_stl/bambu_bed_ejection_chute.stl) | 130 × 50 × 22 mm | **PETG** | 20% Grid | 3 Wände | An Klemmnasen |
 | **3** | [`gpio_servo_actuator_mount.stl`](file:///C:/Users/lukas/OneDrive/Desktop/Bambuddy-Fork/werkzeuge/automation_hardware/models_stl/gpio_servo_actuator_mount.stl) | 45 × 35 × 24 mm | **PETG** | 30% Gyroid | 4 Wände | Keine |
 | **4** | [`hx711_loadcell_base.stl`](file:///C:/Users/lukas/OneDrive/Desktop/Bambuddy-Fork/werkzeuge/automation_hardware/models_stl/hx711_loadcell_base.stl) | 90 × 40 × 16 mm | **PETG / PLA+** | 45% Gyroid | 5 Wände | Keine |
 | **5** | [`hx711_spool_cradle.stl`](file:///C:/Users/lukas/OneDrive/Desktop/Bambuddy-Fork/werkzeuge/automation_hardware/models_stl/hx711_spool_cradle.stl) | 100 × 100 × 24 mm | **PETG** | 25% Gyroid | 3 Wände | Keine |
@@ -54,12 +59,12 @@ Alle Bauteile wurden im Hinblick auf maximale mechanische Festigkeit, thermische
 
 ### Detaillierte Bauteilbeschreibungen
 
-#### 1. Toolhead Sweeper Blade (Werkzeugkopf-Schiebekeil)
+#### 1. Toolhead Sweeper Blade (Werkzeugkopf-Schiebekeil) – entfällt, Teile bleiben auf der Platte
 - **Funktion:** Wird an der Unterseite des Werkzeugkopfs montiert. Der 35°-Abschubkeil schiebt nach dem Abkühlen der Textured PEI-Platte das Bauteil durch eine koordinierte Vorwärtsbewegung der Y-Achse sanft und ruckfrei vom Bett.
 - **Druckausrichtung:** Flach auf der Montageebene (Z=0).
 - **Materialempfehlung:** **ASA** (alternativ hochtemperaturbeständiges PETG oder PA-CF). Gewährleistet Formstabilität auch bei geschlossener Baukammer während ABS/PC-Drucken.
 
-#### 2. Bed Ejection Chute (Auswurfrutsche)
+#### 2. Bed Ejection Chute (Auswurfrutsche) – entfällt, Teile bleiben auf der Platte
 - **Funktion:** Wird an der vorderen Rahmenkante des Druckbetts eingeklippt. Schützt die vordere Abdeckung und leitet abgeworfene Teile mit 35° Gefälle sicher in den Sammelbehälter. Seitliche Führungsstege (15 mm) verhindern ein Verkanten.
 - **Druckausrichtung:** Auf der Rutschenschräge oder auf den Montageflanschen mit Baumstützen (Tree Supports).
 - **Materialempfehlung:** **PETG** (hohe Zähigkeit, glatte Oberfläche für minimale Reibung).
@@ -143,12 +148,12 @@ Die Ansteuerung der Hardware erfolgt direkt durch den PrintLab Raspberry Pi Daem
 4. Messleitungen am HX711-Board anlöten:
    - **E+ (Rot)**, **E- (Schwarz)**, **A+ (Grün)**, **A- (Weiß)**.
 
-### Schritt 2: Montage des Toolhead Sweeper Blades
+### Schritt 2: Montage des Toolhead Sweeper Blades (entfällt)
 1. Zwei M3-Ruthex Gewindeeinsätze mit dem Lötkolben (ca. 240°C) vorsichtig in die Bohrungen der Montagehalterung am Werkzeugkopf einpressen.
 2. Das gedruckte [`bambu_toolhead_sweeper_blade.stl`](file:///C:/Users/lukas/OneDrive/Desktop/Bambuddy-Fork/werkzeuge/automation_hardware/models_stl/bambu_toolhead_sweeper_blade.stl) mit zwei M3×12 mm Schrauben fixieren.
 3. Den Spalt zwischen Keilunterkante und Textured PEI-Druckplatte auf exakt **1.5 mm bis 2.0 mm** ausrichten (z.B. mit einer Fühlerlehre oder 2 Kreditkarten).
 
-### Schritt 3: Installation der Auswurfrutsche (Chute)
+### Schritt 3: Installation der Auswurfrutsche (Chute) (entfällt)
 1. Die Klemmnasen der [`bambu_bed_ejection_chute.stl`](file:///C:/Users/lukas/OneDrive/Desktop/Bambuddy-Fork/werkzeuge/automation_hardware/models_stl/bambu_bed_ejection_chute.stl) an der Frontseite des Druckergehäuses bzw. des 2020-Alurahmens einrasten.
 2. Einen Sammelbehälter oder ein automatisches Förderband direkt unter dem Auswurf platzieren.
 

@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PrintLab 3D – Tür, Plattenlager, Wechsler & Waschstation</title>
-  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
   <style>
     html, body { margin: 0; height: 100%; overflow: hidden; user-select: none; background: #080c14; color: #e2e8f0; }
     canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
@@ -14,7 +13,53 @@
     button:disabled { opacity: .45; cursor: not-allowed; }
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    .mono { font-family: ui-monospace, monospace; }
+    .cyc { position: absolute; top: 12px; right: 12px; z-index: 15; width: 304px; max-height: calc(100% - 150px); overflow-y: auto; border-radius: 14px; padding: 12px; font-size: 12px; }
+    .cyc[hidden] { display: none; }
+    .cyc-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+    .cyc-head b { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #fff; }
+    .cyc button { background: #1e293b; border: 1px solid #334155; color: #e2e8f0; border-radius: 8px; padding: 4px 9px; cursor: pointer; font-size: 12px; }
+    .cyc button:hover { background: #334155; }
+    .cyc-ctl { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+    .cyc-ctl input { flex: 1; min-width: 0; }
+    .cyc-opt { display: flex; gap: 14px; margin-bottom: 8px; color: #cbd5e1; }
+    .cyc-opt label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+    #phase-list { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+    #phase-list li { display: grid; grid-template-columns: 20px 1fr; gap: 2px 6px; padding: 4px 6px; border-radius: 8px; cursor: pointer; border: 1px solid transparent; color: #94a3b8; }
+    #phase-list li:hover { background: rgba(30, 41, 59, .7); }
+    #phase-list li.act { background: #0b3a4a; border-color: #06b6d4; color: #e2e8f0; }
+    #phase-list li.done { color: #64748b; }
+    #phase-list .n { font-family: ui-monospace, monospace; color: #fbbf24; text-align: right; }
+    #phase-list .d { grid-column: 2; display: none; font-size: 11px; color: #94a3b8; line-height: 1.35; }
+    #phase-list li.act .d { display: block; }
+    .cyc-live { display: grid; grid-template-columns: 1fr auto; gap: 1px 10px; padding: 8px 0; border-top: 1px solid #334155; }
+    .cyc-live .k { color: #94a3b8; }
+    .cyc-live .v { text-align: right; color: #e2e8f0; }
+    .gap-ok { color: #34d399 !important; } .gap-warn { color: #fbbf24 !important; } .gap-fail { color: #f87171 !important; }
+    .cyc-checks { border-top: 1px solid #334155; padding-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+    .cyc-checks h3 { margin: 0 0 2px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #94a3b8; }
+    .chk { display: grid; grid-template-columns: 16px 1fr auto; gap: 6px; align-items: baseline; }
+    .chk.ok .s { color: #34d399; } .chk.warn .s { color: #fbbf24; } .chk.fail .s { color: #f87171; }
+    .chk small { grid-column: 2 / 4; color: #94a3b8; font-size: 11px; line-height: 1.35; }
+    @media (max-width: 900px) {
+      header { height: auto !important; flex-wrap: wrap; padding-top: 6px; padding-bottom: 6px; }
+      header h1, header p { white-space: normal !important; }
+      #sidebar { position: absolute; right: 0; top: 0; bottom: 0; width: min(320px, 92vw); }
+      .cyc { left: 8px; right: 8px; top: 8px; width: auto; max-height: 55%; }
+    }
+    @media (max-width: 700px) {
+      #slotpanel, #hint { display: none !important; }
+      header p { display: none !important; }
+      header h1 { font-size: 12px; }
+      header button { padding: 4px 8px !important; }
+      #ctlbar { flex-wrap: nowrap !important; justify-content: flex-start !important; overflow-x: auto; width: calc(100% - 16px); padding: 6px 10px !important; gap: 8px !important; }
+      #ctlbar > * { flex: 0 0 auto; }
+      #status { max-width: 60vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    }
   </style>
+  <!-- Gestaltung eingebettet (Tailwind v3.4.17, MIT): erzeugt für genau die Klassen dieser Seite, damit die Ansicht ohne Netz
+       und ohne fremdes Skript läuft. Neue Klassen: in der Datei von Hand ergänzen. -->
+  <style id="utilities">*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000}/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.pointer-events-none{pointer-events:none}.absolute{position:absolute}.relative{position:relative}.inset-0{inset:0px}.bottom-24{bottom:6rem}.bottom-3{bottom:0.75rem}.left-1\/2{left:50%}.left-3{left:0.75rem}.top-3{top:0.75rem}.z-10{z-index:10}.z-20{z-index:20}.z-30{z-index:30}.block{display:block}.flex{display:flex}.grid{display:grid}.hidden{display:none}.h-14{height:3.5rem}.h-2\.5{height:0.625rem}.h-8{height:2rem}.h-screen{height:100vh}.w-2\.5{width:0.625rem}.w-60{width:15rem}.w-8{width:2rem}.w-80{width:20rem}.w-full{width:100%}.w-screen{width:100vw}.min-w-0{min-width:0px}.max-w-\[90\%\]{max-width:90%}.max-w-xs{max-width:20rem}.flex-1{flex:1 1 0%}.shrink-0{flex-shrink:0}.-translate-x-1\/2{--tw-translate-x:-50%;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}@keyframes pulse{50%{opacity:.5}}.animate-pulse{animation:pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite}.cursor-pointer{cursor:pointer}.select-all{-webkit-user-select:all;user-select:all}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1\.5{gap:0.375rem}.gap-2{gap:0.5rem}.gap-3{gap:0.75rem}.space-y-0\.5 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.125rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.125rem * var(--tw-space-y-reverse))}.space-y-1 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.25rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.25rem * var(--tw-space-y-reverse))}.space-y-1\.5 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.375rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.375rem * var(--tw-space-y-reverse))}.space-y-2 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.5rem * var(--tw-space-y-reverse))}.overflow-hidden{overflow:hidden}.overflow-y-auto{overflow-y:auto}.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.break-all{word-break:break-all}.rounded-2xl{border-radius:1rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:0.5rem}.rounded-xl{border-radius:0.75rem}.border{border-width:1px}.border-b{border-bottom-width:1px}.border-l{border-left-width:1px}.border-t{border-top-width:1px}.border-amber-500\/50{border-color:rgb(245 158 11 / 0.5)}.border-cyan-400{--tw-border-opacity:1;border-color:rgb(34 211 238 / var(--tw-border-opacity, 1))}.border-cyan-700{--tw-border-opacity:1;border-color:rgb(14 116 144 / var(--tw-border-opacity, 1))}.border-cyan-800\/60{border-color:rgb(21 94 117 / 0.6)}.border-slate-700{--tw-border-opacity:1;border-color:rgb(51 65 85 / var(--tw-border-opacity, 1))}.border-slate-700\/60{border-color:rgb(51 65 85 / 0.6)}.border-slate-700\/80{border-color:rgb(51 65 85 / 0.8)}.border-slate-800{--tw-border-opacity:1;border-color:rgb(30 41 59 / var(--tw-border-opacity, 1))}.border-amber-400{--tw-border-opacity:1;border-color:rgb(251 191 36 / var(--tw-border-opacity, 1))}.border-cyan-500\/50{border-color:rgb(6 182 212 / 0.5)}.bg-amber-600{--tw-bg-opacity:1;background-color:rgb(217 119 6 / var(--tw-bg-opacity, 1))}.bg-cyan-500\/20{background-color:rgb(6 182 212 / 0.2)}.bg-cyan-600{--tw-bg-opacity:1;background-color:rgb(8 145 178 / var(--tw-bg-opacity, 1))}.bg-cyan-700{--tw-bg-opacity:1;background-color:rgb(14 116 144 / var(--tw-bg-opacity, 1))}.bg-emerald-400{--tw-bg-opacity:1;background-color:rgb(52 211 153 / var(--tw-bg-opacity, 1))}.bg-purple-600{--tw-bg-opacity:1;background-color:rgb(147 51 234 / var(--tw-bg-opacity, 1))}.bg-slate-700{--tw-bg-opacity:1;background-color:rgb(51 65 85 / var(--tw-bg-opacity, 1))}.bg-slate-800{--tw-bg-opacity:1;background-color:rgb(30 41 59 / var(--tw-bg-opacity, 1))}.bg-slate-800\/90{background-color:rgb(30 41 59 / 0.9)}.bg-slate-900{--tw-bg-opacity:1;background-color:rgb(15 23 42 / var(--tw-bg-opacity, 1))}.bg-slate-900\/70{background-color:rgb(15 23 42 / 0.7)}.bg-slate-950\/90{background-color:rgb(2 6 23 / 0.9)}.bg-amber-400{--tw-bg-opacity:1;background-color:rgb(251 191 36 / var(--tw-bg-opacity, 1))}.bg-amber-500{--tw-bg-opacity:1;background-color:rgb(245 158 11 / var(--tw-bg-opacity, 1))}.bg-cyan-400{--tw-bg-opacity:1;background-color:rgb(34 211 238 / var(--tw-bg-opacity, 1))}.bg-cyan-500{--tw-bg-opacity:1;background-color:rgb(6 182 212 / var(--tw-bg-opacity, 1))}.bg-purple-500{--tw-bg-opacity:1;background-color:rgb(168 85 247 / var(--tw-bg-opacity, 1))}.bg-red-500{--tw-bg-opacity:1;background-color:rgb(239 68 68 / var(--tw-bg-opacity, 1))}.bg-slate-600{--tw-bg-opacity:1;background-color:rgb(71 85 105 / var(--tw-bg-opacity, 1))}.p-2\.5{padding:0.625rem}.p-3{padding:0.75rem}.p-4{padding:1rem}.px-1{padding-left:0.25rem;padding-right:0.25rem}.px-2{padding-left:0.5rem;padding-right:0.5rem}.px-2\.5{padding-left:0.625rem;padding-right:0.625rem}.px-3{padding-left:0.75rem;padding-right:0.75rem}.px-4{padding-left:1rem;padding-right:1rem}.py-1{padding-top:0.25rem;padding-bottom:0.25rem}.py-1\.5{padding-top:0.375rem;padding-bottom:0.375rem}.py-2{padding-top:0.5rem;padding-bottom:0.5rem}.py-2\.5{padding-top:0.625rem;padding-bottom:0.625rem}.pb-2{padding-bottom:0.5rem}.pt-1{padding-top:0.25rem}.pt-1\.5{padding-top:0.375rem}.font-mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}.text-sm{font-size:0.875rem;line-height:1.25rem}.text-xs{font-size:0.75rem;line-height:1rem}.font-bold{font-weight:700}.font-semibold{font-weight:600}.uppercase{text-transform:uppercase}.leading-relaxed{line-height:1.625}.tracking-wider{letter-spacing:0.05em}.text-amber-300{--tw-text-opacity:1;color:rgb(252 211 77 / var(--tw-text-opacity, 1))}.text-amber-400{--tw-text-opacity:1;color:rgb(251 191 36 / var(--tw-text-opacity, 1))}.text-cyan-200{--tw-text-opacity:1;color:rgb(165 243 252 / var(--tw-text-opacity, 1))}.text-cyan-300{--tw-text-opacity:1;color:rgb(103 232 249 / var(--tw-text-opacity, 1))}.text-emerald-300{--tw-text-opacity:1;color:rgb(110 231 183 / var(--tw-text-opacity, 1))}.text-emerald-400{--tw-text-opacity:1;color:rgb(52 211 153 / var(--tw-text-opacity, 1))}.text-purple-300{--tw-text-opacity:1;color:rgb(216 180 254 / var(--tw-text-opacity, 1))}.text-slate-200{--tw-text-opacity:1;color:rgb(226 232 240 / var(--tw-text-opacity, 1))}.text-slate-300{--tw-text-opacity:1;color:rgb(203 213 225 / var(--tw-text-opacity, 1))}.text-slate-400{--tw-text-opacity:1;color:rgb(148 163 184 / var(--tw-text-opacity, 1))}.text-slate-500{--tw-text-opacity:1;color:rgb(100 116 139 / var(--tw-text-opacity, 1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.accent-amber-400{accent-color:#fbbf24}.shadow-2xl{--tw-shadow:0 25px 50px -12px rgb(0 0 0 / 0.25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.hover\:border-amber-400:hover{--tw-border-opacity:1;border-color:rgb(251 191 36 / var(--tw-border-opacity, 1))}.hover\:border-cyan-500\/50:hover{border-color:rgb(6 182 212 / 0.5)}.hover\:bg-amber-500:hover{--tw-bg-opacity:1;background-color:rgb(245 158 11 / var(--tw-bg-opacity, 1))}.hover\:bg-cyan-500:hover{--tw-bg-opacity:1;background-color:rgb(6 182 212 / var(--tw-bg-opacity, 1))}.hover\:bg-cyan-600:hover{--tw-bg-opacity:1;background-color:rgb(8 145 178 / var(--tw-bg-opacity, 1))}.hover\:bg-purple-500:hover{--tw-bg-opacity:1;background-color:rgb(168 85 247 / var(--tw-bg-opacity, 1))}.hover\:bg-slate-600:hover{--tw-bg-opacity:1;background-color:rgb(71 85 105 / var(--tw-bg-opacity, 1))}.hover\:bg-slate-700:hover{--tw-bg-opacity:1;background-color:rgb(51 65 85 / var(--tw-bg-opacity, 1))}.hover\:text-white:hover{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}@media (min-width: 1024px){.lg\:flex{display:flex}}</style>
 </head>
 <body class="w-screen h-screen flex flex-col antialiased">
 
@@ -40,6 +85,7 @@
       <label class="hidden lg:flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer">
         <input type="checkbox" id="chk-xray"> Röntgen
       </label>
+      <button id="btn-cycle" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-cyan-700 text-cyan-200 text-xs font-semibold" title="Wechselzyklus (C)">⏱ Zyklus</button>
       <button id="btn-sidebar" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold">☰ Bauanleitung</button>
     </div>
   </header>
@@ -56,23 +102,24 @@
       </div>
 
       <!-- Magazin-Belegung -->
-      <div class="absolute top-3 left-3 z-10 hud rounded-xl p-3 text-xs w-60 space-y-1.5">
+      <div id="slotpanel" class="absolute top-3 left-3 z-10 hud rounded-xl p-3 text-xs w-60 space-y-1.5">
         <div class="font-bold text-slate-200">Plattenlager (4 Fächer)</div>
         <div id="slot-list" class="space-y-1 font-mono"></div>
         <div class="pt-1.5 border-t border-slate-700 text-slate-400 space-y-0.5">
           <div>Auf dem Bett: <span id="bed-plate" class="text-slate-200"></span></div>
-          <div>Teile in Auffangschale: <span id="tray-count" class="text-slate-200">0</span></div>
+          <div>Entnommene Teile: <span id="tray-count" class="text-slate-200">0</span></div>
         </div>
       </div>
 
       <!-- Hinweis Maße -->
-      <div class="absolute bottom-24 left-3 z-10 hud rounded-xl px-3 py-2 text-xs text-slate-400 max-w-xs pointer-events-none">
-        Ziehen: drehen · Rad: zoomen · Doppelklick: Ansicht zurücksetzen<br>
+      <div id="hint" class="absolute bottom-24 left-3 z-10 hud rounded-xl px-3 py-2 text-xs text-slate-400 max-w-xs pointer-events-none">
+        Ziehen: drehen · Rechtsklick/Shift: verschieben · Rad/Pinch: zoomen · Doppelklick: zurücksetzen<br>
+        Tasten: 0–4 Ansicht · W Wechsel · Leertaste Pause · ←/→ Phase · C Zyklus<br>
         Drucker maßstäblich nach Herstellerangabe; Hebel- und Tür-Kinematik schematisch – am Gerät einmessen.
       </div>
 
       <!-- Steuerleiste -->
-      <div class="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 hud px-4 py-2.5 rounded-2xl flex flex-wrap items-center justify-center gap-3 shadow-2xl">
+      <div id="ctlbar" class="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 hud px-4 py-2.5 rounded-2xl flex flex-wrap items-center justify-center gap-3 shadow-2xl">
         <div class="flex gap-1.5">
           <button id="btn-prev" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold">❮ Zurück</button>
           <button id="btn-next" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold">Weiter ❯</button>
@@ -94,17 +141,34 @@
           <option value="door">1 · Tür & Servo</option>
           <option value="magazine">2 · Plattenregal (oben)</option>
           <option value="shuttle">3 · Wechsler-Shuttle</option>
+          <option value="cycle">3 · Wechselzyklus (Überblick)</option>
           <option value="washer">4 · Waschstation (unten)</option>
-          <option value="toolhead">5 · Werkzeugkopf & Keil</option>
-          <option value="chute">6 · Rutsche & Schale</option>
         </select>
+      </div>
+
+      <!-- Wechselzyklus: Phasen, Regler, Livewerte, Konstruktionsprüfung (Daten aus plate_changer.py) -->
+      <div id="cycle" class="cyc hud" hidden>
+        <div class="cyc-head"><b>Wechselzyklus</b><span id="cyc-count" class="mono" style="color:#94a3b8"></span><button id="cyc-close" aria-label="Zyklus-Panel schließen">✕</button></div>
+        <div class="cyc-ctl">
+          <button id="cyc-prev" title="Vorige Phase (←)" aria-label="Vorige Phase">⏮</button>
+          <button id="cyc-play" title="Start / Pause (Leertaste)" aria-label="Start oder Pause">▶</button>
+          <button id="cyc-next" title="Nächste Phase (→)" aria-label="Nächste Phase">⏭</button>
+          <input id="sl-cycle" type="range" min="0" max="1000" value="0" aria-label="Fortschritt im Wechselzyklus">
+        </div>
+        <div class="cyc-opt">
+          <label><input type="checkbox" id="chk-path"> Bahn der Backe</label>
+          <label><input type="checkbox" id="chk-clear" checked> Freigang</label>
+        </div>
+        <ol id="phase-list"></ol>
+        <div id="cyc-live" class="cyc-live mono"></div>
+        <div id="cyc-checks" class="cyc-checks"></div>
       </div>
     </div>
 
     <!-- Seitenleiste -->
     <aside id="sidebar" class="w-80 shrink-0 hud border-l border-slate-700/80 p-4 flex flex-col gap-3 overflow-y-auto z-20">
       <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
-        <h2 class="text-xs font-bold uppercase tracking-wider text-white">Bauplan · 6 Baugruppen</h2>
+        <h2 class="text-xs font-bold uppercase tracking-wider text-white">Bauplan · 4 Baugruppen</h2>
         <button id="btn-close" class="text-slate-400 hover:text-white text-sm px-1">✕</button>
       </div>
       <div id="steps" class="flex flex-col gap-2"></div>
@@ -121,6 +185,223 @@
     </aside>
   </div>
 
+<script id="plate-changer-data" type="application/json">
+{
+  "checks": [
+    {
+      "id": "door_portal",
+      "label": "Tür ↔ Portalprofil (Draufsicht, ganzer Öffnungsweg)",
+      "limit": 15.0,
+      "margin": -7.7,
+      "note": "Die 17 mm der Doku gelten bis zur Schienenmitte (Y 575), die Profilvorderkante liegt bei Y 565: Schiene auf Y ≥ 583 setzen oder die Türöffnung am Gerät auf unter 90° begrenzen.",
+      "status": "warn",
+      "unit": "mm",
+      "value": 7.3
+    },
+    {
+      "id": "door_plate",
+      "label": "Tür (115°) ↔ Platte im Übergabekorridor",
+      "limit": 15.0,
+      "margin": 37.6,
+      "note": "Platte bei X 0, am Drucker und im Korridor Y 355. Die Tür muss ganz offen sein, bevor die Platte den Drucker verlässt: bei halber Öffnung schneidet sie den Korridor.",
+      "status": "ok",
+      "unit": "mm",
+      "value": 52.6
+    },
+    {
+      "id": "plate_front",
+      "label": "Plattenhinterkante ↔ Druckerfront im Korridor",
+      "limit": 15.0,
+      "margin": 6.5,
+      "note": "Platte bei Y 355: Hinterkante bei 226,5, Druckerfront bei 205.",
+      "status": "ok",
+      "unit": "mm",
+      "value": 21.5
+    },
+    {
+      "id": "tower_gap",
+      "label": "Turm ↔ rechte Druckerwand",
+      "limit": 15.0,
+      "margin": 9.0,
+      "note": "Turm ab X 220, Druckerwand bei X 196.",
+      "status": "ok",
+      "unit": "mm",
+      "value": 24.0
+    },
+    {
+      "id": "x_stroke",
+      "label": "Reserve Verfahrweg X (Schiene − Wagen − Hub)",
+      "limit": 5.0,
+      "margin": 189.6,
+      "note": "Hub 360 mm auf MGN12H 600 mm.",
+      "status": "ok",
+      "unit": "mm",
+      "value": 194.6
+    },
+    {
+      "id": "y_stroke",
+      "label": "Reserve Verfahrweg Y-Arm (Schiene − Wagen − Hub)",
+      "limit": 5.0,
+      "margin": 49.6,
+      "note": "Hub 405.5 mm auf MGN9H 500 mm; mit 440 mm fehlten 5,4 mm.",
+      "status": "ok",
+      "unit": "mm",
+      "value": 54.6
+    },
+    {
+      "id": "z_stroke",
+      "label": "Reserve Verfahrweg Z (Schiene − Wagen − Hub)",
+      "limit": 5.0,
+      "margin": 3.6,
+      "note": "Hub 246 mm (Waschhöhe 44 bis Fach 4 bei 290) auf MGN12H 300 mm.",
+      "status": "ok",
+      "unit": "mm",
+      "value": 8.6
+    },
+    {
+      "id": "jaw_ceiling",
+      "label": "Backe in Fach 4 ↔ Deckplatte des Turms",
+      "limit": 15.0,
+      "margin": -1.0,
+      "note": "Backenoberkante 8 mm über der Plattenoberkante, Deckplatte ab Z 312.",
+      "status": "warn",
+      "unit": "mm",
+      "value": 14.0
+    },
+    {
+      "id": "part_height",
+      "label": "Höhe der Teile auf der Platte im niedrigsten Fach",
+      "limit": 30.0,
+      "margin": -13.0,
+      "note": "Fach 1 bis 3: je 29.5 mm (35-mm-Raster minus Platte und 5 mm Luft), Fach 4 unter der Deckplatte: 17.0 mm. Höhere Teile: Raster vergrößern, Fächer streichen oder das oberste Fach nicht für Platten mit Teilen nutzen. Gewünscht angenommen: 30 mm.",
+      "status": "warn",
+      "unit": "mm",
+      "value": 17.0
+    },
+    {
+      "id": "magnet_reserve",
+      "label": "Haltekraft Magnet ÷ Plattengewicht",
+      "limit": 5.0,
+      "margin": 26.5,
+      "note": "80 N Nennkraft, Platte rund 259 g. Nennwert: Eine dünne Platte nutzt nur einen Bruchteil davon, am Gerät mit der Federwaage prüfen.",
+      "status": "ok",
+      "unit": "×",
+      "value": 31.5
+    }
+  ],
+  "door": {
+    "hinge": [
+      -176.5,
+      205.0
+    ],
+    "open_deg": 115.0,
+    "width": 353.0
+  },
+  "phases": [
+    {
+      "detail": "Servo öffnet die Glastür auf 115°",
+      "id": "door_open",
+      "label": "Tür öffnet",
+      "magnet": null,
+      "t0": 0.0,
+      "t1": 0.08
+    },
+    {
+      "detail": "Bett senkt sich auf Z 220, die Teile bleiben auf der Platte",
+      "id": "bed_down",
+      "label": "Bett fährt auf Wechselhöhe",
+      "magnet": null,
+      "t0": 0.08,
+      "t1": 0.22
+    },
+    {
+      "detail": "Shuttle X 360 → 0, Arm fährt vor",
+      "id": "to_printer",
+      "label": "Shuttle vor den Drucker",
+      "magnet": null,
+      "t0": 0.22,
+      "t1": 0.28
+    },
+    {
+      "detail": "Magnet an, Platte samt Teilen bis Y = 355 in den Übergabekorridor",
+      "id": "pull_old",
+      "label": "Alte Platte herausziehen",
+      "magnet": true,
+      "t0": 0.28,
+      "t1": 0.38
+    },
+    {
+      "detail": "X 0 → 360, Z auf das leere Fach",
+      "id": "to_rack",
+      "label": "Zum Plattenregal",
+      "magnet": null,
+      "t0": 0.38,
+      "t1": 0.48
+    },
+    {
+      "detail": "Platte samt Teilen ins Fach schieben, Magnet aus",
+      "id": "store_old",
+      "label": "Alte Platte ablegen",
+      "magnet": false,
+      "t0": 0.48,
+      "t1": 0.56
+    },
+    {
+      "detail": "Arm löst, Z auf das Fach mit der frischen Platte",
+      "id": "lift_fresh",
+      "label": "Zur frischen Platte",
+      "magnet": null,
+      "t0": 0.56,
+      "t1": 0.62
+    },
+    {
+      "detail": "Magnet an, Platte bis Y = 355 herausziehen",
+      "id": "pull_fresh",
+      "label": "Frische Platte holen",
+      "magnet": true,
+      "t0": 0.62,
+      "t1": 0.72
+    },
+    {
+      "detail": "X 360 → 0, Z auf Wechselhöhe 220",
+      "id": "to_printer_fresh",
+      "label": "Zurück zum Drucker",
+      "magnet": null,
+      "t0": 0.72,
+      "t1": 0.82
+    },
+    {
+      "detail": "Platte auf das Heizbett schieben, Magnet aus",
+      "id": "place_fresh",
+      "label": "Platte auf das Bett legen",
+      "magnet": false,
+      "t0": 0.82,
+      "t1": 0.9
+    },
+    {
+      "detail": "Arm zurück auf Y = 540, Shuttle zum Turm, Tür zu, Bett auf Ruhe-Z",
+      "id": "park_close",
+      "label": "Parken, Tür schließt",
+      "magnet": null,
+      "t0": 0.9,
+      "t1": 1.0
+    }
+  ],
+  "plate_half": 128.5,
+  "portal_front": [
+    -162.0,
+    565.0,
+    525.0,
+    585.0
+  ],
+  "slot_capacity": [
+    29.5,
+    29.5,
+    29.5,
+    17.0
+  ]
+}
+</script>
 <script>
 // ============================================================================
 // Vektor-Hilfen
@@ -146,12 +427,12 @@ const PH = 478;                   // Außenhöhe P2S (478 mm)
 const DOOR = { hinge: [-176.5, 205], width: 353, z0: 68, z1: 442, open: 115 * Math.PI / 180 };
 const PLATE = 128.5;              // halbe Plattenkante (257 × 257 mm für 256³ mm Bauraum)
 const NOZZLE_Z = 356;             // Düsenspitze P2S DynaSense Hotend
-const PUSH_Z = 354.5;             // Bett-Z zum Abschieben (Keil 3 mm über Platte)
 const HOME_Z = 310;               // Bett-Ruheposition P2S
 const SLOT_Z = [185, 220, 255, 290];  // Plattenoberkante je Magazinfach (oben im Kompakt-Turm, Fach 2 = Betthöhe 220 mm)
 const MAG_X = 360, MAG_Y = 0;         // Kompakt-Turm (Plattenregal + Waschstation darunter) rechts neben dem P2S
 const TRANSFER_Y = 355, RAIL_Y = 575; // Vorzone (+Y) und Shuttle-Schiene (17 mm vor P2S Tür-Radius 558 mm)
 const PARK = { cx: MAG_X, gy: 540, sz: 220 };
+const DEMO_PART_H = 25;               // Beispielteil: passt in Fach 1–3 (höchstens 29,5 mm), nicht ins oberste (17 mm)
 const WASH_Z = 44;                    // Waschhöhe auf den Walzen direkt unter dem Plattenregal
 
 const PLATE_TYPES = {
@@ -164,16 +445,23 @@ const PLATE_TYPES = {
 // Welt-Zustand
 // ============================================================================
 const world = {
-  slots: [ { type: 'smooth', state: 'ready' }, { type: 'ht', state: 'ready' }, { type: 'gold', state: 'ready' }, null ],
+  slots: [ null, { type: 'smooth', state: 'ready' }, { type: 'ht', state: 'ready' }, { type: 'gold', state: 'ready' } ],  // Fach 1 frei: dort passen Teile bis 29,5 mm
   bedPlate: { type: 'gold', state: 'used' },
   part: 'bed',          // 'bed' | 'none'
-  partH: 30,
+  partH: DEMO_PART_H,
   tray: 0,
   bedZ: HOME_Z,
   door: 0, doorTarget: 0,
 };
 let action = null;      // { type, t, dur, ... }
 let speed = 1;
+let paused = false, cycleOpen = false, showPath = false, showClear = true;
+
+// Daten des Plattenwechslers: Kopie aus backend/app/services/plate_changer.py (ein Test hält sie gleich).
+const DATA = JSON.parse(document.getElementById('plate-changer-data').textContent);
+const PHASES = DATA.phases, CHECKS = DATA.checks;
+const JAW_OFFSET = DATA.plate_half + 6;   // Backe sitzt 6 mm hinter der Plattenvorderkante
+const phaseIndex = t => { const i = PHASES.findIndex(p => t < p.t1); return i < 0 ? PHASES.length - 1 : i; };
 
 // ============================================================================
 // Kamera
@@ -183,9 +471,8 @@ const PRESETS = {
   door:     { yaw: -0.28, pitch: 0.32, dist: 1020, t: [-65, 215, 310] },
   magazine: { yaw: 0.45,  pitch: 0.36, dist: 980,  t: [360, 0, 235] },
   shuttle:  { yaw: 0.25,  pitch: 0.50, dist: 1320, t: [180, 330, 205] },
+  cycle:    { yaw: 0.30,  pitch: 0.62, dist: 1950, t: [190, 300, 130] },
   washer:   { yaw: 0.48,  pitch: 0.42, dist: 920,  t: [360, 20, 55] },
-  toolhead: { yaw: 0.22,  pitch: 0.24, dist: 760,  t: [0, 20, 375] },
-  chute:    { yaw: -0.18, pitch: 0.28, dist: 740,  t: [0, 155, 275] },
 };
 const cam = { yaw: 0.40, pitch: 0.44, dist: 1840, tx: 130, ty: 95, tz: 195 };
 let camGoal = null;
@@ -197,13 +484,13 @@ function setPreset(name) {
   while (yaw - cam.yaw < -Math.PI) yaw += 2 * Math.PI;
   camGoal = { yaw, pitch: p.pitch, dist: p.dist, tx: p.t[0], ty: p.t[1], tz: p.t[2] };
   document.getElementById('sel-cam').value = name;
-  const stepMap = { iso: 0, door: 1, magazine: 2, shuttle: 3, washer: 4, toolhead: 5, chute: 6 };
+  const stepMap = { iso: 0, door: 1, magazine: 2, shuttle: 3, cycle: 3, washer: 4 };
   if (stepMap[name] !== undefined) activeStep = stepMap[name];
   document.querySelectorAll('.step').forEach((el, i) => {
     el.classList.toggle('border-cyan-400', i + 1 === activeStep);
     el.classList.toggle('bg-slate-800', i + 1 === activeStep);
   });
-  if (activeStep >= 1 && activeStep <= 6) {
+  if (activeStep >= 1 && activeStep <= STEPS.length) {
     const s = STEPS[activeStep - 1];
     document.getElementById('d-title').textContent = `${activeStep} · ${s.t}`;
     document.getElementById('d-desc').textContent = s.d;
@@ -212,7 +499,7 @@ function setPreset(name) {
     document.getElementById('d-path').textContent = s.p;
   } else {
     document.getElementById('d-title').textContent = 'Gesamtansicht · Bambu Lab P2S';
-    document.getElementById('d-desc').textContent = 'Gesamtaufbau mit allen 6 Baugruppen: Türöffner (links über 5"-Display), Kompakt-Turm rechts (4-Fach-Magazin oben + IPA-Waschstation unten), 3-Achs-Shuttle bei Y = 575 mm, DynaSense-Keil und mitfahrende Rutsche am Bett.';
+    document.getElementById('d-desc').textContent = 'Gesamtaufbau mit allen 4 Baugruppen: Türöffner (links über 5"-Display), Kompakt-Turm rechts (4-Fach-Magazin oben + IPA-Waschstation unten) und 3-Achs-Shuttle bei Y = 575 mm. Die fertigen Teile bleiben auf der Platte und wandern mit ihr ins Regal.';
     document.getElementById('d-dim').textContent = 'Drucker 392×406×478 mm · Turm 280×290×320 mm · Portal Y=575 mm';
     document.getElementById('d-hw').textContent = 'Alu 2020 Profile + MGN12H + MG90S + NEMA17';
     document.getElementById('d-path').textContent = 'werkzeuge/automation_hardware/models_stl/';
@@ -253,16 +540,37 @@ function project(p) {
   return { x: dot(v, b.right) / d * F + W / 2, y: -dot(v, b.up) / d * F + H / 2, d };
 }
 
-// Maus / Touch
-let drag = null;
-cv.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY }; cv.setPointerCapture(e.pointerId); cv.classList.add('dragging'); camGoal = null; });
-cv.addEventListener('pointermove', e => {
-  if (!drag) return;
-  cam.yaw -= (e.clientX - drag.x) * 0.006;
-  cam.pitch = Math.max(-0.15, Math.min(1.45, cam.pitch + (e.clientY - drag.y) * 0.006));
-  drag = { x: e.clientX, y: e.clientY };
+// Maus / Touch: ziehen = drehen, Rechtsklick / Shift / Mitteltaste = verschieben, zwei Finger = zoomen
+let drag = null, pinch = null;
+const pointers = new Map();
+cv.addEventListener('contextmenu', e => e.preventDefault());
+cv.addEventListener('pointerdown', e => {
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  cv.setPointerCapture(e.pointerId); cv.classList.add('dragging'); camGoal = null;
+  drag = { x: e.clientX, y: e.clientY, pan: e.button === 2 || e.button === 1 || e.shiftKey };
+  if (pointers.size === 2) { const [p, q] = [...pointers.values()]; pinch = { d: Math.hypot(p.x - q.x, p.y - q.y), dist: cam.dist }; drag = null; }
 });
-cv.addEventListener('pointerup', () => { drag = null; cv.classList.remove('dragging'); });
+cv.addEventListener('pointermove', e => {
+  if (pointers.has(e.pointerId)) pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pinch && pointers.size === 2) {
+    const [p, q] = [...pointers.values()];
+    cam.dist = Math.max(350, Math.min(3500, pinch.dist * pinch.d / Math.max(1, Math.hypot(p.x - q.x, p.y - q.y))));
+    return;
+  }
+  if (!drag) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  if (drag.pan) {
+    const b = camBasis(), k = cam.dist / F;
+    cam.tx += (-b.right[0] * dx + b.up[0] * dy) * k; cam.ty += (-b.right[1] * dx + b.up[1] * dy) * k; cam.tz += (-b.right[2] * dx + b.up[2] * dy) * k;
+  } else {
+    cam.yaw -= dx * 0.006;
+    cam.pitch = Math.max(-0.15, Math.min(1.45, cam.pitch + dy * 0.006));
+  }
+  drag = { ...drag, x: e.clientX, y: e.clientY };
+});
+const endPointer = e => { pointers.delete(e.pointerId); if (pointers.size < 2) pinch = null; if (!pointers.size) { drag = null; cv.classList.remove('dragging'); } };
+cv.addEventListener('pointerup', endPointer);
+cv.addEventListener('pointercancel', endPointer);
 cv.addEventListener('wheel', e => { e.preventDefault(); camGoal = null; cam.dist = Math.max(350, Math.min(3500, cam.dist * (1 + e.deltaY * 0.001))); }, { passive: false });
 cv.addEventListener('dblclick', () => setPreset('iso'));
 
@@ -310,7 +618,7 @@ function cyl(c, axis, r, len, col, opt = {}, seg = 20) {
   addFace(top, opt.cap || col, { ...opt, ctr: mid });
 }
 
-function plateMesh(cx, cy, ztop, plate, overrideState) {
+function plateMesh(cx, cy, ztop, plate, overrideState, withPart = true) {
   const st = overrideState || plate.state;
   const base = PLATE_TYPES[plate.type].col;
   box(cx - PLATE, cy - PLATE, ztop - 1.5, cx + PLATE, cy + PLATE, ztop, base, { edge: true });
@@ -319,6 +627,8 @@ function plateMesh(cx, cy, ztop, plate, overrideState) {
     [[-60, -40], [35, 50], [70, -70], [-20, 80]].forEach(([dx, dy]) =>
       box(cx + dx - 14, cy + dy - 9, ztop, cx + dx + 14, cy + dy + 9, ztop + 0.4, '#3f3f46', { edge: false }));
   }
+  // Fertige Teile bleiben auf der Platte und wandern mit ihr (gleiche Lage wie auf dem Bett)
+  if (withPart && plate.part > 0) box(cx - 25, cy - 45, ztop, cx + 25, cy + 5, ztop + plate.part, '#06b6d4');
 }
 
 function pin(p, title, sub, step) { pins.push({ p, title, sub, step }); }
@@ -349,8 +659,8 @@ function idlePose() {
 function printPose(A, t) {
   const p = idlePose();
   const k = lin(t, 0.08, 0.95);
-  p.partH = 30 * k;
-  p.bedZ = pw(t, [[0, A.z0], [0.08, NOZZLE_Z - 0.3], [0.95, NOZZLE_Z - 0.3 - 30], [1, NOZZLE_Z - 0.3 - 30]]);
+  p.partH = DEMO_PART_H * k;
+  p.bedZ = pw(t, [[0, A.z0], [0.08, NOZZLE_Z - 0.3], [0.95, NOZZLE_Z - 0.3 - DEMO_PART_H], [1, NOZZLE_Z - 0.3 - DEMO_PART_H]]);
   if (t > 0.08 && t < 0.95) p.th = [Math.sin(t * 90) * 25, -20 + Math.cos(t * 70) * 25];
   else p.th = [lerp(-100, 0, ss(t, 0, 0.08)) * (t < 0.5 ? 1 : 0) + (t >= 0.95 ? lerp(0, -100, ss(t, 0.95, 1)) : 0), t < 0.5 ? lerp(-120, -20, ss(t, 0, 0.08)) : lerp(-20, -120, ss(t, 0.95, 1))];
   p.part = t > 0.08 ? { x: 0, y: -20, z: p.bedZ, h: Math.max(0.5, p.partH), where: 'bed' } : null;
@@ -362,21 +672,10 @@ function swapPose(A, t) {
   const p = idlePose();
   const zE = SLOT_Z[A.empty], zF = SLOT_Z[A.fresh], zBed = 220;
   p.door = DOOR.open * ss(t, 0, 0.08) * (1 - ss(t, 0.92, 1));
-  p.bedZ = pw(t, [[0.04, A.z0], [0.08, A.hasPart ? PUSH_Z : A.z0], [0.22, A.hasPart ? PUSH_Z : A.z0], [0.28, zBed], [0.90, zBed], [1, HOME_Z]]);
-  // Werkzeugkopf: nach hinten, Keil schiebt nach vorne, dann Parkposition
-  let thX = 0, thY;
-  if (t < 0.08) { thX = lerp(-100, 0, ss(t, 0, 0.04)); thY = lerp(-120, -150, ss(t, 0, 0.04)); }
-  else if (t < 0.20) thY = A.hasPart ? lerp(-150, 135, lin(t, 0.08, 0.20)) : -150;
-  else { const k = ss(t, 0.20, 0.26); thX = lerp(0, -100, k); thY = lerp(A.hasPart ? 135 : -150, -120, k); }
-  p.th = [thX, thY];
-  // Druckteil: wird vom Keil geschoben, fällt über die Rutsche in die Schale
-  if (A.hasPart) {
-    const bladeFront = thY + 37;
-    if (t < 0.0987) p.part = { x: 0, y: -20, z: p.bedZ, h: A.partH, where: 'bed' };
-    else if (t < 0.180) p.part = { x: 0, y: Math.max(-20, bladeFront + 25), z: p.bedZ, h: A.partH, where: 'bed' };
-    else { const f = ss(t, 0.180, 0.215); p.part = { x: 0, y: lerp(150, 160, f), z: lerp(p.bedZ, p.bedZ - 57, f), h: A.partH, where: 'fall' }; }
-    if (t >= 0.215) p.part = null, p.trayExtra = 1;
-  } else p.part = null;
+  // Das Bett senkt sich auf Wechselhöhe; der Werkzeugkopf bleibt in der Parkposition, die Teile bleiben auf der Platte
+  p.bedZ = pw(t, [[0.04, A.z0], [0.22, zBed], [0.90, zBed], [1, HOME_Z]]);
+  p.th = [-100, -120];
+  p.part = A.hasPart && t < 0.28 ? { x: 0, y: -20, z: p.bedZ, h: A.partH, where: 'bed' } : null;
   // Shuttle (X-Schlitten vor Drucker & Kompakt-Turm, Y-Teleskoparm, Z-Hub)
   p.cx = pw(t, [[0.22, MAG_X], [0.28, 0], [0.38, 0], [0.48, MAG_X], [0.72, MAG_X], [0.82, 0], [0.90, 0], [0.96, MAG_X]]);
   p.sz = pw(t, [[0.22, PARK.sz], [0.28, zBed], [0.38, zBed], [0.48, zE], [0.56, zE], [0.62, zF], [0.72, zF], [0.82, zBed], [0.90, zBed], [0.96, PARK.sz]]);
@@ -392,11 +691,11 @@ function swapPose(A, t) {
   const old = A.oldPlate, fresh = A.freshPlate;
   if (t < 0.28) p.bedPlate = old;
   else if (t < 0.56) { p.bedPlate = null; p.moving = { plate: old, pos: [p.cx, oldY, p.sz] }; }
-  else { p.bedPlate = null; p.slots[A.empty] = { ...old, state: old.state === 'used' ? 'dirty' : old.state }; }
+  else { p.bedPlate = null; p.slots[A.empty] = { ...old, state: A.hasPart ? 'full' : old.state === 'used' ? 'dirty' : old.state }; }
   if (t >= 0.62 && t < 0.90) { p.slots[A.fresh] = null; p.moving = { plate: fresh, pos: [p.cx, freshY, p.sz] }; }
   if (t >= 0.90) { p.slots[A.fresh] = null; p.bedPlate = fresh; }
-  p.phase = t < 0.08 ? 'Tür öffnet (115°)' : t < 0.215 ? (A.hasPart ? 'Keil schiebt Teil in die Schale' : 'Bett positioniert')
-          : t < 0.38 ? 'Shuttle zieht gebrauchte Platte aus dem Drucker' : t < 0.56 ? `Alte Platte → Plattenregal Fach ${A.empty + 1} (Z ${zE})`
+  p.phase = t < 0.08 ? 'Tür öffnet (115°)' : t < 0.22 ? 'Bett fährt auf Wechselhöhe, Teile bleiben auf der Platte'
+          : t < 0.38 ? `Shuttle zieht die Platte${A.hasPart ? ' samt Teilen' : ''} aus dem Drucker` : t < 0.56 ? `Alte Platte${A.hasPart ? ' samt Teilen' : ''} → Plattenregal Fach ${A.empty + 1} (Z ${zE})`
           : t < 0.62 ? `Hub auf Fach ${A.fresh + 1} (Z ${zF})` : t < 0.90 ? `Frische Platte aus Fach ${A.fresh + 1} → Heizbett`
           : 'Shuttle parkt & Tür schließt';
   return p;
@@ -508,28 +807,11 @@ function buildScene(P, e) {
   // Heizbett-Trägerrahmen
   box(-132, -132, bz - 16, 132, 132, bz - 2, '#1e293b');
   // Heizbett-Magnetplatte & Federstahlplatte (257 × 257 mm)
-  if (P.bedPlate) plateMesh(0, 0, bz, P.bedPlate);
+  if (P.bedPlate) plateMesh(0, 0, bz, P.bedPlate, undefined, false);
   // Druckteil
   if (P.part) box(P.part.x - 25, P.part.y - 25, P.part.z, P.part.x + 25, P.part.y + 25, P.part.z + P.part.h, '#06b6d4');
 
-  // ---- Schritt 6: P2S Rutsche & Schale an Bettvorderkante (74,5 mm Freiraum) ----
-  const tz = bz - 80 * e;
-  // 30°-Abgleitrampe (42 mm Ausladung)
-  pbox([-60, PLATE, tz - 2.5], [120, 0, 0], [0, 42, -24], [0, 0, 2.5], '#10b981');
-  pbox([-62, PLATE, tz - 2.5], [4, 0, 0], [0, 42, -24], [0, 0, 12], '#059669');       // Leitwange links
-  pbox([58, PLATE, tz - 2.5], [4, 0, 0], [0, 42, -24], [0, 0, 12], '#059669');        // Leitwange rechts
-  // Auffangschale (124 × 56 × 46 mm) im 74,5 mm Freiraum
-  box(-62, 136, tz - 60, 62, 192, tz - 56, '#047857');                                 // Schalenboden
-  box(-62, 136, tz - 56, -58, 192, tz - 14, '#059669');                                // Seitenwand links
-  box(58, 136, tz - 56, 62, 192, tz - 14, '#059669');                                 // Seitenwand rechts
-  box(-58, 188, tz - 56, 58, 192, tz - 14, '#059669');                                // Vorderwand (11 mm vor Tür)
-  box(-58, 136, tz - 56, 58, 140, tz - 34, '#059669');                                // Rückwand
-  const nTray = Math.min(3, world.tray + (P.trayExtra || 0));
-  for (let i = 0; i < nTray; i++) box(-50 + i * 34, 144, tz - 56, -22 + i * 34, 182, tz - 56 + 18, '#0891b2');
-  pin([0, 174, tz - 10], '6 · P2S Rutsche & Schale', 'fährt mit Bett · 74,5 mm Freiraum', 6);
-  if (e > 0.03) guide([0, 164, bz - 30], [0, 164, tz - 30], '#34d399');
-
-  // ---- 4. Werkzeugkopf (CoreXY) + Schritt 5: P2S DynaSense-Abschubkeil ----
+  // ---- 4. Werkzeugkopf (CoreXY) ----
   const [hx, hy] = P.th;
   // Carbon-Führungsstangen (Ø 8 mm)
   cyl([-170, hy - 14, 432], 'x', 4, 340, '#0f172a', {}, 10);
@@ -539,15 +821,6 @@ function buildScene(P, e) {
   box(hx - 26, hy + 26, 376, hx + 26, hy + 30, 430, '#1e293b');                       // Front-Cover
   box(hx - 4, hy + 30, 422, hx + 4, hy + 30.5, 426, '#22c55e');                        // Status-LED
   cyl([hx, hy, NOZZLE_Z], 'z', 3, 12, '#f59e0b', {}, 10);                              // Messingdüse
-  // P2S Abschubkeil (75 × 32 × 12,5 mm, Keilwinkel 35°, Eddy-Sensor-Freisparung)
-  const by = hy + 26 + 70 * e;
-  box(hx - 37.5, by, 357.5, hx + 37.5, by + 12, 370, '#f59e0b');
-  box(hx - 37.5, by - 16, 357.5, hx - 12, by, 370, '#d97706');                        // Montageflansch links
-  box(hx + 12, by - 16, 357.5, hx + 37.5, by, 370, '#d97706');                         // Montageflansch rechts (Eddy-Aussparung mittig)
-  cyl([hx - 28, by - 8, 370], 'z', 2.8, 2, '#94a3b8');                                // M3 Zylinderschraube links
-  cyl([hx + 28, by - 8, 370], 'z', 2.8, 2, '#94a3b8');                                // M3 Zylinderschraube rechts
-  pin([hx + 40, by + 6, 370], '5 · P2S Abschub-Keil', 'Eddy-Sensor-Freigang · 2× M3×12', 5);
-  if (e > 0.03) guide([hx, hy + 26, 363], [hx, by, 363], '#f59e0b');
 
   // ---- 5. Schritt 2 & 4: Kompakt-Turm (Rechts neben dem P2S, 2020-Alurahmen) ----
   const mx = 140 * e, mz = 65 * e;
@@ -674,7 +947,6 @@ function drawDim(p0, p1, label, opt = {}) {
 }
 
 function getDimensions(P) {
-  const bz = P.bedZ, [hx, hy] = P.th;
   const dims = [];
 
   // 1. In der Gesamtübersicht (activeStep === 0): Die 8 Hauptmaße mit weitem Freiraum (ohne Überlappung)
@@ -693,7 +965,7 @@ function getDimensions(P) {
     dims.push(
       { p0: [DOOR.hinge[0], DOOR.hinge[1], DOOR.z1], p1: [DOOR.hinge[0] + DOOR.width, DOOR.hinge[1], DOOR.z1], off: [0, 20, 45], label: 'Türbreite: 353 mm (0°→115°)', col: '#f59e0b' },
       { p0: [-176.5, 205, 0], p1: [-176.5, 558, 0], off: [-55, 0, 0], label: 'Schwenkbogen R = 353 mm (bis Y = 558)', col: '#f59e0b' },
-      { p0: [-176.5, 558, 0], p1: [-176.5, RAIL_Y, 0], off: [-55, 0, 0], label: '17 mm Sicherheitsabstand zum Portal', col: '#fbbf24' },
+      { p0: [-176.5, 558, 0], p1: [-176.5, RAIL_Y, 0], off: [-55, 0, 0], label: '17 mm bis Schienenmitte · 7 mm bis Profilkante', col: '#fbbf24' },
       { p0: [-148, PD, PH + 30], p1: [-148, 210, PH + 30], off: [-110, 0, 15], label: '14 mm Frontüberstand über Display', col: '#f59e0b' },
       { p0: [-148, 210, PH + 30], p1: [-176.5 + 75, 205, DOOR.z1], off: [20, 35, 30], label: 'Kniehebelstange: 90 mm', col: '#fbbf24' }
     );
@@ -711,7 +983,7 @@ function getDimensions(P) {
       { p0: [525, RAIL_Y, 0], p1: [525, RAIL_Y, 335], off: [50, 0, 0], label: 'Portalhöhe: 335 mm', col: '#38bdf8' },
       { p0: [0, RAIL_Y, 280], p1: [MAG_X, RAIL_Y, 280], off: [0, -55, -20], label: 'Verfahrweg X = 360 mm (Drucker ↔ Turm)', col: '#38bdf8' },
       { p0: [MAG_X, 134.5, 240], p1: [MAG_X, 540, 240], off: [50, 0, 0], label: 'Teleskophub Y = 405,5 mm', col: '#38bdf8' },
-      { p0: [0, 558, 20], p1: [0, RAIL_Y, 20], off: [-40, 0, 0], label: '17 mm Sicherheitsabstand vor Tür', col: '#fbbf24' }
+      { p0: [0, 558, 20], p1: [0, RAIL_Y, 20], off: [-40, 0, 0], label: '17 mm bis Schienenmitte · 7 mm bis Profilkante', col: '#fbbf24' }
     );
   } else if (activeStep === 4) { // 5. Baugruppe 4: Waschstation
     dims.push(
@@ -721,21 +993,7 @@ function getDimensions(P) {
       { p0: [237, 45, 32], p1: [483, 45, 32], off: [0, 40, 20], label: '2× Schrubbwalzen: Ø 24 × 246 mm', col: '#c084fc' },
       { p0: [360, 45, 0], p1: [360, 45, 44], off: [-45, 0, 0], label: 'Wasch-Arbeitshöhe Z = 44 mm', col: '#c084fc' }
     );
-  } else if (activeStep === 5) { // 6. Baugruppe 5: Abschubkeil
-    dims.push(
-      { p0: [hx - 37.5, hy + 26, 357.5], p1: [hx + 37.5, hy + 26, 357.5], off: [0, 45, 20], label: 'Keilbreite: 75 mm (Winkel 35°)', col: '#f59e0b' },
-      { p0: [hx + 37.5, hy + 26, 357.5], p1: [hx + 37.5, hy + 38, 357.5], off: [45, 0, 0], label: 'Keiltiefe: 12 mm (+18 mm Flansch)', col: '#f59e0b' },
-      { p0: [hx - 12, hy + 26, 365], p1: [hx + 12, hy + 26, 365], off: [0, -35, 15], label: 'Eddy-Sensor-Freisparung: 24 mm', col: '#fbbf24' },
-      { p0: [hx, hy, NOZZLE_Z], p1: [hx, hy, 357.5], off: [-40, 0, 0], label: '+1,5 mm Freigang über Düsenspitze', col: '#f59e0b' }
-    );
-  } else if (activeStep === 6) { // 7. Baugruppe 6: Rutsche & Schale
-    dims.push(
-      { p0: [0, PLATE, bz], p1: [0, PD, bz], off: [50, 0, 0], label: 'Freiraum vor Heizbett: 74,5 mm', col: '#34d399' },
-      { p0: [0, PLATE, bz], p1: [0, PLATE + 42, bz - 24], off: [-50, 0, 0], label: 'Rutsche: 42 mm Ausladung (30° Gefälle)', col: '#34d399' },
-      { p0: [-62, 192, bz - 30], p1: [62, 192, bz - 30], off: [0, 45, 0], label: 'Auffangschale: 124 mm Breite', col: '#34d399' },
-      { p0: [62, 136, bz - 30], p1: [62, 192, bz - 30], off: [45, 0, 0], label: 'Schalentiefe: 56 mm', col: '#34d399' },
-      { p0: [0, 192, bz - 30], p1: [0, PD, bz - 30], off: [35, 0, 0], label: '11 mm Restabstand zur geschlossenen Tür', col: '#fbbf24' }
-    );
+
   }
 
   return dims;
@@ -799,6 +1057,9 @@ function render(pose) {
   for (const g of guides) { const a = project(g.a), b = project(g.b); if (a && b) { ctx.strokeStyle = g.col; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); } }
   ctx.restore();
 
+  drawClearance();
+  drawPath();
+
   // CAD-Bemaßungen (Echte Maße in mm)
   if (showDims && pose) {
     const dims = getDimensions(pose);
@@ -833,6 +1094,7 @@ function render(pose) {
     ctx.fillStyle = hi ? '#fbbf24' : '#e2e8f0'; ctx.fillText(pn.title, q.x + 17, q.y + 4);
     if (hi) { ctx.font = '12px ui-monospace, monospace'; ctx.fillStyle = '#94a3b8'; ctx.fillText(pn.sub, q.x + 17, q.y + 19); }
   }
+  drawGizmo();
 }
 
 // ============================================================================
@@ -850,25 +1112,15 @@ const STEPS = [
     hw: '4× Alu-Profil 2020 (L = 320 mm), 16× M4×10 + Nutenstein, 4× Gabellichtschranke TCST2103',
     p: 'models_stl/plate_magazine_rack_tower.stl' },
   { t: '3-Achs-Wechsler-Shuttle (P2S)', c: 'text-cyan-300', tag: 'X/Y/Z-Portal · Y = 575', preset: 'shuttle',
-    d: 'Wegen der größeren P2S-Gehäusetiefe (406 mm, Türschwenkradius bis Y = 558 mm) auf Y = 575 mm positioniert (17 mm Sicherheitsabstand vor der offenen P2S-Tür). X-Achse verfährt zwischen P2S-Mitte (X = 0) und Kompakt-Turm (X = +360 mm); Y-Teleskoparm (Hub 440 mm) greift die Plattenvorderkante.',
-    dim: 'X-Träger 685 mm (X = −160..+525) · Z-Steher 2× 335 mm · Y-Teleskoparm 440 mm',
-    hw: 'Alu 2020 (1× 685 mm, 2× 335 mm), MGN12H (600 mm + 2× 300 mm), MGN9H (440 mm), T8×8 (300 mm), 3× NEMA17',
+    d: 'Wegen der größeren P2S-Gehäusetiefe (406 mm, Türschwenkradius bis Y = 558 mm) auf Y = 575 mm positioniert (17 mm bis zur Schienenmitte, nur 7 mm bis zur Profilkante: siehe Konstruktionsprüfung). X-Achse verfährt zwischen P2S-Mitte (X = 0) und Kompakt-Turm (X = +360 mm); Y-Teleskoparm (Hub 405,5 mm auf MGN9H 500 mm) greift die Plattenvorderkante.',
+    dim: 'X-Träger 685 mm (X = −160..+525) · Z-Steher 2× 335 mm · Y-Teleskoparm: Hub 405,5 mm',
+    hw: 'Alu 2020 (1× 685 mm, 2× 335 mm), MGN12H (600 mm + 2× 300 mm), MGN9H (500 mm), T8×8 (300 mm), 3× NEMA17',
     p: 'Zukauf-Linearportal (2020 Alu + MGN12H) + Greiferaufnahme' },
   { t: 'IPA-Waschstation (Kompakt-Turm unten)', c: 'text-purple-300', tag: 'Z = 0..64 mm · unten', preset: 'washer',
     d: 'Sitzt im Untergeschoss des rechten Kompakt-Turms (X = +360 mm, Y = 0 mm, Z = 0..64 mm) direkt unter dem Plattenregal. Shuttle senkt die verschmutzte Platte senkrecht auf Z = 44 mm ab und führt sie ±26 mm über 2 gegenläufige Mikrofaser-Walzen (Ø 24 × 246 mm) unter 99,9 % IPA-Sprühung und 5015-Gebläsetrocknung.',
     dim: 'Wanne 260×280×64 mm (Wandstärke 6 mm) · 2× Walze Ø24×246 mm (Y = −45 / +45 mm, Z = 32 mm)',
     hw: '4× Kugellager 608ZZ (8×22×7 mm), 12V Peristaltikpumpe (Relais GPIO 19), N20 Getriebemotor (GPIO 26), 5015 Lüfter (GPIO 13)',
     p: 'models_stl/plate_washer_station_basin.stl' },
-  { t: 'P2S DynaSense Abschubkeil', c: 'text-amber-300', tag: '75×32×12,5 mm · 35°', preset: 'toolhead',
-    d: 'Speziell auf den Bambu Lab P2S DynaSense-Werkzeugkopf abgestimmter 35°-Räumkeil mit rückseitiger 24×14-mm-Freisparung für den P2S Eddy-Wirbelstromsensor und die Bauteilkühlung. Unterkante liegt bei Z = 357,5 mm (+1,5 mm über der P2S-Düsenspitze Z = 356 mm); Abschub erfolgt bei Bett-Z = 354,5 mm.',
-    dim: '75 × 32 × 12,5 mm · Keilwinkel 35° · Eddy-Sensor-Freisparung 24×14 mm · +1,5 mm zur Düse',
-    hw: '2× M3×12 Zylinderschraube + 2× Ruthex M3-Gewindeeinsatz (0,8 Nm, Material ASA)',
-    p: 'models_stl/bambu_toolhead_sweeper_blade.stl' },
-  { t: 'P2S Mitfahrende Rutsche & Schale', c: 'text-emerald-300', tag: '74,5 mm P2S-Freiraum', preset: 'chute',
-    d: 'Nutzt den beim Bambu Lab P2S vergrößerten vorderen Bauraum-Freiraum von 74,5 mm zwischen Plattenvorderkante (Y = +128,5 mm) und Glastür-Innenseite (Y = +203 mm). Fährt am P2S-Heizbettträger in Z mit und bleibt komplett unterhalb der Plattenebene (Z ≤ bz − 2,5 mm), sodass das Shuttle die Platte frei darüber hinwegzieht.',
-    dim: 'Rutsche 120×42×24 mm (30° Gefälle) · Auffangschale 124×56×46 mm (Y = 136..192 mm)',
-    hw: 'Werkzeuglose Klick-Rastnasen am P2S-Bettträger + 2× M3×8 Sicherungsschraube (Material PETG)',
-    p: 'models_stl/bambu_bed_ejection_chute.stl' },
 ];
 
 const stepsEl = document.getElementById('steps');
@@ -908,34 +1160,35 @@ function startAction(type) {
     if (!world.bedPlate) return setStatus('Keine Platte auf dem Bett', 'bg-red-500');
     A.dur = 8;
   } else if (type === 'swap') {
-    A.empty = world.slots.findIndex(s => !s);
-    A.fresh = world.slots.findIndex(s => s && s.state === 'ready');
-    if (A.empty < 0) return setStatus('Kein freies Fach – erst eine Platte entnehmen', 'bg-red-500');
-    if (A.fresh < 0) return setStatus('Keine frische Platte im Lager – erst waschen', 'bg-red-500');
-    A.oldPlate = { ...world.bedPlate }; A.freshPlate = { ...world.slots[A.fresh], state: 'ready' };
     A.hasPart = world.part === 'bed'; A.partH = world.partH;
+    // Die Teile bleiben auf der Platte und müssen unter die nächste Platte im Regal passen
+    A.empty = world.slots.findIndex((s, i) => !s && (!A.hasPart || DATA.slot_capacity[i] >= A.partH));
+    A.fresh = world.slots.findIndex(s => s && s.state === 'ready');
+    if (A.empty < 0) return setStatus(world.slots.some(s => !s) ? `Teile (${A.partH} mm) passen in kein freies Fach` : 'Kein freies Fach – erst eine Platte entnehmen', 'bg-red-500');
+    if (A.fresh < 0) return setStatus('Keine frische Platte im Lager – erst waschen', 'bg-red-500');
+    A.oldPlate = { ...world.bedPlate, part: A.hasPart ? A.partH : 0 }; A.freshPlate = { ...world.slots[A.fresh], state: 'ready', part: 0 };
     A.dur = 16;
   } else if (type === 'wash') {
     A.dirty = world.slots.findIndex(s => s && s.state === 'dirty');
-    if (A.dirty < 0) return setStatus('Keine verschmutzte Platte im Lager', 'bg-red-500');
+    if (A.dirty < 0) return setStatus(world.slots.some(s => s && s.state === 'full') ? 'Erst die Teile von der Platte entnehmen' : 'Keine verschmutzte Platte im Lager', 'bg-red-500');
     A.plate = { ...world.slots[A.dirty] };
     A.dur = 12;
   }
   if (world.door > 0.01 && type !== 'print') world.doorTarget = world.door; // Swap öffnet selbst
   explTarget = 0; $('sl-expl').value = 0; explAuto = false;
-  action = A; lockUI(true);
+  action = A; paused = false; lockUI(true);
   setStatus({ print: 'DRUCK LÄUFT', swap: 'PLATTENWECHSEL', wash: 'WASCHZYKLUS' }[type], 'bg-cyan-400 animate-pulse');
 }
 
 function finishAction(A) {
-  if (A.type === 'print') { world.part = 'bed'; world.partH = 30; world.bedPlate.state = 'used'; world.bedZ = NOZZLE_Z - 0.3 - 30; }
+  paused = false;
+  if (A.type === 'print') { world.part = 'bed'; world.partH = DEMO_PART_H; world.bedPlate.state = 'used'; world.bedZ = NOZZLE_Z - 0.3 - DEMO_PART_H; }
   if (A.type === 'swap') {
-    world.slots[A.empty] = { ...A.oldPlate, state: A.oldPlate.state === 'used' ? 'dirty' : A.oldPlate.state };
+    world.slots[A.empty] = { ...A.oldPlate, state: A.hasPart ? 'full' : A.oldPlate.state === 'used' ? 'dirty' : A.oldPlate.state };
     world.slots[A.fresh] = null; world.bedPlate = { ...A.freshPlate };
-    if (A.hasPart) world.tray++;
     world.part = 'none'; world.bedZ = HOME_Z; world.door = 0; world.doorTarget = 0;
   }
-  if (A.type === 'wash') world.slots[A.dirty] = { ...A.plate, state: 'ready' };
+  if (A.type === 'wash') world.slots[A.dirty] = { ...A.plate, state: 'ready', part: 0 };
   action = null; lockUI(false);
   setStatus({ print: 'DRUCK FERTIG', swap: 'WECHSEL FERTIG · BEREIT', wash: 'PLATTE SAUBER · BEREIT' }[A.type], 'bg-emerald-400');
   updateHud();
@@ -943,18 +1196,26 @@ function finishAction(A) {
 
 function updateHud(pose) {
   const slots = pose ? pose.slots : world.slots;
-  const lab = { ready: ['frisch', 'text-emerald-400'], dirty: ['verschmutzt', 'text-amber-400'] };
+  const lab = { ready: ['frisch', 'text-emerald-400'], dirty: ['verschmutzt', 'text-amber-400'], full: ['mit Teilen', 'text-cyan-300'] };
   $('slot-list').innerHTML = slots.map((s, i) => {
     if (!s) return `<div class="flex justify-between"><span>Fach ${i + 1} · Z ${SLOT_Z[i]}</span><span class="text-slate-500">leer</span></div>`;
     const [t, c] = lab[s.state] || ['–', ''];
-    return `<div class="flex justify-between gap-2"><span>Fach ${i + 1} · ${PLATE_TYPES[s.type].name}</span><span class="${c}">${t}</span></div>`;
+    const unload = s.state === 'full' ? ` <button data-unload="${i}" class="underline text-cyan-200" title="Fertige Teile von der Platte nehmen">entnehmen</button>` : '';
+    return `<div class="flex justify-between gap-2"><span>Fach ${i + 1} · ${PLATE_TYPES[s.type].name}</span><span class="${c}">${t}${unload}</span></div>`;
   }).join('');
   const bp = pose ? pose.bedPlate : world.bedPlate;
   $('bed-plate').textContent = bp ? `${PLATE_TYPES[bp.type].name} (${bp.state === 'used' ? 'benutzt' : 'frisch'})` : '— (Wechsel läuft)';
-  $('tray-count').textContent = world.tray + (pose && pose.trayExtra ? 1 : 0);
+  $('tray-count').textContent = world.tray;
   $('lbl-door').textContent = world.doorTarget > 0 ? 'Tür schließen' : 'Tür öffnen';
 }
 
+$('slot-list').onclick = e => {
+  const i = e.target instanceof Element ? e.target.getAttribute('data-unload') : null;
+  if (i === null || action) return;
+  const s = world.slots[+i]; if (!s || s.state !== 'full') return;
+  world.slots[+i] = { ...s, part: 0, state: 'dirty' }; world.tray++;
+  setStatus(`Teile aus Fach ${+i + 1} entnommen – Platte kann gewaschen werden`, 'bg-emerald-400'); updateHud();
+};
 $('btn-print').onclick = () => startAction('print');
 $('btn-swap').onclick = () => startAction('swap');
 $('btn-wash').onclick = () => startAction('wash');
@@ -971,10 +1232,202 @@ let explAuto = false, explDir = 1;
 $('btn-explode').onclick = () => { explAuto = !explAuto; $('btn-explode').textContent = explAuto ? 'Explosion ❚❚' : 'Explosion ▶'; };
 $('sel-speed').onchange = e => speed = parseFloat(e.target.value);
 $('sel-cam').onchange = e => setPreset(e.target.value);
-$('btn-prev').onclick = () => selectStep(activeStep <= 1 ? 6 : activeStep - 1);
-$('btn-next').onclick = () => selectStep(activeStep >= 6 ? 1 : activeStep + 1);
+$('btn-prev').onclick = () => selectStep(activeStep <= 1 ? STEPS.length : activeStep - 1);
+$('btn-next').onclick = () => selectStep(activeStep >= STEPS.length ? 1 : activeStep + 1);
 const toggleSidebar = () => $('sidebar').classList.toggle('hidden');
 $('btn-sidebar').onclick = toggleSidebar; $('btn-close').onclick = toggleSidebar;
+
+// ============================================================================
+// Freigang, Bahn der Backe, Achsenkreuz (Überlagerungen)
+// ============================================================================
+function segBoxDist(p, q, b) { // Strecke p–q zu Rechteck [x0, y0, x1, y1] in der Draufsicht
+  let best = Infinity;
+  for (let i = 0; i <= 200; i++) {
+    const k = i / 200, x = p[0] + (q[0] - p[0]) * k, y = p[1] + (q[1] - p[1]) * k;
+    best = Math.min(best, Math.hypot(Math.max(b[0] - x, 0, x - b[2]), Math.max(b[1] - y, 0, y - b[3])));
+  }
+  return best;
+}
+const doorSeg = th => [[DOOR.hinge[0], DOOR.hinge[1]], [DOOR.hinge[0] + DOOR.width * Math.cos(th), DOOR.hinge[1] + DOOR.width * Math.sin(th)]];
+const gapClass = g => g == null ? '' : g < 3 ? 'gap-fail' : g < 15 ? 'gap-warn' : 'gap-ok';
+
+function liveGaps(pose) {
+  const [a, b] = doorSeg(pose.door), h = DATA.plate_half, plates = [];
+  if (pose.bedPlate) plates.push([-h, -h, h, h]);
+  if (pose.moving) { const [mx, my] = pose.moving.pos; plates.push([mx - h, my - h, mx + h, my + h]); }
+  const min = boxes => boxes.length ? Math.min(...boxes.map(bx => segBoxDist(a, b, bx))) : null;
+  return {
+    plate: min(plates),
+    jaw: min([[pose.cx - 30, pose.gy - 8, pose.cx + 30, pose.gy]]),
+    portal: min([DATA.portal_front]),
+  };
+}
+
+function drawClearance() {
+  if (!showClear || !(activeStep === 0 || activeStep === 1 || activeStep === 3 || cycleOpen)) return;
+  const [hx, hy] = DATA.door.hinge, r = DATA.door.width, a1 = DATA.door.open_deg * Math.PI / 180;
+  const ring = [[hx, hy, 0.6]];
+  for (let i = 0; i <= 46; i++) { const f = a1 * i / 46; ring.push([hx + r * Math.cos(f), hy + r * Math.sin(f), 0.6]); }
+  const pp = ring.map(project);
+  ctx.save();
+  if (pp.every(Boolean)) {
+    ctx.beginPath(); pp.forEach((q, i) => i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)); ctx.closePath();
+    ctx.fillStyle = 'rgba(245, 158, 11, 0.07)'; ctx.fill();
+    ctx.setLineDash([6, 5]); ctx.lineWidth = 1.3; ctx.strokeStyle = 'rgba(245, 158, 11, 0.75)'; ctx.stroke();
+  }
+  const f = DATA.portal_front, p0 = project([f[0], f[1], 0.6]), p1 = project([f[2], f[1], 0.6]);
+  if (p0 && p1) { ctx.setLineDash([6, 4]); ctx.strokeStyle = 'rgba(248, 113, 113, 0.9)'; ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke(); }
+  ctx.restore();
+  const door = CHECKS.find(c => c.id === 'door_portal');
+  if (door) drawDim([f[0], f[1] - door.value, 0.6], [f[0], f[1], 0.6], `${door.value} mm Tür ↔ Profil`,
+    { offset: [-70, 0, 0], color: door.status === 'ok' ? '#34d399' : '#fbbf24' });
+}
+
+let pathCache = null;
+function getPath() {
+  const empty = world.slots.findIndex(s => !s), fresh = world.slots.findIndex(s => s && s.state === 'ready');
+  const key = [world.slots.map(s => s ? s.state[0] : '-').join(''), world.part, world.bedPlate && world.bedPlate.type].join('|');
+  if (pathCache && pathCache.key === key) return pathCache;
+  const A = { type: 'swap', t: 0, z0: HOME_Z, empty: empty < 0 ? 3 : empty, fresh: fresh < 0 ? 0 : fresh,
+    oldPlate: { ...(world.bedPlate || { type: 'gold', state: 'used' }) }, freshPlate: { type: 'gold', state: 'ready' },
+    hasPart: world.part === 'bed', partH: world.partH };
+  const pts = [], marks = [];
+  for (let i = 0; i <= 240; i++) { const t = 0.22 + 0.74 * i / 240, p = swapPose(A, t); pts.push({ t, p: [p.cx, p.gy, p.sz] }); }
+  PHASES.forEach((ph, i) => { if (ph.t0 >= 0.22) { const p = swapPose(A, ph.t0); marks.push({ n: i + 1, p: [p.cx, p.gy, p.sz] }); } });
+  return pathCache = { key, pts, marks };
+}
+
+function drawPath() {
+  if (!showPath) return;
+  const { pts, marks } = getPath();
+  ctx.save(); ctx.lineWidth = 2.2; ctx.lineJoin = 'round'; ctx.globalAlpha = 0.9;
+  let prev = null;
+  for (const q of pts) {
+    const s = project(q.p);
+    if (prev && s) { ctx.strokeStyle = `hsl(${190 - 150 * ((q.t - 0.22) / 0.74)} 90% 60%)`; ctx.beginPath(); ctx.moveTo(prev.x, prev.y); ctx.lineTo(s.x, s.y); ctx.stroke(); }
+    prev = s;
+  }
+  ctx.globalAlpha = 1; ctx.font = '700 11px ui-sans-serif, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const m of marks) {
+    const s = project(m.p); if (!s) continue;
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.92)'; ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.arc(s.x, s.y, 9, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#fde68a'; ctx.fillText(String(m.n), s.x, s.y + 0.5);
+  }
+  ctx.restore();
+}
+
+function drawGizmo() {
+  const b = camBasis(), ox = W - 54, oy = H - 70, L = 26;
+  ctx.save(); ctx.lineWidth = 2; ctx.font = '700 11px ui-sans-serif, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.55)'; ctx.beginPath(); ctx.arc(ox, oy, L + 16, 0, 7); ctx.fill();
+  for (const [v, col, lab] of [[[1, 0, 0], '#f87171', 'X'], [[0, 1, 0], '#4ade80', 'Y'], [[0, 0, 1], '#60a5fa', 'Z']]) {
+    const sx = dot(v, b.right) * L, sy = -dot(v, b.up) * L;
+    ctx.strokeStyle = col; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ox + sx, oy + sy); ctx.stroke();
+    ctx.fillStyle = col; ctx.fillText(lab, ox + sx * 1.38, oy + sy * 1.38);
+  }
+  ctx.restore();
+}
+
+// ============================================================================
+// Wechselzyklus-Panel (Phasen, Regler, Livewerte, Konstruktionsprüfung)
+// ============================================================================
+const phaseList = $('phase-list');
+PHASES.forEach((p, i) => {
+  const li = document.createElement('li');
+  for (const [cls, txt] of [['n', String(i + 1)], ['l', p.label], ['d', p.detail]]) { const s = document.createElement('span'); s.className = cls; s.textContent = txt; li.appendChild(s); }
+  li.onclick = () => gotoPhase(i);
+  phaseList.appendChild(li);
+});
+
+const LIVE_ROWS = [['x', 'Shuttle X'], ['y', 'Backe Y'], ['z', 'Shuttle Z'], ['bed', 'Bett Z'], ['door', 'Tür'], ['gplate', 'Tür ↔ Platte'], ['gjaw', 'Tür ↔ Backe'], ['gportal', 'Tür ↔ Profil']];
+const liveEl = {};
+for (const [id, label] of LIVE_ROWS) {
+  const k = document.createElement('span'); k.className = 'k'; k.textContent = label;
+  const v = document.createElement('span'); v.className = 'v'; liveEl[id] = v;
+  $('cyc-live').append(k, v);
+}
+
+(() => {
+  const box = $('cyc-checks'), h = document.createElement('h3'); h.textContent = 'Konstruktionsprüfung'; box.appendChild(h);
+  const sym = { ok: '✓', warn: '!', fail: '✗' };
+  for (const c of CHECKS) {
+    const row = document.createElement('div'); row.className = `chk ${c.status}`;
+    const s = document.createElement('span'); s.className = 's'; s.textContent = sym[c.status];
+    const l = document.createElement('span'); l.textContent = c.label;
+    const v = document.createElement('b'); v.className = 'mono'; v.textContent = `${c.value} ${c.unit}`;
+    row.append(s, l, v);
+    if (c.status !== 'ok') { const n = document.createElement('small'); n.textContent = c.note; row.appendChild(n); }
+    row.title = c.note;
+    box.appendChild(row);
+  }
+})();
+
+let lastPhase = -2;
+function setGap(el, g) { el.textContent = g == null ? '–' : `${g.toFixed(1)} mm`; el.className = `v ${gapClass(g)}`; }
+function updateCycleUi(pose) {
+  const idx = action && action.type === 'swap' ? phaseIndex(action.t) : -1;
+  if (idx !== lastPhase) {
+    lastPhase = idx;
+    [...phaseList.children].forEach((li, i) => { li.classList.toggle('act', i === idx); li.classList.toggle('done', idx >= 0 && i < idx); });
+    $('cyc-count').textContent = idx >= 0 ? `Phase ${idx + 1}/${PHASES.length}` : `${PHASES.length} Phasen`;
+  }
+  const sl = $('sl-cycle');
+  if (document.activeElement !== sl) sl.value = action && action.type === 'swap' ? Math.round(action.t * 1000) : 0;
+  $('cyc-play').textContent = action && !paused ? '⏸' : '▶';
+  liveEl.x.textContent = `${pose.cx.toFixed(0)} mm`; liveEl.y.textContent = `${pose.gy.toFixed(0)} mm`; liveEl.z.textContent = `${pose.sz.toFixed(0)} mm`;
+  liveEl.bed.textContent = `${pose.bedZ.toFixed(0)} mm`; liveEl.door.textContent = `${(pose.door * 180 / Math.PI).toFixed(0)}°`;
+  const g = liveGaps(pose);
+  setGap(liveEl.gplate, g.plate); setGap(liveEl.gjaw, g.jaw); setGap(liveEl.gportal, g.portal);
+}
+
+function gotoPhase(i) {
+  if (!action) { startAction('swap'); if (!action) return; }
+  action.t = Math.min(0.9999, PHASES[i].t0 + 0.0001); paused = true;
+  setStatus('PAUSIERT', 'bg-amber-400');
+}
+function stepPhase(dir) {
+  if (!action || action.type !== 'swap') return startAction('swap');
+  const i = phaseIndex(action.t);
+  gotoPhase(dir > 0 ? Math.min(PHASES.length - 1, i + 1) : (action.t - PHASES[i].t0 > 0.01 ? i : Math.max(0, i - 1)));
+}
+function cyclePlay() {
+  if (!action) return startAction('swap');
+  paused = !paused;
+  setStatus(paused ? 'PAUSIERT' : { print: 'DRUCK LÄUFT', swap: 'PLATTENWECHSEL', wash: 'WASCHZYKLUS' }[action.type], paused ? 'bg-amber-400' : 'bg-cyan-400 animate-pulse');
+}
+function toggleCycle(force) {
+  cycleOpen = force === undefined ? !cycleOpen : force;
+  $('cycle').hidden = !cycleOpen; lastPhase = -2;
+}
+$('btn-cycle').onclick = () => toggleCycle();
+$('cyc-close').onclick = () => toggleCycle(false);
+$('cyc-play').onclick = cyclePlay;
+$('cyc-prev').onclick = () => stepPhase(-1);
+$('cyc-next').onclick = () => stepPhase(1);
+$('sl-cycle').oninput = e => {
+  if (!action) { startAction('swap'); if (!action) return; }
+  action.t = Math.min(0.9999, e.target.value / 1000); paused = true; setStatus('PAUSIERT', 'bg-amber-400');
+};
+$('chk-path').onchange = e => showPath = e.target.checked;
+$('chk-clear').onchange = e => showClear = e.target.checked;
+
+addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey || (e.target instanceof Element && e.target.matches('select, textarea, input[type=text], input[type=range]'))) return;
+  const k = e.key.toLowerCase();
+  if (k >= '0' && k <= '4' && k.length === 1) k === '0' ? setPreset('iso') : selectStep(+k);
+  else if (k === ' ') { e.preventDefault(); cyclePlay(); }
+  else if (k === 'arrowright') { e.preventDefault(); action ? stepPhase(1) : $('btn-next').click(); }
+  else if (k === 'arrowleft') { e.preventDefault(); action ? stepPhase(-1) : $('btn-prev').click(); }
+  else if (k === '+' || k === '=') { camGoal = null; cam.dist = Math.max(350, cam.dist * 0.85); }
+  else if (k === '-') { camGoal = null; cam.dist = Math.min(3500, cam.dist * 1.18); }
+  else if (k === 'r') setPreset('iso');
+  else if (k === 'w') startAction('swap');
+  else if (k === 'c') toggleCycle();
+  else if (k === 'd') { $('chk-dims').click(); }
+  else if (k === 'x') { $('chk-xray').click(); }
+  else if (k === 'p') { $('chk-path').click(); }
+});
 
 // ============================================================================
 // Hauptschleife
@@ -998,16 +1451,17 @@ function loop(now) {
 
   let pose;
   if (action) {
-    action.t = Math.min(1, action.t + dt * speed / action.dur);
+    if (!paused) action.t = Math.min(1, action.t + dt * speed / action.dur);
     pose = action.type === 'swap' ? swapPose(action, action.t) : action.type === 'wash' ? washPose(action, action.t) : printPose(action, action.t);
     world.door = pose.door;
     $('phase').textContent = `· ${pose.phase}`;
     updateHud(pose);
-    if (action.t >= 1) { finishAction(action); $('phase').textContent = ''; }
+    if (action.t >= 1 && !paused) { finishAction(action); $('phase').textContent = ''; }
   } else {
     world.door = lerp(world.door, world.doorTarget, 1 - Math.pow(0.02, dt));
     pose = idlePose();
   }
+  if (cycleOpen) updateCycleUi(pose);
   buildScene(pose, action ? 0 : expl);
   render(pose);
   requestAnimationFrame(loop);
@@ -1019,12 +1473,16 @@ const _q = new URLSearchParams(location.search);
 if (_q.get('cam')) setPreset(_q.get('cam'));
 if (_q.get('step')) selectStep(parseInt(_q.get('step')));
 if (_q.get('act')) { startAction(_q.get('act')); if (_q.get('t') && action) action.t = parseFloat(_q.get('t')); }
+if (_q.get('pause') === '1') paused = true;   // für Bildschirmfotos: Zyklus an der Stelle t anhalten
 if (_q.get('expl')) { expl = explTarget = parseFloat(_q.get('expl')); $('sl-expl').value = Math.round(expl * 100); }
 updateHud();
+if (innerWidth < 900) $('sidebar').classList.add('hidden');
+toggleCycle(_q.get('cycle') ? _q.get('cycle') !== '0' : innerWidth >= 1100);
+if (_q.get('path') === '1') { showPath = true; $('chk-path').checked = true; }
 requestAnimationFrame(loop);
 
 // Testhaken für automatisierte Prüfung (headless)
-window.__plt = { world, startAction, get action() { return action; }, setPreset, cam, setT: t => { if (action) action.t = t; } };
+window.__plt = { world, startAction, get action() { return action; }, get paused() { return paused; }, setPaused: v => { paused = v; }, setPreset, cam, setT: t => { if (action) action.t = t; }, PHASES, DATA, liveGaps, swapPose, getPath };
 </script>
 </body>
 </html>
