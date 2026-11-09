@@ -174,13 +174,13 @@
         <div onclick="selectStep(1)" id="step-card-1" class="step-card p-2.5 rounded-xl bg-slate-900/70 border border-slate-800 hover:border-cyan-500/50 cursor-pointer transition">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-amber-300">1. Tür-Servo & Kniehebel</span>
-            <span class="text-xs font-mono text-slate-400">MG90S • M3</span>
+            <span class="text-xs font-mono text-slate-400">MG90S • Scharnier Rechts</span>
           </div>
           <p class="text-xs text-slate-300 mt-1 leading-relaxed">
-            Servohalterung oben am Scharnier montieren. Der 85mm Kniehebel übersetzt 120° Servodrehung in 115° sanfte Türöffnung.
+            Servohalterung oben rechts am Original-Scharnier montieren. Der Kniehebel öffnet die Glastür originalgetreu von links nach rechts auf 115°.
           </p>
           <div class="mt-1 flex items-center gap-2 text-[11px] font-mono text-cyan-400">
-            <span>GPIO 18 PWM</span> • <span>Soft-Start Ramp</span>
+            <span>GPIO 18 PWM</span> • <span>Bambu Werksmaß</span>
           </div>
         </div>
 
@@ -408,7 +408,7 @@
     const STEP_DATA = {
       1: {
         title: "1. Tür-Servo & Kniehebel",
-        desc: "Servohalterung oben am Scharnier montieren. Der 85mm Kniehebel übersetzt 120° Servodrehung in 115° sanfte Türöffnung.",
+        desc: "Servohalterung oben rechts am Original-Scharnier montieren (Bambu Original-Drehachse). Der 85mm Kniehebel öffnet die Glastür von links nach rechts auf 115°.",
         path: "models_stl/bambu_door_opener_servo_bracket.stl",
         preset: "door"
       },
@@ -480,8 +480,8 @@
         camYaw = -0.58; camPitch = 0.36; camDist = 680;
         targetX = -20; targetY = 0; targetZ = 110;
       } else if (preset === 'door') {
-        camYaw = -0.25; camPitch = 0.22; camDist = 380;
-        targetX = -80; targetY = 90; targetZ = 150;
+        camYaw = -0.45; camPitch = 0.22; camDist = 380;
+        targetX = 60; targetY = 90; targetZ = 150;
       } else if (preset === 'magazine') {
         camYaw = -1.15; camPitch = 0.32; camDist = 420;
         targetX = -170; targetY = 10; targetZ = 100;
@@ -637,25 +637,28 @@
       drawBox(-120, 110, 12, -110, 120, 240, colFrame, colFrame, colEdge);
       drawBox(-120, -120, 240, 120, 120, 250, colFrame, colFrame, colEdge);
 
-      // --- 2. Dynamic Rotating Glass Front Door (Hinged at X = -110, Y = 118) ---
-      const hingeX = -110, hingeY = 118;
+      // --- 2. Dynamic Rotating Glass Front Door (Hinged on RIGHT at X = 110, Y = 118) ---
+      const hingeX = 110, hingeY = 118;
       const doorW = 220;
       const dCos = Math.cos(doorOpenAngle);
       const dSin = Math.sin(doorOpenAngle);
 
-      // Door corner coordinates rotated around hinge
-      const dTopLeft = project(hingeX, hingeY, 235);
-      const dBotLeft = project(hingeX, hingeY, 15);
-      const dTopRight = project(hingeX + doorW * dCos, hingeY + doorW * dSin, 235);
-      const dBotRight = project(hingeX + doorW * dCos, hingeY + doorW * dSin, 15);
+      // Left free edge coordinates rotated around right hinge
+      const freeX = hingeX - doorW * dCos;
+      const freeY = hingeY + doorW * dSin;
+
+      const dTopRight = project(hingeX, hingeY, 235);
+      const dBotRight = project(hingeX, hingeY, 15);
+      const dTopLeft  = project(freeX, freeY, 235);
+      const dBotLeft  = project(freeX, freeY, 15);
 
       if (dTopLeft && dBotLeft && dTopRight && dBotRight) {
         // Glass door pane
         ctx.beginPath();
-        ctx.moveTo(dBotLeft.x, dBotLeft.y);
-        ctx.lineTo(dBotRight.x, dBotRight.y);
-        ctx.lineTo(dTopRight.x, dTopRight.y);
+        ctx.moveTo(dBotRight.x, dBotRight.y);
+        ctx.lineTo(dBotLeft.x, dBotLeft.y);
         ctx.lineTo(dTopLeft.x, dTopLeft.y);
+        ctx.lineTo(dTopRight.x, dTopRight.y);
         ctx.closePath();
         ctx.fillStyle = 'rgba(6, 182, 212, 0.12)';
         ctx.fill();
@@ -663,21 +666,30 @@
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Door handle & damper
-        const hPt = project(hingeX + (doorW - 15) * dCos, hingeY + (doorW - 15) * dSin, 125);
+        // Door handle & damper on the LEFT edge of door
+        const hPt = project(freeX + 15 * dCos, freeY - 15 * dSin, 125);
         if (hPt) {
           ctx.beginPath();
           ctx.arc(hPt.x, hPt.y, 4, 0, Math.PI * 2);
           ctx.fillStyle = '#f8fafc';
           ctx.fill();
         }
+
+        // Metal hinge pivots on the RIGHT side
+        const hTop = project(hingeX, hingeY, 220);
+        const hBot = project(hingeX, hingeY, 30);
+        if (hTop && hBot) {
+          ctx.fillStyle = '#94a3b8';
+          ctx.beginPath(); ctx.arc(hTop.x, hTop.y, 5, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(hBot.x, hBot.y, 5, 0, Math.PI * 2); ctx.fill();
+        }
       }
 
-      // Door Opener Servo Bracket & Linkage (Step 1)
+      // Door Opener Servo Bracket & Linkage (Step 1) on TOP RIGHT frame (X = 110)
       const servoExplZ = 245 + explosionFactor * 40;
-      drawExplosionGuide(-110, 100, 245, -110, 100, servoExplZ, '#f59e0b');
-      drawBox(-125, 95, servoExplZ, -95, 125, servoExplZ + 20, '#d97706', '#b45309', '#fbbf24');
-      drawPin(-110, 110, servoExplZ + 15, "1. Tür-Servo & Kniehebel", "MG90S • GPIO 18", activeStep === 1);
+      drawExplosionGuide(110, 100, 245, 110, 100, servoExplZ, '#f59e0b');
+      drawBox(95, 95, servoExplZ, 125, 125, servoExplZ + 20, '#d97706', '#b45309', '#fbbf24');
+      drawPin(110, 110, servoExplZ + 15, "1. Tür-Servo & Kniehebel", "MG90S • Scharnier Rechts", activeStep === 1);
 
       // --- 3. Heated Bed & Active Spring Steel Plate ---
       const bedBaseZ = 70;
