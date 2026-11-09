@@ -143,10 +143,11 @@ const PLATE = 128.5;              // halbe Plattenkante (≈257 mm)
 const NOZZLE_Z = 338;             // Düsenspitze
 const PUSH_Z = 336.5;             // Bett-Z zum Abschieben (Keil 3 mm über Platte)
 const HOME_Z = 300;               // Bett-Ruheposition
-const SLOT_Z = [180, 215, 250, 285];  // Plattenoberkante je Magazinfach
-const MAG_X = -326.5, MAG_Y = 370;    // Plattenmitte im Magazin (vorne links, außerhalb Tür-Schwenkradius)
-const PARK = { cx: MAG_X, gy: 520, sz: 200 };
-const WASH_Z = 48;
+const SLOT_Z = [180, 215, 250, 285];  // Plattenoberkante je Magazinfach (oben im Kompakt-Turm)
+const MAG_X = -355, MAG_Y = 0;        // Kompakt-Turm (Plattenregal + Waschstation darunter) links neben dem Drucker
+const TRANSFER_Y = 345, RAIL_Y = 550; // Vorzone für Plattenauszug (+Y) und Shuttle-Schiene
+const PARK = { cx: MAG_X, gy: 515, sz: 215 };
+const WASH_Z = 44;                    // Waschhöhe auf den Walzen direkt unter dem Plattenregal
 
 const PLATE_TYPES = {
   gold:   { name: 'Textured PEI', col: '#c9a227' },
@@ -173,17 +174,17 @@ let speed = 1;
 // Kamera
 // ============================================================================
 const PRESETS = {
-  iso:      { yaw: -0.48, pitch: 0.44, dist: 1850, t: [-80, 180, 175] },
+  iso:      { yaw: -0.42, pitch: 0.44, dist: 1850, t: [-110, 80, 185] },
   door:     { yaw: 0.28,  pitch: 0.32, dist: 1000, t: [60, 210, 290] },
-  magazine: { yaw: -0.62, pitch: 0.38, dist: 1000, t: [-330, 370, 230] },
-  shuttle:  { yaw: -0.32, pitch: 0.52, dist: 1250, t: [-160, 430, 210] },
-  washer:   { yaw: 0.24,  pitch: 0.58, dist: 950,  t: [0, 370, 40] },
+  magazine: { yaw: -0.45, pitch: 0.36, dist: 980,  t: [-355, 0, 230] },
+  shuttle:  { yaw: -0.25, pitch: 0.50, dist: 1300, t: [-175, 320, 200] },
+  washer:   { yaw: -0.48, pitch: 0.42, dist: 920,  t: [-355, 20, 55] },
   toolhead: { yaw: -0.22, pitch: 0.24, dist: 760,  t: [0, 20, 360] },
   chute:    { yaw: 0.18,  pitch: 0.28, dist: 720,  t: [0, 150, 270] },
   scale:    { yaw: 0.72,  pitch: 0.45, dist: 850,  t: [320, -60, 90] },
   dock:     { yaw: 0.82,  pitch: 0.26, dist: 700,  t: [215, 95, 280] },
 };
-const cam = { yaw: -0.48, pitch: 0.44, dist: 1850, tx: -80, ty: 180, tz: 175 };
+const cam = { yaw: -0.42, pitch: 0.44, dist: 1850, tx: -110, ty: 80, tz: 185 };
 let camGoal = null;
 
 function setPreset(name) {
@@ -336,9 +337,9 @@ function printPose(A, t) {
 
 function swapPose(A, t) {
   const p = idlePose();
-  const zE = SLOT_Z[A.empty], zF = SLOT_Z[A.fresh];
-  p.door = DOOR.open * ss(t, 0, 0.08) * (1 - ss(t, 0.90, 1));
-  p.bedZ = pw(t, [[0.04, A.z0], [0.08, A.hasPart ? PUSH_Z : A.z0], [0.22, A.hasPart ? PUSH_Z : A.z0], [0.30, zE], [0.50, zE], [0.56, zF], [0.90, zF], [1, HOME_Z]]);
+  const zE = SLOT_Z[A.empty], zF = SLOT_Z[A.fresh], zBed = 215;
+  p.door = DOOR.open * ss(t, 0, 0.08) * (1 - ss(t, 0.92, 1));
+  p.bedZ = pw(t, [[0.04, A.z0], [0.08, A.hasPart ? PUSH_Z : A.z0], [0.22, A.hasPart ? PUSH_Z : A.z0], [0.28, zBed], [0.90, zBed], [1, HOME_Z]]);
   // Werkzeugkopf: nach hinten, Keil schiebt nach vorne, dann Parkposition
   let thX = 0, thY;
   if (t < 0.08) { thX = lerp(-100, 0, ss(t, 0, 0.04)); thY = lerp(-120, -150, ss(t, 0, 0.04)); }
@@ -353,48 +354,61 @@ function swapPose(A, t) {
     else { const f = ss(t, 0.180, 0.215); p.part = { x: 0, y: lerp(150, 160, f), z: lerp(p.bedZ, p.bedZ - 57, f), h: A.partH, where: 'fall' }; }
     if (t >= 0.215) p.part = null, p.trayExtra = 1;
   } else p.part = null;
-  // Shuttle (X-Schlitten, Y-Teleskoparm, Z-Hub)
-  p.cx = pw(t, [[0.24, MAG_X], [0.30, 0], [0.42, 0], [0.50, MAG_X], [0.58, MAG_X], [0.66, 0], [0.81, 0], [0.88, MAG_X]]);
-  p.sz = pw(t, [[0.24, PARK.sz], [0.30, zE], [0.53, zE], [0.56, zF], [0.88, zF], [0.90, PARK.sz]]);
-  const plateY = pw(t, [[0.34, 0], [0.42, MAG_Y]]);
-  const freshY = pw(t, [[0.66, MAG_Y], [0.77, 0]]);
-  p.gy = t < 0.30 ? PARK.gy : t < 0.34 ? lerp(PARK.gy, PLATE + 6, ss(t, 0.30, 0.34))
-       : t < 0.42 ? plateY + PLATE + 6 : t < 0.50 ? MAG_Y + PLATE + 6
-       : t < 0.53 ? lerp(MAG_Y + PLATE + 6, PARK.gy, ss(t, 0.50, 0.53)) : t < 0.56 ? PARK.gy
-       : t < 0.58 ? lerp(PARK.gy, MAG_Y + PLATE + 6, ss(t, 0.56, 0.58)) : t < 0.66 ? MAG_Y + PLATE + 6
-       : t < 0.77 ? freshY + PLATE + 6 : t < 0.81 ? lerp(PLATE + 6, PARK.gy, ss(t, 0.77, 0.81)) : PARK.gy;
+  // Shuttle (X-Schlitten vor Drucker & Kompakt-Turm, Y-Teleskoparm, Z-Hub)
+  p.cx = pw(t, [[0.22, MAG_X], [0.28, 0], [0.38, 0], [0.48, MAG_X], [0.72, MAG_X], [0.82, 0], [0.90, 0], [0.96, MAG_X]]);
+  p.sz = pw(t, [[0.22, PARK.sz], [0.28, zBed], [0.38, zBed], [0.48, zE], [0.56, zE], [0.62, zF], [0.72, zF], [0.82, zBed], [0.90, zBed], [0.96, PARK.sz]]);
+  const oldY   = pw(t, [[0.28, 0], [0.38, TRANSFER_Y], [0.48, TRANSFER_Y], [0.56, MAG_Y]]);
+  const freshY = pw(t, [[0.62, MAG_Y], [0.72, TRANSFER_Y], [0.82, TRANSFER_Y], [0.90, 0]]);
+  p.gy = t < 0.25 ? PARK.gy : t < 0.28 ? lerp(PARK.gy, PLATE + 6, ss(t, 0.25, 0.28))
+       : t < 0.56 ? oldY + PLATE + 6
+       : t < 0.59 ? lerp(PLATE + 6, PLATE + 60, ss(t, 0.56, 0.59))
+       : t < 0.62 ? lerp(PLATE + 60, PLATE + 6, ss(t, 0.59, 0.62))
+       : t < 0.90 ? freshY + PLATE + 6
+       : t < 0.95 ? lerp(PLATE + 6, PARK.gy, ss(t, 0.90, 0.95)) : PARK.gy;
   // Platten
   const old = A.oldPlate, fresh = A.freshPlate;
-  if (t < 0.34) p.bedPlate = old;
-  else if (t < 0.50) { p.bedPlate = null; p.moving = { plate: old, pos: [t < 0.42 ? 0 : p.cx, plateY, zE] }; }
+  if (t < 0.28) p.bedPlate = old;
+  else if (t < 0.56) { p.bedPlate = null; p.moving = { plate: old, pos: [p.cx, oldY, p.sz] }; }
   else { p.bedPlate = null; p.slots[A.empty] = { ...old, state: old.state === 'used' ? 'dirty' : old.state }; }
-  if (t >= 0.58 && t < 0.77) { p.slots[A.fresh] = null; p.moving = { plate: fresh, pos: [t < 0.66 ? p.cx : 0, t < 0.66 ? MAG_Y : freshY, zF] }; }
-  if (t >= 0.77) { p.slots[A.fresh] = null; p.bedPlate = fresh; }
+  if (t >= 0.62 && t < 0.90) { p.slots[A.fresh] = null; p.moving = { plate: fresh, pos: [p.cx, freshY, p.sz] }; }
+  if (t >= 0.90) { p.slots[A.fresh] = null; p.bedPlate = fresh; }
   p.phase = t < 0.08 ? 'Tür öffnet (115°)' : t < 0.215 ? (A.hasPart ? 'Keil schiebt Teil in die Schale' : 'Bett positioniert')
-          : t < 0.34 ? `Bett & Shuttle auf Fach ${A.empty + 1} (Z ${zE})` : t < 0.50 ? `Alte Platte → Fach ${A.empty + 1}`
-          : t < 0.58 ? `Wechsel auf Fach ${A.fresh + 1} (Z ${zF})` : t < 0.77 ? `Frische Platte aus Fach ${A.fresh + 1} → Bett`
-          : t < 0.90 ? 'Shuttle parkt' : 'Tür schließt';
+          : t < 0.38 ? 'Shuttle zieht gebrauchte Platte aus dem Drucker' : t < 0.56 ? `Alte Platte → Plattenregal Fach ${A.empty + 1} (Z ${zE})`
+          : t < 0.62 ? `Hub auf Fach ${A.fresh + 1} (Z ${zF})` : t < 0.90 ? `Frische Platte aus Fach ${A.fresh + 1} → Heizbett`
+          : 'Shuttle parkt & Tür schließt';
   return p;
 }
 
 function washPose(A, t) {
   const p = idlePose();
   const zD = SLOT_Z[A.dirty];
-  p.sz = pw(t, [[0, PARK.sz], [0.06, zD], [0.20, zD], [0.30, WASH_Z], [0.66, WASH_Z], [0.76, zD], [0.92, zD], [1, PARK.sz]]);
-  p.cx = pw(t, [[0.08, MAG_X], [0.20, 0], [0.76, 0], [0.88, MAG_X]]);
-  const osc = (t > 0.30 && t < 0.66) ? 20 * Math.sin(lin(t, 0.30, 0.66) * Math.PI * 6) : 0;
-  const py = MAG_Y + osc;
-  p.gy = t < 0.06 ? PARK.gy : t < 0.08 ? lerp(PARK.gy, MAG_Y + PLATE + 6, ss(t, 0.06, 0.08))
-       : t < 0.88 ? py + PLATE + 6 : t < 0.92 ? lerp(MAG_Y + PLATE + 6, PARK.gy, ss(t, 0.88, 0.92)) : PARK.gy;
+  // Shuttle bleibt vor dem Kompakt-Turm (cx = MAG_X): zieht Platte aus Fach, senkt sie direkt in die Waschstation darunter ab
+  p.cx = MAG_X;
+  p.sz = pw(t, [[0, PARK.sz], [0.06, zD], [0.20, zD], [0.30, WASH_Z], [0.78, WASH_Z], [0.88, zD], [0.96, zD], [1, PARK.sz]]);
+  const osc = (t > 0.38 && t < 0.70) ? 26 * Math.sin(lin(t, 0.38, 0.70) * Math.PI * 6) : 0;
+  const py = t < 0.08 ? MAG_Y
+           : t < 0.20 ? lerp(MAG_Y, TRANSFER_Y, ss(t, 0.08, 0.20))
+           : t < 0.30 ? TRANSFER_Y
+           : t < 0.38 ? lerp(TRANSFER_Y, MAG_Y, ss(t, 0.30, 0.38))
+           : t < 0.70 ? MAG_Y + osc
+           : t < 0.80 ? lerp(MAG_Y, TRANSFER_Y, ss(t, 0.70, 0.80))
+           : t < 0.88 ? TRANSFER_Y
+           : t < 0.96 ? lerp(TRANSFER_Y, MAG_Y, ss(t, 0.88, 0.96)) : MAG_Y;
+  p.gy = t < 0.05 ? PARK.gy : t < 0.08 ? lerp(PARK.gy, PLATE + 6, ss(t, 0.05, 0.08))
+       : t < 0.96 ? py + PLATE + 6
+       : lerp(PLATE + 6, PARK.gy, ss(t, 0.96, 1));
   const plate = A.plate;
-  const cleanNow = t > 0.60;
-  if (t >= 0.08 && t < 0.88) { p.slots[A.dirty] = null; p.moving = { plate, pos: [p.cx, py, p.sz], state: cleanNow ? 'ready' : 'dirty' }; }
-  if (t >= 0.88) p.slots[A.dirty] = { ...plate, state: 'ready' };
-  p.roll = (t > 0.30 && t < 0.66) ? (t - 0.30) * 140 : 0;
-  p.spray = (t > 0.32 && t < 0.52) ? 1 : 0;
-  p.fan = (t > 0.52 && t < 0.66) ? 1 : 0;
-  p.phase = t < 0.20 ? `Platte aus Fach ${A.dirty + 1} holen` : t < 0.30 ? 'Absenken in die Wanne'
-          : t < 0.52 ? 'IPA-Sprühung + Walzen' : t < 0.66 ? 'Trocknen (Lüfter 5015)' : t < 0.88 ? `Zurück in Fach ${A.dirty + 1}` : 'Shuttle parkt';
+  const cleanNow = t > 0.62;
+  if (t >= 0.08 && t < 0.96) { p.slots[A.dirty] = null; p.moving = { plate, pos: [MAG_X, py, p.sz], state: cleanNow ? 'ready' : 'dirty' }; }
+  if (t >= 0.96) p.slots[A.dirty] = { ...plate, state: 'ready' };
+  p.roll = (t > 0.38 && t < 0.70) ? (t - 0.38) * 140 : 0;
+  p.spray = (t > 0.40 && t < 0.56) ? 1 : 0;
+  p.fan = (t > 0.56 && t < 0.70) ? 1 : 0;
+  p.phase = t < 0.20 ? `Platte aus Fach ${A.dirty + 1} nach vorne ausziehen`
+          : t < 0.38 ? 'Direktes Absenken in die Waschstation unter dem Regal'
+          : t < 0.56 ? 'IPA-Sprühung + Mikrofaser-Walzen'
+          : t < 0.70 ? 'Trocknen (5015 Gebläse)'
+          : `Saubere Platte zurück in Fach ${A.dirty + 1}`;
   return p;
 }
 
@@ -469,47 +483,50 @@ function buildScene(P, e) {
   pin([hx + 40, by + 6, 352], '5 · Abschub-Keil', '2× M3×12 + Ruthex', 5);
   if (e > 0.03) guide([hx, hy + 25, 345], [hx, by, 345], '#f59e0b');
 
-  // ---- Schritt 2: Plattenlager vorne links (außerhalb Tür-Schwenkradius) ----
-  const mx = -160 * e;
-  [[-470, 230], [-470, 505], [-205, 230], [-205, 505]].forEach(([lx, ly]) => box(lx + mx, ly, 0, lx + 12 + mx, ly + 10, 150, '#065f46'));
-  box(-470 + mx, 230, 150, -190 + mx, 515, 158, '#047857');
-  box(-470 + mx, 230, 305, -190 + mx, 515, 313, '#047857');
-  box(-470 + mx, 230, 158, -462 + mx, 515, 305, '#10b981', { alpha: 0.45 });
-  box(-462 + mx, 230, 158, -190 + mx, 237, 305, '#10b981', { alpha: 0.45 });
+  // ---- Schritt 2: Kompakt-Turm OBEN – Plattenregal (4 Fächer, links neben dem Drucker) ----
+  const mx = -140 * e, mz = 65 * e;
+  [[-495, -145], [-495, 135], [-225, -145], [-225, 135]].forEach(([lx, ly]) => box(lx + mx, ly, 0, lx + 10 + mx, ly + 10, 150 + mz, '#065f46'));
+  box(-495 + mx, -145, 148 + mz, -215 + mx, 145, 156 + mz, '#047857');
+  box(-495 + mx, -145, 305 + mz, -215 + mx, 145, 313 + mz, '#047857');
+  box(-495 + mx, -145, 156 + mz, -488 + mx, 145, 305 + mz, '#10b981', { alpha: 0.45 });
+  box(-222 + mx, -145, 156 + mz, -215 + mx, 145, 305 + mz, '#10b981', { alpha: 0.45 });
+  box(-488 + mx, -145, 156 + mz, -222 + mx, -138, 305 + mz, '#10b981', { alpha: 0.45 });
   SLOT_Z.forEach((z, k) => {
-    box(-462 + mx, 237, z - 5.5, -198 + mx, 252, z - 1.5, '#34d399');
-    box(-462 + mx, 488, z - 5.5, -198 + mx, 497, z - 1.5, '#34d399');
-    if (P.slots[k]) plateMesh(MAG_X + mx, MAG_Y, z, P.slots[k]);
+    box(-488 + mx, -135, z - 5.5 + mz, -472 + mx, 135, z - 1.5 + mz, '#34d399');
+    box(-238 + mx, -135, z - 5.5 + mz, -222 + mx, 135, z - 1.5 + mz, '#34d399');
+    if (P.slots[k]) plateMesh(MAG_X + mx, MAG_Y, z + mz, P.slots[k]);
   });
-  pin([-330 + mx, 515, 313], '2 · Plattenlager', '4 Fächer · offen zur Druckerseite', 2);
-  if (e > 0.03) guide([-330, 370, 320], [-330 + mx, 370, 320], '#10b981');
+  pin([MAG_X + mx, 140, 313 + mz], '2 · Plattenregal (oben)', '4 Fächer · im Kompakt-Turm', 2);
+  if (e > 0.03) guide([MAG_X, 0, 313], [MAG_X + mx, 0, 313 + mz], '#10b981');
 
-  // ---- Schritt 3: Wechsler-Shuttle (Schiene vor dem Magazin) ----
+  // ---- Schritt 4: Kompakt-Turm UNTEN – Waschstation (direkt unter dem Plattenregal) ----
+  const wx = -140 * e, wy = 160 * e;
+  box(-485 + wx, -140 + wy, 0, -225 + wx, 140 + wy, 5, '#4c1d95');
+  box(-485 + wx, -140 + wy, 5, -479 + wx, 140 + wy, 64, '#7c3aed', { alpha: 0.65 });
+  box(-231 + wx, -140 + wy, 5, -225 + wx, 140 + wy, 64, '#7c3aed', { alpha: 0.65 });
+  box(-479 + wx, -140 + wy, 5, -231 + wx, -134 + wy, 64, '#7c3aed', { alpha: 0.65 });
+  box(-479 + wx, 134 + wy, 5, -231 + wx, 140 + wy, 32, '#7c3aed', { alpha: 0.65 });
+  box(-479 + wx, -134 + wy, 5, -231 + wx, 134 + wy, 20, '#22d3ee', { alpha: 0.35, edge: false });
+  cyl([-478 + wx, -45 + wy, 32], 'x', 12, 246, '#c084fc', { stripe: '#7e22ce', rot: P.roll }, 16);
+  cyl([-478 + wx,  45 + wy, 32], 'x', 12, 246, '#c084fc', { stripe: '#7e22ce', rot: -P.roll }, 16);
+  box(-538 + wx, -65 + wy, 0, -498 + wx, -5 + wy, 48, '#6d28d9');               // Peristaltikpumpe
+  cyl([-518 + wx, 30 + wy, 0], 'z', 18, 64, '#e0f2fe', { alpha: 0.55 }, 14);     // IPA-Flasche
+  box(-538 + wx, 65 + wy, 12, -498 + wx, 130 + wy, 66, '#4c1d95');              // Lüfter 5015
+  if (P.spray) effects.push({ type: 'spray', x: wx, y: wy });
+  if (P.fan) effects.push({ type: 'fan', x: wx, y: wy });
+  pin([MAG_X + wx, 140 + wy, 64], '4 · Waschstation (unten)', 'direkt unter dem Plattenregal', 4);
+  if (e > 0.03) guide([MAG_X, 140, 32], [MAG_X + wx, 140 + wy, 32], '#a855f7');
+
+  // ---- Schritt 3: Wechsler-Shuttle (Schiene vor Drucker & Kompakt-Turm) ----
   const sy = 140 * e, cx = P.cx, sz = P.sz, gy = P.gy;
-  box(-510, 572 + sy, 0, -495, 588 + sy, 330, '#64748b'); box(160, 572 + sy, 0, 175, 588 + sy, 330, '#64748b');
-  box(-510, 570 + sy, sz + 12, 175, 590 + sy, sz + 24, '#94a3b8');
-  box(cx - 22, 562 + sy, sz - 4, cx + 22, 596 + sy, sz + 30, '#475569');
-  box(cx - 7, gy + sy, sz + 1, cx + 7, 562 + sy, sz + 6, '#cbd5e1');
+  box(-520, RAIL_Y - 8 + sy, 0, -505, RAIL_Y + 8 + sy, 330, '#64748b'); box(145, RAIL_Y - 8 + sy, 0, 160, RAIL_Y + 8 + sy, 330, '#64748b');
+  box(-520, RAIL_Y - 10 + sy, sz + 12, 160, RAIL_Y + 10 + sy, sz + 24, '#94a3b8');
+  box(cx - 22, RAIL_Y - 18 + sy, sz - 4, cx + 22, RAIL_Y + 16 + sy, sz + 30, '#475569');
+  box(cx - 7, gy + sy, sz + 1, cx + 7, RAIL_Y - 18 + sy, sz + 6, '#cbd5e1');
   box(cx - 30, gy - 6 + sy, sz - 3, cx + 30, gy + sy, sz + 8, '#0ea5e9');
-  if (P.moving) plateMesh(P.moving.pos[0], P.moving.pos[1] + sy * 0, P.moving.pos[2], P.moving.plate, P.moving.state);
-  pin([cx, 580 + sy, sz + 34], '3 · Wechsler-Shuttle', 'X-Schlitten · Y-Arm · Z-Hub', 3);
-  if (e > 0.03) guide([-170, 580, 150], [-170, 580 + sy, 150], '#38bdf8');
-
-  // ---- Schritt 4: Waschstation (flach, unter Türunterkante 70 mm) ----
-  const wy = 170 * e;
-  box(-145, 205 + wy, 0, 145, 540 + wy, 4, '#4c1d95');
-  box(-145, 205 + wy, 4, -139, 540 + wy, 55, '#7c3aed', { alpha: 0.6 }); box(139, 205 + wy, 4, 145, 540 + wy, 55, '#7c3aed', { alpha: 0.6 });
-  box(-139, 205 + wy, 4, 139, 211 + wy, 55, '#7c3aed', { alpha: 0.6 }); box(-139, 534 + wy, 4, 139, 540 + wy, 40, '#7c3aed', { alpha: 0.6 });
-  box(-139, 211 + wy, 4, 139, 534 + wy, 18, '#22d3ee', { alpha: 0.35, edge: false });
-  cyl([-135, 320 + wy, 34], 'x', 12, 270, '#c084fc', { stripe: '#7e22ce', rot: P.roll }, 16);
-  cyl([-135, 420 + wy, 34], 'x', 12, 270, '#c084fc', { stripe: '#7e22ce', rot: -P.roll }, 16);
-  box(150, 300 + wy, 0, 190, 360 + wy, 45, '#6d28d9');                       // Pumpe
-  cyl([170, 400 + wy, 0], 'z', 18, 60, '#e0f2fe', { alpha: 0.55 }, 14);        // IPA-Flasche
-  box(-190, 330 + wy, 10, -150, 410 + wy, 62, '#4c1d95');                     // Lüfter 5015
-  if (P.spray) effects.push({ type: 'spray', y: wy });
-  if (P.fan) effects.push({ type: 'fan', y: wy });
-  pin([0, 540 + wy, 55], '4 · Waschstation', 'IPA · 2 Walzen · Lüfter', 4);
-  if (e > 0.03) guide([0, 540, 30], [0, 540 + wy, 30], '#a855f7');
+  if (P.moving) plateMesh(P.moving.pos[0], P.moving.pos[1], P.moving.pos[2], P.moving.plate, P.moving.state);
+  pin([cx, RAIL_Y + sy, sz + 34], '3 · Wechsler-Shuttle', 'X-Schlitten · Y-Arm · Z-Hub', 3);
+  if (e > 0.03) guide([-180, RAIL_Y, 150], [-180, RAIL_Y + sy, 150], '#38bdf8');
 
   // ---- Schritt 7: HX711-Spulenwaage (rechts neben dem Drucker) ----
   box(275, -80, 0, 365, -40, 16, '#7e22ce');
@@ -563,20 +580,20 @@ function render() {
     ctx.fillStyle = `rgba(${r},${g},${b},${f.alpha})`; ctx.fill();
     if (f.edge) { ctx.strokeStyle = `rgba(${Math.round(r * 0.55)},${Math.round(g * 0.55)},${Math.round(b * 0.55)},${Math.min(1, f.alpha + 0.2)})`; ctx.lineWidth = 0.8; ctx.stroke(); }
   }
-  // Effekte (Sprühnebel, Luftstrom)
+  // Effekte (Sprühnebel, Luftstrom in der Waschstation unter dem Plattenregal)
   const now = performance.now() / 1000;
   for (const fx of effects) {
     if (fx.type === 'spray') {
       ctx.fillStyle = 'rgba(56, 189, 248, 0.85)';
       for (let i = 0; i < 40; i++) {
-        const x = -120 + (i * 37) % 240, y = 250 + ((i * 53 + now * 300) % 260), z = 60 + 25 * Math.abs(Math.sin(now * 6 + i));
-        const q = project([x, y + fx.y, z]); if (q) { ctx.beginPath(); ctx.arc(q.x, q.y, Math.max(1, 900 / q.d), 0, 7); ctx.fill(); }
+        const x = MAG_X - 115 + (i * 37) % 230 + (fx.x || 0), y = -110 + ((i * 53 + now * 260) % 220) + (fx.y || 0), z = 48 + 22 * Math.abs(Math.sin(now * 6 + i));
+        const q = project([x, y, z]); if (q) { ctx.beginPath(); ctx.arc(q.x, q.y, Math.max(1, 900 / q.d), 0, 7); ctx.fill(); }
       }
     } else {
       ctx.strokeStyle = 'rgba(226, 232, 240, 0.55)'; ctx.lineWidth = 1.5;
       for (let i = 0; i < 6; i++) {
-        const y = 340 + i * 12 + fx.y, s = (now * 1.5 + i * 0.17) % 1;
-        const a = project([-150 + s * 120, y, 55]), b = project([-110 + s * 120, y, 52]);
+        const y = -60 + i * 24 + (fx.y || 0), s = (now * 1.5 + i * 0.17) % 1;
+        const a = project([MAG_X - 135 + s * 130 + (fx.x || 0), y, 54]), b = project([MAG_X - 95 + s * 130 + (fx.x || 0), y, 50]);
         if (a && b) { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
       }
     }
@@ -613,14 +630,14 @@ const STEPS = [
   { t: 'Tür-Servo & Hebel', c: 'text-amber-300', tag: 'MG90S · GPIO 18', preset: 'door',
     d: 'Halter oben rechts über dem Original-Scharnier. Hebel greift 70 mm neben dem Scharnier an der Türoberkante und öffnet die Tür nach vorne-rechts auf 115°. Hebellängen sind schematisch – am Gerät einmessen.',
     p: 'models_stl/bambu_door_opener_servo_bracket.stl + bambu_door_push_pull_linkage.stl' },
-  { t: 'Plattenlager (4 Fächer)', c: 'text-emerald-300', tag: 'vorne links', preset: 'magazine',
-    d: 'Steht vorne links außerhalb des Tür-Schwenkradius (350 mm um das Scharnier). Fächer auf Z 180 / 215 / 250 / 285 mm, offen zur Druckerseite (+X), Platten liegen auf Leisten vorne und hinten.',
-    p: 'models_stl/plate_magazine_rack_tower.stl (Turm, für 257-mm-Platten skalieren)' },
+  { t: 'Plattenregal (Kompakt-Turm oben)', c: 'text-emerald-300', tag: '4 Fächer · oben', preset: 'magazine',
+    d: 'Sitzt im oberen Teil des Kompakt-Turms links neben dem Drucker (X = −355 mm). 4 Fächer auf Z 180 / 215 / 250 / 285 mm, nach vorne (+Y) offen zum Wechsler-Shuttle.',
+    p: 'models_stl/plate_magazine_rack_tower.stl' },
   { t: 'Wechsler-Shuttle', c: 'text-cyan-300', tag: '3 Achsen', preset: 'shuttle',
-    d: 'Schiene vor dem Magazin (Y ≈ 580 mm, außerhalb des Tür-Radius). X-Schlitten, Y-Teleskoparm greift die Plattenvorderkante, Z-Hub fährt Fach- bzw. Betthöhe an. Zieht die Platte durch die offene Tür nach vorne heraus.',
+    d: 'Linearschiene vor Drucker und Kompakt-Turm (Y = 550 mm). Zieht Platten nach vorne aus dem Drucker bzw. Plattenregal, verfährt in X/Z und senkt verschmutzte Platten direkt in die Waschstation unter dem Regal ab.',
     p: 'Kein STL – Zukaufteile: Alu-Profil, Linearschiene, 3 Antriebe (X, Y, Z)' },
-  { t: 'Waschstation', c: 'text-purple-300', tag: 'IPA · Walzen', preset: 'washer',
-    d: 'Flache Wanne (55 mm hoch) vor dem Drucker, unter der Türunterkante (70 mm) – die Tür schwenkt darüber. Shuttle senkt die Platte auf die Walzen, IPA-Sprühung, Walzen, dann Trocknung mit Lüfter 5015.',
+  { t: 'Waschstation (Kompakt-Turm unten)', c: 'text-purple-300', tag: 'IPA · unter Regal', preset: 'washer',
+    d: 'Sitzt platzsparend direkt unter dem Plattenregal im selben Kompakt-Turm (Z = 0..64 mm). Das Shuttle senkt die verschmutzte Platte aus dem Regal direkt nach unten auf die 2 Mikrofaser-Walzen ab, sprüht IPA und trocknet mit dem 5015-Gebläse.',
     p: 'models_stl/plate_washer_station_basin.stl' },
   { t: 'Abschub-Keil am Werkzeugkopf', c: 'text-amber-300', tag: '2× M3×12', preset: 'toolhead',
     d: 'Keil vorn am Werkzeugkopf, Unterkante 1,5 mm über der Düsenspitze. Zum Abschieben fährt das Bett auf Z 336,5 mm, der Kopf schiebt das Teil nach vorne über die Bettkante.',
@@ -776,7 +793,7 @@ function loop(now) {
 }
 selectStep(1);
 setPreset('iso');
-Object.assign(cam, { yaw: -0.48, pitch: 0.44, dist: 1850, tx: -80, ty: 180, tz: 175 }); camGoal = null;
+Object.assign(cam, { yaw: -0.42, pitch: 0.44, dist: 1850, tx: -110, ty: 80, tz: 185 }); camGoal = null;
 const _q = new URLSearchParams(location.search);
 if (_q.get('act')) { startAction(_q.get('act')); if (_q.get('t') && action) action.t = parseFloat(_q.get('t')); }
 if (_q.get('expl')) { expl = explTarget = parseFloat(_q.get('expl')); $('sl-expl').value = Math.round(expl * 100); }
