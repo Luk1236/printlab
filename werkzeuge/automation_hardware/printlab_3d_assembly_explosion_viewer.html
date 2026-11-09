@@ -7,7 +7,7 @@
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
   <style>
     body {
-      background-color: var(--background, #0b0f17);
+      background-color: var(--background, #080c14);
       color: var(--foreground, #e2e8f0);
       margin: 0;
       overflow: hidden;
@@ -19,9 +19,9 @@
       height: 100%;
     }
     .hud-panel {
-      background: rgba(15, 23, 42, 0.82);
-      backdrop-filter: blur(14px);
-      border: 1px solid rgba(51, 65, 85, 0.65);
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(51, 65, 85, 0.7);
     }
     input[type=range] {
       accent-color: #06b6d4;
@@ -30,7 +30,7 @@
       width: 6px;
     }
     ::-webkit-scrollbar-track {
-      background: rgba(15, 23, 42, 0.5);
+      background: rgba(15, 23, 42, 0.6);
     }
     ::-webkit-scrollbar-thumb {
       background: #334155;
@@ -38,12 +38,12 @@
     }
   </style>
 </head>
-<body class="w-screen h-screen flex flex-col antialiased">
+<body class="w-screen h-screen flex flex-col antialiased bg-[#080c14] text-slate-200">
 
-  <!-- Top Header Navigation -->
-  <header class="hud-panel h-14 px-4 flex items-center justify-between shrink-0 z-20 border-b border-slate-700/60">
+  <!-- Top Navigation & Viewport Toolbar -->
+  <header class="hud-panel h-14 px-4 flex items-center justify-between shrink-0 z-30 border-b border-slate-700/60">
     <div class="flex items-center space-x-3">
-      <div class="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-400 flex items-center justify-center text-cyan-400 font-bold text-base">
+      <div class="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-400 flex items-center justify-center text-cyan-400 font-bold text-sm">
         3D
       </div>
       <div>
@@ -51,78 +51,112 @@
           PrintLab Hardware Montage & Explosionsansicht
           <span class="text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">CAD 3D VIEWER</span>
         </h1>
-        <p class="text-xs text-slate-400">Interaktiver Zusammenbau aller 6 Druckteile am Bambu Lab Drucker</p>
+        <p class="text-xs text-slate-400">Interaktive 3D-Ansicht aller 6 Druckteile am Bambu Lab Drucker</p>
       </div>
     </div>
 
     <!-- Quick Presets -->
-    <div class="flex items-center space-x-2">
-      <span class="text-xs text-slate-400 font-mono hidden sm:inline">KAMERA:</span>
-      <button onclick="setCamPreset('iso')" class="px-2.5 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">Isometrisch</button>
+    <div class="hidden md:flex items-center space-x-1.5">
+      <span class="text-xs text-slate-400 font-mono mr-1">KAMERA:</span>
+      <button onclick="setCamPreset('iso')" class="px-2.5 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">Übersicht</button>
       <button onclick="setCamPreset('toolhead')" class="px-2.5 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">Werkzeugkopf</button>
-      <button onclick="setCamPreset('chute')" class="px-2.5 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">Auswurfrutsche</button>
-      <button onclick="setCamPreset('scale')" class="px-2.5 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">Spulenwaage</button>
-      <button onclick="setCamPreset('dock')" class="px-2.5 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">Scanner-Dock</button>
+      <button onclick="setCamPreset('chute')" class="px-2.5 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">Rutsche</button>
+      <button onclick="setCamPreset('scale')" class="px-2.5 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">Waage</button>
+      <button onclick="setCamPreset('dock')" class="px-2.5 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">Scanner</button>
     </div>
 
-    <!-- Enclosure Transparency Toggle -->
-    <div class="flex items-center space-x-2">
-      <label class="flex items-center space-x-1.5 text-xs text-slate-300 cursor-pointer">
+    <!-- Right Controls: Röntgenblick & Sidebar Toggle -->
+    <div class="flex items-center space-x-3">
+      <label class="hidden sm:flex items-center space-x-1.5 text-xs text-slate-300 cursor-pointer">
         <input type="checkbox" id="chk-ghost-frame" class="rounded border-slate-600 text-cyan-500 focus:ring-0">
-        <span>Röntgenansicht (Gehäuse transparent)</span>
+        <span>Röntgenansicht</span>
       </label>
+
+      <!-- Toggle Sidebar Button -->
+      <button id="btn-toggle-sidebar" class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/></svg>
+        <span id="txt-toggle-sidebar">Bauanleitung</span>
+      </button>
     </div>
   </header>
 
-  <!-- Main 3D Canvas Area -->
-  <div class="relative flex-1 w-full h-full overflow-hidden">
-    <canvas id="assembly-canvas" class="absolute inset-0 z-0"></canvas>
+  <!-- Main View Area (Flex Layout: Canvas on Left/Center, Sidebar on Right) -->
+  <div class="relative flex-1 w-full h-full flex overflow-hidden">
+    
+    <!-- 3D Canvas Container (Takes all remaining width) -->
+    <div class="relative flex-1 h-full overflow-hidden">
+      <canvas id="assembly-canvas" class="absolute inset-0 z-0"></canvas>
 
-    <!-- Top Left Hint -->
-    <div class="absolute top-4 left-4 z-10 hud-panel px-3.5 py-2.5 rounded-xl text-xs space-y-1 pointer-events-none opacity-90 max-w-xs">
-      <div class="text-slate-200 font-bold flex items-center gap-1.5">
-        <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
-        3D Steuerung & Navigation
-      </div>
-      <p class="text-xs text-slate-400">Maus links ziehen: Drehen • Rad: Zoomen • Bauteile anklicken für Details</p>
-    </div>
-
-    <!-- Bottom Center: Explosion Slider & Playback Controls -->
-    <div class="absolute bottom-5 left-1/2 -translate-x-1/2 z-10 hud-panel px-5 py-3 rounded-2xl flex items-center space-x-4 border border-slate-700 shadow-2xl max-w-xl w-[90%]">
-      
-      <!-- Auto Explode Button -->
-      <button id="btn-auto-explode" class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold flex items-center gap-1.5 transition shrink-0" title="Automatisch auseinander- und zusammenfahren">
-        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-        <span id="txt-auto-explode">Auto-Animation</span>
-      </button>
-
-      <!-- Assembled / Exploded Range Slider -->
-      <div class="flex-1 flex flex-col space-y-1">
-        <div class="flex justify-between text-xs font-mono">
-          <span class="text-emerald-400 font-bold">0% Montiert</span>
-          <span id="lbl-explosion-pct" class="text-cyan-300 font-bold">50% Explosionsansicht</span>
-          <span class="text-amber-400 font-bold">100% Zerlegt</span>
+      <!-- 3D Navigation Hint (Top-Left) -->
+      <div class="absolute top-4 left-4 z-10 hud-panel px-3.5 py-2 rounded-xl text-xs space-y-1 pointer-events-none opacity-85 max-w-xs">
+        <div class="text-slate-200 font-bold flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+          3D-Orbit Steuerung
         </div>
-        <input type="range" id="slider-explosion" min="0" max="100" value="50" class="w-full h-2 bg-slate-700 rounded-lg cursor-pointer">
+        <p class="text-xs text-slate-400">Linksklick + Ziehen: Drehen • Mausrad: Zoomen</p>
       </div>
 
-      <!-- Quick Reset Button -->
-      <button onclick="setExplosion(0)" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700 transition shrink-0">
-        Fertig montiert (0%)
-      </button>
+      <!-- Current Step HUD Card (Floating Top-Center) -->
+      <div id="step-hud" class="absolute top-4 left-1/2 -translate-x-1/2 z-10 hud-panel px-4 py-2 rounded-xl border border-slate-700/80 shadow-lg text-xs flex items-center space-x-3 max-w-md">
+        <span id="step-hud-badge" class="font-bold px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-mono">SCHRITT 1/5</span>
+        <span id="step-hud-title" class="font-semibold text-white">Toolhead Sweeper Blade</span>
+        <span id="step-hud-fasteners" class="text-slate-400 font-mono text-[11px]">(2× M3×12 + Ruthex)</span>
+      </div>
+
+      <!-- Bottom Center: Explosion Slider & Step Navigator -->
+      <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 hud-panel px-4 py-3 rounded-2xl flex flex-col sm:flex-row items-center gap-3 border border-slate-700/90 shadow-2xl max-w-2xl w-[92%] sm:w-auto">
+        
+        <!-- Step Navigation Buttons -->
+        <div class="flex items-center space-x-1.5 shrink-0">
+          <button id="btn-prev-step" onclick="prevStep()" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition" title="Vorheriger Montageschritt">
+            ❮ Zurück
+          </button>
+          <button id="btn-next-step" onclick="nextStep()" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition" title="Nächster Montageschritt">
+            Weiter ❯
+          </button>
+        </div>
+
+        <div class="hidden sm:block h-6 w-px bg-slate-700"></div>
+
+        <!-- Auto Explode Button -->
+        <button id="btn-auto-explode" class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold flex items-center gap-1.5 transition shrink-0" title="Automatisch auseinander- und zusammenfahren">
+          <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          <span id="txt-auto-explode">Auto-Animation</span>
+        </button>
+
+        <!-- Assembled / Exploded Range Slider -->
+        <div class="flex flex-col space-y-1 w-48 sm:w-56">
+          <div class="flex justify-between text-[11px] font-mono">
+            <span class="text-emerald-400 font-bold">0% Montiert</span>
+            <span id="lbl-explosion-pct" class="text-cyan-300 font-bold">50% Explosionsgrad</span>
+            <span class="text-amber-400 font-bold">100% Zerlegt</span>
+          </div>
+          <input type="range" id="slider-explosion" min="0" max="100" value="50" class="w-full h-2 bg-slate-700 rounded-lg cursor-pointer">
+        </div>
+
+        <!-- Quick 0% Reset -->
+        <button onclick="setExplosion(0)" class="hidden md:inline-block px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700 transition shrink-0">
+          0% Montiert
+        </button>
+      </div>
     </div>
 
-    <!-- Right Sidebar: Interactive Assembly Steps & Part Details -->
-    <div class="absolute top-4 right-4 z-10 hud-panel w-84 max-h-[calc(100vh-6.5rem)] overflow-y-auto rounded-2xl p-4 border border-slate-700/80 space-y-3.5 shadow-2xl">
+    <!-- Right Sidebar: Interactive Assembly Steps & Part Details (Collapsible & Fixed Width) -->
+    <aside id="assembly-sidebar" class="w-80 min-w-[320px] max-w-[340px] h-full hud-panel border-l border-slate-700/80 p-4 flex flex-col space-y-3 shrink-0 z-20 overflow-y-auto shadow-2xl transition-all duration-200">
       <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
         <h2 class="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
           <span class="w-2.5 h-2.5 rounded-sm bg-cyan-400"></span>
-          Bauanleitung & Montage-Schritte
+          Bauanleitung & Schritte
         </h2>
-        <span class="text-xs bg-slate-800 text-cyan-300 px-2 py-0.5 rounded font-mono border border-slate-700">5 SCHRITTE</span>
+        <div class="flex items-center space-x-1.5">
+          <span class="text-xs bg-slate-800 text-cyan-300 px-2 py-0.5 rounded font-mono border border-slate-700">5 SCHRITTE</span>
+          <button onclick="toggleSidebar()" class="p-1 rounded hover:bg-slate-700 text-slate-400 hover:text-white" title="Seitenleiste schließen">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
       </div>
 
-      <div class="space-y-2" id="assembly-steps-list">
+      <div class="space-y-2 flex-1" id="assembly-steps-list">
         <!-- Step 1 -->
         <div onclick="selectStep(1)" id="step-card-1" class="step-card p-3 rounded-xl bg-slate-900/70 border border-slate-800 hover:border-cyan-500/50 cursor-pointer transition">
           <div class="flex items-center justify-between">
@@ -194,21 +228,21 @@
         </div>
       </div>
 
-      <!-- Live Inspector for Selected Part -->
-      <div id="part-detail-box" class="p-3 bg-slate-950/80 rounded-xl border border-cyan-800/50 text-xs space-y-1.5">
+      <!-- Live Inspector for Selected Part (Correct Dynamic STL Path) -->
+      <div id="part-detail-box" class="p-3 bg-slate-950/90 rounded-xl border border-cyan-800/60 text-xs space-y-1.5 shrink-0">
         <div class="text-cyan-300 font-bold flex items-center justify-between">
           <span id="detail-part-name">1. Toolhead Sweeper Blade</span>
           <span class="text-xs px-1.5 py-0.5 rounded bg-cyan-900/60 text-cyan-200 font-mono">STL BEREIT</span>
         </div>
-        <p id="detail-part-desc" class="text-xs text-slate-300">
+        <p id="detail-part-desc" class="text-xs text-slate-300 leading-relaxed">
           35°-Abschubkeil zur Montage an der Unterseite des Bambu Werkzeugkopfs für automatischen Bauteilabschub.
         </p>
-        <div class="pt-1 flex justify-between font-mono text-xs text-slate-400 border-t border-slate-800">
-          <span>Dateipfad:</span>
-          <span class="text-slate-300 select-all">models_stl/bambu_toolhead_sweeper_blade.stl</span>
+        <div class="pt-1.5 flex flex-col font-mono text-[11px] text-slate-400 border-t border-slate-800">
+          <span class="text-slate-500 text-[10px]">STL DATEIPFAD IM REPO:</span>
+          <span id="detail-part-path" class="text-emerald-400 font-bold break-all select-all">models_stl/bambu_toolhead_sweeper_blade.stl</span>
         </div>
       </div>
-    </div>
+    </aside>
   </div>
 
   <!-- 3D Vector Rendering Engine with Assembly / Explosion Vectors -->
@@ -253,6 +287,18 @@
       camDist = Math.max(220, Math.min(1400, camDist + e.deltaY * 0.8));
     }, { passive: false });
 
+    // Sidebar Toggle
+    const sidebar = document.getElementById('assembly-sidebar');
+    const btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
+    let sidebarOpen = true;
+
+    window.toggleSidebar = function() {
+      sidebarOpen = !sidebarOpen;
+      sidebar.classList.toggle('hidden', !sidebarOpen);
+      setTimeout(resize, 50);
+    };
+    btnToggleSidebar.addEventListener('click', toggleSidebar);
+
     // Explosion Factor (0.0 to 1.0)
     let explosionFactor = 0.5;
     let autoAnimate = false;
@@ -267,13 +313,13 @@
 
     slider.addEventListener('input', (e) => {
       explosionFactor = parseInt(e.target.value, 10) / 100.0;
-      lblPct.textContent = Math.round(explosionFactor * 100) + '% Explosionsansicht';
+      lblPct.textContent = Math.round(explosionFactor * 100) + '% Explosionsgrad';
     });
 
     window.setExplosion = function(val) {
       explosionFactor = val / 100.0;
       slider.value = val;
-      lblPct.textContent = val + '% Explosionsansicht';
+      lblPct.textContent = val + '% Explosionsgrad';
     };
 
     chkGhost.addEventListener('change', (e) => {
@@ -307,7 +353,45 @@
       }
     };
 
-    // Step Selection
+    // Step Data Definition (with correct STL file paths)
+    const STEP_DATA = {
+      1: {
+        title: "Toolhead Sweeper Blade (Schiebekeil)",
+        fasteners: "(2× M3×12 + Ruthex)",
+        desc: "Montage an der Vorderseite des Werkzeugkopfs via 2× M3×12 mm Schrauben und M3 Ruthex-Gewindeeinsätzen. Keilwinkel: 35°.",
+        path: "models_stl/bambu_toolhead_sweeper_blade.stl",
+        preset: "toolhead"
+      },
+      2: {
+        title: "Bed Ejection Chute (Auswurfrutsche)",
+        fasteners: "(Klick-Montage am Bett)",
+        desc: "Eingeklippt an der vorderen Kante des Druckbetts. Führungsstege leiten ausgeworfene Druckteile direkt in den Auffangbehälter.",
+        path: "models_stl/bambu_bed_ejection_chute.stl",
+        preset: "chute"
+      },
+      3: {
+        title: "HX711 Loadcell Base (Wägezellensockel)",
+        fasteners: "(2× M4×16 Schrauben)",
+        desc: "Befestigung des starren Endes der 5kg Wägezelle mit 2× M4×16 mm Schrauben. Kabelführung für die 4 Messdrähte.",
+        path: "models_stl/hx711_loadcell_base.stl",
+        preset: "scale"
+      },
+      4: {
+        title: "HX711 Spool Cradle (Spulenteller)",
+        fasteners: "(2× M4×14 Senkkopf)",
+        desc: "Wird mit 2× M4 Senkkopfschrauben auf dem freien Ende montiert. 52 mm Zentrierkragen verhindert Schrägstellung der Filamentspule.",
+        path: "models_stl/hx711_spool_cradle.stl",
+        preset: "scale"
+      },
+      5: {
+        title: "Barcode Scanner Dock & Verkabelung",
+        fasteners: "(2× M4 Nutensteine • GPIO 29/31)",
+        desc: "Wand- und Profilhalterung für den Handscanner. Ermöglicht sofortiges Erfassen und Tara-Verrechnen neuer Spulen.",
+        path: "models_stl/barcode_scanner_wall_dock.stl",
+        preset: "dock"
+      }
+    };
+
     let activeStep = 1;
     window.selectStep = function(step) {
       activeStep = step;
@@ -316,31 +400,29 @@
         el.classList.toggle('bg-slate-800', idx + 1 === step);
       });
 
-      const detailName = document.getElementById('detail-part-name');
-      const detailDesc = document.getElementById('detail-part-desc');
+      const data = STEP_DATA[step];
+      if (data) {
+        setCamPreset(data.preset);
+        document.getElementById('step-hud-badge').textContent = `SCHRITT ${step}/5`;
+        document.getElementById('step-hud-title').textContent = data.title;
+        document.getElementById('step-hud-fasteners').textContent = data.fasteners;
 
-      if (step === 1) {
-        setCamPreset('toolhead');
-        detailName.textContent = '1. Toolhead Sweeper Blade (Schiebekeil)';
-        detailDesc.textContent = 'Montage an der Vorderseite des Werkzeugkopfs via 2× M3×12 mm Schrauben und M3 Ruthex-Gewindeeinsätzen. Keilwinkel: 35°.';
-      } else if (step === 2) {
-        setCamPreset('chute');
-        detailName.textContent = '2. Bed Ejection Chute (Auswurfrutsche)';
-        detailDesc.textContent = 'Eingeklippt an der vorderen Kante des Druckbetts. Führungsstege leiten ausgeworfene Druckteile direkt in den Auffangbehälter.';
-      } else if (step === 3) {
-        setCamPreset('scale');
-        detailName.textContent = '3. HX711 Loadcell Base (Wägezellensockel)';
-        detailDesc.textContent = 'Befestigung des starren Endes der 5kg Wägezelle mit 2× M4×16 mm Schrauben. Kabelführung für die 4 Messdrähte.';
-      } else if (step === 4) {
-        setCamPreset('scale');
-        detailName.textContent = '4. HX711 Spool Cradle (Spulenteller)';
-        detailDesc.textContent = 'Wird mit 2× M4 Senkkopfschrauben auf dem freien Ende montiert. 52 mm Zentrierkragen verhindert Schrägstellung der Filamentspule.';
-      } else if (step === 5) {
-        setCamPreset('dock');
-        detailName.textContent = '5. Barcode Scanner Dock & Verkabelung';
-        detailDesc.textContent = 'Wand- und Profilhalterung für den Handscanner. Ermöglicht sofortiges Erfassen und Tara-Verrechnen neuer Spulen.';
+        document.getElementById('detail-part-name').textContent = `${step}. ${data.title}`;
+        document.getElementById('detail-part-desc').textContent = data.desc;
+        document.getElementById('detail-part-path').textContent = data.path;
       }
     };
+
+    window.nextStep = function() {
+      const next = activeStep >= 5 ? 1 : activeStep + 1;
+      selectStep(next);
+    };
+
+    window.prevStep = function() {
+      const prev = activeStep <= 1 ? 5 : activeStep - 1;
+      selectStep(prev);
+    };
+
     selectStep(1);
 
     // --- 3D Projection Helpers ---
@@ -637,7 +719,7 @@
           animDir = 1;
         }
         slider.value = Math.round(explosionFactor * 100);
-        lblPct.textContent = Math.round(explosionFactor * 100) + '% Explosionsansicht';
+        lblPct.textContent = Math.round(explosionFactor * 100) + '% Explosionsgrad';
       }
 
       render();
