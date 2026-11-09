@@ -199,6 +199,53 @@ def generate_barcode_scanner_dock(out_path: Path) -> None:
     write_binary_stl(out_path, tris, "PrintLab Barcode Scanner Dock")
 
 
+
+
+def generate_door_opener_servo_bracket(out_path: Path) -> None:
+    """7. Servomotor-Halterung für das automatische Türöffnen der Glastür (MG90S/SG90)."""
+    tris = []
+    tris.extend(make_box_triangles(-20.0, -15.0, 0.0, 20.0, 15.0, 6.0))
+    tris.extend(make_box_triangles(-18.0, -14.0, 6.0, -12.0, 14.0, 26.0))
+    tris.extend(make_box_triangles(12.0, -14.0, 6.0, 18.0, 14.0, 26.0))
+    tris.extend(make_box_triangles(-18.0, -14.0, 22.0, 18.0, -6.0, 26.0))
+    tris.extend(make_box_triangles(-18.0, 6.0, 22.0, 18.0, 14.0, 26.0))
+    write_binary_stl(out_path, tris, "PrintLab Door Opener Servo Bracket")
+
+
+def generate_door_push_pull_linkage(out_path: Path) -> None:
+    """8. Schub- und Zughebel für Türöffner (Kniehebelstange 85mm mit Drehachsen)."""
+    tris = []
+    tris.extend(make_box_triangles(-4.0, -40.0, 0.0, 4.0, 40.0, 5.0))
+    tris.extend(make_box_triangles(-8.0, -48.0, 0.0, 8.0, -40.0, 7.0))
+    tris.extend(make_box_triangles(-8.0, 40.0, 0.0, 8.0, 48.0, 7.0))
+    write_binary_stl(out_path, tris, "PrintLab Door Push-Pull Linkage")
+
+
+def generate_plate_magazine_rack_tower(out_path: Path) -> None:
+    """9. Vertikales Plattenmagazin (Tower für 4 Federstahl-Druckplatten)."""
+    tris = []
+    tris.extend(make_box_triangles(-60.0, -40.0, 0.0, 60.0, 40.0, 8.0))
+    tris.extend(make_box_triangles(-60.0, -40.0, 8.0, -50.0, 40.0, 140.0))
+    tris.extend(make_box_triangles(50.0, -40.0, 8.0, 60.0, 40.0, 140.0))
+    tris.extend(make_box_triangles(-50.0, -40.0, 8.0, 50.0, -32.0, 140.0))
+    for z_slot in (35.0, 65.0, 95.0, 125.0):
+        tris.extend(make_box_triangles(-50.0, -32.0, z_slot, -42.0, 35.0, z_slot + 4.0))
+        tris.extend(make_box_triangles(42.0, -32.0, z_slot, 50.0, 35.0, z_slot + 4.0))
+    write_binary_stl(out_path, tris, "PrintLab Plate Magazine Rack Tower")
+
+
+def generate_plate_washer_station_basin(out_path: Path) -> None:
+    """10. Waschstation-Wanne mit Walzenlagern und Schmutzablauf."""
+    tris = []
+    tris.extend(make_box_triangles(-55.0, -35.0, 0.0, 55.0, 35.0, 8.0))
+    tris.extend(make_box_triangles(-55.0, -35.0, 8.0, -47.0, 35.0, 45.0))
+    tris.extend(make_box_triangles(47.0, -35.0, 8.0, 55.0, 35.0, 45.0))
+    tris.extend(make_box_triangles(-47.0, -35.0, 8.0, 47.0, -28.0, 45.0))
+    tris.extend(make_box_triangles(-47.0, 28.0, 8.0, 47.0, 35.0, 45.0))
+    tris.extend(make_box_triangles(-15.0, -28.0, 8.0, -5.0, 28.0, 35.0))
+    tris.extend(make_box_triangles(5.0, -28.0, 8.0, 15.0, 28.0, 35.0))
+    write_binary_stl(out_path, tris, "PrintLab Plate Washer Station Basin")
+
 def main() -> None:
     out_dir = Path(__file__).resolve().parent / "models_stl"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -210,6 +257,10 @@ def main() -> None:
         ("hx711_loadcell_base.stl", generate_hx711_loadcell_base),
         ("hx711_spool_cradle.stl", generate_hx711_spool_cradle),
         ("barcode_scanner_wall_dock.stl", generate_barcode_scanner_dock),
+        ("bambu_door_opener_servo_bracket.stl", generate_door_opener_servo_bracket),
+        ("bambu_door_push_pull_linkage.stl", generate_door_push_pull_linkage),
+        ("plate_magazine_rack_tower.stl", generate_plate_magazine_rack_tower),
+        ("plate_washer_station_basin.stl", generate_plate_washer_station_basin),
     ]
 
     print("=== Generiere wasserdichte 3D-Druck-STL-Dateien ===")

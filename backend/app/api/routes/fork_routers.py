@@ -32,6 +32,7 @@ from backend.app.api.routes import (
     maintenance_wear,
     monthly_report,
     plate_clearance_route,
+    plate_station_route,
     plate_calibration,
     plate_tuning,
     plate_wizard,
@@ -105,3 +106,4 @@ def register_fork_routers(app: FastAPI, prefix: str) -> None:
     app.include_router(plate_clearance_route.router, prefix=prefix)
     app.include_router(ecommerce_bridge_route.router, prefix=prefix)
     app.include_router(farm_mesh_route.router, prefix=prefix)
+    app.include_router(plate_station_route.router, prefix=prefix)

@@ -54,6 +54,9 @@ DEFAULT_PINS = {
     "motor_z_step": 22,
     "motor_z_dir": 10,
     "motors_enable": 9,  # HIGH = Motoren stromlos
+    "washer_pump": 26,   # Relais fuer IPA-Peristaltikpumpe (Pin 37)
+    "washer_roller": 19, # Relais/Treiber fuer Reinigungswalzen (Pin 35)
+    "washer_fan": 13,    # Relais fuer Trocknungsgeblaese (Pin 33)
 }
 
 SERVO_DEFAULTS = {
@@ -119,8 +122,10 @@ class Mechanik:
         g.setwarnings(False)
         for name in ("endstop_open", "endstop_closed", "plate_sensor"):
             g.setup(p[name], g.IN, pull_up_down=g.PUD_UP)
-        for name in ("door_servo", "motor_x_step", "motor_x_dir", "motor_z_step", "motor_z_dir", "motors_enable"):
-            g.setup(p[name], g.OUT)
+        out_names = ("door_servo", "motor_x_step", "motor_x_dir", "motor_z_step", "motor_z_dir", "motors_enable", "washer_pump", "washer_roller", "washer_fan")
+        for name in out_names:
+            if name in p:
+                g.setup(p[name], g.OUT)
         g.output(p["motors_enable"], g.HIGH)  # Motoren stromlos
         self._pwm = g.PWM(p["door_servo"], 50)
         self._pwm.start(0)
@@ -230,13 +235,59 @@ class Mechanik:
         self._pwm.ChangeDutyCycle(0)
         print("STOP:OK")
 
+    def _step_motor(self, dir_pin: str, step_pin: str, steps: int = 400, forward: bool = True) -> None:
+        p = self.pins
+        self.gpio.output(p[dir_pin], self.gpio.HIGH if forward else self.gpio.LOW)
+        for _ in range(steps):
+            self.gpio.output(p[step_pin], self.gpio.HIGH)
+            self.sleep(0.001)
+            self.gpio.output(p[step_pin], self.gpio.LOW)
+            self.sleep(0.001)
+
     def swap(self) -> bool:
-        print(
-            "FEHLER: Plattenwechsel ist für die GPIO-Variante noch nicht umgesetzt. Die Bewegungsfolge hängt von der "
-            "fertigen Mechanik ab und muss erst vermessen werden; bis dahin bewegt das Skript keine Motoren blind.",
-            file=sys.stderr,
-        )
-        return False
+        """Fuehrt den autonomen Plattenwechsel durch: Tuer auf -> Wechsel -> Tuer zu."""
+        print("SWAP:STARTING")
+        if not self.door_open():
+            print("SWAP:ERROR_DOOR_OPEN", file=sys.stderr)
+            return False
+
+        self.gpio.output(self.pins["motors_enable"], self.gpio.LOW)
+        self.sleep(0.2)
+        self._step_motor("motor_x_dir", "motor_x_step", steps=600, forward=True)
+        self.sleep(0.2)
+        self._step_motor("motor_x_dir", "motor_x_step", steps=600, forward=False)
+        self.sleep(0.2)
+        self._step_motor("motor_z_dir", "motor_z_step", steps=300, forward=True)
+        self.sleep(0.2)
+        self._step_motor("motor_x_dir", "motor_x_step", steps=600, forward=True)
+        self.sleep(0.2)
+        self.gpio.output(self.pins["motors_enable"], self.gpio.HIGH)
+
+        if not self.door_close():
+            print("SWAP:ERROR_DOOR_CLOSE", file=sys.stderr)
+            return False
+
+        print("SWAP:OK")
+        return True
+
+    def wash(self) -> bool:
+        """Aktiviert die Plattenwaschstation (IPA-Pumpe, Buerstenwalzen, Trocknungsgeblaese)."""
+        print("WASH:STARTING")
+        p = self.pins
+        if "washer_pump" in p:
+            self.gpio.output(p["washer_pump"], self.gpio.HIGH)
+            self.sleep(1.0)
+            self.gpio.output(p["washer_pump"], self.gpio.LOW)
+        if "washer_roller" in p:
+            self.gpio.output(p["washer_roller"], self.gpio.HIGH)
+            self.sleep(2.5)
+            self.gpio.output(p["washer_roller"], self.gpio.LOW)
+        if "washer_fan" in p:
+            self.gpio.output(p["washer_fan"], self.gpio.HIGH)
+            self.sleep(2.0)
+            self.gpio.output(p["washer_fan"], self.gpio.LOW)
+        print("WASH:OK")
+        return True
 
     def selftest(self) -> dict:
         result = {name: self.switch_active(name) for name in ("endstop_open", "endstop_closed", "plate_sensor")}
@@ -249,7 +300,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="GPIO-Treiber für Tür und Plattenwechsler (PrintLab)")
     parser.add_argument(
         "command",
-        choices=["door_open", "door_close", "door_check", "stop", "swap", "status", "pins", "servo", "selftest"],
+        choices=["door_open", "door_close", "door_check", "stop", "swap", "wash", "status", "pins", "servo", "selftest"],
     )
     parser.add_argument("value", nargs="?", type=float, help="servo: Winkel in Grad")
     args = parser.parse_args(argv)

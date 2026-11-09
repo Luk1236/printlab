@@ -134,3 +134,5 @@ feature_votes.sh
 # Lokale Werkzeug- und Testreste
 .claude/
 /timelapse_frames/
+
+plate_station_state.json
