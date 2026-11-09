@@ -88,14 +88,12 @@
         </select>
         <select id="sel-cam" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs">
           <option value="iso">Gesamtansicht</option>
-          <option value="door">Tür & Servo</option>
-          <option value="magazine">Plattenlager</option>
-          <option value="shuttle">Wechsler-Shuttle</option>
-          <option value="washer">Waschstation</option>
-          <option value="toolhead">Werkzeugkopf & Keil</option>
-          <option value="chute">Rutsche & Schale</option>
-          <option value="scale">Spulenwaage</option>
-          <option value="dock">Scanner-Halter</option>
+          <option value="door">1 · Tür & Servo</option>
+          <option value="magazine">2 · Plattenregal (oben)</option>
+          <option value="shuttle">3 · Wechsler-Shuttle</option>
+          <option value="washer">4 · Waschstation (unten)</option>
+          <option value="toolhead">5 · Werkzeugkopf & Keil</option>
+          <option value="chute">6 · Rutsche & Schale</option>
         </select>
       </div>
     </div>
@@ -103,15 +101,17 @@
     <!-- Seitenleiste -->
     <aside id="sidebar" class="w-80 shrink-0 hud border-l border-slate-700/80 p-4 flex flex-col gap-3 overflow-y-auto z-20">
       <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
-        <h2 class="text-xs font-bold uppercase tracking-wider text-white">Bauanleitung · 8 Schritte</h2>
+        <h2 class="text-xs font-bold uppercase tracking-wider text-white">Bauplan · 6 Baugruppen</h2>
         <button id="btn-close" class="text-slate-400 hover:text-white text-sm px-1">✕</button>
       </div>
       <div id="steps" class="flex flex-col gap-2"></div>
-      <div class="p-3 bg-slate-950/90 rounded-xl border border-cyan-800/60 text-xs space-y-1.5">
+      <div class="p-3 bg-slate-950/90 rounded-xl border border-cyan-800/60 text-xs space-y-2">
         <div id="d-title" class="text-cyan-300 font-bold"></div>
         <p id="d-desc" class="text-slate-300 leading-relaxed"></p>
-        <div class="pt-1.5 border-t border-slate-800 font-mono">
-          <div class="text-slate-500">STL / Bauteil:</div>
+        <div class="pt-1.5 border-t border-slate-800 font-mono space-y-1">
+          <div class="text-slate-400">Maße & Position: <span id="d-dim" class="text-amber-300"></span></div>
+          <div class="text-slate-400">Befestigung: <span id="d-hw" class="text-cyan-300"></span></div>
+          <div class="text-slate-500 pt-1">STL / Baugruppe:</div>
           <div id="d-path" class="text-emerald-400 break-all select-all"></div>
         </div>
       </div>
@@ -174,17 +174,15 @@ let speed = 1;
 // Kamera
 // ============================================================================
 const PRESETS = {
-  iso:      { yaw: 0.42,  pitch: 0.44, dist: 1850, t: [110, 80, 185] },
+  iso:      { yaw: 0.40,  pitch: 0.44, dist: 1800, t: [125, 90, 185] },
   door:     { yaw: -0.28, pitch: 0.32, dist: 1000, t: [-60, 210, 290] },
   magazine: { yaw: 0.45,  pitch: 0.36, dist: 980,  t: [355, 0, 230] },
   shuttle:  { yaw: 0.25,  pitch: 0.50, dist: 1300, t: [175, 320, 200] },
   washer:   { yaw: 0.48,  pitch: 0.42, dist: 920,  t: [355, 20, 55] },
   toolhead: { yaw: 0.22,  pitch: 0.24, dist: 760,  t: [0, 20, 360] },
   chute:    { yaw: -0.18, pitch: 0.28, dist: 720,  t: [0, 150, 270] },
-  scale:    { yaw: -0.72, pitch: 0.45, dist: 850,  t: [-320, -60, 90] },
-  dock:     { yaw: -0.82, pitch: 0.26, dist: 700,  t: [-215, -45, 280] },
 };
-const cam = { yaw: 0.42, pitch: 0.44, dist: 1850, tx: 110, ty: 80, tz: 185 };
+const cam = { yaw: 0.40, pitch: 0.44, dist: 1800, tx: 125, ty: 90, tz: 185 };
 let camGoal = null;
 
 function setPreset(name) {
@@ -527,22 +525,6 @@ function buildScene(P, e) {
   if (P.moving) plateMesh(P.moving.pos[0], P.moving.pos[1], P.moving.pos[2], P.moving.plate, P.moving.state);
   pin([cx, RAIL_Y + sy, sz + 34], '3 · Wechsler-Shuttle', 'X-Schlitten · Y-Arm · Z-Hub', 3);
   if (e > 0.03) guide([180, RAIL_Y, 150], [180, RAIL_Y + sy, 150], '#38bdf8');
-
-  // ---- Schritt 7: HX711-Spulenwaage (links neben dem Drucker) ----
-  box(-365, -80, 0, -275, -40, 16, '#7e22ce');
-  const z1 = 16 + 30 * e; box(-355, -66, z1, -285, -54, z1 + 12, '#cbd5e1');
-  const z2 = z1 + 12 + 40 * e; box(-370, -110, z2, -270, -10, z2 + 8, '#a855f7'); cyl([-320, -60, z2 + 8], 'z', 26, 12, '#9333ea', {}, 16);
-  const z3 = z2 + 8 + 80 * e;
-  cyl([-320, -60, z3], 'z', 100, 4, '#1f2937', {}, 28); cyl([-320, -60, z3 + 4], 'z', 90, 58, '#0284c7', {}, 28); cyl([-320, -60, z3 + 62], 'z', 100, 4, '#1f2937', {}, 28);
-  pin([-370, -60, z2 + 4], '7 · HX711-Waage', 'Sockel + Teller Ø100 / Bund 52', 7);
-  if (e > 0.03) guide([-320, -60, 16], [-320, -60, z3], '#a855f7');
-
-  // ---- Schritt 8: Scanner-Halter an linker Seitenwand (hinten, außerhalb Tür-Radius) ----
-  const dx = -90 * e;
-  box(-PW - 40 + dx, -80, 230, -PW + dx, -10, 300, '#047857');
-  box(-PW - 34 + 1.6 * dx, -60, 250, -PW - 6 + 1.6 * dx, -30, 345, '#e5e7eb');
-  pin([-PW - 40 + dx, -45, 300], '8 · Scanner-Halter', '2× M4 · Seitenwand links', 8);
-  if (e > 0.03) guide([-PW, -45, 265], [-PW + dx, -45, 265], '#34d399');
 }
 
 function render() {
@@ -624,33 +606,39 @@ function render() {
 }
 
 // ============================================================================
-// Bauanleitung (Seitenleiste)
+// Bauanleitung (Seitenleiste) – 6 Kern-Baugruppen mit exakten Maßen
 // ============================================================================
 const STEPS = [
-  { t: 'Tür-Servo & Hebel', c: 'text-amber-300', tag: 'MG90S · Scharnier links', preset: 'door',
-    d: 'Halter oben links über dem Original-Türscharnier (X = −175 mm). Der Kniehebel greift 70 mm neben dem Scharnier an der Türoberkante und öffnet die Glastür nach vorne-links auf 115°.',
+  { t: 'Tür-Servo & Kniehebel', c: 'text-amber-300', tag: 'MG90S · Scharnier links', preset: 'door',
+    d: 'Servohalterung oben links über der Original-Scharnierachse (X = −175 mm, Y = +196,5 mm, Z = 457 mm). Das 28-mm-Servohorn treibt die 85-mm-Schubstange an (Anschlagpunkt 70 mm vom Scharnier an der Türoberkante) und öffnet die 350 mm breite Glastür sanft um 115° nach vorne-links.',
+    dim: 'Halter 50×40×26 mm · Hebel 85×8×5 mm · Winkel 0°→115°',
+    hw: '2× M3×12 (Halter), 2× M3×10 + Selbstsicherungsmutter (Gelenke), GPIO 18 PWM',
     p: 'models_stl/bambu_door_opener_servo_bracket.stl + bambu_door_push_pull_linkage.stl' },
   { t: 'Plattenregal (Kompakt-Turm oben)', c: 'text-emerald-300', tag: '4 Fächer · rechts', preset: 'magazine',
-    d: 'Sitzt im oberen Teil des Kompakt-Turms rechts neben dem Drucker (X = +355 mm, gegenüber der nach links öffnenden Tür). 4 Fächer auf Z 180 / 215 / 250 / 285 mm, nach vorne (+Y) offen zum Shuttle.',
+    d: 'Oberes Modul des Kompakt-Turms rechts neben dem Drucker (Mitte X = +355 mm, Y = 0 mm). Nimmt bis zu 4 Federstahlplatten (257 × 257 × 0,5 mm) auf seitlichen 8-mm-Auflageleisten mit 45°-Einlaufschräge auf.',
+    dim: 'Außen 280×290×165 mm (Z = 148..313 mm) · 4 Slots: Z = 180 / 215 / 250 / 285 mm (Raster 35 mm)',
+    hw: '4× Alu-Profil 2020 (L = 313 mm), 16× M4×10 + Nutenstein, 4× Gabellichtschranke TCST2103',
     p: 'models_stl/plate_magazine_rack_tower.stl' },
-  { t: 'Wechsler-Shuttle', c: 'text-cyan-300', tag: '3 Achsen', preset: 'shuttle',
-    d: 'Linearschiene vor Drucker und dem rechts stehenden Kompakt-Turm (Y = 560 mm). Zieht Platten nach vorne aus dem Drucker bzw. Plattenregal, verfährt nach rechts und senkt verschmutzte Platten direkt in die Waschstation unter dem Regal ab.',
-    p: 'Kein STL – Zukaufteile: Alu-Profil, Linearschiene, 3 Antriebe (X, Y, Z)' },
-  { t: 'Waschstation (Kompakt-Turm unten)', c: 'text-purple-300', tag: 'IPA · unter Regal', preset: 'washer',
-    d: 'Sitzt platzsparend direkt unter dem Plattenregal im rechten Kompakt-Turm (Z = 0..64 mm). Das Shuttle senkt die verschmutzte Platte aus dem Regal direkt nach unten auf die 2 Mikrofaser-Walzen ab, sprüht IPA und trocknet mit dem 5015-Gebläse.',
+  { t: '3-Achs-Wechsler-Shuttle', c: 'text-cyan-300', tag: 'X/Y/Z-Portal · Y = 560', preset: 'shuttle',
+    d: 'Frontportal außerhalb des 350-mm-Türschwenkradius (Y = 560 mm). X-Achse verfährt zwischen Drucker (X = 0) und Kompakt-Turm (X = +355 mm); Z-Achse fährt Betthöhe (Z = 215 mm), Regalfächer (Z = 180..285 mm) und Waschstation (Z = 44 mm) an; Y-Teleskoparm (Hub 430 mm) greift die Plattenvorderkante per Elektromagnet/Klemmbacke.',
+    dim: 'X-Träger 680 mm (X = −160..+520) · Z-Steher 2× 330 mm · Y-Teleskoparm 430 mm',
+    hw: 'Alu 2020 (1× 680 mm, 2× 330 mm), MGN12H (600 mm + 400 mm), T8×8 Spindel (300 mm), 3× NEMA17',
+    p: 'Zukauf-Linearportal (2020 Alu + MGN12H) + Greiferaufnahme' },
+  { t: 'IPA-Waschstation (Kompakt-Turm unten)', c: 'text-purple-300', tag: 'Z = 0..64 mm · unten', preset: 'washer',
+    d: 'Sitzt platzsparend im Untergeschoss des Kompakt-Turms (X = +355 mm, Y = 0 mm, Z = 0..64 mm) direkt unter dem Plattenregal. Shuttle senkt die verschmutzte Platte senkrecht auf Z = 44 mm ab, führt sie ±26 mm über 2 gegenläufige Mikrofaser-Walzen (Ø 24 × 246 mm) unter 99,9 % IPA-Sprühung und 5015-Gebläsetrocknung.',
+    dim: 'Wanne 260×280×64 mm (Wandstärke 6 mm) · 2× Walze Ø24×246 mm (Y = −45 / +45 mm, Z = 32 mm)',
+    hw: '4× Kugellager 608ZZ (8×22×7 mm), 12V Peristaltikpumpe (Relais GPIO 19), N20 Getriebemotor (GPIO 26), 5015 Lüfter (GPIO 13)',
     p: 'models_stl/plate_washer_station_basin.stl' },
-  { t: 'Abschub-Keil am Werkzeugkopf', c: 'text-amber-300', tag: '2× M3×12', preset: 'toolhead',
-    d: 'Keil vorn am Werkzeugkopf, Unterkante 1,5 mm über der Düsenspitze. Zum Abschieben fährt das Bett auf Z 336,5 mm, der Kopf schiebt das Teil nach vorne über die Bettkante.',
+  { t: 'Werkzeugkopf-Abschubkeil', c: 'text-amber-300', tag: '75×30×12 mm · 35°', preset: 'toolhead',
+    d: 'An der unteren Vorderkante des X1C/P1S-Werkzeugkopfs verschraubter 35°-Räumkeil. Unterkante liegt exakt 1,5 mm über der Düsenspitze (Z = 339,5 mm), sodass der Keil beim Drucken nie das Bauteil berührt und beim Abschub (Bett auf Z = 336,5 mm) das Teil sauber an der Basis abscheren kann.',
+    dim: '75 × 30 × 12 mm · Keilwinkel 35° · Lochabstand 40 mm · Bodenfreiheit +1,5 mm zur Düse',
+    hw: '2× M3×12 Zylinderschraube + 2× Ruthex M3-Gewindeeinsatz (0,8 Nm, Material ASA/PETG)',
     p: 'models_stl/bambu_toolhead_sweeper_blade.stl' },
-  { t: 'Rutsche & Auffangschale', c: 'text-emerald-300', tag: 'am Bett', preset: 'chute',
-    d: 'Hängt an der Bettvorderkante und fährt mit dem Bett. Passt in den 56-mm-Spalt zwischen Bett und Tür; das Teil fällt über die Rutsche in die Schale. Liegt unter der Plattenebene, damit der Wechsler die Platte darüber ziehen kann.',
+  { t: 'Mitfahrende Rutsche & Auffangschale', c: 'text-emerald-300', tag: 'an Bettvorderkante', preset: 'chute',
+    d: 'Wird an der vorderen Kante des Heizbett-Trägers eingeklickt und fährt in Z mit dem Bett mit. Nutzt den 56-mm-Freiraum zwischen Bettvorderkante (Y = +128,5 mm) und Glastür (Y = +196,5 mm). Liegt komplett unterhalb der Plattenebene (Z ≤ bz − 2,5 mm), damit das Shuttle die Platte frei darüber hinwegziehen kann.',
+    dim: 'Rutsche 120×38×24 mm (32° Gefälle) · Auffangschale 124×51×46 mm (Y = 135..186 mm)',
+    hw: 'Werkzeuglose Klick-Rastnasen am Bettträger + 2× M3×8 Sicherungsschraube (Material PETG)',
     p: 'models_stl/bambu_bed_ejection_chute.stl' },
-  { t: 'HX711-Spulenwaage', c: 'text-purple-300', tag: '5-kg-Wägezelle', preset: 'scale',
-    d: 'Links neben dem Drucker (X = −320 mm, hinter dem Tür-Schwenkbereich). Sockel 90 × 40 mm, Wägezelle, Teller Ø 100 mm mit 52-mm-Bund; die Spule (Ø 200 mm) liegt flach darauf.',
-    p: 'models_stl/hx711_loadcell_base.stl + hx711_spool_cradle.stl' },
-  { t: 'Scanner-Halter', c: 'text-teal-300', tag: '2× M4', preset: 'dock',
-    d: 'An der linken Seitenwand hinten, außerhalb des vorderen Tür-Schwenkbereichs.',
-    p: 'models_stl/barcode_scanner_wall_dock.stl' },
 ];
 
 const stepsEl = document.getElementById('steps');
@@ -668,6 +656,8 @@ function selectStep(n) {
   const s = STEPS[n - 1];
   document.getElementById('d-title').textContent = `${n} · ${s.t}`;
   document.getElementById('d-desc').textContent = s.d;
+  document.getElementById('d-dim').textContent = s.dim;
+  document.getElementById('d-hw').textContent = s.hw;
   document.getElementById('d-path').textContent = s.p;
   setPreset(s.preset);
 }
@@ -750,8 +740,8 @@ let explAuto = false, explDir = 1;
 $('btn-explode').onclick = () => { explAuto = !explAuto; $('btn-explode').textContent = explAuto ? 'Explosion ❚❚' : 'Explosion ▶'; };
 $('sel-speed').onchange = e => speed = parseFloat(e.target.value);
 $('sel-cam').onchange = e => setPreset(e.target.value);
-$('btn-prev').onclick = () => selectStep(activeStep <= 1 ? 8 : activeStep - 1);
-$('btn-next').onclick = () => selectStep(activeStep >= 8 ? 1 : activeStep + 1);
+$('btn-prev').onclick = () => selectStep(activeStep <= 1 ? 6 : activeStep - 1);
+$('btn-next').onclick = () => selectStep(activeStep >= 6 ? 1 : activeStep + 1);
 const toggleSidebar = () => $('sidebar').classList.toggle('hidden');
 $('btn-sidebar').onclick = toggleSidebar; $('btn-close').onclick = toggleSidebar;
 
@@ -793,7 +783,7 @@ function loop(now) {
 }
 selectStep(1);
 setPreset('iso');
-Object.assign(cam, { yaw: 0.42, pitch: 0.44, dist: 1850, tx: 110, ty: 80, tz: 185 }); camGoal = null;
+Object.assign(cam, { yaw: 0.40, pitch: 0.44, dist: 1800, tx: 125, ty: 90, tz: 185 }); camGoal = null;
 const _q = new URLSearchParams(location.search);
 if (_q.get('act')) { startAction(_q.get('act')); if (_q.get('t') && action) action.t = parseFloat(_q.get('t')); }
 if (_q.get('expl')) { expl = explTarget = parseFloat(_q.get('expl')); $('sl-expl').value = Math.round(expl * 100); }
