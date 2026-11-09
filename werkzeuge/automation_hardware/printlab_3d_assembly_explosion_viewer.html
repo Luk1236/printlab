@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PrintLab 3D – Montage- & Explosionsansicht</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    body {
+      background-color: var(--background, #0b0f17);
+      color: var(--foreground, #e2e8f0);
+      margin: 0;
+      overflow: hidden;
+      user-select: none;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    .hud-panel {
+      background: rgba(15, 23, 42, 0.82);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(51, 65, 85, 0.65);
+    }
+    input[type=range] {
+      accent-color: #06b6d4;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="w-screen h-screen flex flex-col antialiased">
+
+  <!-- Top Header Navigation -->
+  <header class="hud-panel h-14 px-4 flex items-center justify-between shrink-0 z-20 border-b border-slate-700/60">
+    <div class="flex items-center space-x-3">
+      <div class="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-400 flex items-center justify-center text-cyan-400 font-bold text-base">
+        3D
+      </div>
+      <div>
+        <h1 class="text-sm font-bold tracking-wide text-white flex items-center gap-2">
+          PrintLab Hardware Montage & Explosionsansicht
+          <span class="text-xs px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">CAD 3D VIEWER</span>
+        </h1>
+        <p class="text-xs text-slate-400">Interaktiver Zusammenbau aller 6 Druckteile am Bambu Lab Drucker</p>
+      </div>
+    </div>
+
+    <!-- Quick Presets -->
+    <div class="flex items-center space-x-2">
+      <span class="text-xs text-slate-400 font-mono hidden sm:inline">KAMERA:</span>
+      <button onclick="setCamPreset('iso')" class="px-2.5 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">Isometrisch</button>
+      <button onclick="setCamPreset('toolhead')" class="px-2.5 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">Werkzeugkopf</button>
+      <button onclick="setCamPreset('chute')" class="px-2.5 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">Auswurfrutsche</button>
+      <button onclick="setCamPreset('scale')" class="px-2.5 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">Spulenwaage</button>
+      <button onclick="setCamPreset('dock')" class="px-2.5 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">Scanner-Dock</button>
+    </div>
+
+    <!-- Enclosure Transparency Toggle -->
+    <div class="flex items-center space-x-2">
+      <label class="flex items-center space-x-1.5 text-xs text-slate-300 cursor-pointer">
+        <input type="checkbox" id="chk-ghost-frame" class="rounded border-slate-600 text-cyan-500 focus:ring-0">
+        <span>Röntgenansicht (Gehäuse transparent)</span>
+      </label>
+    </div>
+  </header>
+
+  <!-- Main 3D Canvas Area -->
+  <div class="relative flex-1 w-full h-full overflow-hidden">
+    <canvas id="assembly-canvas" class="absolute inset-0 z-0"></canvas>
+
+    <!-- Top Left Hint -->
+    <div class="absolute top-4 left-4 z-10 hud-panel px-3.5 py-2.5 rounded-xl text-xs space-y-1 pointer-events-none opacity-90 max-w-xs">
+      <div class="text-slate-200 font-bold flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+        3D Steuerung & Navigation
+      </div>
+      <p class="text-xs text-slate-400">Maus links ziehen: Drehen • Rad: Zoomen • Bauteile anklicken für Details</p>
+    </div>
+
+    <!-- Bottom Center: Explosion Slider & Playback Controls -->
+    <div class="absolute bottom-5 left-1/2 -translate-x-1/2 z-10 hud-panel px-5 py-3 rounded-2xl flex items-center space-x-4 border border-slate-700 shadow-2xl max-w-xl w-[90%]">
+      
+      <!-- Auto Explode Button -->
+      <button id="btn-auto-explode" class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold flex items-center gap-1.5 transition shrink-0" title="Automatisch auseinander- und zusammenfahren">
+        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        <span id="txt-auto-explode">Auto-Animation</span>
+      </button>
+
+      <!-- Assembled / Exploded Range Slider -->
+      <div class="flex-1 flex flex-col space-y-1">
+        <div class="flex justify-between text-xs font-mono">
+          <span class="text-emerald-400 font-bold">0% Montiert</span>
+          <span id="lbl-explosion-pct" class="text-cyan-300 font-bold">50% Explosionsansicht</span>
+          <span class="text-amber-400 font-bold">100% Zerlegt</span>
+        </div>
+        <input type="range" id="slider-explosion" min="0" max="100" value="50" class="w-full h-2 bg-slate-700 rounded-lg cursor-pointer">
+      </div>
+
+      <!-- Quick Reset Button -->
+      <button onclick="setExplosion(0)" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs border border-slate-700 transition shrink-0">
+        Fertig montiert (0%)
+      </button>
+    </div>
+
+    <!-- Right Sidebar: Interactive Assembly Steps & Part Details -->
+    <div class="absolute top-4 right-4 z-10 hud-panel w-84 max-h-[calc(100vh-6.5rem)] overflow-y-auto rounded-2xl p-4 border border-slate-700/80 space-y-3.5 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-sm bg-cyan-400"></span>
+          Bauanleitung & Montage-Schritte
+        </h2>
+        <span class="text-xs bg-slate-800 text-cyan-300 px-2 py-0.5 rounded font-mono border border-slate-700">5 SCHRITTE</span>
+      </div>
+
+      <div class="space-y-2" id="assembly-steps-list">
+        <!-- Step 1 -->
+        <div onclick="selectStep(1)" id="step-card-1" class="step-card p-3 rounded-xl bg-slate-900/70 border border-slate-800 hover:border-cyan-500/50 cursor-pointer transition">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-amber-300">Schritt 1: Toolhead Sweeper Blade</span>
+            <span class="text-xs font-mono text-slate-400">2× M3×12</span>
+          </div>
+          <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+            Zwei M3 Ruthex-Gewindeeinsätze in die Werkzeugkopf-Halterung einschmelzen. Den Keil mit M3×12 mm Schrauben fixieren. Abstand zum Druckbett auf 1.8 mm einstellen.
+          </p>
+          <div class="mt-2 flex items-center gap-2 text-xs font-mono text-cyan-400">
+            <span>Material: ASA / PETG</span> • <span>Drehmoment: 0.8 Nm</span>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div onclick="selectStep(2)" id="step-card-2" class="step-card p-3 rounded-xl bg-slate-900/70 border border-slate-800 hover:border-cyan-500/50 cursor-pointer transition">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-emerald-300">Schritt 2: Auswurfrutsche (Chute)</span>
+            <span class="text-xs font-mono text-slate-400">Klick-Montage</span>
+          </div>
+          <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+            Rutsche mit den integrierten Haltenasen an der vorderen Bettkante einrasten. Schützt die Gehäusefront und leitet Teile mit 35° Gefälle in den Sammelbehälter.
+          </p>
+          <div class="mt-2 flex items-center gap-2 text-xs font-mono text-cyan-400">
+            <span>Material: PETG glatt</span> • <span>Keine Schrauben nötig</span>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div onclick="selectStep(3)" id="step-card-3" class="step-card p-3 rounded-xl bg-slate-900/70 border border-slate-800 hover:border-cyan-500/50 cursor-pointer transition">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-purple-300">Schritt 3: HX711 Wägezellen-Basis</span>
+            <span class="text-xs font-mono text-slate-400">2× M4×16</span>
+          </div>
+          <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+            Das starre Ende des 5kg Aluminium-Biegebalkens von unten mit 2× M4×16 Schrauben im Sockel verschrauben. Pfeilrichtung nach unten beachten!
+          </p>
+          <div class="mt-2 flex items-center gap-2 text-xs font-mono text-cyan-400">
+            <span>Material: PETG steif</span> • <span>Drehmoment: 1.8 Nm</span>
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div onclick="selectStep(4)" id="step-card-4" class="step-card p-3 rounded-xl bg-slate-900/70 border border-slate-800 hover:border-cyan-500/50 cursor-pointer transition">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-purple-300">Schritt 4: Spulen-Wiegeteller</span>
+            <span class="text-xs font-mono text-slate-400">2× M4×14 Senkkopf</span>
+          </div>
+          <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+            Wiegeteller mit zwei M4 Senkkopfschrauben am auskragenden Ende der Wägezelle befestigen. Zentriert 1kg Spulen ohne Taumelfehler.
+          </p>
+          <div class="mt-2 flex items-center gap-2 text-xs font-mono text-cyan-400">
+            <span>Zentrierbund: 52 mm</span> • <span>Tara-Abzug aktiv</span>
+          </div>
+        </div>
+
+        <!-- Step 5 -->
+        <div onclick="selectStep(5)" id="step-card-5" class="step-card p-3 rounded-xl bg-slate-900/70 border border-slate-800 hover:border-cyan-500/50 cursor-pointer transition">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-teal-300">Schritt 5: Scanner-Dock & Verkabelung</span>
+            <span class="text-xs font-mono text-slate-400">GPIO Pin 29+31</span>
+          </div>
+          <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+            Handscanner-Holster mit 2 M4 Nutensteinen am Profil montieren. HX711 Leitungen (DT/SCK) an Pi Pin 29 und 31 anschließen. 3.3V Versorgung nutzen!
+          </p>
+          <div class="mt-2 flex items-center gap-2 text-xs font-mono text-cyan-400">
+            <span>VCC: Pin 1 (3.3V)</span> • <span>Scan-to-Action aktiv</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Inspector for Selected Part -->
+      <div id="part-detail-box" class="p-3 bg-slate-950/80 rounded-xl border border-cyan-800/50 text-xs space-y-1.5">
+        <div class="text-cyan-300 font-bold flex items-center justify-between">
+          <span id="detail-part-name">1. Toolhead Sweeper Blade</span>
+          <span class="text-xs px-1.5 py-0.5 rounded bg-cyan-900/60 text-cyan-200 font-mono">STL BEREIT</span>
+        </div>
+        <p id="detail-part-desc" class="text-xs text-slate-300">
+          35°-Abschubkeil zur Montage an der Unterseite des Bambu Werkzeugkopfs für automatischen Bauteilabschub.
+        </p>
+        <div class="pt-1 flex justify-between font-mono text-xs text-slate-400 border-t border-slate-800">
+          <span>Dateipfad:</span>
+          <span class="text-slate-300 select-all">models_stl/bambu_toolhead_sweeper_blade.stl</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3D Vector Rendering Engine with Assembly / Explosion Vectors -->
+  <script>
+    const canvas = document.getElementById('assembly-canvas');
+    const ctx = canvas.getContext('2d');
+
+    let width = 0, height = 0;
+    function resize() {
+      width = canvas.parentElement.clientWidth;
+      height = canvas.parentElement.clientHeight;
+      canvas.width = width * window.devicePixelRatio;
+      canvas.height = height * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // 3D Orbit Camera
+    let camYaw = -0.55;
+    let camPitch = 0.38;
+    let camDist = 650;
+    let targetX = 0, targetY = 0, targetZ = 110;
+    let isDragging = false;
+    let lastX = 0, lastY = 0;
+
+    canvas.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
+    });
+    window.addEventListener('mouseup', () => isDragging = false);
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      camYaw += (e.clientX - lastX) * 0.008;
+      camPitch = Math.max(-1.4, Math.min(1.4, camPitch + (e.clientY - lastY) * 0.008));
+      lastX = e.clientX;
+      lastY = e.clientY;
+    });
+    canvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      camDist = Math.max(220, Math.min(1400, camDist + e.deltaY * 0.8));
+    }, { passive: false });
+
+    // Explosion Factor (0.0 to 1.0)
+    let explosionFactor = 0.5;
+    let autoAnimate = false;
+    let animDir = 1;
+    let ghostFrame = false;
+
+    const slider = document.getElementById('slider-explosion');
+    const lblPct = document.getElementById('lbl-explosion-pct');
+    const chkGhost = document.getElementById('chk-ghost-frame');
+    const btnAuto = document.getElementById('btn-auto-explode');
+    const txtAuto = document.getElementById('txt-auto-explode');
+
+    slider.addEventListener('input', (e) => {
+      explosionFactor = parseInt(e.target.value, 10) / 100.0;
+      lblPct.textContent = Math.round(explosionFactor * 100) + '% Explosionsansicht';
+    });
+
+    window.setExplosion = function(val) {
+      explosionFactor = val / 100.0;
+      slider.value = val;
+      lblPct.textContent = val + '% Explosionsansicht';
+    };
+
+    chkGhost.addEventListener('change', (e) => {
+      ghostFrame = e.target.checked;
+    });
+
+    btnAuto.addEventListener('click', () => {
+      autoAnimate = !autoAnimate;
+      txtAuto.textContent = autoAnimate ? 'Pause' : 'Auto-Animation';
+      btnAuto.classList.toggle('bg-amber-600', autoAnimate);
+      btnAuto.classList.toggle('bg-cyan-600', !autoAnimate);
+    });
+
+    // Camera Presets
+    window.setCamPreset = function(preset) {
+      if (preset === 'iso') {
+        camYaw = -0.55; camPitch = 0.38; camDist = 650;
+        targetX = 0; targetY = 0; targetZ = 110;
+      } else if (preset === 'toolhead') {
+        camYaw = -0.3; camPitch = 0.25; camDist = 320;
+        targetX = 0; targetY = 30; targetZ = 195;
+      } else if (preset === 'chute') {
+        camYaw = 0.0; camPitch = 0.35; camDist = 380;
+        targetX = 0; targetY = 120; targetZ = 80;
+      } else if (preset === 'scale') {
+        camYaw = 0.8; camPitch = 0.45; camDist = 360;
+        targetX = 170; targetY = -20; targetZ = 70;
+      } else if (preset === 'dock') {
+        camYaw = -1.1; camPitch = 0.3; camDist = 340;
+        targetX = -130; targetY = 0; targetZ = 100;
+      }
+    };
+
+    // Step Selection
+    let activeStep = 1;
+    window.selectStep = function(step) {
+      activeStep = step;
+      document.querySelectorAll('.step-card').forEach((el, idx) => {
+        el.classList.toggle('border-cyan-400', idx + 1 === step);
+        el.classList.toggle('bg-slate-800', idx + 1 === step);
+      });
+
+      const detailName = document.getElementById('detail-part-name');
+      const detailDesc = document.getElementById('detail-part-desc');
+
+      if (step === 1) {
+        setCamPreset('toolhead');
+        detailName.textContent = '1. Toolhead Sweeper Blade (Schiebekeil)';
+        detailDesc.textContent = 'Montage an der Vorderseite des Werkzeugkopfs via 2× M3×12 mm Schrauben und M3 Ruthex-Gewindeeinsätzen. Keilwinkel: 35°.';
+      } else if (step === 2) {
+        setCamPreset('chute');
+        detailName.textContent = '2. Bed Ejection Chute (Auswurfrutsche)';
+        detailDesc.textContent = 'Eingeklippt an der vorderen Kante des Druckbetts. Führungsstege leiten ausgeworfene Druckteile direkt in den Auffangbehälter.';
+      } else if (step === 3) {
+        setCamPreset('scale');
+        detailName.textContent = '3. HX711 Loadcell Base (Wägezellensockel)';
+        detailDesc.textContent = 'Befestigung des starren Endes der 5kg Wägezelle mit 2× M4×16 mm Schrauben. Kabelführung für die 4 Messdrähte.';
+      } else if (step === 4) {
+        setCamPreset('scale');
+        detailName.textContent = '4. HX711 Spool Cradle (Spulenteller)';
+        detailDesc.textContent = 'Wird mit 2× M4 Senkkopfschrauben auf dem freien Ende montiert. 52 mm Zentrierkragen verhindert Schrägstellung der Filamentspule.';
+      } else if (step === 5) {
+        setCamPreset('dock');
+        detailName.textContent = '5. Barcode Scanner Dock & Verkabelung';
+        detailDesc.textContent = 'Wand- und Profilhalterung für den Handscanner. Ermöglicht sofortiges Erfassen und Tara-Verrechnen neuer Spulen.';
+      }
+    };
+    selectStep(1);
+
+    // --- 3D Projection Helpers ---
+    function project(x, y, z) {
+      const dx = x - targetX;
+      const dy = y - targetY;
+      const dz = z - targetZ;
+
+      // Yaw around Z
+      const cosY = Math.cos(camYaw);
+      const sinY = Math.sin(camYaw);
+      const x1 = dx * cosY - dy * sinY;
+      const y1 = dx * sinY + dy * cosY;
+      const z1 = dz;
+
+      // Pitch around X
+      const cosP = Math.cos(camPitch);
+      const sinP = Math.sin(camPitch);
+      const x2 = x1;
+      const y2 = y1 * cosP - z1 * sinP;
+      const z2 = y1 * sinP + z1 * cosP;
+
+      const depth = y2 + camDist;
+      if (depth < 10) return null;
+
+      const fov = 520;
+      const sx = (x2 / depth) * fov + (width / 2);
+      const sy = (-z2 / depth) * fov + (height / 2);
+
+      return { x: sx, y: sy, depth: depth };
+    }
+
+    // Box Renderer
+    function drawBox(x0, y0, z0, x1, y1, z1, colTop, colSide, stroke) {
+      const p = [
+        project(x0, y0, z0), project(x1, y0, z0), project(x1, y1, z0), project(x0, y1, z0),
+        project(x0, y0, z1), project(x1, y0, z1), project(x1, y1, z1), project(x0, y1, z1),
+      ];
+      if (p.some(pt => pt === null)) return;
+
+      const faces = [
+        { pts: [4, 5, 6, 7], col: colTop },
+        { pts: [0, 1, 5, 4], col: colSide },
+        { pts: [1, 2, 6, 5], col: colSide },
+        { pts: [2, 3, 7, 6], col: colSide },
+        { pts: [3, 0, 4, 7], col: colSide },
+      ];
+
+      faces.forEach(f => {
+        ctx.beginPath();
+        ctx.moveTo(p[f.pts[0]].x, p[f.pts[0]].y);
+        for (let i = 1; i < f.pts.length; i++) ctx.lineTo(p[f.pts[i]].x, p[f.pts[i]].y);
+        ctx.closePath();
+        ctx.fillStyle = f.col;
+        ctx.fill();
+        if (stroke) {
+          ctx.strokeStyle = stroke;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+      });
+    }
+
+    // Dashed Guide Line for Explosions
+    function drawExplosionGuide(x0, y0, z0, x1, y1, z1, color = 'rgba(6, 182, 212, 0.6)') {
+      if (explosionFactor < 0.05) return;
+      const p0 = project(x0, y0, z0);
+      const p1 = project(x1, y1, z1);
+      if (!p0 || !p1) return;
+
+      ctx.save();
+      ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(p0.x, p0.y);
+      ctx.lineTo(p1.x, p1.y);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Callout Label Pin
+    function drawPin(x, y, z, text, subtext, highlight = false) {
+      const pt = project(x, y, z);
+      if (!pt) return;
+
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, highlight ? 6 : 4, 0, Math.PI * 2);
+      ctx.fillStyle = highlight ? '#f59e0b' : '#38bdf8';
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.save();
+      ctx.font = 'bold 11px ui-sans-serif, system-ui, sans-serif';
+      const tw = Math.max(ctx.measureText(text).width, subtext ? ctx.measureText(subtext).width : 0) + 16;
+      const th = subtext ? 32 : 20;
+
+      ctx.fillStyle = highlight ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.85)';
+      ctx.strokeStyle = highlight ? '#f59e0b' : 'rgba(56, 189, 248, 0.6)';
+      ctx.lineWidth = 1.5;
+      ctx.fillRect(pt.x + 10, pt.y - 12, tw, th);
+      ctx.strokeRect(pt.x + 10, pt.y - 12, tw, th);
+
+      ctx.fillStyle = highlight ? '#fbbf24' : '#e2e8f0';
+      ctx.fillText(text, pt.x + 16, pt.y + 2);
+      if (subtext) {
+        ctx.font = '9px ui-monospace, SFMono-Regular, monospace';
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillText(subtext, pt.x + 16, pt.y + 15);
+      }
+      ctx.restore();
+    }
+
+    // --- Main Render Function ---
+    function render() {
+      ctx.clearRect(0, 0, width, height);
+
+      // Floor Grid
+      ctx.strokeStyle = 'rgba(30, 41, 59, 0.4)';
+      ctx.lineWidth = 1;
+      for (let i = -280; i <= 280; i += 40) {
+        let p1 = project(i, -280, 0), p2 = project(i, 280, 0);
+        if (p1 && p2) { ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke(); }
+        p1 = project(-280, i, 0); p2 = project(280, i, 0);
+        if (p1 && p2) { ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke(); }
+      }
+
+      // --- 1. Bambu Lab Printer Chassis (Base + Columns + Top Frame) ---
+      const fAlpha = ghostFrame ? '0.2' : '0.85';
+      const colBaseTop = ghostFrame ? 'rgba(30, 41, 59, 0.3)' : '#0f172a';
+      const colFrame = `rgba(51, 65, 85, ${fAlpha})`;
+      const colEdge = ghostFrame ? 'rgba(100, 116, 139, 0.4)' : '#64748b';
+
+      // Chassis Base
+      drawBox(-120, -120, 0, 120, 120, 12, colBaseTop, 'rgba(15, 23, 42, 0.7)', colEdge);
+      // 4 Upright Extrusions
+      drawBox(-120, -120, 12, -110, -110, 240, colFrame, colFrame, colEdge);
+      drawBox(110, -120, 12, 120, -110, 240, colFrame, colFrame, colEdge);
+      drawBox(110, 110, 12, 120, 120, 240, colFrame, colFrame, colEdge);
+      drawBox(-120, 110, 12, -110, 120, 240, colFrame, colFrame, colEdge);
+      // Top Crossbar
+      drawBox(-120, -120, 240, 120, 120, 250, colFrame, colFrame, colEdge);
+
+      // Glass front panels (transparent outline)
+      if (!ghostFrame) {
+        const gf1 = project(-110, 118, 15), gf2 = project(110, 118, 15);
+        const gf3 = project(110, 118, 235), gf4 = project(-110, 118, 235);
+        if (gf1 && gf2 && gf3 && gf4) {
+          ctx.beginPath();
+          ctx.moveTo(gf1.x, gf1.y); ctx.lineTo(gf2.x, gf2.y); ctx.lineTo(gf3.x, gf3.y); ctx.lineTo(gf4.x, gf4.y);
+          ctx.closePath();
+          ctx.fillStyle = 'rgba(6, 182, 212, 0.04)'; ctx.fill();
+          ctx.strokeStyle = 'rgba(6, 182, 212, 0.25)'; ctx.stroke();
+        }
+      }
+
+      // --- 2. Heated Bed Plate (Z=70) ---
+      const bedBaseZ = 70;
+      drawBox(-95, -95, bedBaseZ - 6, 95, 95, bedBaseZ, '#d97706', '#1e293b', '#475569');
+
+      // --- 3. Toolhead & Gantry (X=0, Y=20, Z=210) ---
+      const thX = 0, thY = 20, thZ = 210;
+      // Carbon Gantry Rods
+      const rod1a = project(-110, thY - 5, thZ + 5), rod1b = project(110, thY - 5, thZ + 5);
+      const rod2a = project(-110, thY + 5, thZ + 5), rod2b = project(110, thY + 5, thZ + 5);
+      if (rod1a && rod1b && rod2a && rod2b) {
+        ctx.strokeStyle = '#475569'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(rod1a.x, rod1a.y); ctx.lineTo(rod1b.x, rod1b.y); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(rod2a.x, rod2a.y); ctx.lineTo(rod2b.x, rod2b.y); ctx.stroke();
+      }
+      // Main Toolhead Body
+      drawBox(thX - 22, thY - 18, thZ - 20, thX + 22, thY + 18, thZ + 15, '#1e293b', '#0f172a', '#38bdf8');
+      // Hotend Nozzle Tip
+      drawBox(thX - 3, thY - 3, thZ - 28, thX + 3, thY + 3, thZ - 20, '#f59e0b', '#b45309', '#fde047');
+
+      // --- 4. EXPLODED PART 1: Toolhead Sweeper Blade (Explodes along +Y) ---
+      const bladeOrigY = thY + 20;
+      const bladeExplY = bladeOrigY + explosionFactor * 75;
+      const bladeZ = thZ - 18;
+
+      drawExplosionGuide(thX, bladeOrigY, bladeZ, thX, bladeExplY, bladeZ, '#fbbf24');
+
+      // Draw Sweeper Blade (Amber ASA)
+      drawBox(thX - 26, bladeExplY, bladeZ, thX + 26, bladeExplY + 16, bladeZ + 12, '#f59e0b', '#d97706', '#fde047');
+      // Wedge slope
+      const w1 = project(thX - 26, bladeExplY + 16, bladeZ + 12);
+      const w2 = project(thX + 26, bladeExplY + 16, bladeZ + 12);
+      const w3 = project(thX + 26, bladeExplY + 28, bladeZ);
+      const w4 = project(thX - 26, bladeExplY + 28, bladeZ);
+      if (w1 && w2 && w3 && w4) {
+        ctx.beginPath(); ctx.moveTo(w1.x, w1.y); ctx.lineTo(w2.x, w2.y); ctx.lineTo(w3.x, w3.y); ctx.lineTo(w4.x, w4.y);
+        ctx.closePath();
+        ctx.fillStyle = '#b45309'; ctx.fill();
+        ctx.strokeStyle = '#fde047'; ctx.stroke();
+      }
+
+      // Fasteners: 2× M3×12 Screws floating further out along +Y
+      const screwY = bladeExplY + 25 + explosionFactor * 35;
+      drawExplosionGuide(thX - 18, bladeExplY + 10, bladeZ + 6, thX - 18, screwY, bladeZ + 6, '#e2e8f0');
+      drawExplosionGuide(thX + 18, bladeExplY + 10, bladeZ + 6, thX + 18, screwY, bladeZ + 6, '#e2e8f0');
+      drawBox(thX - 20, screwY, bladeZ + 4, thX - 16, screwY + 6, bladeZ + 8, '#f8fafc', '#94a3b8', '#cbd5e1');
+      drawBox(thX + 16, screwY, bladeZ + 4, thX + 20, screwY + 6, bladeZ + 8, '#f8fafc', '#94a3b8', '#cbd5e1');
+
+      drawPin(thX, bladeExplY + 20, bladeZ + 8, "Teil 1: Sweeper Blade", "2× M3×12 + Ruthex", activeStep === 1);
+
+      // --- 5. EXPLODED PART 2: Bed Ejection Chute (Explodes along +Y & -Z) ---
+      const chuteOrigY = 100;
+      const chuteExplY = chuteOrigY + explosionFactor * 80;
+      const chuteExplZ = bedBaseZ - explosionFactor * 35;
+
+      drawExplosionGuide(0, chuteOrigY, bedBaseZ, 0, chuteExplY, chuteExplZ, '#34d399');
+
+      // Chute Body (Emerald PETG)
+      drawBox(-55, chuteExplY, chuteExplZ - 10, 55, chuteExplY + 50, chuteExplZ + 12, '#059669', '#047857', '#34d399');
+      // Flanges
+      drawBox(-58, chuteExplY, chuteExplZ + 10, -52, chuteExplY + 50, chuteExplZ + 25, '#047857', '#064e3b', '#34d399');
+      drawBox(52, chuteExplY, chuteExplZ + 10, 58, chuteExplY + 50, chuteExplZ + 25, '#047857', '#064e3b', '#34d399');
+
+      drawPin(0, chuteExplY + 40, chuteExplZ + 10, "Teil 2: Ejection Chute", "Klemmsitz 35° Gefälle", activeStep === 2);
+
+      // --- 6. EXPLODED PARTS 4 & 5: HX711 Spool Scale (Side Station) ---
+      const scaleX = 175, scaleY = -25;
+
+      // Part 4: Loadcell Base (Fixed to bench)
+      drawBox(scaleX - 25, scaleY - 20, 0, scaleX + 25, scaleY + 20, 16, '#7e22ce', '#581c87', '#c084fc');
+
+      // Part 4b: 5kg Aluminum Loadcell Bar (Lifts along +Z)
+      const barExplZ = 16 + explosionFactor * 35;
+      drawExplosionGuide(scaleX, scaleY, 16, scaleX, scaleY, barExplZ, '#cbd5e1');
+      drawBox(scaleX - 20, scaleY - 6, barExplZ, scaleX + 20, scaleY + 6, barExplZ + 12, '#94a3b8', '#64748b', '#f1f5f9');
+
+      // Fasteners: 2× M4 Bolts for Loadcell
+      const boltZ = barExplZ + 18 + explosionFactor * 25;
+      drawBox(scaleX + 8, scaleY - 3, boltZ, scaleX + 14, scaleY + 3, boltZ + 8, '#f8fafc', '#94a3b8', '#cbd5e1');
+      drawBox(scaleX + 15, scaleY - 3, boltZ, scaleX + 21, scaleY + 3, boltZ + 8, '#f8fafc', '#94a3b8', '#cbd5e1');
+
+      // Part 5: Spool Cradle (Wiegeteller) (Lifts further along +Z)
+      const cradleExplZ = barExplZ + 14 + explosionFactor * 45;
+      drawExplosionGuide(scaleX, scaleY, barExplZ + 12, scaleX, scaleY, cradleExplZ, '#a855f7');
+      drawBox(scaleX - 35, scaleY - 35, cradleExplZ, scaleX + 35, scaleY + 35, cradleExplZ + 8, '#a855f7', '#7e22ce', '#e9d5ff');
+      // 52mm Centering Ring
+      drawBox(scaleX - 16, scaleY - 16, cradleExplZ + 8, scaleX + 16, scaleY + 16, cradleExplZ + 20, '#9333ea', '#6b21a8', '#f3e8ff');
+
+      // Filament Spool (Lifts high along +Z)
+      const spoolExplZ = cradleExplZ + 24 + explosionFactor * 65;
+      drawExplosionGuide(scaleX, scaleY, cradleExplZ + 20, scaleX, scaleY, spoolExplZ, '#0284c7');
+      const spPt = project(scaleX, scaleY, spoolExplZ + 25);
+      if (spPt) {
+        ctx.beginPath();
+        ctx.arc(spPt.x, spPt.y, 30, 0, Math.PI * 2);
+        ctx.fillStyle = '#0284c7'; ctx.fill();
+        ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(spPt.x, spPt.y, 9, 0, Math.PI * 2);
+        ctx.fillStyle = '#0f172a'; ctx.fill(); ctx.stroke();
+      }
+
+      drawPin(scaleX, scaleY, barExplZ + 8, "Teil 4: HX711 Basis", "2× M4×16 Schrauben", activeStep === 3);
+      drawPin(scaleX, scaleY, cradleExplZ + 14, "Teil 5: Wiegeteller", "2× M4×14 Senkkopf", activeStep === 4);
+
+      // --- 7. EXPLODED PART 6: Barcode Scanner Wall Dock (Explodes along -X) ---
+      const dockOrigX = -125;
+      const dockExplX = dockOrigX - explosionFactor * 50;
+      const dockY = 0, dockZ = 90;
+
+      drawExplosionGuide(dockOrigX, dockY, dockZ, dockExplX, dockY, dockZ, '#34d399');
+
+      // Scanner Dock Holster (Green PETG)
+      drawBox(dockExplX - 25, dockY - 20, dockZ, dockExplX, dockY + 20, dockZ + 45, '#047857', '#064e3b', '#34d399');
+
+      // Scanner (Explodes further out along -X)
+      const scannerX = dockExplX - 25 - explosionFactor * 40;
+      drawExplosionGuide(dockExplX - 10, dockY, dockZ + 20, scannerX, dockY, dockZ + 35, '#f8fafc');
+      drawBox(scannerX - 8, dockY - 8, dockZ + 10, scannerX + 8, dockY + 8, dockZ + 50, '#f8fafc', '#94a3b8', '#cbd5e1');
+
+      drawPin(dockExplX - 15, dockY, dockZ + 40, "Teil 6: Scanner-Dock", "2× M4 Nutensteine", activeStep === 5);
+    }
+
+    // --- Animation Loop ---
+    let lastTime = performance.now();
+    function loop(now) {
+      const dt = Math.min(0.1, (now - lastTime) / 1000.0);
+      lastTime = now;
+
+      if (autoAnimate) {
+        explosionFactor += dt * 0.35 * animDir;
+        if (explosionFactor >= 1.0) {
+          explosionFactor = 1.0;
+          animDir = -1;
+        } else if (explosionFactor <= 0.0) {
+          explosionFactor = 0.0;
+          animDir = 1;
+        }
+        slider.value = Math.round(explosionFactor * 100);
+        lblPct.textContent = Math.round(explosionFactor * 100) + '% Explosionsansicht';
+      }
+
+      render();
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
