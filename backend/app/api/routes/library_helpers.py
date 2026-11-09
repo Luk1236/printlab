@@ -25,6 +25,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from backend.app.core.config import settings as app_settings
+from backend.app.core import database
 from backend.app.models.archive import PrintArchive
 from backend.app.models.library import LibraryFile, LibraryFolder
 from backend.app.models.print_queue import PrintQueueItem
@@ -785,7 +786,7 @@ MAX_CLIENT_THUMBNAIL_EDGE = 2048
 STORED_CLIENT_THUMBNAIL_EDGE = 512
 
 
-async def _backfill_external_thumbnails(folder_ids: list[int]) -> None:
+async def _backfill_external_thumbnails(folder_ids: list[int], session_factory: Any = None) -> None:
     """Generate STL and PDF thumbnails for an external folder tree in the background.
 
     Spawned via ``asyncio.create_task`` from ``scan_external_folder`` so the
@@ -806,7 +807,8 @@ async def _backfill_external_thumbnails(folder_ids: list[int]) -> None:
     if not folder_ids:
         return
     thumbnails_dir = get_library_thumbnails_dir()
-    async with async_session() as db:
+    # Der Aufrufer reicht seine Session-Fabrik durch (Tests tauschen sie dort aus), sonst die aktuelle der Datenbankschicht.
+    async with (session_factory or database.async_session)() as db:
         result = await db.execute(
             LibraryFile.active().where(
                 LibraryFile.folder_id.in_(folder_ids),

@@ -5,7 +5,7 @@ description = "PrintLab – Drucker-Verwaltung für Bambu Lab (P2S) mit Plattenw
 requires-python = ">=3.10"
 
 [tool.ruff]
-target-version = "2.0.54"
+target-version = "py310"
 line-length = 120
 exclude = [
     ".git",

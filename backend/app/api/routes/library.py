@@ -118,11 +118,20 @@ router = APIRouter(prefix="/library", tags=["library"])
 # Ausgelagerte Module zur Modularisierung und Einhaltung des Zeilenbudgets
 from backend.app.api.routes.library_helpers import (
     _PROJECT_SETTINGS_PATH,
+    CLIENT_THUMBNAIL_TYPES,
+    IMAGE_EXTENSIONS,
+    MAX_CLIENT_THUMBNAIL_BYTES,
+    MAX_CLIENT_THUMBNAIL_EDGE,
+    MAX_PHOTO_BYTES,
+    PHOTO_EXTENSIONS,
+    PHOTO_MEDIA_TYPES,
+    STORED_CLIENT_THUMBNAIL_EDGE,
     _backfill_external_thumbnails,
     _clean_3mf_metadata,
     _ensure_library_file_visible,
     _folder_tree_file_ids,
     _move_file_bytes,
+    _MoveSkip,
     _read_3mf_entry,
     _resolve_slice_destination,
     _resolve_source_disk_path,
@@ -1368,7 +1377,7 @@ async def scan_external_folder(
     # + every subfolder created during this scan. all_folder_ids on its own
     # would miss the newly-created ones (it's snapshotted before the walk).
     spawn_background_task(
-        _backfill_external_thumbnails(list(set(folder_cache.values()))),
+        _backfill_external_thumbnails(list(set(folder_cache.values())), async_session),
         name=f"thumbnail-backfill-folder-{folder_id}",
     )
 

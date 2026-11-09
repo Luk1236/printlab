@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import logging
 import os
-from urllib.parse import unquote
+from urllib.parse import unquote, urlparse
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from fastapi.responses import Response
