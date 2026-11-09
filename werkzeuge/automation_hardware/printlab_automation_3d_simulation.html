@@ -300,11 +300,12 @@
     let height = 0;
 
     function resizeCanvas() {
+      const dpr = window.devicePixelRatio || 1;
       width = canvas.parentElement.clientWidth;
       height = canvas.parentElement.clientHeight;
-      canvas.width = width * window.devicePixelRatio;
-      canvas.height = height * window.devicePixelRatio;
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
