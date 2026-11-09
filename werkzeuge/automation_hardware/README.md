@@ -41,6 +41,7 @@ flowchart TD
 > Die Teile bleiben auf der Platte und wandern mit ihr ins Plattenregal, sie werden dort von Hand entnommen. Abschubkeil und
 > Rutsche mit Schale sind aus dem Bauplan gestrichen (die Dateien bleiben liegen). Wechselzyklus, Sperren und
 > Konstruktionsprüfung: `TUER_MAGAZIN_WASCHSTATION.md`, Abschnitt 4.
+> Einzelteile des Shuttles, Elektrik, Antriebe, Fahrzeiten, Strom und Inbetriebnahme: dort Abschnitt 5 bis 10.
 
 ---
 

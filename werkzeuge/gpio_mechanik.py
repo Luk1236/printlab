@@ -54,7 +54,7 @@ DEFAULT_PINS = {
     "motor_z_step": 22,
     "motor_z_dir": 10,
     "motors_enable": 9,  # HIGH = Motoren stromlos
-    "washer_pump": 26,   # Relais fuer IPA-Peristaltikpumpe (Pin 37)
+    "washer_pump": 6,    # Relais fuer IPA-Peristaltikpumpe (Pin 31; frueher 26, doppelt mit dem Not-Halt)
     "washer_roller": 19, # Relais/Treiber fuer Reinigungswalzen (Pin 35)
     "washer_fan": 13,    # Relais fuer Trocknungsgeblaese (Pin 33)
 }
