@@ -50,8 +50,6 @@ def program_path() -> str:
     return DEFAULT_PROGRAM
 
 
-
-
 def get_default_machine_json(name: str = "Bambu Lab P1S 0.4 nozzle") -> str:
     """Liefert vollstaendige Standard-Maschinenkonfiguration fuer OrcaSlicer."""
     repo_root = Path(__file__).resolve().parent.parent.parent.parent
@@ -65,21 +63,23 @@ def get_default_machine_json(name: str = "Bambu Lab P1S 0.4 nozzle") -> str:
             data["layer_gcode"] = ";AFTER_LAYER_CHANGE\nG92 E0"
             return json.dumps(data)
         except Exception:
-            pass
-    return json.dumps({
-        "type": "machine",
-        "name": name,
-        "from": "system",
-        "setting_id": "GM014",
-        "instantiation": "true",
-        "nozzle_diameter": ["0.4"],
-        "printer_model": "Bambu Lab P1S",
-        "printer_variant": "0.4",
-        "printable_area": ["0x0", "256x0", "256x256", "0x256"],
-        "printable_height": "256",
-        "use_relative_e_distances": "1",
-        "layer_gcode": ";AFTER_LAYER_CHANGE\nG92 E0",
-    })
+            logger.debug("Fehler ignoriert", exc_info=True)
+    return json.dumps(
+        {
+            "type": "machine",
+            "name": name,
+            "from": "system",
+            "setting_id": "GM014",
+            "instantiation": "true",
+            "nozzle_diameter": ["0.4"],
+            "printer_model": "Bambu Lab P1S",
+            "printer_variant": "0.4",
+            "printable_area": ["0x0", "256x0", "256x256", "0x256"],
+            "printable_height": "256",
+            "use_relative_e_distances": "1",
+            "layer_gcode": ";AFTER_LAYER_CHANGE\nG92 E0",
+        }
+    )
 
 
 def get_default_process_json(name: str = "0.20mm Standard @BBL X1C") -> str:
@@ -93,18 +93,20 @@ def get_default_process_json(name: str = "0.20mm Standard @BBL X1C") -> str:
         try:
             return pfile.read_text(encoding="utf-8")
         except Exception:
-            pass
-    return json.dumps({
-        "type": "process",
-        "name": name,
-        "from": "system",
-        "setting_id": "GP004",
-        "instantiation": "true",
-        "layer_height": "0.2",
-        "initial_layer_print_height": "0.2",
-        "wall_loops": "2",
-        "sparse_infill_density": "15%",
-    })
+            logger.debug("Fehler ignoriert", exc_info=True)
+    return json.dumps(
+        {
+            "type": "process",
+            "name": name,
+            "from": "system",
+            "setting_id": "GP004",
+            "instantiation": "true",
+            "layer_height": "0.2",
+            "initial_layer_print_height": "0.2",
+            "wall_loops": "2",
+            "sparse_infill_density": "15%",
+        }
+    )
 
 
 def sanitize_process_profile_dict(p: dict) -> dict:
@@ -158,7 +160,7 @@ def sanitize_process_json_str(process_json_str: str | None) -> str | None:
         if isinstance(data, dict):
             return json.dumps(sanitize_process_profile_dict(data))
     except Exception:
-        pass
+        logger.debug("Fehler ignoriert", exc_info=True)
     return process_json_str
 
 
@@ -234,13 +236,17 @@ def _package_gcode_3mf(source: Path, tmp_path: Path, out_path: Path, plate: int 
                 for f in sp.get("filaments", []):
                     weight_g += float(f.get("total_used_g", 0.0))
         except Exception:
-            pass
+            logger.debug("Fehler ignoriert", exc_info=True)
 
     first_gcode = gcode_files[0].read_text(encoding="utf-8", errors="replace")
     if pred_sec <= 0:
         m_total = re.search(r"total estimated time:\s*(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?", first_gcode)
         m_model = re.search(r"model printing time:\s*(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?", first_gcode)
-        m_time = m_total or m_model or re.search(r"estimated printing time.*?=\s*(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?", first_gcode)
+        m_time = (
+            m_total
+            or m_model
+            or re.search(r"estimated printing time.*?=\s*(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?", first_gcode)
+        )
         if m_time:
             hours = int(m_time.group(1) or 0)
             mins = int(m_time.group(2) or 0)
@@ -262,7 +268,7 @@ def _package_gcode_3mf(source: Path, tmp_path: Path, out_path: Path, plate: int 
         f'    <metadata key="prediction" value="{pred_sec}"/>\n'
         f'    <metadata key="weight" value="{weight_g:.2f}"/>\n'
         f'    <filament id="1" type="PLA" color="#00AE42" used_g="{weight_g:.2f}" used_m="0.0"/>\n'
-        '  </plate>\n</config>'
+        "  </plate>\n</config>"
     )
 
     if source.suffix.lower() == ".3mf" and zipfile.is_zipfile(source):
@@ -352,6 +358,8 @@ def slice_file(
     if not source.is_file() or source.stat().st_size > MAX_3MF_BYTES:
         raise SlicerCliError("Datei fehlt oder ist größer als 200 MB.")
     name = Path(str(name).replace("\\", "/")).name or "slice.3mf"  # nur der Dateiname, nie ein Pfad
+    if name in (".", ".."):  # Path(...).name lässt diese beiden durch; sie würden aus dem Arbeitsordner zeigen
+        name = "slice.3mf"
     if not name.lower().endswith(".3mf"):
         name = Path(name).stem + ".gcode.3mf"
     with tempfile.TemporaryDirectory(prefix="bambu_slice_") as tmp:
@@ -367,7 +375,7 @@ def slice_file(
                 if sanitized_bytes != raw_bytes:
                     copy.write_bytes(sanitized_bytes)
             except Exception:
-                pass
+                logger.debug("Fehler ignoriert", exc_info=True)
 
         # Wenn STL geslict wird (oder Profile unvollstaendig sind), mit den Standard-OrcaSlicer-Profilen anreichern
         use_printer_json = printer_json
@@ -377,10 +385,14 @@ def slice_file(
             for fj_str in filament_jsons:
                 try:
                     parsed = json.loads(fj_str) if fj_str else {}
-                    if isinstance(parsed, dict) and len(parsed) >= 6 and ("nozzle_temperature" in parsed or "filament_max_volumetric_speed" in parsed):
+                    if (
+                        isinstance(parsed, dict)
+                        and len(parsed) >= 6
+                        and ("nozzle_temperature" in parsed or "filament_max_volumetric_speed" in parsed)
+                    ):
                         use_filaments.append(fj_str)
                 except Exception:
-                    pass
+                    logger.debug("Fehler ignoriert", exc_info=True)
 
         is_stl = source.suffix.lower() == ".stl"
         if is_stl and not arrange:
@@ -424,7 +436,7 @@ def slice_file(
                     cur_p.pop("compatible_printers_condition", None)
                     use_process_json = json.dumps(cur_p)
             except Exception:
-                pass
+                logger.debug("Fehler ignoriert", exc_info=True)
 
         slicer_dir = str(Path(program).parent) if Path(program).is_file() else str(tmp_path)
         slicer_env = dict(os.environ)
@@ -432,10 +444,21 @@ def slice_file(
             slicer_env["PATH"] = str(Path(program).parent) + os.pathsep + slicer_env.get("PATH", "")
 
         cmd = build_command(
-            program, copy, tmp_path.resolve(), name, use_printer_json, use_process_json, use_filaments or [], arrange, orient, plate
+            program,
+            copy,
+            tmp_path.resolve(),
+            name,
+            use_printer_json,
+            use_process_json,
+            use_filaments or [],
+            arrange,
+            orient,
+            plate,
         )
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=slicer_dir, env=slicer_env, check=False)
+            result = subprocess.run(
+                cmd, capture_output=True, text=True, timeout=timeout, cwd=slicer_dir, env=slicer_env, check=False
+            )
         except (OSError, subprocess.SubprocessError) as exc:
             raise SlicerCliError(f"Bambu Studio konnte nicht gestartet werden: {exc}") from exc
 
@@ -448,7 +471,10 @@ def slice_file(
             stderr = (result.stderr or result.stdout or "").strip()
             range_errors = re.findall(r"(\w+):\s*([-\d.]+)\s*not in range\s*\[([-\d.]+),\s*([-\d.]+)\]", stderr)
             if range_errors:
-                logger.warning("[PC-Slicer] Parameter-Range-Fehler erkannt (%s). Korrigiere Profile und versuche erneut...", range_errors)
+                logger.warning(
+                    "[PC-Slicer] Parameter-Range-Fehler erkannt (%s). Korrigiere Profile und versuche erneut...",
+                    range_errors,
+                )
                 try:
                     cur_p = json.loads(use_process_json)
                     modified = False
@@ -470,21 +496,42 @@ def slice_file(
                     if modified:
                         use_process_json = json.dumps(cur_p)
                         cmd = build_command(
-                            program, copy, tmp_path.resolve(), name, use_printer_json, use_process_json, use_filaments or [], arrange, orient, plate
+                            program,
+                            copy,
+                            tmp_path.resolve(),
+                            name,
+                            use_printer_json,
+                            use_process_json,
+                            use_filaments or [],
+                            arrange,
+                            orient,
+                            plate,
                         )
-                        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=slicer_dir, env=slicer_env, check=False)
+                        result = subprocess.run(
+                            cmd,
+                            capture_output=True,
+                            text=True,
+                            timeout=timeout,
+                            cwd=slicer_dir,
+                            env=slicer_env,
+                            check=False,
+                        )
                 except Exception as exc:
                     logger.warning("[PC-Slicer] Auto-Korrektur fehlgeschlagen: %s", exc)
 
         # Retry Stufe 1: Falls mit Settings versucht und gescheitert -> falls 3MF, ohne --load-settings probieren
         has_gcodes = bool(list(tmp_path.glob("plate_*.gcode")))
-        if (result.returncode != 0 or not has_gcodes) and not is_stl and (use_printer_json is not None or use_process_json is not None):
+        if (
+            (result.returncode != 0 or not has_gcodes)
+            and not is_stl
+            and (use_printer_json is not None or use_process_json is not None)
+        ):
             logger.warning("[PC-Slicer] Slicen mit Settings fehlgeschlagen; wiederhole mit eingebetteten 3MF-Settings.")
-            cmd = build_command(
-                program, copy, tmp_path.resolve(), name, None, None, [], arrange, orient, plate
-            )
+            cmd = build_command(program, copy, tmp_path.resolve(), name, None, None, [], arrange, orient, plate)
             try:
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=slicer_dir, env=slicer_env, check=False)
+                result = subprocess.run(
+                    cmd, capture_output=True, text=True, timeout=timeout, cwd=slicer_dir, env=slicer_env, check=False
+                )
             except (OSError, subprocess.SubprocessError) as exc:
                 raise SlicerCliError(f"Bambu Studio konnte nicht gestartet werden: {exc}") from exc
 
@@ -493,14 +540,25 @@ def slice_file(
         if (result.returncode != 0 or not has_gcodes) and plate is not None and plate > 0:
             logger.warning("[PC-Slicer] --slice %s fehlgeschlagen; wiederhole mit allen Platten (--slice 0).", plate)
             cmd = build_command(
-                program, copy, tmp_path.resolve(), name, use_printer_json, use_process_json, use_filaments or [], arrange, orient, 0
+                program,
+                copy,
+                tmp_path.resolve(),
+                name,
+                use_printer_json,
+                use_process_json,
+                use_filaments or [],
+                arrange,
+                orient,
+                0,
             )
             try:
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, cwd=slicer_dir, env=slicer_env, check=False)
+                result = subprocess.run(
+                    cmd, capture_output=True, text=True, timeout=timeout, cwd=slicer_dir, env=slicer_env, check=False
+                )
             except (OSError, subprocess.SubprocessError) as exc:
                 raise SlicerCliError(f"Bambu Studio konnte nicht gestartet werden: {exc}") from exc
 
-        output = tmp_path / name
+        output = tmp_path / name  # SEC-PATH-OK: name ist oben auf einen reinen Dateinamen reduziert
         has_gcodes = bool(list(tmp_path.glob("plate_*.gcode")))
         if not output.is_file():
             if has_gcodes:
@@ -514,7 +572,9 @@ def slice_file(
                         "sudo apt update && sudo apt install -y libwebkit2gtk-4.1-0 libjavascriptcoregtk-4.1-0 xvfb\n\n"
                         "(Oder: sudo bash werkzeuge/pi_slicer_installieren.sh)"
                     )
-                raise SlicerCliError(f"Slicen fehlgeschlagen (Returncode {result.returncode}): {stderr[-500:] or 'keine Ausgabe'}")
+                raise SlicerCliError(
+                    f"Slicen fehlgeschlagen (Returncode {result.returncode}): {stderr[-500:] or 'keine Ausgabe'}"
+                )
         else:
             seconds, grams = _read_slice_info(output)
 

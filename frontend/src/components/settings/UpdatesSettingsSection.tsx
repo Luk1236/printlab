@@ -1,4 +1,3 @@
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { UseMutationResult } from '@tanstack/react-query';
 import {
@@ -7,11 +6,8 @@ import {
   Loader2,
   ExternalLink,
   Download,
-  AlertTriangle,
-  CheckCircle2,
-  HelpCircle,
 } from 'lucide-react';
-import { api, type Settings, type VersionInfo, type UpdateCheckResponse, type UpdateStatusResponse } from '../../api/client';
+import { api, type AppSettings, type VersionInfo, type UpdateCheckResult, type UpdateStatus } from '../../api/client';
 import { Card, CardHeader, CardContent } from '../Card';
 import { Button } from '../Button';
 import { CopyButton } from '../CopyButton';
@@ -21,13 +17,13 @@ import { helpLink, HELP_ANCHORS } from '../../utils/docsLinks';
 import { useAuth } from '../../contexts/AuthContext';
 
 export interface UpdatesSettingsSectionProps {
-  localSettings: Settings;
-  updateSetting: (key: keyof Settings, value: unknown) => void;
+  localSettings: AppSettings;
+  updateSetting: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void;
   versionInfo?: VersionInfo;
-  updateCheck?: UpdateCheckResponse;
+  updateCheck?: UpdateCheckResult;
   refetchUpdateCheck: () => void;
   isCheckingUpdate: boolean;
-  updateStatus?: UpdateStatusResponse;
+  updateStatus?: UpdateStatus;
   refetchUpdateStatus: () => void;
   applyUpdateMutation: UseMutationResult<unknown, Error, void, unknown>;
   setShowReleaseNotes: (show: boolean) => void;

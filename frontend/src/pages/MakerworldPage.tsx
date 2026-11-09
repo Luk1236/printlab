@@ -3,7 +3,7 @@ import DOMPurify from 'dompurify';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { AlertCircle, ArrowRight, Check, ChevronLeft, ChevronRight, Download, ExternalLink, FolderOpen, Globe, Images, Loader2, Search, Trash2, Upload, X } from 'lucide-react';
+import { AlertCircle, ArrowRight, Check, ChevronLeft, ChevronRight, Download, ExternalLink, FolderOpen, Globe, Images, Info, Loader2, Search, Trash2, Upload, X } from 'lucide-react';
 
 import {
   api,

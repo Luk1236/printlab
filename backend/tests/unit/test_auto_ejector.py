@@ -89,7 +89,9 @@ async def test_auto_ejector_api_endpoints(async_client: AsyncClient) -> None:
     assert put_resp.json()["max_bed_temp_c"] == 33.0
 
     # 3. Status GET
-    st_resp = await async_client.get("/api/v1/automation/ejector/status/PRINTER-1?current_bed_temp_c=25.0&filament_type=PLA")
+    st_resp = await async_client.get(
+        "/api/v1/automation/ejector/status/PRINTER-1?current_bed_temp_c=25.0&filament_type=PLA"
+    )
     assert st_resp.status_code == 200
     assert st_resp.json()["can_eject"] is True
 

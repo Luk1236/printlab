@@ -32,7 +32,9 @@ class CalibrateScaleRequest(BaseModel):
 
 
 class ReadSpoolRequest(BaseModel):
-    spool_type: str = Field("bambu_reusable", description="Spulentyp (bambu_reusable, polymaker, prusament, cardboard...)")
+    spool_type: str = Field(
+        "bambu_reusable", description="Spulentyp (bambu_reusable, polymaker, prusament, cardboard...)"
+    )
     custom_tare_grams: float | None = Field(None, ge=0.0, description="Individuelles Leergewicht des Spulenkörpers")
 
 
@@ -43,7 +45,9 @@ class VerifyScalePreflightRequest(BaseModel):
 
 
 class ScannerInputRequest(BaseModel):
-    raw_barcode: str = Field(..., min_length=1, max_length=256, description="Gescannter Barcode, QR-Code oder RFID-Text")
+    raw_barcode: str = Field(
+        ..., min_length=1, max_length=256, description="Gescannter Barcode, QR-Code oder RFID-Text"
+    )
 
 
 class AssignSpoolRequest(BaseModel):
@@ -53,6 +57,7 @@ class AssignSpoolRequest(BaseModel):
 
 
 # --- HX711 Spool Scale Endpoints ---
+
 
 @router.get("/scale/status", response_model=dict[str, Any])
 async def get_hx711_scale_status(
@@ -108,6 +113,7 @@ async def verify_scale_filament_preflight(
 
 
 # --- Handheld Scanner Endpoints ---
+
 
 @router.post("/scanner/scan", response_model=dict[str, Any])
 async def receive_scanner_input(

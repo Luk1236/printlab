@@ -102,7 +102,7 @@ async def resolve_preset_ref(
 
             res = sanitize_process_json_str(res) or res
         except Exception:
-            pass
+            logger.debug("Fehler ignoriert", exc_info=True)
     return res
 
 

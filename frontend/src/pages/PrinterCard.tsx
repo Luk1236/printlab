@@ -9,7 +9,6 @@
 import { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback } from 'react';
 import { mapModelCode } from '../utils/printerModel';
 import { formatPrintName } from '../utils/printName';
-import { isBedSlinger } from '../utils/bedSlinger';
 import { computePopoverPosition, type PopoverPosition } from '../utils/popoverPosition';
 import { openCameraWindow, type CameraViewMode } from '../utils/camera';
 import { resolveDryingPresetKey, type DryingPreset } from '../utils/dryingPresets';
@@ -19,7 +18,7 @@ import { BED_TEMP_DEFAULTS, CHAMBER_TEMP_DEFAULTS, FAN_SPEED_DEFAULTS, NOZZLE_TE
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
-import { Link, Unlink, Signal, Clock, MoreVertical, Trash2, RefreshCw, RotateCw, HardDrive, AlertTriangle, Terminal, Zap, Wrench, ChevronDown, EyeOff, Pencil, ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Layers, Video, Loader2, Square, Pause, Play, X, Fan, Wind, AirVent, Download, ScanSearch, CheckCircle, CheckSquare, User, Home, Printer as PrinterIcon, Info, Cable, Flame, Hourglass, Snowflake, Gauge, DoorOpen, DoorClosed, Move, LogIn, LogOut, Stethoscope, ScanEye, LineChart as LineChartIcon, ExternalLink, PictureInPicture2, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Link, Unlink, Signal, Clock, MoreVertical, Trash2, RefreshCw, RotateCw, HardDrive, AlertTriangle, Terminal, Zap, Wrench, ChevronDown, EyeOff, Pencil, Layers, Video, Loader2, Square, Pause, Play, X, Fan, Wind, AirVent, Download, ScanSearch, CheckCircle, CheckSquare, User, Home, Printer as PrinterIcon, Info, Cable, Flame, Hourglass, Snowflake, Gauge, DoorOpen, DoorClosed, LogIn, LogOut, Stethoscope, ScanEye, LineChart as LineChartIcon, ExternalLink, PictureInPicture2, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { ConfirmOutcomeDialog } from '../components/ConfirmOutcomeDialog';
 import { SliceModal, type SliceSource } from '../components/SliceModal';
 import { useNavigate } from 'react-router-dom';
@@ -29,7 +28,6 @@ import { formatDateOnly, formatETA, formatDuration } from '../utils/date';
 import type { Printer, PrinterStatus, AMSUnit, LinkedSpoolInfo, SpoolAssignment, InventorySpool, SmartPlug } from '../api/client';
 import { Card, CardContent } from '../components/Card';
 import { Button } from '../components/Button';
-import { ConfirmModal } from '../components/ConfirmModal';
 import { FileManagerModal } from '../components/FileManagerModal';
 import { ContextMenu, type ContextMenuItem } from '../components/ContextMenu';
 import { MQTTDebugModal } from '../components/MQTTDebugModal';

@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import {
@@ -23,7 +23,7 @@ import {
   Check,
 } from 'lucide-react';
 import { api } from '../api/client';
-import type { LocalPreset, LocalPresetsResponse, LocalPresetDetail } from '../api/client';
+import type { LocalPreset, LocalPresetsResponse } from '../api/client';
 import { Card, CardContent } from './Card';
 import { Button } from './Button';
 import { useToast } from '../contexts/ToastContext';
@@ -507,8 +507,8 @@ function EditPresetModal({
     enabled: isOpen && presetId !== null,
   });
 
-  // Details in Formularstate übernehmen
-  useMemo(() => {
+  // Details in Formularstate übernehmen (Effekt: setState darf nicht beim Rendern laufen)
+  useEffect(() => {
     if (detail) {
       setProfileName(detail.name);
       setSetting(detail.setting || {});

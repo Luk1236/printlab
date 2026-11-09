@@ -10,8 +10,6 @@ import logging
 from datetime import datetime, timezone
 from typing import Any
 
-from backend.app.services.printer_manager import printer_manager
-
 logger = logging.getLogger(__name__)
 
 # Standard-Sensitivität (0.85 = ab 85% Übereinstimmung mit dem leeren Bett gilt die Platte als frei)
@@ -65,7 +63,9 @@ def acknowledge_bed_clear(
         "is_active": True,
     }
     _overrides[printer_id] = record
-    logger.info("[PlateClearance] Platte für Drucker '%s' manuell durch '%s' freigegeben: %s", printer_id, operator_name, notes)
+    logger.info(
+        "[PlateClearance] Platte für Drucker '%s' manuell durch '%s' freigegeben: %s", printer_id, operator_name, notes
+    )
     return {
         "success": True,
         "printer_id": printer_id,

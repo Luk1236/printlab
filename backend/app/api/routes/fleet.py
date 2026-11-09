@@ -48,13 +48,13 @@ from backend.app.services.auto_nesting import (
     split_batch_across_fleet,
     suggest_optimal_orientation,
 )
-from backend.app.services.purge_optimizer import optimize_purge_volume
 from backend.app.services.fleet_load_balancer import (
     MIN_DISPATCH_SCORE,
     calculate_printer_fitness,
     dispatch_job_to_fleet,
 )
 from backend.app.services.printer_manager import printer_manager
+from backend.app.services.purge_optimizer import optimize_purge_volume
 from backend.app.services.wear_tracker import get_printer_wear
 
 logger = logging.getLogger(__name__)
@@ -624,4 +624,3 @@ async def process_gcode_m486(
 ) -> dict[str, Any]:
     """Analysiert G-Code und injiziert fehlende M486-Objektmarker für Einzelobjekt-Ausschluss."""
     return inject_m486_object_markers(req.gcode, req.object_names)
-

@@ -157,4 +157,3 @@ class GcodeM486Request(BaseModel):
 
     gcode: str = Field(..., min_length=1, max_length=5_000_000)
     object_names: list[str] | None = None
-

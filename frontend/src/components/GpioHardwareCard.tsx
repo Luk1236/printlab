@@ -17,7 +17,7 @@ export function GpioHardwareCard({ canControl }: GpioHardwareCardProps) {
   const { showToast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: gpioStatus, isLoading } = useQuery({
+  const { data: gpioStatus } = useQuery({
     queryKey: ['gpioStatus'],
     queryFn: api.getGpioStatus,
     refetchInterval: 3000,

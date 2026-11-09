@@ -34,7 +34,16 @@ def test_repo_hygiene_check_is_ok():
     assert title == "Repo-Hygiene"
 
 
-def test_durchstich_runs_stage_3_and_4_workflows_cleanly():
+def test_durchstich_runs_stage_3_and_4_workflows_cleanly(monkeypatch):
+    """Der Durchstich slict im Betrieb mit dem echten OrcaSlicer. Im Test wird der nicht aus dem Netz geladen und
+    nicht gestartet: Ein Unit-Test darf weder GitHub brauchen noch an fehlenden Systembibliotheken (libOpenGL im
+    Docker-Image) scheitern. Die Slicer-Aufrufe selbst sind in test_builtin_slicer.py abgedeckt."""
+    from backend.app.services import builtin_slicer
+    from backend.app.services.slicer_cli import SliceOutput
+
+    monkeypatch.setattr(
+        builtin_slicer, "slice_model_builtin", lambda *args, **kwargs: SliceOutput(b"PK stub", 600, 1.5)
+    )
     steps = abnahme.run_durchstich()
     assert len(steps) == 5
     for step in steps:

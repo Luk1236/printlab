@@ -80,7 +80,7 @@ export const portalEndpoints = {
   /**
    * Gespeichertes Sofortangebot abrufen.
    */
-  getQuote: (quoteId: string) =>
+  getPortalQuote: (quoteId: string) =>
     request<InstantQuote>(`/portal/quote/${quoteId}`),
 
   /**
@@ -152,9 +152,9 @@ export const portalEndpoints = {
         total_parts_eur: number;
         savings_cents: number;
         savings_eur: number;
-        tiers_overview: Array<any>;
+        tiers_overview: Array<Record<string, unknown>>;
       };
-      post_processing: Array<any>;
+      post_processing: Array<Record<string, unknown>>;
       options_total_cents: number;
       options_total_eur: number;
       is_express: boolean;

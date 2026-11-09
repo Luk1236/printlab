@@ -1,6 +1,7 @@
 """Unit tests for automated queue plate empty check."""
 
 from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
 
 from backend.app.services.queue_plate_check import check_queue_plate_clear
@@ -15,13 +16,13 @@ class FakePrinter:
         self.model = kwargs.get("model", "X1C")
         self.plate_detection_enabled = kwargs.get("plate_detection_enabled", True)
         self.external_camera_enabled = kwargs.get("external_camera_enabled", False)
-        self.external_camera_url = kwargs.get("external_camera_url", None)
-        self.external_camera_type = kwargs.get("external_camera_type", None)
-        self.external_camera_snapshot_url = kwargs.get("external_camera_snapshot_url", None)
-        self.plate_detection_roi_x = kwargs.get("plate_detection_roi_x", None)
-        self.plate_detection_roi_y = kwargs.get("plate_detection_roi_y", None)
-        self.plate_detection_roi_w = kwargs.get("plate_detection_roi_w", None)
-        self.plate_detection_roi_h = kwargs.get("plate_detection_roi_h", None)
+        self.external_camera_url = kwargs.get("external_camera_url")
+        self.external_camera_type = kwargs.get("external_camera_type")
+        self.external_camera_snapshot_url = kwargs.get("external_camera_snapshot_url")
+        self.plate_detection_roi_x = kwargs.get("plate_detection_roi_x")
+        self.plate_detection_roi_y = kwargs.get("plate_detection_roi_y")
+        self.plate_detection_roi_w = kwargs.get("plate_detection_roi_w")
+        self.plate_detection_roi_h = kwargs.get("plate_detection_roi_h")
 
 
 class FakeQueueItem:
@@ -83,10 +84,13 @@ async def test_plate_check_blocked_when_object_detected():
     db = MagicMock()
 
     res = FakeDetectionResult(is_empty=False, difference_percent=24.5, message="Object found")
-    with patch("backend.app.services.plate_detection.check_plate_empty", AsyncMock(return_value=res)), \
-         patch("backend.app.services.printer_manager.printer_manager.set_awaiting_plate_clear") as mock_set_awaiting, \
-         patch("backend.app.services.notification_service.notification_service.on_plate_not_empty", AsyncMock()) as mock_notif:
-
+    with (
+        patch("backend.app.services.plate_detection.check_plate_empty", AsyncMock(return_value=res)),
+        patch("backend.app.services.printer_manager.printer_manager.set_awaiting_plate_clear") as mock_set_awaiting,
+        patch(
+            "backend.app.services.notification_service.notification_service.on_plate_not_empty", AsyncMock()
+        ) as mock_notif,
+    ):
         is_clear, reason = await check_queue_plate_clear(printer, item, db)
         assert is_clear is False
         assert "Objekt auf Druckbett erkannt" in reason
@@ -100,7 +104,9 @@ async def test_plate_check_exception_failsafe():
     item = FakeQueueItem()
     db = MagicMock()
 
-    with patch("backend.app.services.plate_detection.check_plate_empty", AsyncMock(side_effect=RuntimeError("Camera timeout"))):
+    with patch(
+        "backend.app.services.plate_detection.check_plate_empty", AsyncMock(side_effect=RuntimeError("Camera timeout"))
+    ):
         is_clear, reason = await check_queue_plate_clear(printer, item, db)
         assert is_clear is True
         assert reason is None

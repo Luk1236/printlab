@@ -26,7 +26,7 @@ export interface PrinterMovementPopoverProps {
   bedJogStep: number;
   setBedJogStep: (step: number) => void;
   showBedJogMenu: number | string | null;
-  setShowBedJogMenu: (id: any) => void;
+  setShowBedJogMenu: (id: number | null) => void;
   homeAxesMutation: { mutate: (axis: 'all' | 'z') => void; isPending: boolean };
   bedJogMutation: { mutate: (args: { distance: number }) => void; isPending: boolean };
   xyJogMutation: { mutate: (args: { x: number; y: number }) => void; isPending: boolean };

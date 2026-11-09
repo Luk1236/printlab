@@ -3,14 +3,15 @@
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock
+
 import httpx
 import pytest
 
 from backend.app.services.model_providers.base import ProviderResourceRef
 from backend.app.services.model_providers.direct.errors import (
+    DirectUrlError,
     DirectUrlNotFoundError,
     DirectUrlUnavailableError,
-    DirectUrlError,
 )
 from backend.app.services.model_providers.direct.provider import DirectUrlProvider
 from backend.app.services.model_providers.direct.service import DirectUrlService

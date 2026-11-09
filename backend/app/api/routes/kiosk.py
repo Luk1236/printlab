@@ -64,18 +64,22 @@ async def get_kiosk_system_status(
         elif state in ("ERROR", "OFFLINE", "FAILED"):
             attention_needed += 1
 
-        printer_items.append({
-            "id": p.id,
-            "name": p.name,
-            "model": p.model,
-            "state": state,
-            "progress_percent": int(getattr(client_state, "mc_percent", 0) or getattr(p, "progress", 0) or 0),
-            "nozzle_temp": float(getattr(client_state, "nozzle_temper", 0.0) or getattr(p, "nozzle_temp", 0.0) or 0.0),
-            "bed_temp": float(getattr(client_state, "bed_temper", 0.0) or getattr(p, "bed_temp", 0.0) or 0.0),
-            "current_layer": int(getattr(client_state, "layer_num", 0) or getattr(p, "current_layer", 0) or 0),
-            "total_layers": int(getattr(client_state, "total_layer_num", 0) or getattr(p, "total_layers", 0) or 0),
-            "current_job": getattr(client_state, "subtask_name", "") or getattr(p, "current_print_file", "") or "",
-        })
+        printer_items.append(
+            {
+                "id": p.id,
+                "name": p.name,
+                "model": p.model,
+                "state": state,
+                "progress_percent": int(getattr(client_state, "mc_percent", 0) or getattr(p, "progress", 0) or 0),
+                "nozzle_temp": float(
+                    getattr(client_state, "nozzle_temper", 0.0) or getattr(p, "nozzle_temp", 0.0) or 0.0
+                ),
+                "bed_temp": float(getattr(client_state, "bed_temper", 0.0) or getattr(p, "bed_temp", 0.0) or 0.0),
+                "current_layer": int(getattr(client_state, "layer_num", 0) or getattr(p, "current_layer", 0) or 0),
+                "total_layers": int(getattr(client_state, "total_layer_num", 0) or getattr(p, "total_layers", 0) or 0),
+                "current_job": getattr(client_state, "subtask_name", "") or getattr(p, "current_print_file", "") or "",
+            }
+        )
 
     sd_stats = sd_wear_guard.get_stats()
 

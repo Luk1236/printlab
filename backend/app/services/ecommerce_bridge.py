@@ -11,16 +11,19 @@ import base64
 import hashlib
 import hmac
 import logging
+import os
 from datetime import datetime, timezone
 from typing import Any
 
 logger = logging.getLogger(__name__)
 
+# Es gibt bewusst keine Standard-Geheimnisse: Ein im Quelltext stehender Schlüssel ist öffentlich bekannt und
+# erlaubt jedem, Bestellungen einzuspeisen. Ohne gesetztes Geheimnis lehnen die Empfänger alles ab.
 _config: dict[str, Any] = {
     "enabled": True,
-    "shopify_webhook_secret": "shpss_test_secret_key_12345",
-    "woocommerce_webhook_secret": "wc_secret_hash_key_67890",
-    "sap_erp_api_token": "sap_bearer_printlab_token_9999",
+    "shopify_webhook_secret": os.environ.get("PRINTLAB_SHOPIFY_WEBHOOK_SECRET", ""),
+    "woocommerce_webhook_secret": os.environ.get("PRINTLAB_WOOCOMMERCE_WEBHOOK_SECRET", ""),
+    "sap_erp_api_token": os.environ.get("PRINTLAB_SAP_ERP_API_TOKEN", ""),
     "auto_queue_incoming_orders": True,
     "default_material": "PLA",
     "default_infill_percent": 15,
@@ -30,15 +33,21 @@ _config: dict[str, Any] = {
 def get_bridge_config() -> dict[str, Any]:
     """Liefert die E-Commerce- und Webhook-Einstellungen (Secrets maskiert)."""
     cfg = dict(_config)
-    cfg["shopify_webhook_secret"] = "***" + cfg["shopify_webhook_secret"][-4:]
-    cfg["woocommerce_webhook_secret"] = "***" + cfg["woocommerce_webhook_secret"][-4:]
-    cfg["sap_erp_api_token"] = "***" + cfg["sap_erp_api_token"][-4:]
+    for key in ("shopify_webhook_secret", "woocommerce_webhook_secret", "sap_erp_api_token"):
+        cfg[key + "_set"] = bool(cfg[key])
+        cfg[key] = "***" + cfg[key][-4:] if len(cfg[key]) >= 12 else ("***" if cfg[key] else "")
     return cfg
 
 
 def update_bridge_config(new_config: dict[str, Any]) -> dict[str, Any]:
     """Aktualisiert Webhook-Tokens und Verhaltensparameter."""
-    for k in ("shopify_webhook_secret", "woocommerce_webhook_secret", "sap_erp_api_token", "auto_queue_incoming_orders", "default_material"):
+    for k in (
+        "shopify_webhook_secret",
+        "woocommerce_webhook_secret",
+        "sap_erp_api_token",
+        "auto_queue_incoming_orders",
+        "default_material",
+    ):
         if k in new_config:
             _config[k] = new_config[k]
     return get_bridge_config()
@@ -47,6 +56,8 @@ def update_bridge_config(new_config: dict[str, Any]) -> dict[str, Any]:
 def verify_shopify_signature(body_bytes: bytes, hmac_header: str, secret: str | None = None) -> bool:
     """Verifiziert die HMAC-SHA256 Signatur eines Shopify-Webhooks."""
     sec = secret or _config["shopify_webhook_secret"]
+    if not sec:
+        return False
     digest = hmac.new(sec.encode("utf-8"), body_bytes, hashlib.sha256).digest()
     expected_hmac = base64.b64encode(digest).decode("utf-8")
     return hmac.compare_digest(expected_hmac, hmac_header.strip())
@@ -55,6 +66,8 @@ def verify_shopify_signature(body_bytes: bytes, hmac_header: str, secret: str | 
 def verify_woocommerce_signature(body_bytes: bytes, signature_header: str, secret: str | None = None) -> bool:
     """Verifiziert die Base64 HMAC-SHA256 Signatur von WooCommerce."""
     sec = secret or _config["woocommerce_webhook_secret"]
+    if not sec:
+        return False
     digest = hmac.new(sec.encode("utf-8"), body_bytes, hashlib.sha256).digest()
     expected_sig = base64.b64encode(digest).decode("utf-8")
     return hmac.compare_digest(expected_sig, signature_header.strip())
@@ -63,6 +76,8 @@ def verify_woocommerce_signature(body_bytes: bytes, signature_header: str, secre
 def verify_sap_erp_token(provided_token: str) -> bool:
     """Prüft das statische Bearer-Token von SAP ERP Anbindungen."""
     expected = _config["sap_erp_api_token"]
+    if not expected:
+        return False
     clean_token = provided_token.replace("Bearer ", "").strip()
     return hmac.compare_digest(expected, clean_token)
 
@@ -80,15 +95,17 @@ def process_shopify_order(payload: dict[str, Any]) -> dict[str, Any]:
     for li in payload.get("line_items", []):
         qty = max(1, int(li.get("quantity", 1)))
         total_parts += qty
-        items.append({
-            "line_item_id": str(li.get("id")),
-            "sku": li.get("sku", "CUSTOM-3D-PART"),
-            "title": li.get("title", "3D-Druck Bauteil"),
-            "quantity": qty,
-            "unit_price_eur": float(li.get("price", 0.0)),
-            "filament_material": _config["default_material"],
-            "requires_slice": True,
-        })
+        items.append(
+            {
+                "line_item_id": str(li.get("id")),
+                "sku": li.get("sku", "CUSTOM-3D-PART"),
+                "title": li.get("title", "3D-Druck Bauteil"),
+                "quantity": qty,
+                "unit_price_eur": float(li.get("price", 0.0)),
+                "filament_material": _config["default_material"],
+                "requires_slice": True,
+            }
+        )
 
     return {
         "source": "shopify",
@@ -120,15 +137,17 @@ def process_woocommerce_order(payload: dict[str, Any]) -> dict[str, Any]:
     for li in payload.get("line_items", []):
         qty = max(1, int(li.get("quantity", 1)))
         total_parts += qty
-        items.append({
-            "line_item_id": str(li.get("id")),
-            "sku": li.get("sku", "WC-PART"),
-            "title": li.get("name", "WooCommerce Bauteil"),
-            "quantity": qty,
-            "unit_price_eur": float(li.get("price", 0.0)),
-            "filament_material": _config["default_material"],
-            "requires_slice": True,
-        })
+        items.append(
+            {
+                "line_item_id": str(li.get("id")),
+                "sku": li.get("sku", "WC-PART"),
+                "title": li.get("name", "WooCommerce Bauteil"),
+                "quantity": qty,
+                "unit_price_eur": float(li.get("price", 0.0)),
+                "filament_material": _config["default_material"],
+                "requires_slice": True,
+            }
+        )
 
     return {
         "source": "woocommerce",
@@ -159,13 +178,15 @@ def process_sap_erp_order(payload: dict[str, Any]) -> dict[str, Any]:
     for mat in payload.get("materials", []):
         qty = max(1, int(mat.get("quantity", 1)))
         total_parts += qty
-        items.append({
-            "material_number": mat.get("material_id", "MAT-001"),
-            "description": mat.get("description", "Industrie-Bauteil"),
-            "quantity": qty,
-            "filament_material": mat.get("filament_type", "PA-CF"),
-            "priority": mat.get("priority", "HIGH"),
-        })
+        items.append(
+            {
+                "material_number": mat.get("material_id", "MAT-001"),
+                "description": mat.get("description", "Industrie-Bauteil"),
+                "quantity": qty,
+                "filament_material": mat.get("filament_type", "PA-CF"),
+                "priority": mat.get("priority", "HIGH"),
+            }
+        )
 
     return {
         "source": "sap_erp",
@@ -194,7 +215,8 @@ def format_fulfillment_payload(
             "status": "SUCCESS",
             "carrier": carrier,
             "tracking_number": tracking_number,
-            "tracking_url": tracking_url or f"https://www.dhl.de/de/privatkunden/pakete-empfangen/verfolgen.html?piececode={tracking_number}",
+            "tracking_url": tracking_url
+            or f"https://www.dhl.de/de/privatkunden/pakete-empfangen/verfolgen.html?piececode={tracking_number}",
             "fulfilled_at": datetime.now(timezone.utc).isoformat(),
             "notify_customer": True,
         }

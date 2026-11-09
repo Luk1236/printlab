@@ -235,40 +235,20 @@ class Mechanik:
         self._pwm.ChangeDutyCycle(0)
         print("STOP:OK")
 
-    def _step_motor(self, dir_pin: str, step_pin: str, steps: int = 400, forward: bool = True) -> None:
-        p = self.pins
-        self.gpio.output(p[dir_pin], self.gpio.HIGH if forward else self.gpio.LOW)
-        for _ in range(steps):
-            self.gpio.output(p[step_pin], self.gpio.HIGH)
-            self.sleep(0.001)
-            self.gpio.output(p[step_pin], self.gpio.LOW)
-            self.sleep(0.001)
-
     def swap(self) -> bool:
-        """Fuehrt den autonomen Plattenwechsel durch: Tuer auf -> Wechsel -> Tuer zu."""
-        print("SWAP:STARTING")
-        if not self.door_open():
-            print("SWAP:ERROR_DOOR_OPEN", file=sys.stderr)
-            return False
+        """Plattenwechsel: bewusst verweigert, bis die Mechanik vermessen ist.
 
-        self.gpio.output(self.pins["motors_enable"], self.gpio.LOW)
-        self.sleep(0.2)
-        self._step_motor("motor_x_dir", "motor_x_step", steps=600, forward=True)
-        self.sleep(0.2)
-        self._step_motor("motor_x_dir", "motor_x_step", steps=600, forward=False)
-        self.sleep(0.2)
-        self._step_motor("motor_z_dir", "motor_z_step", steps=300, forward=True)
-        self.sleep(0.2)
-        self._step_motor("motor_x_dir", "motor_x_step", steps=600, forward=True)
-        self.sleep(0.2)
-        self.gpio.output(self.pins["motors_enable"], self.gpio.HIGH)
-
-        if not self.door_close():
-            print("SWAP:ERROR_DOOR_CLOSE", file=sys.stderr)
-            return False
-
-        print("SWAP:OK")
-        return True
+        Die Bewegungsfolge (Wege, Schrittzahlen, Reihenfolge) hängt von der fertigen Mechanik ab. Früher
+        standen hier erfundene Schrittzahlen; die würden Motoren blind gegen Anschläge fahren lassen.
+        Der Ablauf samt Sperren ist in ``backend/app/services/plate_changer.py`` beschrieben und läuft
+        bisher nur als Simulation.
+        """
+        print(
+            "FEHLER: Plattenwechsel ist für die GPIO-Variante noch nicht umgesetzt. Die Bewegungsfolge hängt von der "
+            "fertigen Mechanik ab und muss erst vermessen werden; bis dahin bewegt das Skript keine Motoren blind.",
+            file=sys.stderr,
+        )
+        return False
 
     def wash(self) -> bool:
         """Aktiviert die Plattenwaschstation (IPA-Pumpe, Buerstenwalzen, Trocknungsgeblaese)."""

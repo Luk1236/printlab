@@ -54,8 +54,13 @@ unfixable = []
 # (ausgelagerte Dienstmodule) ist absichtlich "ungenutzt" — dort bleibt der
 # Namensraum von main.py der Test-Patch- und Registrierungspunkt (# wie immer).
 "backend/app/main.py" = ["E402", "F401"]
-# MQTT client has some unused variables for debugging
-"backend/app/services/bambu_mqtt.py" = ["F841"]
+# Aus dem Umbau in Hilfsmodule bleiben die alten Namen an der Fassade stehen: Tests und andere Module
+# importieren und patchen sie dort (z. B. library._run_slicer_with_fallback). Deshalb kein F401.
+"backend/app/api/routes/library.py" = ["F401", "E402"]
+"backend/app/api/routes/library_helpers.py" = ["F401"]
+"backend/app/api/routes/library_slicing.py" = ["F401", "F811"]
+# MQTT client has some unused variables for debugging; die Rack-Namen aus bambu_mapping bleiben hier sichtbar
+"backend/app/services/bambu_mqtt.py" = ["F841", "F401", "E402"]
 # compat module intentionally uses version checks for Python 3.10 support
 "backend/app/core/compat.py" = ["UP036"]
 

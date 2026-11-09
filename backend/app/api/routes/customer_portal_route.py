@@ -47,6 +47,7 @@ RATE_WINDOW_SECONDS = 60.0
 RATE_MAX_QUOTE_REQUESTS = 20
 RATE_MAX_CHECKOUT_REQUESTS = 6
 RATE_MAX_ANALYZE_REQUESTS = 30
+RATE_MAX_LOOKUP_REQUESTS = 30
 _hits: dict[str, dict[str, list[float]]] = {}
 
 
@@ -211,9 +212,16 @@ async def create_quote_from_model(
     return quote
 
 
+def _limit_lookup(request: Request) -> None:
+    """Abrufe per Angebots-ID begrenzen: Die ID ist der Zugang zu Name und Adresse, Raten wird gebremst."""
+    if not _allow_client(request, "lookup", RATE_MAX_LOOKUP_REQUESTS):
+        raise HTTPException(429, "Zu viele Abrufe. Bitte einen Moment warten.")
+
+
 @router.get("/quote/{quote_id}")
-async def get_stored_quote(quote_id: str, db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
+async def get_stored_quote(quote_id: str, request: Request, db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
     """Liefert die Details einer bestehenden Kalkulation."""
+    _limit_lookup(request)
     quote = await get_quote(db, quote_id)
     if not quote:
         raise HTTPException(404, f"Angebot '{quote_id}' nicht gefunden oder abgelaufen.")
@@ -223,10 +231,12 @@ async def get_stored_quote(quote_id: str, db: AsyncSession = Depends(get_db)) ->
 @router.get("/delivery-note/{quote_id}/pdf")
 async def download_delivery_note_pdf(
     quote_id: str,
+    request: Request,
     lang: str = "de",
     db: AsyncSession = Depends(get_db),
 ) -> Response:
     """Erzeugt ein druckfähiges Lieferschein-PDF für den Druckauftrag."""
+    _limit_lookup(request)
     quote = await get_quote(db, quote_id)
     if not quote:
         raise HTTPException(404, f"Angebot '{quote_id}' nicht gefunden.")
@@ -242,10 +252,12 @@ async def download_delivery_note_pdf(
 @router.get("/shipping-label/{quote_id}/pdf")
 async def download_shipping_label_pdf(
     quote_id: str,
+    request: Request,
     format: str = "100x150",
     db: AsyncSession = Depends(get_db),
 ) -> Response:
     """Erzeugt ein Thermo-Versand- oder Paket-Etikett (PDF) mit Barcode/QR-Code."""
+    _limit_lookup(request)
     quote = await get_quote(db, quote_id)
     if not quote:
         raise HTTPException(404, f"Angebot '{quote_id}' nicht gefunden.")

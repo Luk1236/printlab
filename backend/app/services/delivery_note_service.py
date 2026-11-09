@@ -17,7 +17,6 @@ import qrcode
 from reportlab.lib.colors import HexColor, black, white
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
-from reportlab.lib.utils import simpleSplit
 from reportlab.pdfgen import canvas as rl_canvas
 
 DEFAULT_COMPANY = {
@@ -327,9 +326,9 @@ def generate_thermal_label_pdf(
         address = order_data.get("customer_address") or order_data.get("address") or ""
         pdf.setFont("Helvetica", 10)
         if address:
-            for l in address.splitlines():
-                if l.strip():
-                    pdf.drawString(margin, y, l.strip())
+            for address_line in address.splitlines():
+                if address_line.strip():
+                    pdf.drawString(margin, y, address_line.strip())
                     y -= 4.5 * mm
         else:
             pdf.drawString(margin, y, "Selbstabholung / Standard-Lieferung")

@@ -23,7 +23,9 @@ from backend.app.services.quality_certificate import (
 def test_quality_score_calculation_and_grading():
     """Prüft ISO-9001-konforme Qualitätsindex- und Güteklassen-Berechnung."""
     # Perfekter Druck
-    score_perf, grade_perf = calculate_quality_score(first_layer_score=99.0, temperature_deviation_c=0.5, anomaly_count=0)
+    score_perf, grade_perf = calculate_quality_score(
+        first_layer_score=99.0, temperature_deviation_c=0.5, anomaly_count=0
+    )
     assert score_perf >= 98.0
     assert "Klasse A+" in grade_perf
 
@@ -66,7 +68,9 @@ def test_match_defect_to_object_bounding_box():
     """Prüft Zuordnung von Kamerakoordinaten zu platzierten Bauteilen."""
     objects = [
         PlateObjectBound(object_id=1, name="Gehäuse_Links", min_x_mm=20.0, min_y_mm=20.0, max_x_mm=80.0, max_y_mm=80.0),
-        PlateObjectBound(object_id=2, name="Gehäuse_Rechts", min_x_mm=140.0, min_y_mm=20.0, max_x_mm=200.0, max_y_mm=80.0),
+        PlateObjectBound(
+            object_id=2, name="Gehäuse_Rechts", min_x_mm=140.0, min_y_mm=20.0, max_x_mm=200.0, max_y_mm=80.0
+        ),
         PlateObjectBound(object_id=3, name="Deckel", min_x_mm=80.0, min_y_mm=120.0, max_x_mm=160.0, max_y_mm=200.0),
     ]
 
@@ -156,7 +160,16 @@ async def test_quality_api_routes(async_client: AsyncClient, db_session):
             json={
                 "defect_x_mm": 50.0,
                 "defect_y_mm": 50.0,
-                "objects": [{"object_id": 1, "name": "Teil_A", "min_x_mm": 20.0, "min_y_mm": 20.0, "max_x_mm": 80.0, "max_y_mm": 80.0}],
+                "objects": [
+                    {
+                        "object_id": 1,
+                        "name": "Teil_A",
+                        "min_x_mm": 20.0,
+                        "min_y_mm": 20.0,
+                        "max_x_mm": 80.0,
+                        "max_y_mm": 80.0,
+                    }
+                ],
                 "reason": "Bettablösung",
             },
         )

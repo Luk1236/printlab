@@ -8268,7 +8268,7 @@ export default {
       makerworldDesc: 'Direkte Auflösung von Bambu Lab 3MFs, Platten, Druckern und AMS-Farbzuweisungen.',
       printablesTitle: 'Printables',
       printablesDesc: 'Prusa Research Modelle (3MF & STL) direkt per Link laden.',
-      thingiverseTitle: 'Thingiverse Community',
+      thingiverseTitle: 'Thingiverse-Community',
       thingiverseDesc: 'UltiMaker Community-Modelle direkt per Link (z. B. thing:763622) abrufen und Platten/Dateien einzeln importieren.',
       thangsTitle: 'Thangs 3D (Metasuche)',
       thangsDesc: 'Durchsucht alle Plattformen gleichzeitig. Tipp: Kopiere auf Thangs einfach den Link der Original-Quelle (MakerWorld, Thingiverse, Printables) hierher.',

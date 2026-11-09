@@ -3025,8 +3025,9 @@ class PrintScheduler(AvailabilityMixin, PreheatMixin, DryingMixin, WatchdogMixin
         logger.info("Starting queue item %s", item.id)
 
         from backend.app.services.gpio_hardware import gpio_service
+
         if gpio_service.is_estop_active():
-            logger.warning('Queue item %s blockiert: NOT-HALT aktiv', item.id)
+            logger.warning("Queue item %s blockiert: NOT-HALT aktiv", item.id)
             return
         # Also covers a reservation left active by a process interruption
         # during an earlier attempt. `_dispatch_one` releases this marker on
@@ -3435,6 +3436,7 @@ class PrintScheduler(AvailabilityMixin, PreheatMixin, DryingMixin, WatchdogMixin
 
         # Automated build plate empty check before preheat & dispatch
         from backend.app.services.queue_plate_check import check_queue_plate_clear
+
         plate_clear, _ = await check_queue_plate_clear(printer, item, db)
         if not plate_clear:
             await self._power_off_if_needed(db, item)
@@ -3766,6 +3768,7 @@ class PrintScheduler(AvailabilityMixin, PreheatMixin, DryingMixin, WatchdogMixin
         # Intelligenter Rollentausch (AMS Spool Auto-Fallback bei vorhandenen Backup-Spulen)
         try:
             from backend.app.services.spool_auto_fallback import auto_enable_ams_filament_backup_if_eligible
+
             auto_enable_ams_filament_backup_if_eligible(item.printer_id)
         except Exception:
             logger.warning("Queue item %s: Auto-Fallback-Prüfung vor Druckstart fehlgeschlagen", item.id, exc_info=True)

@@ -32,6 +32,13 @@ def get_local_node_info() -> dict[str, Any]:
     return dict(LOCAL_NODE)
 
 
+def _public_view(record: dict[str, Any]) -> dict[str, Any]:
+    """Knotendaten ohne das Token: Es darf nicht über die Leseschnittstellen wieder herauskommen."""
+    view = {k: v for k, v in record.items() if k != "auth_token"}
+    view["has_auth_token"] = bool(record.get("auth_token"))
+    return view
+
+
 def register_peer_node(
     node_id: str,
     name: str,
@@ -60,14 +67,14 @@ def register_peer_node(
     logger.info("[FarmMesh] Neuer Standortknoten registriert: %s (%s, %s)", clean_id, name, location)
     return {
         "success": True,
-        "node": record,
+        "node": _public_view(record),
         "message": f"Standortknoten '{name}' ({clean_id}) erfolgreich in das Farm-Mesh aufgenommen.",
     }
 
 
 def list_peer_nodes() -> list[dict[str, Any]]:
     """Liefert alle aktuell verbundenen Standortknoten."""
-    return list(_mesh_nodes.values())
+    return [_public_view(node) for node in _mesh_nodes.values()]
 
 
 def remove_peer_node(node_id: str) -> bool:
@@ -78,6 +85,12 @@ def remove_peer_node(node_id: str) -> bool:
         logger.info("[FarmMesh] Standortknoten '%s' aus Mesh entfernt.", clean_id)
         return True
     return False
+
+
+def get_node_auth_token(node_id: str) -> str | None:
+    """Das beim Registrieren hinterlegte Token eines Knotens; ``None``, wenn der Knoten unbekannt ist."""
+    node = _mesh_nodes.get(node_id.strip().upper())
+    return None if node is None else str(node.get("auth_token") or "")
 
 
 def record_node_heartbeat(

@@ -28,7 +28,7 @@ def _normalize_hex(color_str: str | None) -> str:
 
 def are_trays_backup_compatible(tray_a: dict[str, Any], tray_b: dict[str, Any], strict_color: bool = False) -> bool:
     """Prüft, ob zwei Trays für automatisches AMS-Refill kompatibel sind.
-    
+
     Bedingungen:
     1. Beide Trays müssen geladen sein (nicht leer/None).
     2. Identischer Materialtyp (z.B. PLA == PLA, PETG == PETG).
@@ -64,7 +64,7 @@ def are_trays_backup_compatible(tray_a: dict[str, Any], tray_b: dict[str, Any], 
 
 def find_ams_backup_pairs(status: Any) -> list[dict[str, Any]]:
     """Findet alle redundanten/kompatiblen Rollenpaare in allen AMS-Einheiten des Druckers.
-    
+
     Rückgabe:
     Liste von Paaren mit AMS-ID, Slot-Nummern (1-basiert), Material, Farbe und Restprozent.
     """
@@ -111,25 +111,28 @@ def find_ams_backup_pairs(status: Any) -> list[dict[str, Any]]:
                         p_tray, b_tray = tray_j, tray_i
                         p_remain, b_remain = remain_j, remain_i
 
-                    pairs.append({
-                        "ams_id": ams_id,
-                        "material": printer_filament_type(p_tray.get("tray_type") or ""),
-                        "color": p_tray.get("tray_color") or "",
-                        "primary_slot": primary_idx + 1,
-                        "primary_tray_id": primary_idx,
-                        "primary_remain_pct": p_remain,
-                        "backup_slot": backup_idx + 1,
-                        "backup_tray_id": backup_idx,
-                        "backup_remain_pct": b_remain,
-                        "same_color_exact": _normalize_hex(p_tray.get("tray_color")) == _normalize_hex(b_tray.get("tray_color")),
-                    })
+                    pairs.append(
+                        {
+                            "ams_id": ams_id,
+                            "material": printer_filament_type(p_tray.get("tray_type") or ""),
+                            "color": p_tray.get("tray_color") or "",
+                            "primary_slot": primary_idx + 1,
+                            "primary_tray_id": primary_idx,
+                            "primary_remain_pct": p_remain,
+                            "backup_slot": backup_idx + 1,
+                            "backup_tray_id": backup_idx,
+                            "backup_remain_pct": b_remain,
+                            "same_color_exact": _normalize_hex(p_tray.get("tray_color"))
+                            == _normalize_hex(b_tray.get("tray_color")),
+                        }
+                    )
 
     return pairs
 
 
 def auto_enable_ams_filament_backup_if_eligible(printer_id: int) -> bool:
     """Aktiviert ams_filament_backup auf dem Drucker, falls kompatible Backup-Paare vorhanden sind.
-    
+
     Wird vor Druckstart oder bei Defizit-Erkennung aufgerufen.
     """
     client = printer_manager.get_client(printer_id)

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -10,7 +10,6 @@ import {
   ShieldCheck,
   LayoutGrid,
   Layers,
-  Sparkles,
 } from 'lucide-react';
 
 import { api } from '../../api/client';

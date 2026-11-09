@@ -97,3 +97,45 @@ async def test_farm_mesh_api_endpoints(async_client: AsyncClient) -> None:
     )
     assert rt_resp.status_code == 200
     assert rt_resp.json()["routed_target"] == "LOCAL"
+
+
+# ---- Herzschlag-Schnittstelle: nur angemeldete Knoten mit ihrem Token ----
+
+
+@pytest.mark.asyncio
+async def test_heartbeat_endpoint_needs_the_node_token(async_client) -> None:
+    register_peer_node("NODE-TOKEN", "Token Farm", "Ort", "http://token:8000", auth_token="geheimes-knoten-token-1")
+    url = "/api/v1/mesh/heartbeat"
+    body = {"node_id": "NODE-TOKEN", "active_printers": 2, "queue_depth": 1, "latency_ms": 20.0}
+
+    assert (await async_client.post(url, json=body)).status_code == 401
+    assert (await async_client.post(url, json=body, headers={"Authorization": "Bearer falsch"})).status_code == 401
+    ok = await async_client.post(url, json=body, headers={"Authorization": "Bearer geheimes-knoten-token-1"})
+    assert ok.status_code == 200
+    remove_peer_node("NODE-TOKEN")
+
+
+@pytest.mark.asyncio
+async def test_heartbeat_endpoint_does_not_create_nodes(async_client) -> None:
+    """Früher legte der erste Herzschlag jedes beliebigen Absenders einen neuen Knoten an."""
+    body = {"node_id": "NODE-FREMD", "active_printers": 1, "queue_depth": 0, "latency_ms": 5.0}
+    resp = await async_client.post("/api/v1/mesh/heartbeat", json=body, headers={"Authorization": "Bearer x"})
+    assert resp.status_code == 404
+    assert not any(p["node_id"] == "NODE-FREMD" for p in list_peer_nodes())
+
+
+@pytest.mark.asyncio
+async def test_heartbeat_endpoint_refuses_a_node_without_a_token(async_client) -> None:
+    register_peer_node("NODE-OHNE", "Ohne Token", "Ort", "http://ohne:8000")
+    body = {"node_id": "NODE-OHNE", "active_printers": 1, "queue_depth": 0, "latency_ms": 5.0}
+    resp = await async_client.post("/api/v1/mesh/heartbeat", json=body, headers={"Authorization": "Bearer "})
+    assert resp.status_code == 401
+    remove_peer_node("NODE-OHNE")
+
+
+def test_node_tokens_never_leave_through_the_read_side() -> None:
+    res = register_peer_node("NODE-LESEN", "Lesen", "Ort", "http://l:8000", auth_token="nicht-ausgeben-12345")
+    assert "nicht-ausgeben-12345" not in str(res)
+    assert "nicht-ausgeben-12345" not in str(list_peer_nodes())
+    assert any(p["node_id"] == "NODE-LESEN" and p["has_auth_token"] for p in list_peer_nodes())
+    remove_peer_node("NODE-LESEN")

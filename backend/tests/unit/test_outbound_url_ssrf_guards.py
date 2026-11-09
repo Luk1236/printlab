@@ -621,6 +621,8 @@ NOT_A_FETCH_TARGET = {
     ("ExternalLinkUpdate", "url"),
     ("AppMessage", "url"),  # an app's link, appended to the notification text; never requested
     ("FileUpdate", "external_url"),  # library file link (#3077), rendered in the UI, never fetched
+    ("FulfillmentEventRequest", "tracking_url"),  # ends up in the fulfillment payload for the web shop; never requested
+    ("RegisterNodeRequest", "api_url"),  # peer address, stored and handed back to the UI; this server never calls it
     ("MaintenanceTypeCreate", "wiki_url"),  # documentation link surfaced in the UI/notifications
     ("MaintenanceTypeUpdate", "wiki_url"),
     ("ArchiveUpdate", "external_url"),  # stored source link for the model, never fetched

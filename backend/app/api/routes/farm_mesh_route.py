@@ -2,17 +2,19 @@
 
 from __future__ import annotations
 
+import hmac
 import logging
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Header, HTTPException
+from pydantic import BaseModel, Field, field_validator
 
 from backend.app.core.auth import RequirePermissionIfAuthEnabled
 from backend.app.core.permissions import Permission
 from backend.app.services.farm_mesh_relay import (
     get_local_node_info,
     get_mesh_aggregated_overview,
+    get_node_auth_token,
     list_peer_nodes,
     record_node_heartbeat,
     register_peer_node,
@@ -32,6 +34,14 @@ class RegisterNodeRequest(BaseModel):
     api_url: str = Field(..., min_length=5, max_length=256)
     auth_token: str = Field("", max_length=256)
     printers_count: int = Field(4, ge=1, le=100)
+
+    @field_validator("api_url")
+    @classmethod
+    def _http_only(cls, value: str) -> str:
+        # Die Adresse wird gespeichert und in der Oberfläche angezeigt: nur http(s)
+        if not value.strip().lower().startswith(("http://", "https://")):
+            raise ValueError("api_url muss mit http:// oder https:// beginnen")
+        return value
 
 
 class NodeHeartbeatRequest(BaseModel):
@@ -90,8 +100,20 @@ async def unregister_node(
 @router.post("/heartbeat", response_model=dict[str, Any])
 async def handle_heartbeat(
     req: NodeHeartbeatRequest,
+    authorization: str | None = Header(None),
 ) -> dict[str, Any]:
-    """Empfängt Statusmeldungen und Queuetiefen entfernter Farm-Standorte."""
+    """Empfängt Statusmeldungen und Queuetiefen entfernter Farm-Standorte.
+
+    Der Standort meldet sich mit dem Token, das beim Registrieren hinterlegt wurde (``Authorization: Bearer``).
+    Unbekannte Knoten und Knoten ohne Token werden abgelehnt: Sonst könnte jeder beliebige Standorte anlegen
+    und die Lastverteilung beeinflussen.
+    """
+    expected = get_node_auth_token(req.node_id)
+    if expected is None:
+        raise HTTPException(404, "Standortknoten unbekannt: erst über /mesh/nodes/register anmelden.")
+    provided = (authorization or "").removeprefix("Bearer ").strip()
+    if not expected or not provided or not hmac.compare_digest(expected, provided):
+        raise HTTPException(401, "Ungültiges oder fehlendes Knoten-Token.")
     return record_node_heartbeat(
         node_id=req.node_id,
         active_printers=req.active_printers,

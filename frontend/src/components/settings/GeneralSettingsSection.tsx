@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -21,16 +21,13 @@ import {
   FileText,
   Database,
   ArrowRight,
-  Shield,
-  Layers,
   Camera,
 } from 'lucide-react';
 
 import {
   api,
-  type Settings,
+  type AppSettings,
   type Printer,
-  type StorageUsageResponse,
 } from '../../api/client';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -49,6 +46,7 @@ import { Button } from '../Button';
 import { NumberInput } from '../NumberInput';
 import { ConfirmModal } from '../ConfirmModal';
 import { ExternalLinksSettings } from '../ExternalLinksSettings';
+import type { SettingsTabType } from './SettingsNavRail';
 
 export type GeneralSubTab = 'basic' | 'appearance' | 'costs' | 'camera' | 'storage' | 'all';
 
@@ -97,10 +95,10 @@ const getStorageColor = (key: string, index: number) =>
   STORAGE_CATEGORY_COLORS[key] || STORAGE_FALLBACK_COLORS[index % STORAGE_FALLBACK_COLORS.length];
 
 export interface GeneralSettingsSectionProps {
-  localSettings: Settings;
-  updateSetting: (key: keyof Settings, value: unknown) => void;
+  localSettings: AppSettings;
+  updateSetting: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void;
   printers?: Printer[];
-  onTabChange?: (tab: string) => void;
+  onTabChange?: (tab: SettingsTabType) => void;
   initialSubTab?: GeneralSubTab;
 }
 
@@ -279,14 +277,34 @@ export function GeneralSettingsSection({
     },
   });
 
+  // Die URL-Felder speichern erst 800 ms nach dem letzten Tastendruck: sonst ginge pro Zeichen ein PATCH
+  // samt Toast raus (und die Eingabe würde vom Neuladen der Druckerliste überschrieben).
+  const cameraUrlSaveTimeoutRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
+  const snapshotUrlSaveTimeoutRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
+
+  useEffect(() => {
+    const cameraTimers = cameraUrlSaveTimeoutRef.current;
+    const snapshotTimers = snapshotUrlSaveTimeoutRef.current;
+    return () => {
+      Object.values(cameraTimers).forEach(clearTimeout);
+      Object.values(snapshotTimers).forEach(clearTimeout);
+    };
+  }, []);
+
   const handleCameraUrlChange = (printerId: number, url: string) => {
     setLocalCameraUrls(prev => ({ ...prev, [printerId]: url }));
-    updatePrinterMutation.mutate({ id: printerId, data: { external_camera_url: url || null } });
+    clearTimeout(cameraUrlSaveTimeoutRef.current[printerId]);
+    cameraUrlSaveTimeoutRef.current[printerId] = setTimeout(() => {
+      updatePrinterMutation.mutate({ id: printerId, data: { external_camera_url: url || null } });
+    }, 800);
   };
 
   const handleSnapshotUrlChange = (printerId: number, url: string) => {
     setLocalSnapshotUrls(prev => ({ ...prev, [printerId]: url }));
-    updatePrinterMutation.mutate({ id: printerId, data: { external_camera_snapshot_url: url || null } });
+    clearTimeout(snapshotUrlSaveTimeoutRef.current[printerId]);
+    snapshotUrlSaveTimeoutRef.current[printerId] = setTimeout(() => {
+      updatePrinterMutation.mutate({ id: printerId, data: { external_camera_snapshot_url: url || null } });
+    }, 800);
   };
 
   const handleUpdatePrinterCamera = (
@@ -304,7 +322,7 @@ export function GeneralSettingsSection({
     setExtCameraTestLoading(prev => ({ ...prev, [printerId]: true }));
     setExtCameraTestResults(prev => ({ ...prev, [printerId]: null }));
     try {
-      const result = await api.testExternalCamera(url, cameraType);
+      const result = await api.testExternalCamera(printerId, url, cameraType);
       setExtCameraTestResults(prev => ({ ...prev, [printerId]: result }));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t('settings.toast.connectionFailed', 'Verbindung fehlgeschlagen');
@@ -912,7 +930,7 @@ export function GeneralSettingsSection({
         <CardHeader>
           <h2 className="text-lg font-semibold text-white flex items-center gap-2">
             <Video className="w-5 h-5 text-bambu-green" />
-            {t('settings.camera', 'Externe Kameras')}
+            {t('settings.externalCameras', 'Externe Kameras')}
           </h2>
         </CardHeader>
         <CardContent className="space-y-4">

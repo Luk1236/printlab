@@ -331,7 +331,7 @@ class MQTTRelayService:
                 retain=False,
             )
         except Exception:
-            pass
+            logger.debug("Fehler ignoriert", exc_info=True)
 
     async def on_plate_clear_state(
         self,

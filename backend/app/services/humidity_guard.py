@@ -148,7 +148,7 @@ def evaluate_ams_humidity(
     for idx, mat in enumerate(filaments):
         profile = get_drying_profile(mat)
         max_h = float(profile["max_humidity_pct"])
-        is_too_wet = (humidity_pct > max_h)
+        is_too_wet = humidity_pct > max_h
 
         status = "DRY"
         if humidity_pct > max_h + 15.0:
@@ -159,17 +159,19 @@ def evaluate_ams_humidity(
             status = "NEEDS_DRYING"
             overall_drying_recommended = True
 
-        spool_evaluations.append({
-            "slot_index": idx,
-            "filament_type": mat,
-            "hygroscopic_class": profile["hygroscopic_class"],
-            "max_allowed_humidity_pct": max_h,
-            "current_humidity_pct": humidity_pct,
-            "status": status,
-            "recommended_drying_temp_c": profile["drying_temp_c"],
-            "recommended_drying_hours": profile["drying_hours"],
-            "defect_risk": profile["defect_risk"],
-        })
+        spool_evaluations.append(
+            {
+                "slot_index": idx,
+                "filament_type": mat,
+                "hygroscopic_class": profile["hygroscopic_class"],
+                "max_allowed_humidity_pct": max_h,
+                "current_humidity_pct": humidity_pct,
+                "status": status,
+                "recommended_drying_temp_c": profile["drying_temp_c"],
+                "recommended_drying_hours": profile["drying_hours"],
+                "defect_risk": profile["defect_risk"],
+            }
+        )
 
     return {
         "ambient_temp_c": round(temp_c, 1),

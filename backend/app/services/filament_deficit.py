@@ -636,10 +636,11 @@ async def compute_deficit_for_queue_item(
     if not backup_on and item.printer_id:
         try:
             from backend.app.services.spool_auto_fallback import auto_enable_ams_filament_backup_if_eligible
+
             if auto_enable_ams_filament_backup_if_eligible(item.printer_id):
                 backup_on = True
         except Exception:
-            pass
+            logger.debug("Fehler ignoriert", exc_info=True)
 
     # ------------------------------------------------------------------ phase 1
     # Resolve each requirement to (ams_id, tray_id, identity, remaining_grams).

@@ -14,7 +14,6 @@ import ssl
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
-import certifi
 import httpx
 
 from backend.app.services.model_providers.base import (
@@ -26,7 +25,6 @@ from backend.app.services.model_providers.base import (
     ProviderStatus,
 )
 from backend.app.services.model_providers.thingiverse.errors import (
-    ThingiverseAuthError,
     ThingiverseNotFoundError,
     ThingiverseUnavailableError,
     ThingiverseUrlError,
@@ -67,7 +65,7 @@ def _create_ssl_context() -> ssl.SSLContext:
     try:
         ctx.load_default_certs(ssl.Purpose.SERVER_AUTH)
     except Exception:
-        pass
+        logger.debug("Fehler ignoriert", exc_info=True)
     return ctx
 
 
@@ -192,16 +190,18 @@ class ThingiverseService(ProviderService):
                 pass
 
             file_id = idx + 1
-            instances.append({
-                "id": file_id,
-                "profileId": file_id,
-                "title": fname,
-                "name": fname,
-                "fileSize": f.get("size") or 0,
-                "cover": cover_url,
-                "instanceCreator": {"name": creator_name},
-                "directUrl": furl,
-            })
+            instances.append(
+                {
+                    "id": file_id,
+                    "profileId": file_id,
+                    "title": fname,
+                    "name": fname,
+                    "fileSize": f.get("size") or 0,
+                    "cover": cover_url,
+                    "instanceCreator": {"name": creator_name},
+                    "directUrl": furl,
+                }
+            )
 
         design: dict[str, Any] = {
             "id": thing_id,
@@ -236,8 +236,7 @@ class ThingiverseService(ProviderService):
         if target_instance is None:
             # Fall back to first STL or 3MF file if available, otherwise first instance
             stl_candidates = [
-                inst for inst in instances
-                if inst.get("name", "").lower().endswith((".stl", ".3mf", ".step", ".stp"))
+                inst for inst in instances if inst.get("name", "").lower().endswith((".stl", ".3mf", ".step", ".stp"))
             ]
             target_instance = stl_candidates[0] if stl_candidates else instances[0]
 
@@ -264,7 +263,9 @@ class ThingiverseService(ProviderService):
         headers = dict(_HEADERS)
 
         try:
-            async with self._client.stream("GET", info.url, headers=headers, timeout=60.0, follow_redirects=True) as resp:
+            async with self._client.stream(
+                "GET", info.url, headers=headers, timeout=60.0, follow_redirects=True
+            ) as resp:
                 if resp.status_code == 404:
                     raise ThingiverseNotFoundError(f"File not found: {info.url}")
                 if resp.status_code != 200:

@@ -123,7 +123,7 @@ class GpioHardwareService:
                     pin_levels[ack_pin] = self._gpio.input(ack_pin)
                     pin_levels[pause_pin] = self._gpio.input(pause_pin)
                 except Exception:
-                    pass
+                    logger.debug("Fehler ignoriert", exc_info=True)
 
             estop_raw = pin_levels.get(estop_pin, 0 if self._estop_triggered else 1)
             # Im NC-Modus bedeutet LOW (0) = Kontakt geöffnet = Not-Halt aktiv
@@ -208,7 +208,7 @@ class GpioHardwareService:
             hw = get_hardware(1)
             hw.reload_config()
         except Exception:
-            pass
+            logger.debug("Fehler ignoriert", exc_info=True)
 
         self._set_led_output("ready")
 
@@ -233,7 +233,7 @@ class GpioHardwareService:
             val = self._gpio.HIGH if state == "estop" else self._gpio.LOW
             self._gpio.output(led_pin, val)
         except Exception:
-            pass
+            logger.debug("Fehler ignoriert", exc_info=True)
 
     def test_servo_angle(self, angle: float, printer_id: int = 1) -> tuple[bool, str]:
         """Fährt das Tür-Servo zu Testzwecken auf einen gewünschten Winkel (0 bis 180 Grad)."""
@@ -256,10 +256,12 @@ class GpioHardwareService:
         if not (0.0 <= min_angle < max_angle <= 180.0):
             return False, "Ungültige Winkel: ZU muss kleiner als OFFEN sein und im Bereich 0..180° liegen."
 
-        self.save_config({
-            "door_servo_min_angle": round(min_angle, 1),
-            "door_servo_max_angle": round(max_angle, 1),
-        })
+        self.save_config(
+            {
+                "door_servo_min_angle": round(min_angle, 1),
+                "door_servo_max_angle": round(max_angle, 1),
+            }
+        )
 
         # Auch in gpio_mechanik.json synchronisieren
         mpath = DATA_DIR / "gpio_mechanik.json"
@@ -308,7 +310,7 @@ class GpioHardwareService:
                             try:
                                 get_hardware(1).refill_magazine()
                             except Exception:
-                                pass
+                                logger.debug("Fehler ignoriert", exc_info=True)
 
                     # 3. Pause/Resume-Taster
                     if self._gpio.input(pause_pin) == 0 and self._debounce(pause_pin):
@@ -319,7 +321,7 @@ class GpioHardwareService:
                             elif client and getattr(client.state, "state", None) == "PAUSE":
                                 printer_manager.resume_print(1)
                         except Exception:
-                            pass
+                            logger.debug("Fehler ignoriert", exc_info=True)
                 except Exception as exc:
                     logger.debug("[GPIO] Fehler in Polling-Schleife: %s", exc)
 

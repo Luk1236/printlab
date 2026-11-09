@@ -26,8 +26,8 @@ from backend.app.services.model_providers.base import (
 from backend.app.services.model_providers.direct import direct_url_provider
 from backend.app.services.model_providers.makerworld import makerworld_provider
 from backend.app.services.model_providers.printables import printables_provider
-from backend.app.services.model_providers.thingiverse import thingiverse_provider
 from backend.app.services.model_providers.registry import ModelProviderRegistry, registry
+from backend.app.services.model_providers.thingiverse import thingiverse_provider
 
 registry.register(makerworld_provider)
 registry.register(printables_provider)

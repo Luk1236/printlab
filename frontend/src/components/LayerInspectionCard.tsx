@@ -3,14 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertOctagon,
-  AlertTriangle,
   Camera,
   CheckCircle2,
   Eye,
   Loader2,
   RefreshCw,
   Save,
-  Sliders,
   Upload,
 } from 'lucide-react';
 

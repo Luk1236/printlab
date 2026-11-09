@@ -30,15 +30,11 @@ const ExternalLinkPage = lazy(() => import('./pages/ExternalLinkPage').then((m) 
 const GroupEditPage = lazy(() => import('./pages/GroupEditPage').then((m) => ({ default: m.GroupEditPage })));
 const InventoryPage = lazy(() => import('./pages/InventoryPage'));
 const MakerworldPage = lazy(() => import('./pages/MakerworldPage').then((m) => ({ default: m.MakerworldPage })));
-const SystemInfoPage = lazy(() => import('./pages/SystemInfoPage').then((m) => ({ default: m.SystemInfoPage })));
 const LoginPage = lazy(() => import('./pages/LoginPage').then((m) => ({ default: m.LoginPage })));
 const ConnectAuthorizePage = lazy(() =>
   import('./pages/ConnectAuthorizePage').then((m) => ({ default: m.ConnectAuthorizePage })),
 );
 const SetupPage = lazy(() => import('./pages/SetupPage').then((m) => ({ default: m.SetupPage })));
-const SetupGuidePage = lazy(() =>
-  import('./pages/SetupGuidePage').then((m) => ({ default: m.SetupGuidePage })),
-);
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage').then((m) => ({ default: m.NotificationsPage })));
 const GCodeViewerPage = lazy(() => import('./pages/GCodeViewerPage').then((m) => ({ default: m.GCodeViewerPage })));
 const KioskModePage = lazy(() => import('./pages/KioskModePage').then((m) => ({ default: m.KioskModePage })));

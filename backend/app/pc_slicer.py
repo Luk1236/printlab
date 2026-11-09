@@ -29,7 +29,11 @@ from backend.app.services.builtin_slicer import (
     resolve_profile_values,
     slice_model_builtin,
 )
-from backend.app.services.slicer_cli import SlicerCliError, program_path, slice_file
+from backend.app.services.slicer_cli import (  # noqa: F401 - Tests biegen slice_file um
+    SlicerCliError,
+    program_path,
+    slice_file,
+)
 
 logger = logging.getLogger(__name__)
 app = FastAPI(title="PrintLab Integrated Slicer Sidecar", version=BUILTIN_VERSION)
@@ -171,8 +175,6 @@ async def slice_route(request: Request):
 
     plate = await _read_form_text(form.get("plate"))
     exportType = await _read_form_text(form.get("exportType"))
-    arrange = await _read_form_text(form.get("arrange"))
-    orient = await _read_form_text(form.get("orient"))
     requestId = await _read_form_text(form.get("requestId")) or request.headers.get("x-slice-request-id")
     printerProfile = await _read_form_text(form.get("printerProfile"))
     presetProfile = await _read_form_text(form.get("presetProfile"))

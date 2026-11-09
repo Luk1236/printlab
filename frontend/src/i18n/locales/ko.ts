@@ -41,7 +41,8 @@ export default {
     smartSwitches: '스마트 스위치',
     logout: '로그아웃',
     installApp: '앱 설치',
-    installAppSuccess: 'PrintLab가 설치되었습니다'
+    installAppSuccess: 'PrintLab가 설치되었습니다',
+    assistant: 'AI 어시스턴트',
   },
   announcements: {
     title: '공지사항',
@@ -2399,7 +2400,10 @@ export default {
       ldap: 'LDAP',
       twoFa: '이중 인증',
       oidc: 'SSO / OIDC',
-      security: '보안'
+      security: '보안',
+      setup: '설정 및 어시스턴트',
+      system: '시스템 상태 및 진단',
+      updates: '업데이트 및 버전',
     },
     spoolbuddy: {
       infoTitle: 'PrintLab Spool 기기',
@@ -3524,6 +3528,13 @@ export default {
           cancelled: '취소됨',
         },
       },
+    },
+    categories: {
+      system: '시스템 및 일반',
+      hardware: '장치 및 하드웨어',
+      workflow: '워크플로 및 인쇄',
+      network: '네트워크 및 인터페이스',
+      security: '보안 및 접근',
     },
   },
   notification: {
@@ -7739,7 +7750,32 @@ export default {
       resolveFailed: 'MakerWorld URL을 확인할 수 없습니다.',
       downloadFailed: '다운로드 실패. 다시 시도하세요.',
       deleteFailed: '라이브러리에서 파일을 제거할 수 없습니다.'
-    }
+    },
+    platformsTitle: '지원되는 3D 플랫폼 및 소스',
+    platforms: {
+      makerworldTitle: 'MakerWorld',
+      makerworldDesc: 'Bambu Lab 3MF, 플레이트, 프린터, AMS 색상 할당을 직접 해석합니다.',
+      printablesTitle: 'Printables',
+      printablesDesc: 'Prusa Research 모델(3MF 및 STL)을 웹 링크로 바로 불러옵니다.',
+      thingiverseTitle: 'Thingiverse 커뮤니티',
+      thingiverseDesc: 'UltiMaker 커뮤니티 모델을 링크(예: thing:763622)로 바로 가져오고 플레이트/파일을 개별로 가져올 수 있습니다.',
+      thangsTitle: 'Thangs 3D (메타 검색)',
+      thangsDesc: '모든 플랫폼을 동시에 검색합니다. 팁: Thangs에서 원본 출처(MakerWorld, Thingiverse, Printables)의 링크를 여기에 복사하세요.',
+      metaBadge: '메타 검색',
+      directTitle: '직접 다운로드',
+      directDesc: '.3mf, .stl, .step 파일을 가리키는 직접 웹 링크는 즉시 감지되어 불러와집니다.',
+      directAction: 'URL 입력',
+      uploadTitle: '파일 직접 업로드',
+      uploadDesc: '“모델 업로드”를 클릭하거나 브라우저로 끌어다 놓아 .3mf, .stl, .step 파일을 가져올 수 있습니다.',
+      uploadAction: '파일 선택',
+      openPortal: '열기',
+      openMetaSearch: '메타 검색 열기',
+    },
+    openOnThingiverse: 'Thingiverse에서 열기',
+    openOnPrintables: 'Printables에서 열기',
+    uploadModel: '모델 업로드',
+    uploadSuccess: '모델이 라이브러리에 업로드되었습니다',
+    dropFilesHint: '또는 3D 모델 파일(.3mf, .stl, .step)을 여기에 바로 끌어다 놓으세요',
   },
   gcodeViewer: {
     filamentSlot: '필라멘트 {{n}}',

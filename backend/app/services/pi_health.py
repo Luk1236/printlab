@@ -9,12 +9,15 @@ Abnahme-Check (``werkzeuge/abnahme.py``) benutzt.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import shutil
 import subprocess
 import time
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 BACKUP_FOLDERS = ("update-backups",)
 LOW_DISK_BYTES = 1_000_000_000
@@ -240,7 +243,7 @@ def snapshot(data_dir: Path | str, extra_backup_dirs: list[Path] | None = None) 
 
         crash_report = crash_diagnostics.get_last_report(data_dir)
     except Exception:
-        pass
+        logger.debug("Fehler ignoriert", exc_info=True)
 
     info: dict[str, Any] = {
         "cpu_temp_c": cpu_temp_c(),

@@ -9,29 +9,27 @@ from __future__ import annotations
 
 import csv
 import io
-import re
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any
 
-from backend.app.services import company_profile, einvoice, invoices, quote_pdf
-
+from backend.app.services import company_profile, einvoice, quote_pdf
 
 # Kontenrahmen-Definitionen
 KONTENRAHMEN: dict[str, dict[str, Any]] = {
     "SKR03": {
         "name": "Standardkontenrahmen 03 (Prozessgliederungsprinzip)",
         "erloese_19": "8400",  # Erlöse 19% USt
-        "erloese_7": "8300",   # Erlöse 7% USt
-        "erloese_0": "8100",   # Steuerfreie Erlöse
+        "erloese_7": "8300",  # Erlöse 7% USt
+        "erloese_0": "8100",  # Steuerfreie Erlöse
         "forderungen": "10000",  # Sammelkonto Forderungen aus L+L
         "bu_schluessel_auto": "3",  # Automatik 19%
     },
     "SKR04": {
         "name": "Standardkontenrahmen 04 (Abschlussgliederungsprinzip)",
         "erloese_19": "4400",  # Erlöse 19% USt
-        "erloese_7": "4300",   # Erlöse 7% USt
-        "erloese_0": "4100",   # Steuerfreie Erlöse
+        "erloese_7": "4300",  # Erlöse 7% USt
+        "erloese_0": "4100",  # Steuerfreie Erlöse
         "forderungen": "10000",  # Sammelkonto Debitoren
         "bu_schluessel_auto": "3",
     },
@@ -77,39 +75,41 @@ def generate_datev_csv(
 
     # DATEV Header Zeile 1: Datei-Kopf (EXTF-Spezifikation 700)
     # Format: "EXTF";Version;Datenkategorie;Formatname;Formatversion;ErzeugtAm;Importiert;Herkunft;ExportiertVon;...
-    writer.writerow([
-        "EXTF",
-        700,
-        21,
-        "Buchungsstapel",
-        12,
-        date_str,
-        "",
-        "PrintLab 3D Farm",
-        "PrintLab",
-        "",
-        consultant_number,
-        client_number,
-        int(f"{year}0101"),
-        4,
-        int(f"{year}0101"),
-        int(f"{year}1231"),
-        "PrintLab Ausgangsrechnungen",
-        "",
-        1,
-        0,
-        0,
-        "EUR",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-    ])
+    writer.writerow(
+        [
+            "EXTF",
+            700,
+            21,
+            "Buchungsstapel",
+            12,
+            date_str,
+            "",
+            "PrintLab 3D Farm",
+            "PrintLab",
+            "",
+            consultant_number,
+            client_number,
+            int(f"{year}0101"),
+            4,
+            int(f"{year}0101"),
+            int(f"{year}1231"),
+            "PrintLab Ausgangsrechnungen",
+            "",
+            1,
+            0,
+            0,
+            "EUR",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+        ]
+    )
 
     # DATEV Header Zeile 2: Spaltenbezeichnungen
     headers = [

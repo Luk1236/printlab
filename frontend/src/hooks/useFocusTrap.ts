@@ -95,6 +95,8 @@ export function useFocusTrap<T extends HTMLElement = HTMLDivElement>({
       if (!containerRef.current) return;
 
       if (e.key === 'Escape') {
+        // Ein offenes Menü im Dialog (z. B. die Slicer-Auswahl) bekommt Escape zuerst und schließt sich selbst
+        if (containerRef.current.querySelector('[role="menu"]')) return;
         if (onClose) {
           e.preventDefault();
           e.stopPropagation();
@@ -137,6 +139,7 @@ export function useFocusTrap<T extends HTMLElement = HTMLDivElement>({
     (e: React.KeyboardEvent) => {
       // In-component handler fallback
       if (e.key === 'Escape' && onClose) {
+        if (containerRef.current?.querySelector('[role="menu"]')) return; // siehe oben: erst das Menü
         e.preventDefault();
         e.stopPropagation();
         onClose();

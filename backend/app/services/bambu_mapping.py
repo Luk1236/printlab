@@ -9,6 +9,7 @@ import logging
 
 logger = logging.getLogger("backend.app.services.bambu_mqtt")
 
+
 def parse_ams_filament_backup_from_cfg(cfg_raw: object) -> bool | None:
     """Extract AMS Filament Backup state from a Bambu push_status ``print.cfg`` value.
 
@@ -624,4 +625,3 @@ def resolve_rack_plan_mapping(
     if all(value == -1 for value in wire):
         return None, "the plate assigns no filament to a nozzle"
     return wire, None
-

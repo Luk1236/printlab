@@ -32,6 +32,7 @@ async def on_startup(base_dir: Path, session_factory: Callable[[], Any]) -> None
     # Absturz-Diagnose: Prüfen, ob Rechner oder Dienst unerwartet neu gestartet wurden
     try:
         import asyncio
+
         from backend.app.services import crash_diagnostics
 
         task = asyncio.get_running_loop().create_task(

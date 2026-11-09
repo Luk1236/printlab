@@ -871,6 +871,7 @@ async def dismiss_crash_report(
     crash_diagnostics.dismiss_report(settings.base_dir)
     return {"status": "ok", "dismissed": True}
 
+
 @router.get("/slicer-engine")
 async def get_slicer_engine(
     _: User | None = RequirePermissionIfAuthEnabled(Permission.SYSTEM_READ),

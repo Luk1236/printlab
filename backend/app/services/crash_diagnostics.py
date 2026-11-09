@@ -194,7 +194,7 @@ def record_heartbeat(base_dir: Path | str) -> None:
     """Schreibt periodisch einen Heartbeat mit aktueller Boot-ID und Zeitstempel."""
     data_dir = _data_dir(base_dir)
     data_dir.mkdir(parents=True, exist_ok=True)
-    state_file = data_dir / BOOT_STATE_FILE
+    state_file = data_dir / BOOT_STATE_FILE  # SEC-PATH-OK: feste Namenskonstante
     boot_id = get_system_boot_id()
     state = {
         "boot_id": boot_id,
@@ -213,7 +213,7 @@ def record_heartbeat(base_dir: Path | str) -> None:
 def record_clean_shutdown(base_dir: Path | str) -> None:
     """Wird beim sauberen Herunterfahren von PrintLab (Lifespan-Ende) aufgerufen."""
     data_dir = _data_dir(base_dir)
-    state_file = data_dir / BOOT_STATE_FILE
+    state_file = data_dir / BOOT_STATE_FILE  # SEC-PATH-OK: feste Namenskonstante
     if not state_file.exists():
         return
     try:
@@ -235,8 +235,8 @@ def check_and_generate_crash_report(base_dir: Path | str) -> dict[str, Any] | No
     """
     data_dir = _data_dir(base_dir)
     data_dir.mkdir(parents=True, exist_ok=True)
-    state_file = data_dir / BOOT_STATE_FILE
-    report_file = data_dir / CRASH_REPORT_FILE
+    state_file = data_dir / BOOT_STATE_FILE  # SEC-PATH-OK: feste Namenskonstante
+    report_file = data_dir / CRASH_REPORT_FILE  # SEC-PATH-OK: feste Namenskonstante
 
     current_boot_id = get_system_boot_id()
     if not state_file.exists():
@@ -306,7 +306,7 @@ def check_and_generate_crash_report(base_dir: Path | str) -> dict[str, Any] | No
 def get_last_report(base_dir: Path | str) -> dict[str, Any] | None:
     """Gibt den letzten gespeicherten Absturzbericht zurück (oder None)."""
     data_dir = _data_dir(base_dir)
-    report_file = data_dir / CRASH_REPORT_FILE
+    report_file = data_dir / CRASH_REPORT_FILE  # SEC-PATH-OK: feste Namenskonstante
     if not report_file.exists():
         return None
     try:
@@ -318,7 +318,7 @@ def get_last_report(base_dir: Path | str) -> dict[str, Any] | None:
 def dismiss_report(base_dir: Path | str) -> dict[str, bool]:
     """Markiert den aktuellen Absturzbericht als vom Benutzer zur Kenntnis genommen."""
     data_dir = _data_dir(base_dir)
-    report_file = data_dir / CRASH_REPORT_FILE
+    report_file = data_dir / CRASH_REPORT_FILE  # SEC-PATH-OK: feste Namenskonstante
     if not report_file.exists():
         return {"success": True}
     try:
@@ -342,10 +342,7 @@ async def check_crash_and_notify(base_dir: Path | str, session_factory: Any) -> 
 
     # Meldung vorbereiten
     title = f"⚠️ Pi nach Absturz neu gestartet: {report['title']}"
-    message = (
-        f"{report['explanation']}\n\n"
-        f"Empfohlene Maßnahme: {report['recommendations'][0]}"
-    )
+    message = f"{report['explanation']}\n\nEmpfohlene Maßnahme: {report['recommendations'][0]}"
 
     logger.warning("[CrashDiagnostics] %s — %s", title, message)
 

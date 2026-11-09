@@ -1,11 +1,11 @@
 import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Plus, Plug, AlertTriangle, RotateCcw, Bell, Download, RefreshCw, ExternalLink, Globe, Droplets, Thermometer, FileText, Edit2, Pencil, Send, CheckCircle, XCircle, History, Trash2, Zap, TrendingUp, Calendar, DollarSign, Power, PowerOff, Key, Copy, Database, X, Shield, Printer, Cylinder, Wifi, Home, Video, Users, Lock, Unlock, ChevronDown, Mail, Flame, Layers, ListOrdered, Code, Search, Scale, Settings as SettingsIcon, ScanEye, Cog, QrCode, Workflow, UploadCloud, MonitorPlay } from 'lucide-react';
+import { Loader2, Plus, Plug, AlertTriangle, RotateCcw, Bell, RefreshCw, ExternalLink, Globe, Droplets, Thermometer, FileText, Edit2, Pencil, Send, CheckCircle, XCircle, History, Trash2, Zap, TrendingUp, Calendar, DollarSign, Power, PowerOff, Key, Copy, Database, X, Shield, Wifi, Home, Video, Users, Lock, Unlock, ChevronDown, Mail, Flame, Layers, ListOrdered, Code, Search, Settings as SettingsIcon, Cog, QrCode, Workflow, UploadCloud, MonitorPlay } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { formatDateOnly } from '../utils/date';
-import { getCurrencySymbol, SUPPORTED_CURRENCIES } from '../utils/currency';
+import { getCurrencySymbol } from '../utils/currency';
 import { checkPasswordComplexity } from '../utils/password';
 import { PRESET_CATEGORIES, parsePresetTriple } from '../utils/temperatureFanPresets';
 import { CALIBRATION_MODES, CALIBRATION_MODE_ACTIVE, CALIBRATION_MODE_INACTIVE } from '../utils/calibrationMode';
@@ -17,7 +17,7 @@ import {
 } from '../utils/locationSensorDefaults';
 import { describeHASensorReading, iconForHASensor } from '../utils/haSensorDisplay';
 import { PreheatFilamentTargetsEditor } from '../components/PreheatFilamentTargetsEditor';
-import type { APIKey, AppSettings, AppSettingsUpdate, PrinterHASensor, LocationHASensor, LocationHASensorReading, SmartPlug, SmartPlugStatus, NotificationProvider, NotificationTemplate, UpdateStatus, GitHubBackupStatus, CloudAuthStatus, UserCreate, UserUpdate, UserResponse, StorageUsageResponse, CalibrationMode } from '../api/client';
+import type { APIKey, AppSettings, AppSettingsUpdate, PrinterHASensor, LocationHASensor, LocationHASensorReading, SmartPlug, SmartPlugStatus, NotificationProvider, NotificationTemplate, UpdateStatus, GitHubBackupStatus, CloudAuthStatus, UserCreate, UserUpdate, UserResponse, CalibrationMode } from '../api/client';
 import { Card, CardContent, CardDensityProvider, CardHeader } from '../components/Card';
 import { SlicerPipelinesPanel } from '../components/SlicerPipelinesPanel';
 import { SlicerConnectionCheck } from '../components/SlicerConnectionCheck';
@@ -25,7 +25,6 @@ import { CameraTokensSection } from './CameraTokensPage';
 import { ConnectedAppsSection } from '../components/ConnectedAppsSection';
 import { StreamOverlayBuilder } from '../components/StreamOverlayBuilder';
 import { Collapsible } from '../components/Collapsible';
-import { CopyButton } from '../components/CopyButton';
 import { Button } from '../components/Button';
 import { SmartPlugCard } from '../components/SmartPlugCard';
 import { AddSmartPlugModal } from '../components/AddSmartPlugModal';
@@ -45,10 +44,7 @@ import { LdapUserPicker } from '../components/LdapUserPicker';
 import { SpoolmanSettings } from '../components/SpoolmanSettings';
 import { SpoolCatalogSettings } from '../components/SpoolCatalogSettings';
 import { ColorCatalogSettings } from '../components/ColorCatalogSettings';
-import { ExternalLinksSettings } from '../components/ExternalLinksSettings';
 import { VirtualPrinterList } from '../components/VirtualPrinterList';
-import { UpdateRestartWatcher } from '../components/UpdateRestartWatcher';
-import { UpdateBackupsCard } from '../components/UpdateBackupsCard';
 import { SpoolBuddySettings } from '../components/SpoolBuddySettings';
 import { GitHubBackupSettings } from '../components/GitHubBackupSettings';
 import { AiChecksCard } from '../components/AiChecksCard';
@@ -60,18 +56,14 @@ import { OIDCProviderSettings } from '../components/OIDCProviderSettings';
 import { SecurityStatusCard } from '../components/SecurityStatusCard';
 import { APIBrowser } from '../components/APIBrowser';
 import { virtualPrinterApi, spoolbuddyApi } from '../api/client';
-import { defaultNavItems, getDefaultView, setDefaultView } from '../components/Layout';
 import { availableLanguages } from '../i18n';
 import { useToast } from '../contexts/ToastContext';
-import { useTheme, type ThemeStyle, type DarkBackground, type LightBackground, type ThemeAccent } from '../contexts/ThemeContext';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Gauge, Link2, Palette, ArrowUpCircle } from 'lucide-react';
+import { Gauge, Link2 } from 'lucide-react';
 import { registerCoreSettingsSearchEntries, getSettingsSearchEntries } from '../lib/settingsSearch';
-import { QuickSetupHubCard } from '../components/QuickSetupHubCard';
 import type { UsersSubTab } from '../lib/settingsSearch';
 import { availableEngines, hasEngineChoice, resolveEngine, type SliceEngineId } from '../lib/sliceEngines';
 import { NumberInput } from '../components/NumberInput';
-import { helpLink, HELP_ANCHORS } from '../utils/docsLinks';
 import { SettingsNavRail } from '../components/settings/SettingsNavRail';
 import { SetupSettingsSection } from '../components/settings/SetupSettingsSection';
 import { SystemSettingsSection } from '../components/settings/SystemSettingsSection';
@@ -109,37 +101,8 @@ registerCoreSettingsSearchEntries();
 // auto-drying would end one cycle and immediately arm another.
 const HUMIDITY_DRYING_FLOOR = 20;
 
-const STORAGE_CATEGORY_COLORS: Record<string, string> = {
-  database: 'bg-blue-600',
-  library_files: 'bg-green-500',
-  library_thumbnails: 'bg-teal-500',
-  library_other: 'bg-emerald-700',
-  archive_timelapses: 'bg-red-500',
-  archive_thumbnails: 'bg-amber-500',
-  archive_files: 'bg-sky-500',
-  virtual_printer_uploads: 'bg-purple-500',
-  virtual_printer_upload_cache: 'bg-fuchsia-500',
-  virtual_printer_certs: 'bg-violet-500',
-  virtual_printer_other: 'bg-purple-700',
-  downloads: 'bg-cyan-500',
-  plate_calibration: 'bg-lime-500',
-  logs: 'bg-orange-500',
-  other_data: 'bg-yellow-500',
-};
 
-const STORAGE_FALLBACK_COLORS = [
-  'bg-blue-500',
-  'bg-green-500',
-  'bg-yellow-500',
-  'bg-red-500',
-  'bg-orange-500',
-  'bg-teal-500',
-  'bg-cyan-500',
-  'bg-purple-500',
-];
 
-const getStorageColor = (key: string, index: number) =>
-  STORAGE_CATEGORY_COLORS[key] || STORAGE_FALLBACK_COLORS[index % STORAGE_FALLBACK_COLORS.length];
 
 const LOCATION_SENSOR_CATEGORY_ORDER: Record<string, number> = {
   temperature: 0,
@@ -163,18 +126,9 @@ export function SettingsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const { authEnabled, user, isAdmin, refreshAuth, hasPermission } = useAuth();
-  const {
-    mode, resolvedMode,
-    darkStyle, darkBackground, darkAccent,
-    lightStyle, lightBackground, lightAccent,
-    setMode,
-    setDarkStyle, setDarkBackground, setDarkAccent,
-    setLightStyle, setLightBackground, setLightAccent,
-    progressInTitle, setProgressInTitle,
-  } = useTheme();
   const [localSettings, setLocalSettings] = useState<AppSettings | null>(null);
   // Transient typed strings for the per-filament humidity threshold inputs
   // (#1605). Committed back to localSettings.ams_humidity_thresholds on blur
@@ -209,9 +163,6 @@ export function SettingsPage() {
   const [templateFilter, setTemplateFilter] = useState('');
   const [settingsSearch, setSettingsSearch] = useState('');
   const [showLogViewer, setShowLogViewer] = useState(false);
-  const [showRebuildConfirm, setShowRebuildConfirm] = useState(false);
-  const [isRebuildLoading, setIsRebuildLoading] = useState(false);
-  const [defaultView, setDefaultViewState] = useState<string>(getDefaultView());
 
   // Initialize tab from URL params (handle legacy ?tab=email → users tab + email sub-tab)
   const tabParam = searchParams.get('tab');
@@ -323,7 +274,6 @@ export function SettingsPage() {
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [changePasswordData, setChangePasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [changePasswordLoading, setChangePasswordLoading] = useState(false);
-  const [storageUsageRefreshing, setStorageUsageRefreshing] = useState(false);
 
   // User management state
   const [showCreateUserModal, setShowCreateUserModal] = useState(false);
@@ -357,47 +307,14 @@ export function SettingsPage() {
   const [haTestResult, setHaTestResult] = useState<{ success: boolean; message: string | null; error: string | null } | null>(null);
   const [haTestLoading, setHaTestLoading] = useState(false);
 
-  // External camera test state
-  const [extCameraTestResults, setExtCameraTestResults] = useState<Record<number, { success: boolean; error?: string; resolution?: string } | null>>({});
-  const [extCameraTestLoading, setExtCameraTestLoading] = useState<Record<number, boolean>>({});
 
-  const handleDefaultViewChange = (path: string) => {
-    setDefaultViewState(path);
-    setDefaultView(path);
-    showToast(t('settings.toast.settingsSaved'), 'success');
-  };
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['settings'],
     queryFn: api.getSettings,
   });
 
-  const {
-    data: storageUsage,
-    isLoading: storageUsageLoading,
-    isFetching: storageUsageFetching,
-  } = useQuery<StorageUsageResponse>({
-    queryKey: ['storage-usage'],
-    queryFn: () => api.getStorageUsage(),
-    enabled: activeTab === 'general',
-    staleTime: Infinity,
-    refetchInterval: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-  });
 
-  const handleStorageUsageRefresh = async () => {
-    setStorageUsageRefreshing(true);
-    try {
-      const data = await api.getStorageUsage({ refresh: true });
-      queryClient.setQueryData(['storage-usage'], data);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to refresh storage usage';
-      showToast(message, 'error');
-    } finally {
-      setStorageUsageRefreshing(false);
-    }
-  };
 
   const { data: smartPlugs, isLoading: plugsLoading } = useQuery({
     queryKey: ['smart-plugs'],
@@ -606,86 +523,17 @@ export function SettingsPage() {
   });
   const obicoActive = !!(obicoStatus?.is_running && obicoStatus?.enabled && obicoStatus?.ml_url);
 
-  const { data: ffmpegStatus } = useQuery({
-    queryKey: ['ffmpeg-status'],
-    queryFn: api.checkFfmpeg,
-  });
 
   const { data: versionInfo } = useQuery({
     queryKey: ['version'],
     queryFn: api.getVersion,
   });
 
-  // Library trash settings (#1008). Separate endpoint from the generic
-  // /settings — persists retention window + auto-purge config. Admin-only.
-  const canPurge = !authEnabled || hasPermission('library:purge');
-  const { data: trashSettings } = useQuery({
-    queryKey: ['library-trash-settings'],
-    queryFn: () => api.getLibraryTrashSettings(),
-    enabled: canPurge,
-  });
 
-  const updateTrashSettingsMutation = useMutation({
-    mutationFn: (body: {
-      retention_days: number;
-      auto_purge_enabled: boolean;
-      auto_purge_days: number;
-      auto_purge_include_never_printed: boolean;
-    }) => api.updateLibraryTrashSettings(body),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['library-trash-settings'] });
-      showToast(t('settings.toast.settingsSaved'), 'success');
-    },
-    onError: (e: Error) => showToast(e.message || t('libraryAutoPurge.saveFailed'), 'error'),
-  });
 
-  const saveTrashSettings = (patch: Partial<{
-    retention_days: number;
-    auto_purge_enabled: boolean;
-    auto_purge_days: number;
-    auto_purge_include_never_printed: boolean;
-  }>) => {
-    if (!trashSettings) return;
-    updateTrashSettingsMutation.mutate({
-      retention_days: trashSettings.retention_days,
-      auto_purge_enabled: trashSettings.auto_purge_enabled,
-      auto_purge_days: trashSettings.auto_purge_days,
-      auto_purge_include_never_printed: trashSettings.auto_purge_include_never_printed,
-      ...patch,
-    });
-  };
 
-  // Archive auto-purge (#1008 follow-up). Gated on the dedicated archives:purge
-  // permission so admins can delegate bulk-delete to a role without granting
-  // per-archive delete on other users' rows.
-  const canPurgeArchives = !authEnabled || hasPermission('archives:purge');
-  const { data: archivePurgeSettings } = useQuery({
-    queryKey: ['archive-purge-settings'],
-    queryFn: () => api.getArchivePurgeSettings(),
-    enabled: canPurgeArchives,
-  });
 
-  const updateArchivePurgeSettingsMutation = useMutation({
-    mutationFn: (body: { enabled: boolean; days: number; purge_stats: boolean }) =>
-      api.updateArchivePurgeSettings(body),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['archive-purge-settings'] });
-      showToast(t('settings.toast.settingsSaved'), 'success');
-    },
-    onError: (e: Error) => showToast(e.message || t('archiveAutoPurge.saveFailed'), 'error'),
-  });
 
-  const saveArchivePurgeSettings = (
-    patch: Partial<{ enabled: boolean; days: number; purge_stats: boolean }>,
-  ) => {
-    if (!archivePurgeSettings) return;
-    updateArchivePurgeSettingsMutation.mutate({
-      enabled: archivePurgeSettings.enabled,
-      days: archivePurgeSettings.days,
-      purge_stats: archivePurgeSettings.purge_stats,
-      ...patch,
-    });
-  };
 
   const { data: updateCheck, refetch: refetchUpdateCheck, isRefetching: isCheckingUpdate } = useQuery({
     queryKey: ['updateCheck'],
@@ -1116,17 +964,6 @@ export function SettingsPage() {
     },
   });
 
-  const updatePrinterMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<{ external_camera_url: string | null; external_camera_type: string | null; external_camera_enabled: boolean; external_camera_snapshot_url: string | null; camera_rotation: number }> }) =>
-      api.updatePrinter(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['printers'] });
-      showToast(t('settings.toast.cameraSettingsSaved'), 'success');
-    },
-    onError: (error: Error) => {
-      showToast(`Failed to update printer: ${error.message}`, 'error');
-    },
-  });
 
   // Debounced auto-save when localSettings change
   useEffect(() => {
@@ -1378,110 +1215,10 @@ export function SettingsPage() {
     setLocalSettings(prev => prev ? { ...prev, [key]: value } : null);
   }, [authEnabled, hasPermission, showToast, t]);
 
-  const handleTestExternalCamera = async (printerId: number, url: string, cameraType: string) => {
-    if (!url) {
-      showToast(t('settings.toast.enterCameraUrl'), 'error');
-      return;
-    }
-    setExtCameraTestLoading(prev => ({ ...prev, [printerId]: true }));
-    setExtCameraTestResults(prev => ({ ...prev, [printerId]: null }));
-    try {
-      const result = await api.testExternalCamera(printerId, url, cameraType);
-      setExtCameraTestResults(prev => ({ ...prev, [printerId]: result }));
-      if (result.success) {
-        // A shared capture means the frame is real but was not fetched over a
-        // connection this test opened, so say so rather than implying the
-        // camera was just reached.
-        showToast(
-          result.coalesced
-            ? t('settings.toast.cameraConnectedCoalesced', { resolution: result.resolution || '' })
-            : t('settings.toast.cameraConnected', { resolution: result.resolution || '' }),
-          'success'
-        );
-      } else {
-        showToast(result.error || t('settings.toast.connectionFailed'), 'error');
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : t('settings.toast.testFailed');
-      setExtCameraTestResults(prev => ({ ...prev, [printerId]: { success: false, error: message } }));
-      showToast(message, 'error');
-    } finally {
-      setExtCameraTestLoading(prev => ({ ...prev, [printerId]: false }));
-    }
-  };
 
-  // Local state for camera URL inputs (to avoid saving on every keystroke)
-  const [localCameraUrls, setLocalCameraUrls] = useState<Record<number, string>>({});
-  const cameraUrlSaveTimeoutRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
-  const initializedPrinterUrlsRef = useRef<Set<number>>(new Set());
-  const [localSnapshotUrls, setLocalSnapshotUrls] = useState<Record<number, string>>({});
-  const snapshotUrlSaveTimeoutRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
-  const initializedPrinterSnapshotUrlsRef = useRef<Set<number>>(new Set());
 
-  // Initialize local camera URLs from printer data
-  useEffect(() => {
-    if (printers) {
-      const urls: Record<number, string> = {};
-      const snapUrls: Record<number, string> = {};
-      printers.forEach(p => {
-        if (p.external_camera_url && !initializedPrinterUrlsRef.current.has(p.id)) {
-          urls[p.id] = p.external_camera_url;
-          initializedPrinterUrlsRef.current.add(p.id);
-        }
-        if (p.external_camera_snapshot_url && !initializedPrinterSnapshotUrlsRef.current.has(p.id)) {
-          snapUrls[p.id] = p.external_camera_snapshot_url;
-          initializedPrinterSnapshotUrlsRef.current.add(p.id);
-        }
-      });
-      if (Object.keys(urls).length > 0) {
-        setLocalCameraUrls(prev => ({ ...prev, ...urls }));
-      }
-      if (Object.keys(snapUrls).length > 0) {
-        setLocalSnapshotUrls(prev => ({ ...prev, ...snapUrls }));
-      }
-    }
-  }, [printers]);
 
-  const handleCameraUrlChange = (printerId: number, url: string) => {
-    // Update local state immediately for responsive UI
-    setLocalCameraUrls(prev => ({ ...prev, [printerId]: url }));
 
-    // Clear existing timeout for this printer
-    if (cameraUrlSaveTimeoutRef.current[printerId]) {
-      clearTimeout(cameraUrlSaveTimeoutRef.current[printerId]);
-    }
-
-    // Debounce the save (800ms delay)
-    cameraUrlSaveTimeoutRef.current[printerId] = setTimeout(() => {
-      updatePrinterMutation.mutate({
-        id: printerId,
-        data: { external_camera_url: url || null }
-      });
-    }, 800);
-  };
-
-  const handleSnapshotUrlChange = (printerId: number, url: string) => {
-    setLocalSnapshotUrls(prev => ({ ...prev, [printerId]: url }));
-
-    if (snapshotUrlSaveTimeoutRef.current[printerId]) {
-      clearTimeout(snapshotUrlSaveTimeoutRef.current[printerId]);
-    }
-
-    snapshotUrlSaveTimeoutRef.current[printerId] = setTimeout(() => {
-      updatePrinterMutation.mutate({
-        id: printerId,
-        data: { external_camera_snapshot_url: url || null }
-      });
-    }, 800);
-  };
-
-  const handleUpdatePrinterCamera = (printerId: number, updates: { type?: string; enabled?: boolean; rotation?: number }) => {
-    const data: Partial<{ external_camera_type: string | null; external_camera_enabled: boolean; camera_rotation: number }> = {};
-    if (updates.type !== undefined) data.external_camera_type = updates.type || null;
-    if (updates.enabled !== undefined) data.external_camera_enabled = updates.enabled;
-    if (updates.rotation !== undefined) data.camera_rotation = updates.rotation;
-    updatePrinterMutation.mutate({ id: printerId, data });
-  };
 
   if (isLoading || !localSettings) {
     return (
@@ -1539,14 +1276,9 @@ export function SettingsPage() {
   // it is blank we fall back to whatever the backend could infer, and when
   // that is blank too we print the command without a `cd` rather than a made-up
   // path that would fail on paste.
-  const composeDir =
-    (localSettings?.docker_compose_dir ?? '').trim() || (updateCheck?.compose_dir_detected ?? '');
   // Quoted only when it has to be. The backend restricts this field to path
   // characters, so quotes, $ and backticks cannot be in it and double-quoting
   // a path with a space is safe.
-  const composeUpdateCommand = composeDir
-    ? `cd ${/\s/.test(composeDir) ? `"${composeDir}"` : composeDir} && docker compose pull && docker compose up -d`
-    : 'docker compose pull && docker compose up -d';
 
   return (
     <CardDensityProvider density="dense">

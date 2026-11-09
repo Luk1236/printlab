@@ -9,9 +9,7 @@ exactly once across the response.
 
 from typing import Any, Literal
 
-from pydantic import field_validator
-
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 CloudStatus = Literal["ok", "not_authenticated", "expired", "unreachable"]
 

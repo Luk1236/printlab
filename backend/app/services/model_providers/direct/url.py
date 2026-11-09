@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-import os
-from urllib.parse import unquote, urlparse
+from urllib.parse import urlparse
 
 from backend.app.services.model_providers.base import ProviderResourceRef
 from backend.app.services.model_providers.direct.errors import DirectUrlInvalidError

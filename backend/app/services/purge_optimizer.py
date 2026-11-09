@@ -29,8 +29,6 @@ def calculate_filament_weight_grams(extrusion_length_mm: float, density: float =
 def analyze_gcode_tool_changes(gcode_text: str) -> dict[str, Any]:
     """Analysiert Werkzeug- und Farbwechsel sowie vorhandene Spülbefehle im G-Code."""
     tool_change_pattern = re.compile(r"^(T\d+)", re.MULTILINE)
-    # Bambu / OrcaSlicer Flush-Kommentare oder Extrusionen beim Farbwechsel
-    flush_comment_pattern = re.compile(r";\s*FLUSH_START|;\s*purge\s+volume:\s*(\d+(?:\.\d+)?)", re.IGNORECASE)
 
     tools_used: set[str] = set()
     tool_changes_count = 0
@@ -52,7 +50,7 @@ def analyze_gcode_tool_changes(gcode_text: str) -> dict[str, Any]:
     raw_flush_grams = calculate_filament_weight_grams(estimated_raw_flush_length_mm)
 
     return {
-        "tools_detected": sorted(list(tools_used)),
+        "tools_detected": sorted(tools_used),
         "tool_count": len(tools_used),
         "total_tool_changes": tool_changes_count,
         "is_multicolor": tool_changes_count > 0,

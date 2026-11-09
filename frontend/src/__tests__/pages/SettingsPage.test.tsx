@@ -117,6 +117,11 @@ describe('SettingsPage', () => {
   });
 
   describe('finish photo plate restore (#2547)', () => {
+    // Der Allgemein-Reiter ist in Unterreiter geteilt; „Alle“ zeigt wie früher alles auf einer Seite.
+    beforeEach(() => {
+      window.history.replaceState({}, '', '/?sub=all');
+    });
+
     const restoreLabel = 'Restore plate for finish photo';
 
     it('offers the toggle while finish photos are enabled', async () => {
@@ -177,6 +182,11 @@ describe('SettingsPage', () => {
   });
 
   describe('general settings', () => {
+    // Der Allgemein-Reiter ist in Unterreiter geteilt; „Alle“ zeigt wie früher alles auf einer Seite.
+    beforeEach(() => {
+      window.history.replaceState({}, '', '/?sub=all');
+    });
+
     it('shows date format setting', async () => {
       render(<SettingsPage />);
 
@@ -254,6 +264,8 @@ describe('SettingsPage', () => {
     });
 
     it('shows updates section with firmware toggle', async () => {
+      // Updates & Version hat einen eigenen Reiter
+      window.history.replaceState({}, '', '/?tab=updates');
       render(<SettingsPage />);
 
       await waitFor(() => {
@@ -507,6 +519,11 @@ describe('SettingsPage', () => {
   });
 
   describe('update CTA per deployment shape', () => {
+    // Updates hat einen eigenen Reiter (Updates & Version).
+    beforeEach(() => {
+      window.history.replaceState({}, '', '/?tab=updates');
+    });
+
     // The update card branches on the deployment shape returned by
     // /updates/check. Each branch is mutually exclusive — verify the right
     // one wins so HA addon users never see the docker-compose snippet
@@ -1591,6 +1608,11 @@ describe('SettingsPage', () => {
   });
 
   describe('external camera snapshot URL override (#1177)', () => {
+    // Der Allgemein-Reiter ist in Unterreiter geteilt; „Alle“ zeigt wie früher alles auf einer Seite.
+    beforeEach(() => {
+      window.history.replaceState({}, '', '/?sub=all');
+    });
+
     /**
      * The snapshot URL input only appears for stream camera types where the
      * MJPEG warm-up problem can occur (mjpeg / rtsp / usb). Pure HTTP
@@ -1690,6 +1712,11 @@ describe('SettingsPage', () => {
   });
 
   describe('theme mode buttons', () => {
+    // Der Allgemein-Reiter ist in Unterreiter geteilt; „Alle“ zeigt wie früher alles auf einer Seite.
+    beforeEach(() => {
+      window.history.replaceState({}, '', '/?sub=all');
+    });
+
     it('renders Dark, Light, and System buttons', async () => {
       render(<SettingsPage />);
 
@@ -2180,7 +2207,7 @@ describe('SettingsPage — settings changed outside the page (#2716)', () => {
   }
 
   beforeEach(() => {
-    window.history.replaceState({}, '', '/');
+    window.history.replaceState({}, '', '/?sub=all');
     localStorage.clear();
     setAuthToken(null);
     puts = [];

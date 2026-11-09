@@ -26,7 +26,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from backend.app.api.routes.cloud import resolve_api_key_cloud_owner
-
+from backend.app.api.routes.library_helpers import (
+    _clean_3mf_metadata,
+    _ensure_library_file_visible,
+    _read_3mf_entry,
+    _resolve_slice_destination,
+    _stored_file_path,
+    _without_print_name,
+    get_library_thumbnails_dir,
+    to_relative_path,
+)
 from backend.app.core.auth import (
     require_media_token_ownership,
     require_ownership_permission,
@@ -82,20 +91,11 @@ from backend.app.utils.threemf_tools import (
     select_plate_gcode_name,
     supports_enabled_in_config,
 )
-from backend.app.api.routes.library_helpers import (
-    _clean_3mf_metadata,
-    _ensure_library_file_visible,
-    _read_3mf_entry,
-    _resolve_slice_destination,
-    _stored_file_path,
-    _without_print_name,
-    get_library_thumbnails_dir,
-    to_relative_path,
-)
 
-logger = logging.getLogger('backend.app.api.routes.library')
+logger = logging.getLogger("backend.app.api.routes.library")
 
 router = APIRouter(tags=["library"])
+
 
 def _patch_process_bed_type(process_json: str, bed_type: str) -> str:
     """Overwrite ``curr_bed_type`` in a process-profile JSON before forwarding
@@ -381,6 +381,13 @@ def _slicer_rejection_message(error_text: str) -> str | None:
     return reason
 
 
+def _lib():
+    """Das Fassadenmodul ``library``: Tests biegen ``library._run_slicer_with_fallback`` um."""
+    import importlib
+
+    return importlib.import_module("backend.app.api.routes.library")
+
+
 async def _run_slicer_with_fallback(
     db: AsyncSession,
     *,
@@ -549,7 +556,7 @@ async def _run_slicer_with_fallback(
 
             presets["process"] = sanitize_process_json_str(presets["process"]) or presets["process"]
         except Exception:
-            pass
+            logger.debug("Fehler ignoriert", exc_info=True)
 
     used_embedded_settings = False
     # "Slice as designed" (#2611): honour the file's embedded
@@ -994,7 +1001,7 @@ async def slice_and_persist(
 
     library_request = request.model_copy(update={"export_3mf": True})
 
-    result, used_embedded_settings = await _run_slicer_with_fallback(
+    result, used_embedded_settings = await _lib()._run_slicer_with_fallback(
         db,
         model_bytes=model_bytes,
         model_filename=model_filename,
@@ -1144,7 +1151,7 @@ async def slice_and_persist_as_archive(
     # caller's `export_3mf` flag; here we override.
     archive_request = request.model_copy(update={"export_3mf": True})
 
-    result, used_embedded_settings = await _run_slicer_with_fallback(
+    result, used_embedded_settings = await _lib()._run_slicer_with_fallback(
         db,
         model_bytes=model_bytes,
         model_filename=model_filename,
@@ -1461,5 +1468,3 @@ async def print_library_file(
         status_code=410,
         detail="Direct library-file print has been removed. Create a print queue item with POST /queue/.",
     )
-
-

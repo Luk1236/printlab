@@ -79,7 +79,7 @@ TRACKING_STAGES: list[dict[str, str]] = [
 
 def generate_tracking_token(order_id: str, salt: str = "") -> str:
     """Erzeugt einen deterministischen, fälschungssicheren URL-sicheren Tracking-Token."""
-    msg = f"{order_id}:{salt}".encode("utf-8")
+    msg = f"{order_id}:{salt}".encode()
     sig = hmac.new(TRACKING_SECRET.encode("utf-8"), msg, hashlib.sha256).hexdigest()
     return f"tr_{sig[:24]}"
 
@@ -109,15 +109,17 @@ def calculate_volume_tier_pricing(base_unit_price_cents: int, quantity: int) -> 
     for t in VOLUME_TIERS:
         tfactor = 1.0 - (t["discount_percent"] / 100.0)
         t_unit_cents = int(round(base_unit_price_cents * tfactor))
-        tiers_overview.append({
-            "tier_name": t["tier_name"],
-            "min_qty": t["min_qty"],
-            "max_qty": t["max_qty"],
-            "discount_percent": t["discount_percent"],
-            "unit_price_cents": t_unit_cents,
-            "unit_price_eur": round(t_unit_cents / 100.0, 2),
-            "is_active": (t["min_qty"] <= q <= t["max_qty"]),
-        })
+        tiers_overview.append(
+            {
+                "tier_name": t["tier_name"],
+                "min_qty": t["min_qty"],
+                "max_qty": t["max_qty"],
+                "discount_percent": t["discount_percent"],
+                "unit_price_cents": t_unit_cents,
+                "unit_price_eur": round(t_unit_cents / 100.0, 2),
+                "is_active": (t["min_qty"] <= q <= t["max_qty"]),
+            }
+        )
 
     return {
         "base_unit_price_cents": base_unit_price_cents,
@@ -165,13 +167,15 @@ def calculate_order_total(
         item_total_cents = cost_parts + setup_fee + surcharge
         total_options_cents += item_total_cents
 
-        post_processing_breakdown.append({
-            "id": opt_id,
-            "name": cfg["name"],
-            "count": count,
-            "cost_cents": item_total_cents,
-            "cost_eur": round(item_total_cents / 100.0, 2),
-        })
+        post_processing_breakdown.append(
+            {
+                "id": opt_id,
+                "name": cfg["name"],
+                "count": count,
+                "cost_cents": item_total_cents,
+                "cost_eur": round(item_total_cents / 100.0, 2),
+            }
+        )
 
     net_total_cents = tier_info["total_parts_cents"] + total_options_cents
     vat_19_cents = int(round(net_total_cents * 0.19))

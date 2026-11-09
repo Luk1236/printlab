@@ -2424,6 +2424,7 @@ async def set_ams_backup(
 
     return {"success": True, "ams_filament_backup": enabled}
 
+
 @router.get("/{printer_id}/inventory-remain")
 async def get_inventory_remain(
     printer_id: int,

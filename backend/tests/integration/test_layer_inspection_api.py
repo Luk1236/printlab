@@ -20,6 +20,15 @@ def _make_test_image() -> bytes:
     return enc.tobytes()
 
 
+@pytest.fixture(autouse=True)
+def _isolated_layer_inspection_config(tmp_path, monkeypatch):
+    """Die Konfiguration liegt sonst in data/layer_inspection.json: Der PUT eines Laufs würde den nächsten färben."""
+    from backend.app.services.layer_inspection import layer_inspection_service
+
+    monkeypatch.setattr(layer_inspection_service, "path", tmp_path / "layer_inspection.json")
+    monkeypatch.setattr(layer_inspection_service, "_config", {})
+
+
 @pytest.fixture
 async def sample_printer(db_session):
     printer = Printer(

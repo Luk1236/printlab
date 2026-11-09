@@ -7,7 +7,7 @@ import logging
 from typing import Any
 
 from fastapi import APIRouter, Header, HTTPException, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from backend.app.core.auth import RequirePermissionIfAuthEnabled
 from backend.app.core.permissions import Permission
@@ -50,6 +50,14 @@ class FulfillmentEventRequest(BaseModel):
     carrier: str = "DHL"
     tracking_url: str = ""
 
+    @field_validator("tracking_url")
+    @classmethod
+    def _http_only(cls, value: str) -> str:
+        # Der Link landet im Rückmelde-Event für den Web-Shop und wird dort angezeigt: nur http(s), kein javascript:
+        if value and not value.lower().startswith(("http://", "https://")):
+            raise ValueError("tracking_url muss mit http:// oder https:// beginnen")
+        return value
+
 
 @router.get("/config", response_model=dict[str, Any])
 async def get_config(
@@ -76,10 +84,9 @@ async def handle_shopify_webhook(
 ) -> dict[str, Any]:
     """Empfängt Bestellungen aus Shopify ('orders/create') mit Signaturprüfung."""
     body_bytes = await request.body()
-    if x_shopify_hmac_sha256:
-        valid = verify_shopify_signature(body_bytes, x_shopify_hmac_sha256)
-        if not valid:
-            raise HTTPException(401, "Ungültige Shopify Webhook HMAC-SHA256 Signatur.")
+    # Die Signatur ist Pflicht: ohne sie (oder ohne gesetztes Geheimnis) kann jeder Bestellungen einspeisen.
+    if not x_shopify_hmac_sha256 or not verify_shopify_signature(body_bytes, x_shopify_hmac_sha256):
+        raise HTTPException(401, "Ungültige oder fehlende Shopify Webhook HMAC-SHA256 Signatur.")
 
     try:
         payload = json.loads(body_bytes.decode("utf-8")) if body_bytes else {}
@@ -96,10 +103,9 @@ async def handle_woocommerce_webhook(
 ) -> dict[str, Any]:
     """Empfängt Bestellungen aus WooCommerce ('order.created') mit Signaturprüfung."""
     body_bytes = await request.body()
-    if x_wc_webhook_signature:
-        valid = verify_woocommerce_signature(body_bytes, x_wc_webhook_signature)
-        if not valid:
-            raise HTTPException(401, "Ungültige WooCommerce Webhook Signatur.")
+    # Die Signatur ist Pflicht (siehe Shopify-Empfänger).
+    if not x_wc_webhook_signature or not verify_woocommerce_signature(body_bytes, x_wc_webhook_signature):
+        raise HTTPException(401, "Ungültige oder fehlende WooCommerce Webhook Signatur.")
 
     try:
         payload = json.loads(body_bytes.decode("utf-8")) if body_bytes else {}
@@ -115,9 +121,9 @@ async def handle_sap_order(
     authorization: str | None = Header(None),
 ) -> dict[str, Any]:
     """Empfängt Fertigungsaufträge aus SAP ERP Systemen über Bearer-Token."""
-    if authorization:
-        if not verify_sap_erp_token(authorization):
-            raise HTTPException(401, "Ungültiges SAP ERP API Bearer-Token.")
+    # Das Token ist Pflicht (siehe Shopify-Empfänger).
+    if not authorization or not verify_sap_erp_token(authorization):
+        raise HTTPException(401, "Ungültiges oder fehlendes SAP ERP API Bearer-Token.")
 
     return process_sap_erp_order(req.model_dump())
 

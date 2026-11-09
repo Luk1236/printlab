@@ -9,14 +9,15 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from backend.app.core.auth import RequirePermissionIfAuthEnabled
+from backend.app.core.permissions import Permission
 from backend.app.services.customer_tracking import (
     POST_PROCESSING_CATALOG,
     VOLUME_TIERS,
     calculate_order_total,
-    calculate_volume_tier_pricing,
     generate_tracking_token,
     resolve_mock_or_simulated_tracking,
 )
@@ -30,9 +31,7 @@ class CalculateTiersRequest(BaseModel):
     base_unit_price_cents: int = Field(..., gt=0, description="Grundpreis für Einzelstück in Cent")
     quantity: int = Field(1, ge=1, le=100000, description="Gewünschte Stückzahl")
     selected_options: list[str] = Field(default_factory=list, description="IDs ausgewählter Optionen")
-    option_quantities: dict[str, int] = Field(
-        default_factory=dict, description="Individuelle Stückzahlen je Option"
-    )
+    option_quantities: dict[str, int] = Field(default_factory=dict, description="Individuelle Stückzahlen je Option")
 
 
 class GenerateTokenRequest(BaseModel):
@@ -71,8 +70,11 @@ async def get_customer_tracking_status(token: str) -> dict[str, Any]:
 
 
 @router.post("/tracking/token", response_model=dict[str, str])
-async def generate_order_tracking_token(req: GenerateTokenRequest) -> dict[str, str]:
-    """Erzeugt einen sicheren Tracking-Token für einen Auftrag."""
+async def generate_order_tracking_token(
+    req: GenerateTokenRequest,
+    _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_READ),
+) -> dict[str, str]:
+    """Erzeugt einen sicheren Tracking-Token für einen Auftrag (nur Mitarbeiter, nicht der Kunde selbst)."""
     tok = generate_tracking_token(req.order_id, salt=req.salt)
     return {
         "order_id": req.order_id,

@@ -13,7 +13,6 @@ Stellt vier eng verzahnte Kernfunktionen für die Serienfertigung bereit:
 
 from __future__ import annotations
 
-import math
 import re
 from dataclasses import dataclass, field
 from typing import Any
@@ -188,9 +187,7 @@ class _GuillotineBin:
         self.spacing = spacing
         self.exclusion_zones = exclusion_zones or []
         # Freie Rechtecke als (x, y, w, d) im nutzbaren Bereich (inkl. +spacing Puffer rechts/oben)
-        self.free_rects: list[tuple[float, float, float, float]] = [
-            (0.0, 0.0, width + spacing, depth + spacing)
-        ]
+        self.free_rects: list[tuple[float, float, float, float]] = [(0.0, 0.0, width + spacing, depth + spacing)]
         self._carve_exclusion_zones()
 
     def _carve_exclusion_zones(self) -> None:
@@ -323,9 +320,7 @@ def pack_parts_onto_plates(
         if part.copies <= 0:
             continue
         fits_normal = part.width_mm <= usable_w + 1e-6 and part.depth_mm <= usable_d + 1e-6
-        fits_rotated = (
-            part.allow_rotation and part.depth_mm <= usable_w + 1e-6 and part.width_mm <= usable_d + 1e-6
-        )
+        fits_rotated = part.allow_rotation and part.depth_mm <= usable_w + 1e-6 and part.width_mm <= usable_d + 1e-6
         fits_height = part.height_mm <= bed_height_mm + 1e-6
 
         if (not fits_normal and not fits_rotated) or not fits_height:
@@ -410,13 +405,9 @@ def pack_parts_onto_plates(
         plates[target_plate_idx].placements.append(instance)
 
     collision_free = all(verify_no_collisions(plate.placements, spacing_mm=spacing_mm) for plate in plates)
-    exclusion_safe = all(
-        verify_no_exclusion_collisions(plate.placements, exclusion_zones) for plate in plates
-    )
+    exclusion_safe = all(verify_no_exclusion_collisions(plate.placements, exclusion_zones) for plate in plates)
     total_placed = sum(len(plate.placements) for plate in plates)
-    avg_utilization = (
-        round(sum(p.utilization_percent for p in plates) / len(plates), 2) if plates else 0.0
-    )
+    avg_utilization = round(sum(p.utilization_percent for p in plates) / len(plates), 2) if plates else 0.0
 
     return {
         "total_parts_requested": sum(max(0, p.copies) for p in parts),
@@ -445,7 +436,11 @@ def suggest_optimal_orientation(
     - Niedrige Bauhöhe (Z) senkt das Hebelmoment und beschleunigt den Druck.
     - Geringes Überhangverhältnis minimiert Support-Material.
     """
-    dx, dy, dz = (max(0.1, float(dimensions_mm[0])), max(0.1, float(dimensions_mm[1])), max(0.1, float(dimensions_mm[2])))
+    dx, dy, dz = (
+        max(0.1, float(dimensions_mm[0])),
+        max(0.1, float(dimensions_mm[1])),
+        max(0.1, float(dimensions_mm[2])),
+    )
     overhangs = overhang_ratio_by_axis or {}
 
     orientations = [

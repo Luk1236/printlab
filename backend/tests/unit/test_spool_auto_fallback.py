@@ -1,13 +1,14 @@
 """Unit-Tests für Intelligenter Rollentausch & AMS Spool Auto-Fallback (Phase 4)."""
 
-import pytest
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from backend.app.services.spool_auto_fallback import (
     are_trays_backup_compatible,
-    find_ams_backup_pairs,
     auto_enable_ams_filament_backup_if_eligible,
+    find_ams_backup_pairs,
 )
 
 
@@ -81,13 +82,13 @@ def test_auto_enable_ams_filament_backup():
     mock_client.state.ams_filament_backup = False
     mock_client.set_ams_filament_backup.return_value = True
 
-    with patch("backend.app.services.spool_auto_fallback.printer_manager.get_client", return_value=mock_client), \
-         patch("backend.app.services.spool_auto_fallback.printer_manager.get_status", return_value=status):
-        
+    with (
+        patch("backend.app.services.spool_auto_fallback.printer_manager.get_client", return_value=mock_client),
+        patch("backend.app.services.spool_auto_fallback.printer_manager.get_status", return_value=status),
+    ):
         res = auto_enable_ams_filament_backup_if_eligible(1)
         assert res is True
         mock_client.set_ams_filament_backup.assert_called_once_with(True)
-
 
 
 @pytest.mark.asyncio
@@ -103,8 +104,10 @@ async def test_api_ams_backup_pairs(async_client):
             }
         ]
     )
-    with patch("backend.app.api.routes.printers.printer_manager.get_status", return_value=status), \
-         patch("backend.app.api.routes.printers.printer_manager.get_client", return_value=None):
+    with (
+        patch("backend.app.api.routes.printers.printer_manager.get_status", return_value=status),
+        patch("backend.app.api.routes.printers.printer_manager.get_client", return_value=None),
+    ):
         resp = await async_client.get("/api/v1/printers/1/ams-backup-pairs")
         assert resp.status_code == 200
         data = resp.json()
@@ -115,7 +118,9 @@ async def test_api_ams_backup_pairs(async_client):
 
 @pytest.mark.asyncio
 async def test_api_apply_ams_auto_fallback(async_client):
-    with patch("backend.app.services.spool_auto_fallback.auto_enable_ams_filament_backup_if_eligible", return_value=True):
+    with patch(
+        "backend.app.services.spool_auto_fallback.auto_enable_ams_filament_backup_if_eligible", return_value=True
+    ):
         resp = await async_client.post("/api/v1/printers/1/ams-auto-fallback/apply")
         assert resp.status_code == 200
         assert resp.json()["success"] is True

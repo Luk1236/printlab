@@ -48,6 +48,7 @@ class PreflightCheckRequest(BaseModel):
 
 # --- Wear Tracking Endpoints ---
 
+
 @router.get("/wear/{printer_id}")
 async def get_printer_wear_status(
     printer_id: str,
@@ -85,6 +86,7 @@ async def reset_printer_component(
 
 
 # --- Phase 18: Abrasive Wear Predictor & AMS Humidity Guard ---
+
 
 @router.post("/wear/forecast", response_model=dict[str, Any])
 async def forecast_job_wear(

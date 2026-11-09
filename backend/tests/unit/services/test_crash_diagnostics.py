@@ -96,8 +96,13 @@ def test_unclean_reboot_generates_and_dismisses_crash_report(tmp_path: Path):
     # 2. Boot 2 startet nach Absturz
     with (
         patch("backend.app.services.crash_diagnostics.get_system_boot_id", return_value="boot-recovered"),
-        patch("backend.app.services.crash_diagnostics.check_undervoltage_flags", return_value=(True, ["Unterspannung seit dem Systemstart aufgetreten"])),
-        patch("backend.app.services.crash_diagnostics.read_previous_boot_logs", return_value=["Kernel crash log line 1"]),
+        patch(
+            "backend.app.services.crash_diagnostics.check_undervoltage_flags",
+            return_value=(True, ["Unterspannung seit dem Systemstart aufgetreten"]),
+        ),
+        patch(
+            "backend.app.services.crash_diagnostics.read_previous_boot_logs", return_value=["Kernel crash log line 1"]
+        ),
     ):
         report = check_and_generate_crash_report(tmp_path)
         assert report is not None

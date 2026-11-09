@@ -71,15 +71,19 @@ def build_printer_inline_keyboard(printer_id: int | None) -> list[list[dict[str,
 
     keyboard = [row1]
     if state == "RUNNING":
-        keyboard.append([
-            {"text": "⏸️ Pause", "callback_data": f"cmd:pause:{printer_id}"},
-            {"text": "⏹️ Stopp", "callback_data": f"cmd:stop:{printer_id}"},
-        ])
+        keyboard.append(
+            [
+                {"text": "⏸️ Pause", "callback_data": f"cmd:pause:{printer_id}"},
+                {"text": "⏹️ Stopp", "callback_data": f"cmd:stop:{printer_id}"},
+            ]
+        )
     elif state == "PAUSE":
-        keyboard.append([
-            {"text": "▶️ Weiter", "callback_data": f"cmd:resume:{printer_id}"},
-            {"text": "⏹️ Stopp", "callback_data": f"cmd:stop:{printer_id}"},
-        ])
+        keyboard.append(
+            [
+                {"text": "▶️ Weiter", "callback_data": f"cmd:resume:{printer_id}"},
+                {"text": "⏹️ Stopp", "callback_data": f"cmd:stop:{printer_id}"},
+            ]
+        )
 
     return keyboard
 
@@ -260,7 +264,7 @@ async def send_live_photo(
             act_data["message_thread_id"] = message_thread_id
         await http_client.post(f"https://api.telegram.org/bot{bot_token}/sendChatAction", json=act_data)
     except Exception:
-        pass
+        logger.debug("Fehler ignoriert", exc_info=True)
 
     target = await resolve_target_printer(printer_id)
     target_id = target.id if target else printer_id
@@ -359,7 +363,11 @@ async def handle_telegram_message(
                 p_name = telegram_markdown_escape(target.name or f"Drucker {target.id}")
                 await http_client.post(
                     f"https://api.telegram.org/bot{bot_token}/sendMessage",
-                    json={"chat_id": chat_id, "text": f"⏸️ Druckauftrag auf *{p_name}* pausiert.", "parse_mode": "Markdown"},
+                    json={
+                        "chat_id": chat_id,
+                        "text": f"⏸️ Druckauftrag auf *{p_name}* pausiert.",
+                        "parse_mode": "Markdown",
+                    },
                 )
     elif cmd in ("/resume", "/weiter"):
         target = await resolve_target_printer()
@@ -370,7 +378,11 @@ async def handle_telegram_message(
                 p_name = telegram_markdown_escape(target.name or f"Drucker {target.id}")
                 await http_client.post(
                     f"https://api.telegram.org/bot{bot_token}/sendMessage",
-                    json={"chat_id": chat_id, "text": f"▶️ Druckauftrag auf *{p_name}* fortgesetzt.", "parse_mode": "Markdown"},
+                    json={
+                        "chat_id": chat_id,
+                        "text": f"▶️ Druckauftrag auf *{p_name}* fortgesetzt.",
+                        "parse_mode": "Markdown",
+                    },
                 )
     elif cmd in ("/licht", "/light"):
         target = await resolve_target_printer()
@@ -383,7 +395,11 @@ async def handle_telegram_message(
                 p_name = telegram_markdown_escape(target.name or f"Drucker {target.id}")
                 await http_client.post(
                     f"https://api.telegram.org/bot{bot_token}/sendMessage",
-                    json={"chat_id": chat_id, "text": f"💡 Gehäusebeleuchtung auf *{p_name}* {s}.", "parse_mode": "Markdown"},
+                    json={
+                        "chat_id": chat_id,
+                        "text": f"💡 Gehäusebeleuchtung auf *{p_name}* {s}.",
+                        "parse_mode": "Markdown",
+                    },
                 )
     elif cmd in ("/stop", "/abbrechen"):
         target = await resolve_target_printer()
@@ -477,7 +493,7 @@ async def handle_telegram_callback_query(
                 },
             )
         except Exception:
-            pass
+            logger.debug("Fehler ignoriert", exc_info=True)
 
     if action == "live" or data == "cmd:live":
         await send_live_photo(bot_token, chat_id, message_thread_id, http_client, target_id)

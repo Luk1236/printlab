@@ -1,6 +1,5 @@
-import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Bot, Sparkles } from 'lucide-react';
+import { Bot } from 'lucide-react';
 import { AssistantPanel } from '../components/AssistantPanel';
 
 export function AssistantPage() {

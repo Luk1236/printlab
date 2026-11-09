@@ -152,8 +152,13 @@ def _extract_manifest_url_and_name(manifest: dict[str, Any]) -> tuple[str | None
 
     # Deep recursive fallback scan for any valid model download URL
     if not signed_url:
+
         def _find_url(obj: Any) -> str | None:
-            if isinstance(obj, str) and obj.startswith("http") and ("bblmw.com" in obj or ".3mf" in obj.lower() or ".stl" in obj.lower()):
+            if (
+                isinstance(obj, str)
+                and obj.startswith("http")
+                and ("bblmw.com" in obj or ".3mf" in obj.lower() or ".stl" in obj.lower())
+            ):
                 return obj
             if isinstance(obj, dict):
                 for v in obj.values():
@@ -218,7 +223,7 @@ class MakerWorldService(ProviderService):
             try:
                 ctx.load_default_certs(ssl.Purpose.SERVER_AUTH)
             except Exception:
-                pass
+                logger.debug("Fehler ignoriert", exc_info=True)
             self._client = httpx.AsyncClient(verify=ctx, timeout=30.0)
             self._owns_client = True
         self._auth_token = auth_token

@@ -24,8 +24,8 @@ from sqlalchemy import distinct, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from backend.app.core.config import settings as app_settings
 from backend.app.core import database
+from backend.app.core.config import settings as app_settings
 from backend.app.models.archive import PrintArchive
 from backend.app.models.library import LibraryFile, LibraryFolder
 from backend.app.models.print_queue import PrintQueueItem
@@ -852,5 +852,3 @@ async def _backfill_external_thumbnails(folder_ids: list[int], session_factory: 
             if thumb_path:
                 target_file.thumbnail_path = to_relative_path(Path(thumb_path))
                 await db.commit()
-
-

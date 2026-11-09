@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any --
+   Hardware-Schnittstellen (GPIO, Plattenstation, Mesh, E-Commerce): Die Antworten sind noch nicht typisiert.
+   Die Typen kommen aus dem OpenAPI-Schema, sobald die Routen stabil sind; bis dahin bewusst lose. */
 import { API_BASE, authToken, request } from './core';
 import type {
   LayerInspectionConfig,

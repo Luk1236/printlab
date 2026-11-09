@@ -74,11 +74,15 @@ def test_slice_model_builtin_extracts_pre_sliced_3mf(tmp_path: Path):
 def test_slice_model_builtin_delegates_to_real_slicer(tmp_path: Path):
     """Testet, dass ungeslicte Modelle an die echte OrcaSlicer-CLI delegiert werden."""
     stl_path = tmp_path / "model.stl"
-    stl_path.write_text("solid test\nfacet normal 0 0 1\nouter loop\nvertex 0 0 0\nvertex 1 0 0\nvertex 1 1 0\nendloop\nendfacet\nendsolid test\n")
+    stl_path.write_text(
+        "solid test\nfacet normal 0 0 1\nouter loop\nvertex 0 0 0\nvertex 1 0 0\nvertex 1 1 0\nendloop\nendfacet\nendsolid test\n"
+    )
 
     mock_output = SliceOutput(b"FAKE_3MF_DATA", 300, 12.4)
-    with patch("backend.app.services.builtin_slicer.find_existing_slicer", return_value="/usr/local/bin/orca-slicer"), \
-         patch("backend.app.services.builtin_slicer.slice_file", return_value=mock_output) as mock_slice:
+    with (
+        patch("backend.app.services.builtin_slicer.find_existing_slicer", return_value="/usr/local/bin/orca-slicer"),
+        patch("backend.app.services.builtin_slicer.slice_file", return_value=mock_output) as mock_slice,
+    ):
         res = slice_model_builtin(
             stl_path,
             "model.gcode.3mf",
@@ -158,7 +162,7 @@ def test_pc_slicer_sidecar_contract_endpoints(tmp_path: Path):
 
 
 def test_sanitize_process_profile_clamps_negative_sentinels():
-    from backend.app.services.slicer_cli import sanitize_process_profile_dict, sanitize_process_json_str
+    from backend.app.services.slicer_cli import sanitize_process_json_str, sanitize_process_profile_dict
 
     raw = {
         "tree_support_wall_count": "-1",

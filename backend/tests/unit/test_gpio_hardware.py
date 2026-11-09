@@ -1,7 +1,8 @@
 """Unit-Tests für GPIO Hardware-Taster, Entprellung & Not-Halt-Dienst (Phase 5)."""
 
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from backend.app.services.gpio_hardware import GpioHardwareService
 

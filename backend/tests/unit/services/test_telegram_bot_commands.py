@@ -218,9 +218,10 @@ async def test_pause_and_resume_commands():
     fake_printer = type("Printer", (), {"id": 1, "name": "Bambu P1S"})()
     mock_bambu_client = MagicMock()
 
-    with patch("backend.app.services.telegram_bot_commands.resolve_target_printer", return_value=fake_printer), \
-         patch("backend.app.services.printer_manager.printer_manager.get_client", return_value=mock_bambu_client):
-        
+    with (
+        patch("backend.app.services.telegram_bot_commands.resolve_target_printer", return_value=fake_printer),
+        patch("backend.app.services.printer_manager.printer_manager.get_client", return_value=mock_bambu_client),
+    ):
         # /pause
         await handle_telegram_message(
             bot_token=BOT_TOKEN,
@@ -247,9 +248,10 @@ async def test_light_toggle_command():
     mock_bambu_client = MagicMock()
     mock_bambu_client.state = type("State", (), {"chamber_light": False})()
 
-    with patch("backend.app.services.telegram_bot_commands.resolve_target_printer", return_value=fake_printer), \
-         patch("backend.app.services.printer_manager.printer_manager.get_client", return_value=mock_bambu_client):
-        
+    with (
+        patch("backend.app.services.telegram_bot_commands.resolve_target_printer", return_value=fake_printer),
+        patch("backend.app.services.printer_manager.printer_manager.get_client", return_value=mock_bambu_client),
+    ):
         await handle_telegram_message(
             bot_token=BOT_TOKEN,
             message={"chat": {"id": int(CHAT_ID)}, "text": "/licht"},

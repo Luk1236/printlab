@@ -94,7 +94,9 @@ async def download_invoice_zugferd_pdf(
     try:
         pdf_bytes = generate_zugferd_facturx_pdf(invoice, lang=lang)
     except einvoice.EInvoiceError as exc:
-        raise HTTPException(status_code=422, detail={"message": "Pflichtangaben fehlen.", "issues": exc.issues}) from exc
+        raise HTTPException(
+            status_code=422, detail={"message": "Pflichtangaben fehlen.", "issues": exc.issues}
+        ) from exc
 
     filename = f"ZUGFeRD_{invoice.get('number', invoice_id)}.pdf"
     return Response(

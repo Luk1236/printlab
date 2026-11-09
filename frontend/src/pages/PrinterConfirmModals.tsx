@@ -5,20 +5,20 @@
 
 import { useTranslation } from 'react-i18next';
 import { ConfirmModal } from '../components/ConfirmModal';
-import type { Printer } from '../api/types';
+import type { Printer, SmartPlug } from '../api/types';
 
 export interface PrinterConfirmModalsProps {
   printer: Printer;
-  status: any;
-  smartPlug: any;
+  status: { state?: string | null } | null | undefined;
+  smartPlug: Pick<SmartPlug, 'id' | 'name'> | null | undefined;
   showPowerOnConfirm: boolean;
   setShowPowerOnConfirm: (show: boolean) => void;
   confirmMaintenanceEnter: boolean;
   setConfirmMaintenanceEnter: (confirm: boolean) => void;
   showPowerOffConfirm: boolean;
   setShowPowerOffConfirm: (show: boolean) => void;
-  haToggleConfirm: { id: string; name: string; ha_entity_id?: string } | null;
-  setHaToggleConfirm: (val: { id: string; name: string; ha_entity_id?: string } | null) => void;
+  haToggleConfirm: Pick<SmartPlug, 'id' | 'name' | 'ha_entity_id'> | null;
+  setHaToggleConfirm: (val: null) => void;
   showStopConfirm: boolean;
   setShowStopConfirm: (show: boolean) => void;
   showPauseConfirm: boolean;
@@ -27,7 +27,7 @@ export interface PrinterConfirmModalsProps {
   setShowResumeConfirm: (show: boolean) => void;
   powerControlMutation: { mutate: (action: 'on' | 'off') => void };
   maintenanceMutation: { mutate: (enabled: boolean) => void };
-  runScriptMutation: { mutate: (args: { id: string; action: string }) => void };
+  runScriptMutation: { mutate: (args: { id: number; action: 'on' | 'toggle' }) => void };
   stopPrintMutation: { mutate: () => void };
   pausePrintMutation: { mutate: () => void };
   resumePrintMutation: { mutate: () => void };

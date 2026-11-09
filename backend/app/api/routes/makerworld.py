@@ -201,12 +201,10 @@ async def proxy_thumbnail(
                 matching_provider = p
                 break
     except Exception:
-        pass
+        logger.debug("Fehler ignoriert", exc_info=True)
 
     thumb_hosts = (
-        matching_provider.thumbnail_hosts()
-        if matching_provider is not None
-        else makerworld_provider.thumbnail_hosts()
+        matching_provider.thumbnail_hosts() if matching_provider is not None else makerworld_provider.thumbnail_hosts()
     )
     service = MakerWorldService(thumbnail_hosts=thumb_hosts)
     try:
@@ -450,7 +448,7 @@ async def import_instance(
     elif d_ext in valid_exts:
         filename = d_name
     else:
-        filename = f"{suggested_name}.3mf" 
+        filename = f"{suggested_name}.3mf"
 
     # API-keyed callers carry identity on the key, not in current_user (#1777);
     # this collapse stays route-side solely so the library row is attributed
@@ -516,7 +514,9 @@ async def recent_imports(
 
 
 @router.get("/providers")
-async def list_providers():
+async def list_providers(
+    current_user: User | None = RequirePermissionIfAuthEnabled(makerworld_provider.view_permission),
+):
     """Return all registered model providers."""
     return [
         {

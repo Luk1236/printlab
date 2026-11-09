@@ -111,6 +111,30 @@ _PUBLIC_ROUTES: frozenset[tuple[str, str]] = frozenset(
         ("GET", "/api/v1/portal/materials"),
         ("POST", "/api/v1/portal/quote"),
         ("POST", "/api/v1/portal/checkout"),
+        # Portal, Modell-Angebot: der Kunde lädt sein Modell hoch und bekommt sofort eine Kalkulation. Nichts
+        # Sensibles wird gelesen, die Eingabe wird nur analysiert; per-IP-Rate-Limit wie bei /portal/quote.
+        ("POST", "/api/v1/portal/analyze-model"),
+        ("POST", "/api/v1/portal/quote-from-model"),
+        # Portal, Abruf per Angebots-ID: Lieferschein und Etikett tragen Name und Adresse, die ID (80 Bit Zufall,
+        # läuft ab) ist die Zugangsberechtigung des Kunden, der keine Sitzung hat. Abrufe sind pro IP begrenzt.
+        ("GET", "/api/v1/portal/quote/{quote_id}"),
+        ("GET", "/api/v1/portal/delivery-note/{quote_id}/pdf"),
+        ("GET", "/api/v1/portal/shipping-label/{quote_id}/pdf"),
+        # Portal, Preisrechner: reine Berechnung aus dem Katalog, liest und schreibt nichts.
+        ("GET", "/api/v1/portal/pricing/options"),
+        ("POST", "/api/v1/portal/pricing/calculate-tiers"),
+        # Portal, Sendungsverfolgung: der Token in der URL ist der Zugang des Kunden. (Token erzeugen darf nur
+        # ein angemeldeter Mitarbeiter, siehe POST /portal/tracking/token.)
+        ("GET", "/api/v1/portal/tracking/{token}"),
+        # E-Commerce-Eingänge: Shopify, WooCommerce und SAP melden sich nicht mit einer Sitzung, sondern mit
+        # HMAC-Signatur beziehungsweise Bearer-Token. Beides ist Pflicht; ohne gesetztes Geheimnis wird alles
+        # abgelehnt (es gibt keine Standard-Geheimnisse).
+        ("POST", "/api/v1/integrations/ecommerce/shopify/webhook"),
+        ("POST", "/api/v1/integrations/ecommerce/woocommerce/webhook"),
+        ("POST", "/api/v1/integrations/ecommerce/sap-erp/order"),
+        # Farm-Mesh: Standorte melden sich mit dem beim Registrieren hinterlegten Bearer-Token; unbekannte Knoten
+        # und Knoten ohne Token werden abgelehnt.
+        ("POST", "/api/v1/mesh/heartbeat"),
         # Notification snapshot (#3089) — HA, Bark and Slack fetch it with no
         # session. The filename embeds secrets.token_urlsafe(24) and is the
         # credential; the handler serves only names of that exact shape, younger

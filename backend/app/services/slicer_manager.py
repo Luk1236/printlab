@@ -7,14 +7,12 @@ Ersetzt den frueheren provisorischen Python-Slicer durch die echte offizielle Sl
 
 from __future__ import annotations
 
-import json
 import logging
 import os
 import platform
 import shutil
 import stat
 import subprocess
-import tempfile
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -30,12 +28,30 @@ ARM64_REPO = "kldzj/orca-slicer-arm64"
 
 # Bekannte Download-URLs fuer v2.4.2
 URLS = {
-    ("linux", "arm64"): f"https://github.com/{ARM64_REPO}/releases/download/v{ORCA_VERSION}-arm64/OrcaSlicer-{ORCA_VERSION}-arm64-linux.AppImage",
-    ("linux", "aarch64"): f"https://github.com/{ARM64_REPO}/releases/download/v{ORCA_VERSION}-arm64/OrcaSlicer-{ORCA_VERSION}-arm64-linux.AppImage",
-    ("linux", "x86_64"): f"https://github.com/{SOFTFEVER_REPO}/releases/download/v{ORCA_VERSION}/OrcaSlicer_Linux_AppImage_Ubuntu2404_V{ORCA_VERSION}.AppImage",
-    ("windows", "x86_64"): f"https://github.com/{SOFTFEVER_REPO}/releases/download/v{ORCA_VERSION}/OrcaSlicer_Windows_V{ORCA_VERSION}_x64_portable.zip",
-    ("windows", "amd64"): f"https://github.com/{SOFTFEVER_REPO}/releases/download/v{ORCA_VERSION}/OrcaSlicer_Windows_V{ORCA_VERSION}_x64_portable.zip",
-    ("windows", "arm64"): f"https://github.com/{SOFTFEVER_REPO}/releases/download/v{ORCA_VERSION}/OrcaSlicer_Windows_V{ORCA_VERSION}_arm64_portable.zip",
+    (
+        "linux",
+        "arm64",
+    ): f"https://github.com/{ARM64_REPO}/releases/download/v{ORCA_VERSION}-arm64/OrcaSlicer-{ORCA_VERSION}-arm64-linux.AppImage",
+    (
+        "linux",
+        "aarch64",
+    ): f"https://github.com/{ARM64_REPO}/releases/download/v{ORCA_VERSION}-arm64/OrcaSlicer-{ORCA_VERSION}-arm64-linux.AppImage",
+    (
+        "linux",
+        "x86_64",
+    ): f"https://github.com/{SOFTFEVER_REPO}/releases/download/v{ORCA_VERSION}/OrcaSlicer_Linux_AppImage_Ubuntu2404_V{ORCA_VERSION}.AppImage",
+    (
+        "windows",
+        "x86_64",
+    ): f"https://github.com/{SOFTFEVER_REPO}/releases/download/v{ORCA_VERSION}/OrcaSlicer_Windows_V{ORCA_VERSION}_x64_portable.zip",
+    (
+        "windows",
+        "amd64",
+    ): f"https://github.com/{SOFTFEVER_REPO}/releases/download/v{ORCA_VERSION}/OrcaSlicer_Windows_V{ORCA_VERSION}_x64_portable.zip",
+    (
+        "windows",
+        "arm64",
+    ): f"https://github.com/{SOFTFEVER_REPO}/releases/download/v{ORCA_VERSION}/OrcaSlicer_Windows_V{ORCA_VERSION}_arm64_portable.zip",
 }
 
 _install_progress: dict[str, Any] = {
@@ -121,7 +137,7 @@ def get_slicer_status() -> dict[str, Any]:
 
 def install_orca_slicer_from_github() -> str:
     """Laedt die echte OrcaSlicer-CLI von GitHub herunter und richtet sie ein.
-    
+
     Returns:
         Pfad zur ausfuehrbaren Datei.
     """

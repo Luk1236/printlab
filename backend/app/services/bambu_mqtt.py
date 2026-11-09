@@ -70,12 +70,7 @@ CONNECT_ERROR_AUTH_REJECTED = "auth_rejected"
 CONNECT_ERROR_REFUSED = "refused"
 
 
-
 from backend.app.services.bambu_mapping import (
-    A2L_LITE_GLOBAL_BASE,
-    A2L_LITE_NORMALIZED_AMS_ID,
-    A2L_LITE_PHYSICAL_AMS_ID,
-    RACK_POSITIONS,
     _FIXED_EXTRUDER_ID,
     _FIXED_NOZZLE_ID,
     _RACK_CARRIAGE_NOZZLE_ID,
@@ -83,6 +78,10 @@ from backend.app.services.bambu_mapping import (
     _RACK_NOZZLE_IDS,
     _RACK_POSITION_BASE,
     _RACK_WIRE_SLOTS,
+    A2L_LITE_GLOBAL_BASE,
+    A2L_LITE_NORMALIZED_AMS_ID,
+    A2L_LITE_PHYSICAL_AMS_ID,
+    RACK_POSITIONS,
     _rack_by_position,
     _rack_slot_is_eligible,
     a2l_lite_wire_ids,

@@ -17,8 +17,6 @@ import threading
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import select
-
 from backend.app.core.config import settings
 from backend.app.services.notification_service import notification_service
 from backend.app.services.spaghetti_detector import spaghetti_detector

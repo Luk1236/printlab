@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-import logging
-from typing import Any
-
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,6 +11,7 @@ from backend.app.core.permissions import Permission
 from backend.app.services.printer_manager import printer_manager
 
 router = APIRouter(prefix="/printers", tags=["spool-auto-fallback"])
+
 
 @router.get("/{printer_id}/ams-backup-pairs")
 async def get_ams_backup_pairs_route(
@@ -48,5 +46,3 @@ async def apply_ams_auto_fallback(
 
     success = auto_enable_ams_filament_backup_if_eligible(printer_id)
     return {"success": success, "printer_id": printer_id}
-
-

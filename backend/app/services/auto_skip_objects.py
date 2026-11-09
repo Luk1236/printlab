@@ -29,10 +29,9 @@ class PlateObjectBound:
     max_y_mm: float
 
     def contains_point(self, x_mm: float, y_mm: float, tolerance_mm: float = 3.0) -> bool:
-        return (
-            (self.min_x_mm - tolerance_mm) <= x_mm <= (self.max_x_mm + tolerance_mm)
-            and (self.min_y_mm - tolerance_mm) <= y_mm <= (self.max_y_mm + tolerance_mm)
-        )
+        return (self.min_x_mm - tolerance_mm) <= x_mm <= (self.max_x_mm + tolerance_mm) and (
+            self.min_y_mm - tolerance_mm
+        ) <= y_mm <= (self.max_y_mm + tolerance_mm)
 
 
 def match_defect_to_object(

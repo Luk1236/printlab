@@ -58,11 +58,13 @@ def build_service_position_gcode(
     else:
         lines.append("M104 S0 ; Düsenheizung AUS (Sicherheit)")
 
-    lines.extend([
-        "G90 ; Absolute Positionierung",
-        f"G1 Z{clamped_z:.1f} F1200 ; Druckbett absenken für freie Zugänglichkeit",
-        f"G1 X{clamped_x:.1f} Y{clamped_y:.1f} F3000 ; Werkzeugkopf nach vorne Mitte verfahren",
-    ])
+    lines.extend(
+        [
+            "G90 ; Absolute Positionierung",
+            f"G1 Z{clamped_z:.1f} F1200 ; Druckbett absenken für freie Zugänglichkeit",
+            f"G1 X{clamped_x:.1f} Y{clamped_y:.1f} F3000 ; Werkzeugkopf nach vorne Mitte verfahren",
+        ]
+    )
     return "\n".join(lines)
 
 
@@ -84,7 +86,9 @@ def move_to_service_position(
             client.set_chamber_light(True)
             client.send_gcode(gcode)
             sent_to_printer = True
-            logger.info("[%s] In Wartungsposition gefahren (Z=%.1f, Düse=%d°C).", printer_id, lower_bed_mm, preheat_nozzle_c)
+            logger.info(
+                "[%s] In Wartungsposition gefahren (Z=%.1f, Düse=%d°C).", printer_id, lower_bed_mm, preheat_nozzle_c
+            )
         except Exception as exc:
             logger.warning("[%s] Fehler beim Senden des Wartungs-G-Codes: %s", printer_id, exc)
 

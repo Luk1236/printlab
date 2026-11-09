@@ -22,6 +22,7 @@ from backend.app.services.model_providers.direct.url import (
 if TYPE_CHECKING:
     import httpx
     from sqlalchemy.ext.asyncio import AsyncSession
+
     from backend.app.models.user import User
 
 

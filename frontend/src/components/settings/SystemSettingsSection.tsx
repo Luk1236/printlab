@@ -35,7 +35,6 @@ import { SystemHealthPanel } from '../SystemHealthPanel';
 import { LogViewer } from '../LogViewer';
 import { ConnectionDiagnosticModal } from '../ConnectionDiagnostic';
 import { useToast } from '../../contexts/ToastContext';
-import { formatDateTime, type TimeFormat } from '../../utils/date';
 
 export type SystemSubTab = 'overview' | 'diagnostics' | 'logs' | 'all';
 
@@ -139,11 +138,6 @@ export function SystemSettingsSection({ printers: propPrinters }: SystemSettings
     refetchInterval: 10 * 1000,
   });
 
-  const { data: settings } = useQuery({
-    queryKey: ['settings'],
-    queryFn: api.getSettings,
-  });
-
   const { data: libraryStats } = useQuery({
     queryKey: ['library-stats'],
     queryFn: api.getLibraryStats,
@@ -155,7 +149,6 @@ export function SystemSettingsSection({ printers: propPrinters }: SystemSettings
   });
 
   const printersList = propPrinters ?? allPrinters ?? [];
-  const timeFormat: TimeFormat = settings?.time_format || 'system';
 
   // Handle anchor jump
   useEffect(() => {

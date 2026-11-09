@@ -2,6 +2,7 @@
 
 import pytest
 from httpx import AsyncClient
+
 from backend.app.services.auto_nesting import (
     NestingPart,
     pack_parts_onto_plates,

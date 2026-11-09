@@ -13,12 +13,15 @@ live value, matching ``bambu_cloud`` / ``orca_cloud`` / ``slicer_api``.
 from __future__ import annotations
 
 import asyncio
+import logging
 import ssl
 
 import certifi
 import httpx
 
 from backend.app.services.model_providers.makerworld.errors import MakerWorldUnavailableError
+
+logger = logging.getLogger(__name__)
 
 # API base: ``api.bambulab.com/v1/design-service`` — the same Bambu Cloud
 # backend that the MakerWorld web UI talks to, but not behind Cloudflare
@@ -157,7 +160,7 @@ def _extract_upstream_error(response: httpx.Response) -> str | None:
             if "code" in data:
                 return f"Code {data['code']}"
     except Exception:
-        pass
+        logger.debug("Fehler ignoriert", exc_info=True)
     text = response.text.strip()
     if text and len(text) < 200 and not text.startswith("<"):
         return text

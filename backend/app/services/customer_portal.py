@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import logging
 import math
+import secrets
 import urllib.parse
 import uuid
 from typing import Any
@@ -110,7 +111,8 @@ def calculate_instant_quote(
     vat = round(net_total * 0.19, 2)
     gross_total = round(net_total + vat, 2)
 
-    quote_id = f"SQ-{uuid.uuid4().hex[:8].upper()}"
+    # 80 Bit Zufall: Die ID ist der einzige Zugang zu Name und Adresse auf Lieferschein und Etikett
+    quote_id = f"SQ-{secrets.token_hex(10).upper()}"
 
     return {
         "quote_id": quote_id,

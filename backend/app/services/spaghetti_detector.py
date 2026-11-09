@@ -185,15 +185,13 @@ class SpaghettiDetector:
 
                 # Konturen analysieren (Spaghetti erzeugt viele kleine gewundene Fragmente)
                 contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                fragments = len(
-                    [c for c in contours if cv2.arcLength(c, True) > 12 and cv2.contourArea(c) < 700]
-                )
+                fragments = len([c for c in contours if cv2.arcLength(c, True) > 12 and cv2.contourArea(c) < 700])
 
                 # Chaos-Score Formel:
                 # Hohe Entropie (>0.72) + hohe Kantendichte + zerfaserte Konturen
                 density_factor = min(1.0, edge_density / 0.055)
                 fragment_factor = min(1.0, fragments / 35.0)
-                entropy_factor = float(np.clip(entropy ** 1.7, 0.0, 1.0))
+                entropy_factor = float(np.clip(entropy**1.7, 0.0, 1.0))
 
                 raw_score = (0.50 * entropy_factor) + (0.30 * density_factor) + (0.20 * fragment_factor)
 

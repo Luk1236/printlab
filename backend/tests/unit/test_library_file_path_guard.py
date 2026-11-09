@@ -23,7 +23,8 @@ def _call(relative_path, base_dir):
     """Call to_absolute_path with base_dir patched to *base_dir*."""
     from backend.app.api.routes.library import to_absolute_path
 
-    with patch("backend.app.api.routes.library.app_settings") as mock_settings:
+    # to_absolute_path lebt in library_helpers und liest die Einstellungen dort
+    with patch("backend.app.api.routes.library_helpers.app_settings") as mock_settings:
         mock_settings.base_dir = str(base_dir)
         return to_absolute_path(relative_path)
 

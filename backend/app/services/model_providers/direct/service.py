@@ -8,7 +8,6 @@ import ssl
 from typing import TYPE_CHECKING, Any
 from urllib.parse import unquote, urlparse
 
-import certifi
 import httpx
 
 from backend.app.services.model_providers.base import (
@@ -37,7 +36,7 @@ def _create_ssl_context() -> ssl.SSLContext:
     try:
         ctx.load_default_certs(ssl.Purpose.SERVER_AUTH)
     except Exception:
-        pass
+        logger.debug("Fehler ignoriert", exc_info=True)
     return ctx
 
 

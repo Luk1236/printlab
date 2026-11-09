@@ -222,4 +222,3 @@ class TestTargetDiscoveryFallsBack:
 
         npm_calls = [c for c in calls if c and "npm" in str(c[0])]
         assert not npm_calls, f"npm build must be skipped when static/index.html exists; got {npm_calls}"
-

@@ -461,9 +461,9 @@ class TestGetDownload:
     async def test_resolves_instance_id_to_profile_id_when_sub_id_matches_instance_id(self, service):
         """In MakerWorld URL fragments (#profileId-3884112), the number is the instance id
         rather than profileId. It maps to the actual profileId from design.instances."""
-        service.get_design = AsyncMock(return_value=self._design(
-            instances=[{"id": 3884112, "profileId": 1052356029, "title": "Plate 1"}]
-        ))
+        service.get_design = AsyncMock(
+            return_value=self._design(instances=[{"id": 3884112, "profileId": 1052356029, "title": "Plate 1"}])
+        )
         service.get_profile_download = AsyncMock(return_value=self._manifest())
 
         info = await self._run(
@@ -475,9 +475,10 @@ class TestGetDownload:
     @pytest.mark.asyncio
     async def test_falls_back_to_instance_id_when_profile_id_not_found(self, service):
         """If calling with profileId returns 404, falls back to the instance id."""
-        service.get_design = AsyncMock(return_value=self._design(
-            instances=[{"id": 3884112, "profileId": 1052356029, "title": "Plate 1"}]
-        ))
+        service.get_design = AsyncMock(
+            return_value=self._design(instances=[{"id": 3884112, "profileId": 1052356029, "title": "Plate 1"}])
+        )
+
         async def mock_download(pid, mid):
             if pid == 1052356029:
                 raise MakerWorldNotFoundError("Profile not found")
@@ -494,13 +495,15 @@ class TestGetDownload:
     async def test_manifest_with_nested_data_url(self, service):
         """Supports wrapped response shapes like {"data": {"url": "..."}}."""
         service.get_design = AsyncMock(return_value=self._design())
-        service.get_profile_download = AsyncMock(return_value={
-            "code": 0,
-            "data": {
-                "url": "https://makerworld.bblmw.com/nested.3mf",
-                "name": "nested.3mf",
+        service.get_profile_download = AsyncMock(
+            return_value={
+                "code": 0,
+                "data": {
+                    "url": "https://makerworld.bblmw.com/nested.3mf",
+                    "name": "nested.3mf",
+                },
             }
-        })
+        )
         info = await self._run(service, ProviderResourceRef(source_type="makerworld", external_id="1400373"))
         assert info.url == "https://makerworld.bblmw.com/nested.3mf"
         assert info.suggested_filename == "nested.3mf"
@@ -509,10 +512,12 @@ class TestGetDownload:
     async def test_manifest_with_download_url_key(self, service):
         """Supports alternative key names like downloadUrl."""
         service.get_design = AsyncMock(return_value=self._design())
-        service.get_profile_download = AsyncMock(return_value={
-            "downloadUrl": "https://makerworld.bblmw.com/alt.3mf",
-            "fileName": "alt.3mf",
-        })
+        service.get_profile_download = AsyncMock(
+            return_value={
+                "downloadUrl": "https://makerworld.bblmw.com/alt.3mf",
+                "fileName": "alt.3mf",
+            }
+        )
         info = await self._run(service, ProviderResourceRef(source_type="makerworld", external_id="1400373"))
         assert info.url == "https://makerworld.bblmw.com/alt.3mf"
         assert info.suggested_filename == "alt.3mf"

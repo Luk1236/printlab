@@ -102,7 +102,10 @@ def generate_quality_certificate_pdf(
     y = height - margin
 
     # Eindeutige Zertifikatsnummer und Integritätshash
-    cert_no = cert_data.get("certificate_number") or f"QC-{datetime.now(timezone.utc).strftime('%Y%m%d')}-{cert_data.get('job_id', '001')}"
+    cert_no = (
+        cert_data.get("certificate_number")
+        or f"QC-{datetime.now(timezone.utc).strftime('%Y%m%d')}-{cert_data.get('job_id', '001')}"
+    )
     timestamp_str = cert_data.get("inspection_date") or datetime.now(timezone.utc).strftime("%d.%m.%Y %H:%M UTC")
 
     hash_input = f"{cert_no}|{cert_data.get('part_name')}|{cert_data.get('printer_serial')}|{timestamp_str}|{cert_data.get('filament_lot')}"
@@ -143,14 +146,18 @@ def generate_quality_certificate_pdf(
     pdf.drawString(margin + 6 * mm, y - 8 * mm, "Gesamtergebnis Qualitätsprüfung:")
 
     # Güteklasse Badge
-    grade_color = HexColor("#16a34a") if score >= 88.0 else (HexColor("#ca8a04") if score >= 75.0 else HexColor("#dc2626"))
+    grade_color = (
+        HexColor("#16a34a") if score >= 88.0 else (HexColor("#ca8a04") if score >= 75.0 else HexColor("#dc2626"))
+    )
     pdf.setFillColor(grade_color)
     pdf.setFont("Helvetica-Bold", 13)
     pdf.drawString(margin + 6 * mm, y - 18 * mm, f"QUALITÄTS-INDEX: {score:.1f} / 100 — {grade}")
 
     pdf.setFillColor(HexColor("#475569"))
     pdf.setFont("Helvetica", 9)
-    pdf.drawRightString(right - 6 * mm, y - 18 * mm, f"Prüfstatus: {'BESTANDEN (PASS)' if score >= 75.0 else 'NICHT BESTANDEN (FAIL)'}")
+    pdf.drawRightString(
+        right - 6 * mm, y - 18 * mm, f"Prüfstatus: {'BESTANDEN (PASS)' if score >= 75.0 else 'NICHT BESTANDEN (FAIL)'}"
+    )
 
     y -= 32 * mm
 
@@ -178,7 +185,10 @@ def generate_quality_certificate_pdf(
         ("Auftrags- / Losnummer:", str(cert_data.get("order_number", cert_data.get("job_id", "PO-2026-001")))),
         ("Kunde / Besteller:", str(cert_data.get("customer_name", "Vertraulich / Intern"))),
         ("G-Code / Modelldatei:", str(cert_data.get("gcode_file", "model.gcode.3mf"))),
-        ("Soll-Stückzahl gefertigt:", f"{cert_data.get('quantity_produced', 1)} von {cert_data.get('quantity_ordered', 1)} Stk."),
+        (
+            "Soll-Stückzahl gefertigt:",
+            f"{cert_data.get('quantity_produced', 1)} von {cert_data.get('quantity_ordered', 1)} Stk.",
+        ),
     ]
     for label, val in rows_job:
         pdf.setFont("Helvetica-Bold", 8.5)
@@ -193,11 +203,26 @@ def generate_quality_certificate_pdf(
     y = draw_section_header("2. MASCHINEN- & PROZESSTELEMETRIE", y)
 
     rows_proc = [
-        ("Produktionsanlage:", f"{cert_data.get('printer_name', 'Bambu Lab P2S')} (SN: {cert_data.get('printer_serial', '01P2S-SERIAL')})"),
-        ("Düsen-Konfiguration:", f"{cert_data.get('nozzle_diameter', 0.4)} mm ({cert_data.get('nozzle_type', 'Gehärteter Stahl')})"),
-        ("Schichthöhe / Infill:", f"{cert_data.get('layer_height', 0.20)} mm / {cert_data.get('infill_percent', 20)} % Infill"),
-        ("Fertigungszeitraum:", f"{cert_data.get('print_time_formatted', '2h 15m')} (Schichten: {cert_data.get('total_layers', 450)})"),
-        ("Durchschnittliche Temperaturen:", f"Düse: {cert_data.get('avg_nozzle_temp', 220.0):.1f} °C (±{cert_data.get('temp_dev_c', 0.8):.1f} °C) | Bett: {cert_data.get('avg_bed_temp', 55.0):.1f} °C"),
+        (
+            "Produktionsanlage:",
+            f"{cert_data.get('printer_name', 'Bambu Lab P2S')} (SN: {cert_data.get('printer_serial', '01P2S-SERIAL')})",
+        ),
+        (
+            "Düsen-Konfiguration:",
+            f"{cert_data.get('nozzle_diameter', 0.4)} mm ({cert_data.get('nozzle_type', 'Gehärteter Stahl')})",
+        ),
+        (
+            "Schichthöhe / Infill:",
+            f"{cert_data.get('layer_height', 0.20)} mm / {cert_data.get('infill_percent', 20)} % Infill",
+        ),
+        (
+            "Fertigungszeitraum:",
+            f"{cert_data.get('print_time_formatted', '2h 15m')} (Schichten: {cert_data.get('total_layers', 450)})",
+        ),
+        (
+            "Durchschnittliche Temperaturen:",
+            f"Düse: {cert_data.get('avg_nozzle_temp', 220.0):.1f} °C (±{cert_data.get('temp_dev_c', 0.8):.1f} °C) | Bett: {cert_data.get('avg_bed_temp', 55.0):.1f} °C",
+        ),
     ]
     for label, val in rows_proc:
         pdf.setFont("Helvetica-Bold", 8.5)
@@ -212,7 +237,10 @@ def generate_quality_certificate_pdf(
     y = draw_section_header("3. WERKSTOFF- & CHARGENRÜCKVERFOLGBARKEIT", y)
 
     rows_mat = [
-        ("Material / Polymer:", f"{cert_data.get('material', 'PETG')} (Farbcode: #{cert_data.get('color_hex', '000000')})"),
+        (
+            "Material / Polymer:",
+            f"{cert_data.get('material', 'PETG')} (Farbcode: #{cert_data.get('color_hex', '000000')})",
+        ),
         ("Filament-Hersteller:", str(cert_data.get("filament_vendor", "Bambu Lab"))),
         ("Chargen- / Spulen-ID:", str(cert_data.get("filament_lot", "LOT-2026-B89201"))),
         ("Netto-Materialverbrauch:", f"{cert_data.get('filament_grams', 45.2):.1f} g (inkl. Spülturm/Support)"),
@@ -230,9 +258,18 @@ def generate_quality_certificate_pdf(
     y = draw_section_header("4. OPTISCHE QUALITÄTSPRÜFUNG & ANOMALIE-ANALYSE", y)
 
     rows_qual = [
-        ("First-Layer Betthaftungs-Score:", f"{cert_data.get('first_layer_score', 99.2):.1f} % (Automatische optische Bett-Inspektion)"),
-        ("Erkannte Schicht-Anomalien:", f"{cert_data.get('anomaly_count', 0)} Ereignisse (Spaghetti / Warping: keine kritischen Fehler)"),
-        ("Maßhaltigkeits-Konformität:", str(cert_data.get("dimensional_conformity", "DIN 16742 TG6 (Standard für FFF/FDM)"))),
+        (
+            "First-Layer Betthaftungs-Score:",
+            f"{cert_data.get('first_layer_score', 99.2):.1f} % (Automatische optische Bett-Inspektion)",
+        ),
+        (
+            "Erkannte Schicht-Anomalien:",
+            f"{cert_data.get('anomaly_count', 0)} Ereignisse (Spaghetti / Warping: keine kritischen Fehler)",
+        ),
+        (
+            "Maßhaltigkeits-Konformität:",
+            str(cert_data.get("dimensional_conformity", "DIN 16742 TG6 (Standard für FFF/FDM)")),
+        ),
         ("Oberflächenfinish:", str(cert_data.get("surface_rating", "Gleichmäßig, fehlerfrei, kein Stringing"))),
     ]
     for label, val in rows_qual:

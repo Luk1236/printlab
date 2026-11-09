@@ -11,8 +11,9 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
-    from backend.app.models.printer import Printer
+
     from backend.app.models.print_queue import PrintQueueItem
+    from backend.app.models.printer import Printer
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +77,7 @@ async def check_queue_plate_clear(
         )
 
         from backend.app.services.printer_manager import printer_manager
+
         printer_manager.set_awaiting_plate_clear(printer.id, True)
 
         try:

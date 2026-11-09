@@ -13,7 +13,6 @@ from dataclasses import replace
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
-import certifi
 import httpx
 
 from backend.app.services.model_providers.base import (
@@ -54,7 +53,7 @@ def _create_ssl_context() -> ssl.SSLContext:
     try:
         ctx.load_default_certs(ssl.Purpose.SERVER_AUTH)
     except Exception:
-        pass
+        logger.debug("Fehler ignoriert", exc_info=True)
     return ctx
 
 
@@ -187,16 +186,18 @@ class PrintablesService(ProviderService):
                 except (ValueError, TypeError):
                     continue
 
-                instances.append({
-                    "id": num_fid,
-                    "profileId": num_fid,
-                    "title": fname,
-                    "name": fname,
-                    "fileSize": f.get("fileSize") or 0,
-                    "cover": cover_url,
-                    "instanceCreator": {"name": user_name},
-                    "group": group_name,
-                })
+                instances.append(
+                    {
+                        "id": num_fid,
+                        "profileId": num_fid,
+                        "title": fname,
+                        "name": fname,
+                        "fileSize": f.get("fileSize") or 0,
+                        "cover": cover_url,
+                        "instanceCreator": {"name": user_name},
+                        "group": group_name,
+                    }
+                )
 
         design: dict[str, Any] = {
             "id": model_id,
@@ -277,11 +278,7 @@ class PrintablesService(ProviderService):
         except ValueError as exc:
             raise PrintablesUnavailableError("Printables returned invalid JSON for download link") from exc
 
-        link = (
-            ((mut_data.get("data") or {}).get("getDownloadLink") or {})
-            .get("output", {})
-            .get("link")
-        )
+        link = ((mut_data.get("data") or {}).get("getDownloadLink") or {}).get("output", {}).get("link")
 
         if not link or not isinstance(link, str):
             raise PrintablesUnavailableError("Printables did not return a valid download link")

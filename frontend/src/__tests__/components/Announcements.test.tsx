@@ -202,7 +202,7 @@ describe('Layout with announcements', () => {
       http.get('/api/v1/announcements', () => HttpResponse.json({ visible: false, announcements: [] }))
     );
     render(<Layout />);
-    await waitFor(() => expect(screen.getAllByTitle(/System/).length).toBeGreaterThan(0));
+    await waitFor(() => expect(screen.getAllByTitle('PrintLab').length).toBeGreaterThan(0));
     expect(screen.queryByRole('button', { name: /announcements/i })).not.toBeInTheDocument();
   });
 

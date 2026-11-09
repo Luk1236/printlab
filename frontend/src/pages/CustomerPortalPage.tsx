@@ -9,7 +9,7 @@
  * - Stripe Checkout Integration
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -39,7 +39,12 @@ export function CustomerPortalPage() {
   const [searchParams] = useSearchParams();
   const quoteIdParam = searchParams.get('quote') || '';
   const statusParam = searchParams.get('status') || '';
-  const { addToast } = useToast();
+  const { showToast } = useToast();
+  // Die Seite meldet mit {type, message}; der Toast-Kontext nimmt (Text, Art)
+  const addToast = useCallback(
+    ({ type, message }: { type: 'success' | 'error' | 'warning' | 'info'; message: string }) => showToast(message, type),
+    [showToast],
+  );
 
   // State
   const [materials, setMaterials] = useState<Record<string, MaterialProfile>>({
@@ -86,7 +91,7 @@ export function CustomerPortalPage() {
   useEffect(() => {
     if (quoteIdParam) {
       api
-        .getQuote(quoteIdParam)
+        .getPortalQuote(quoteIdParam)
         .then((storedQuote) => {
           setQuote(storedQuote);
           if (storedQuote.filament_type) setFilamentType(storedQuote.filament_type);
@@ -127,10 +132,10 @@ export function CustomerPortalPage() {
           customer_address: customerAddress,
         });
         setQuote(instantQuote);
-      } catch (err: any) {
+      } catch (err: unknown) {
         addToast({
           type: 'error',
-          message: err.message || 'Fehler bei der 3D-Modellanalyse.',
+          message: (err instanceof Error ? err.message : '') || 'Fehler bei der 3D-Modellanalyse.',
         });
       } finally {
         setAnalyzing(false);
@@ -164,10 +169,10 @@ export function CustomerPortalPage() {
         type: 'success',
         message: 'Angebot aktualisiert.',
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       addToast({
         type: 'error',
-        message: err.message || 'Kalkulationsfehler.',
+        message: (err instanceof Error ? err.message : '') || 'Kalkulationsfehler.',
       });
     } finally {
       setCalculating(false);
@@ -189,10 +194,10 @@ export function CustomerPortalPage() {
       } else {
         throw new Error('Keine Zahlungs-URL vom Server erhalten.');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       addToast({
         type: 'error',
-        message: err.message || 'Stripe Checkout konnte nicht gestartet werden.',
+        message: (err instanceof Error ? err.message : '') || 'Stripe Checkout konnte nicht gestartet werden.',
       });
     } finally {
       setCheckoutLoading(false);

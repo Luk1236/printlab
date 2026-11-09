@@ -15,23 +15,12 @@ from sqlalchemy import or_, select
 
 from backend.app.api.routes.maintenance import _get_printer_maintenance_internal, ensure_default_types
 from backend.app.core.config import settings as app_settings
-from backend.app.core.database import async_session
-from backend.app.core.tasks import spawn_background_task
-from backend.app.core.websocket import ws_manager
 from backend.app.services import print_dispatch_context
-from backend.app.services.archive import ArchiveService
-from backend.app.services.bambu_ftp import clear_3mf_cache
 from backend.app.services.completion_photo_plate import (
     _apply_camera_rotation,
-    _max_z_for_current_print,
-    _park_plate_after_finish_photo,
-    _plate_restore_is_blocked_by_queue,
-    _restore_plate_for_finish_photo,
 )
 from backend.app.services.energy_plug import energy_plug_candidates, select_energy_reading
 from backend.app.services.expected_prints import _print_ams_mappings, _print_cost_center_ids, _print_plate_ids
-from backend.app.services.mqtt_relay import mqtt_relay
-from backend.app.services.notification_service import notification_service
 from backend.app.services.print_complete_flow import (
     _completion_belongs_to_queue_item,
     _compute_run_filament_grams,
@@ -43,14 +32,11 @@ from backend.app.services.print_complete_flow import (
     _scope_notification_archive_data_to_plate,
 )
 from backend.app.services.print_cost_estimate import plate_scoped_run_estimate as _plate_scoped_run_estimate
-from backend.app.services.printer_manager import printer_manager
-from backend.app.services.smart_plug_manager import smart_plug_manager
 from backend.app.services.spoolman_tracking import (
     cleanup_tracking as _cleanup_spoolman_tracking,
     report_usage as _report_spoolman_usage,
 )
 from backend.app.services.timelapse import (
-    _capture_finish_photo_from_timelapse,
     _scan_for_timelapse_with_retries,
     _upgrade_finish_photo_from_timelapse,
 )
@@ -99,7 +85,7 @@ async def on_print_complete(printer_id: int, data: dict):
     # Drop the 3MF download cache for this printer (#972). The print is over,
     # nothing else legitimately needs the bytes; keeping them would only risk
     # handing a stale file to the next print if it reuses the same name.
-    clear_3mf_cache(printer_id)
+    _rt().clear_3mf_cache(printer_id)
 
     try:
         ws_data = {
@@ -108,16 +94,16 @@ async def on_print_complete(printer_id: int, data: dict):
             "subtask_name": data.get("subtask_name"),
             "timelapse_was_active": data.get("timelapse_was_active"),
         }
-        await ws_manager.send_print_complete(printer_id, ws_data)
+        await _rt().ws_manager.send_print_complete(printer_id, ws_data)
         log_timing("WebSocket send_print_complete")
     except Exception as e:
         logger.warning("[CALLBACK] WebSocket send_print_complete failed: %s", e)
 
     # Capture user info before clearing (needed for print log entry)
-    _print_user_info = printer_manager.get_current_print_user(printer_id)
+    _print_user_info = _rt().printer_manager.get_current_print_user(printer_id)
 
     # Clear current print user tracking (Issue #206)
-    printer_manager.clear_current_print_user(printer_id)
+    _rt().printer_manager.clear_current_print_user(printer_id)
 
     # If the user explicitly stopped this print from the queue UI the printer will
     # report "failed" or "aborted" via MQTT.  Override that to "cancelled" so the
@@ -143,7 +129,7 @@ async def on_print_complete(printer_id: int, data: dict):
     # Auto Off power cycles and PrintLab restarts.
     _final_status = data.get("status", "completed")
     if _final_status in ("completed", "failed", "aborted", "cancelled"):
-        printer_manager.set_awaiting_plate_clear(printer_id, True)
+        _rt().printer_manager.set_awaiting_plate_clear(printer_id, True)
 
     # Automatischer Plattenwechsel (Monitor-Port P2): nur nach "completed" und
     # nur wenn die Automatik in data/hardware.json eingeschaltet ist. Läuft als
@@ -159,9 +145,9 @@ async def on_print_complete(printer_id: int, data: dict):
 
     # MQTT relay - publish print complete
     try:
-        printer_info = printer_manager.get_printer(printer_id)
+        printer_info = _rt().printer_manager.get_printer(printer_id)
         if printer_info:
-            await mqtt_relay.on_print_complete(
+            await _rt().mqtt_relay.on_print_complete(
                 printer_id,
                 printer_info.name,
                 printer_info.serial_number,
@@ -234,7 +220,7 @@ async def on_print_complete(printer_id: int, data: dict):
 
     if not archive_id:
         # Try to find by filename or subtask_name if not tracked (for prints started before app)
-        async with async_session() as db:
+        async with _rt().async_session() as db:
             from backend.app.models.archive import PrintArchive
 
             # Try matching by subtask_name (stored as print_name) first
@@ -278,7 +264,7 @@ async def on_print_complete(printer_id: int, data: dict):
     try:
         if subtask_name:
             archive_filename: str | None = None
-            async with async_session() as db:
+            async with _rt().async_session() as db:
                 from backend.app.models.archive import PrintArchive
                 from backend.app.models.printer import Printer
 
@@ -439,7 +425,7 @@ async def on_print_complete(printer_id: int, data: dict):
             try:
                 from backend.app.services import auto_requeue
 
-                async with async_session() as requeue_db:
+                async with _rt().async_session() as requeue_db:
                     await auto_requeue.maybe_requeue(requeue_db, queue_item_id, queue_status)
             except Exception as e:
                 logger.warning("Auto-requeue failed for queue item %s: %s", queue_item_id, e)
@@ -453,7 +439,7 @@ async def on_print_complete(printer_id: int, data: dict):
             try:
                 from backend.app.services.print_batch import refresh_batch_status_for_item
 
-                async with async_session() as db:
+                async with _rt().async_session() as db:
                     await refresh_batch_status_for_item(db, queue_item_id)
                     await db.commit()
             except Exception as e:
@@ -461,8 +447,8 @@ async def on_print_complete(printer_id: int, data: dict):
 
             # MQTT relay - publish queue job completed
             try:
-                printer_info = printer_manager.get_printer(printer_id)
-                await mqtt_relay.on_queue_job_completed(
+                printer_info = _rt().printer_manager.get_printer(printer_id)
+                await _rt().mqtt_relay.on_queue_job_completed(
                     job_id=queue_item_id,
                     filename=filename or subtask_name,
                     printer_id=printer_id,
@@ -476,7 +462,7 @@ async def on_print_complete(printer_id: int, data: dict):
             try:
                 from sqlalchemy import func as sa_func
 
-                async with async_session() as db:
+                async with _rt().async_session() as db:
                     count_result = await db.execute(
                         select(sa_func.count(PrintQueueItem.id)).where(PrintQueueItem.status == "pending")
                     )
@@ -492,7 +478,7 @@ async def on_print_complete(printer_id: int, data: dict):
                         )
                         completed_count = completed_result.scalar() or 1
 
-                        await notification_service.on_queue_completed(
+                        await _rt().notification_service.on_queue_completed(
                             completed_count=completed_count,
                             db=db,
                         )
@@ -508,8 +494,8 @@ async def on_print_complete(printer_id: int, data: dict):
             # timeout regardless of print state — cutting a touchscreen reprint.
             if queue_auto_off:
                 try:
-                    async with async_session() as db:
-                        await smart_plug_manager.schedule_off_after_queue_job(printer_id, db)
+                    async with _rt().async_session() as db:
+                        await _rt().smart_plug_manager.schedule_off_after_queue_job(printer_id, db)
                 except Exception as e:
                     logger.warning("Failed to schedule queue auto-off for printer %s: %s", printer_id, e)
     except Exception as e:
@@ -524,13 +510,13 @@ async def on_print_complete(printer_id: int, data: dict):
         try:
             from backend.app.api.routes.settings import get_setting
 
-            async with async_session() as db:
+            async with _rt().async_session() as db:
                 threshold_str = await get_setting(db, "bed_cooled_threshold")
             threshold = float(threshold_str) if threshold_str else 35.0
 
             # Check if any provider has on_bed_cooled enabled (skip registration if none)
-            async with async_session() as db:
-                providers = await notification_service._get_providers_for_event(db, "on_bed_cooled", printer_id)
+            async with _rt().async_session() as db:
+                providers = await _rt().notification_service._get_providers_for_event(db, "on_bed_cooled", printer_id)
             if providers:
                 _rt()._bed_cool_waiters[printer_id] = {
                     "threshold": threshold,
@@ -554,7 +540,7 @@ async def on_print_complete(printer_id: int, data: dict):
     billing_base_cost: float | None = None
     if archive_id:
         try:
-            async with async_session() as db:
+            async with _rt().async_session() as db:
                 from backend.app.models.archive import PrintArchive
 
                 billing_archive = await db.get(PrintArchive, archive_id)
@@ -591,24 +577,24 @@ async def on_print_complete(printer_id: int, data: dict):
 
     # Internal inventory: track AMS remain% deltas (skip if Spoolman handles usage)
     try:
-        async with async_session() as db:
+        async with _rt().async_session() as db:
             from backend.app.api.routes.settings import get_setting
 
             _spoolman_on = await get_setting(db, "spoolman_enabled")
         if not _spoolman_on or _spoolman_on.lower() != "true":
             from backend.app.services.usage_tracker import on_print_complete as usage_on_print_complete
 
-            async with async_session() as db:
+            async with _rt().async_session() as db:
                 usage_results = await usage_on_print_complete(
                     printer_id,
                     data,
-                    printer_manager,
+                    _rt().printer_manager,
                     db,
                     archive_id=archive_id,
                     ams_mapping=stored_ams_mapping,
                 )
                 if usage_results:
-                    await ws_manager.broadcast(
+                    await _rt().ws_manager.broadcast(
                         {
                             "type": "spool_usage_logged",
                             "printer_id": printer_id,
@@ -627,7 +613,7 @@ async def on_print_complete(printer_id: int, data: dict):
     try:
         from backend.app.services.usage_tracker import discard_session
 
-        async with async_session() as db:
+        async with _rt().async_session() as db:
             await discard_session(db, printer_id)
     except Exception as e:
         logger.warning("Failed to clear persisted print session for printer %s: %s", printer_id, e)
@@ -643,7 +629,7 @@ async def on_print_complete(printer_id: int, data: dict):
         else:
             # Report partial usage if tracking data exists (only stored when weight sync is disabled)
             try:
-                async with async_session() as db:
+                async with _rt().async_session() as db:
                     await _cleanup_spoolman_tracking(
                         printer_id,
                         archive_id,
@@ -680,7 +666,7 @@ async def on_print_complete(printer_id: int, data: dict):
         # Try to enrich with queue/library-file data so user-specific emails work too.
         async def _notify_no_archive():
             try:
-                async with async_session() as db:
+                async with _rt().async_session() as db:
                     from backend.app.models.library import LibraryFile
                     from backend.app.models.print_queue import PrintQueueItem
                     from backend.app.models.printer import Printer
@@ -741,7 +727,7 @@ async def on_print_complete(printer_id: int, data: dict):
                         "[NOTIFY-BG] Sending notification without archive: printer=%s, status=%s", printer_id, ps
                     )
                     if not await _rt()._kill_switch_notification_already_sent(kill_switch_notification_task):
-                        await notification_service.on_print_complete(
+                        await _rt().notification_service.on_print_complete(
                             printer_id, p_name, ps, data, db, archive_data=no_archive_data
                         )
                     else:
@@ -761,7 +747,7 @@ async def on_print_complete(printer_id: int, data: dict):
             except Exception as e:
                 logger.warning("[NOTIFY-BG] Failed to send notification without archive: %s", e, exc_info=True)
 
-        spawn_background_task(_notify_no_archive(), name="notify-no-archive")
+        _rt().spawn_background_task(_notify_no_archive(), name="notify-no-archive")
         return
 
     log_timing("Archive lookup")
@@ -769,8 +755,8 @@ async def on_print_complete(printer_id: int, data: dict):
     # Update archive status
     logger.info("[ARCHIVE] Updating archive %s status...", archive_id)
     try:
-        async with async_session() as db:
-            service = ArchiveService(db)
+        async with _rt().async_session() as db:
+            service = _rt().ArchiveService(db)
             status = data.get("status", "completed")
 
             hms_errors = data.get("hms_errors", []) if status == "failed" else None
@@ -801,7 +787,7 @@ async def on_print_complete(printer_id: int, data: dict):
                 "[ARCHIVE] Archive %s status updated to %s, failure_reason=%s", archive_id, status, failure_reason
             )
 
-            await ws_manager.send_archive_updated(
+            await _rt().ws_manager.send_archive_updated(
                 {
                     "id": archive_id,
                     "status": status,
@@ -811,7 +797,7 @@ async def on_print_complete(printer_id: int, data: dict):
 
             # MQTT relay - publish archive updated
             try:
-                await mqtt_relay.on_archive_updated(
+                await _rt().mqtt_relay.on_archive_updated(
                     archive_id=archive_id,
                     print_name=filename or subtask_name,
                     status=status,
@@ -831,7 +817,7 @@ async def on_print_complete(printer_id: int, data: dict):
     # estimate and therefore cannot represent an interrupted run.
     try:
         if data.get("status") in ("completed", "failed", "aborted", "cancelled"):
-            async with async_session() as db:
+            async with _rt().async_session() as db:
                 from backend.app.models.archive import PrintArchive
                 from backend.app.services.finance_billing import apply_print_charge_for_archive
 
@@ -871,12 +857,12 @@ async def on_print_complete(printer_id: int, data: dict):
                     logger.info("[FINANCE] Applied print charge for archive %s", archive_id)
     except Exception as e:
         logger.warning("[FINANCE] Failed to apply print charge for archive %s: %s", archive_id, e)
-        printer_info = printer_manager.get_printer(printer_id)
+        printer_info = _rt().printer_manager.get_printer(printer_id)
         billing_printer_name = printer_info.name if printer_info else f"Printer {printer_id}"
         billing_filename = filename or subtask_name or "Unknown"
         billing_error = str(e)
         try:
-            await ws_manager.broadcast(
+            await _rt().ws_manager.broadcast(
                 {
                     "type": "billing_charge_failed",
                     "printer_id": printer_id,
@@ -894,8 +880,8 @@ async def on_print_complete(printer_id: int, data: dict):
 
         async def _notify_billing_charge_failed() -> None:
             try:
-                async with async_session() as notification_db:
-                    await notification_service.on_billing_charge_failed(
+                async with _rt().async_session() as notification_db:
+                    await _rt().notification_service.on_billing_charge_failed(
                         printer_id,
                         billing_printer_name,
                         billing_filename,
@@ -911,7 +897,7 @@ async def on_print_complete(printer_id: int, data: dict):
                     exc_info=True,
                 )
 
-        spawn_background_task(
+        _rt().spawn_background_task(
             _notify_billing_charge_failed(),
             name=f"billing-charge-failed-{archive_id}",
         )
@@ -920,7 +906,7 @@ async def on_print_complete(printer_id: int, data: dict):
 
     # Write independent print log entry (separate table, never touches archives)
     try:
-        async with async_session() as db:
+        async with _rt().async_session() as db:
             from backend.app.models.archive import PrintArchive
             from backend.app.services.print_log import write_log_entry
 
@@ -937,7 +923,7 @@ async def on_print_complete(printer_id: int, data: dict):
                 _print_user_id = _print_user_info.get("user_id") if _print_user_info else None
                 if archive.created_by_id is None and _print_user_id is not None:
                     archive.created_by_id = _print_user_id
-                p_info = printer_manager.get_printer(printer_id)
+                p_info = _rt().printer_manager.get_printer(printer_id)
                 # Per-run actuals — written to PrintLogEntry so stats reflect
                 # what THIS print actually used, not the source archive's
                 # first-run values (#1378). Helper handles the partial-print
@@ -1014,7 +1000,7 @@ async def on_print_complete(printer_id: int, data: dict):
         """
         try:
             logger.info("[ENERGY-BG] Starting energy calculation for archive %s", archive_id)
-            async with async_session() as db:
+            async with _rt().async_session() as db:
                 from backend.app.models.archive import PrintArchive
 
                 archive = await db.get(PrintArchive, archive_id)
@@ -1113,7 +1099,7 @@ async def on_print_complete(printer_id: int, data: dict):
             # stage-22 wait, external-camera grab, or a fresh RTSP shot) can take
             # tens of seconds; holding this session across it pinned one pooled
             # connection idle-in-transaction per finishing print (issue #2572).
-            async with async_session() as db:
+            async with _rt().async_session() as db:
                 from backend.app.api.routes.settings import get_setting
                 from backend.app.models.archive import PrintArchive
                 from backend.app.models.printer import Printer
@@ -1157,7 +1143,7 @@ async def on_print_complete(printer_id: int, data: dict):
 
             timelapse_still_pending = False
             if prefer_timelapse_source:
-                photo_filename, timelapse_still_pending = await _capture_finish_photo_from_timelapse(
+                photo_filename, timelapse_still_pending = await _rt()._capture_finish_photo_from_timelapse(
                     archive_id=archive_id,
                     archive_dir=archive_dir,
                     rotation=getattr(printer, "camera_rotation", 0),
@@ -1230,14 +1216,14 @@ async def on_print_complete(printer_id: int, data: dict):
                 and not print_dispatch_context.end_gcode_injected(printer_id)
             ):
                 try:
-                    async with async_session() as db:
+                    async with _rt().async_session() as db:
                         from backend.app.api.routes.settings import get_setting
 
                         restore_setting = await get_setting(db, "finish_photo_restore_plate")
                     if restore_setting is None or restore_setting.lower() == "true":
-                        max_z = await _max_z_for_current_print(printer_id, data, logger)
-                        if max_z is not None and not await _plate_restore_is_blocked_by_queue(printer_id):
-                            if await _restore_plate_for_finish_photo(printer_id, max_z, logger):
+                        max_z = await _rt()._max_z_for_current_print(printer_id, data, logger)
+                        if max_z is not None and not await _rt()._plate_restore_is_blocked_by_queue(printer_id):
+                            if await _rt()._restore_plate_for_finish_photo(printer_id, max_z, logger):
                                 plate_restored_z = max_z
                 except Exception as e:
                     logger.warning("[PLATE-RESTORE] printer %s: restore failed: %s", printer_id, e)
@@ -1309,7 +1295,7 @@ async def on_print_complete(printer_id: int, data: dict):
 
             # Write phase: attach the photo in a fresh short-lived session.
             if photo_filename:
-                async with async_session() as db:
+                async with _rt().async_session() as db:
                     from backend.app.models.archive import PrintArchive
 
                     arch = await db.get(PrintArchive, archive_id)
@@ -1335,7 +1321,7 @@ async def on_print_complete(printer_id: int, data: dict):
             # silently drops the other's entry, leaving a JPEG on disk that the
             # gallery never lists.
             if timelapse_still_pending:
-                spawn_background_task(
+                _rt().spawn_background_task(
                     _upgrade_finish_photo_from_timelapse(
                         archive_id, archive_dir, rotation=getattr(printer, "camera_rotation", 0)
                     ),
@@ -1352,13 +1338,13 @@ async def on_print_complete(printer_id: int, data: dict):
             # pinned under the nozzle.
             if plate_restored_z is not None:
                 try:
-                    _park_plate_after_finish_photo(printer_id, plate_restored_z, logger)
+                    _rt()._park_plate_after_finish_photo(printer_id, plate_restored_z, logger)
                 except Exception as e:
                     logger.warning("[PLATE-RESTORE] printer %s: could not lower plate: %s", printer_id, e)
 
-    spawn_background_task(_background_energy_calculation(), name="background-energy-calc")
+    _rt().spawn_background_task(_background_energy_calculation(), name="background-energy-calc")
     # Photo capture task - result will be used by notifications
-    photo_task = spawn_background_task(_background_finish_photo(), name="background-finish-photo")
+    photo_task = _rt().spawn_background_task(_background_finish_photo(), name="background-finish-photo")
     log_timing("Background tasks scheduled (energy, photo)")
 
     # Also run smart plug, notifications, and maintenance as background tasks
@@ -1368,8 +1354,8 @@ async def on_print_complete(printer_id: int, data: dict):
         """Handle smart plug automation in background."""
         try:
             logger.info("[AUTO-OFF-BG] Starting smart plug automation for printer %s", printer_id)
-            async with async_session() as db:
-                await smart_plug_manager.on_print_complete(printer_id, print_status, db)
+            async with _rt().async_session() as db:
+                await _rt().smart_plug_manager.on_print_complete(printer_id, print_status, db)
                 logger.info("[AUTO-OFF-BG] Completed")
         except Exception as e:
             logger.warning("[AUTO-OFF-BG] Failed: %s", e)
@@ -1380,7 +1366,7 @@ async def on_print_complete(printer_id: int, data: dict):
             logger.info(
                 "[NOTIFY-BG] Starting notifications for printer %s, photo=%s", printer_id, finish_photo_filename
             )
-            async with async_session() as db:
+            async with _rt().async_session() as db:
                 from backend.app.models.archive import PrintArchive
                 from backend.app.models.printer import Printer
 
@@ -1458,7 +1444,7 @@ async def on_print_complete(printer_id: int, data: dict):
                                 archive_data["image_data"] = photo_bytes
 
                 if not await _rt()._kill_switch_notification_already_sent(kill_switch_notification_task):
-                    await notification_service.on_print_complete(
+                    await _rt().notification_service.on_print_complete(
                         printer_id, printer_name, print_status, data, db, archive_data=archive_data
                     )
                 else:
@@ -1496,7 +1482,7 @@ async def on_print_complete(printer_id: int, data: dict):
             return
         try:
             logger.info("[MAINT-BG] Starting maintenance check for printer %s", printer_id)
-            async with async_session() as db:
+            async with _rt().async_session() as db:
                 from backend.app.models.printer import Printer
 
                 result = await db.execute(select(Printer).where(Printer.id == printer_id))
@@ -1513,13 +1499,15 @@ async def on_print_complete(printer_id: int, data: dict):
                 ]
 
                 if items_needing_attention:
-                    await notification_service.on_maintenance_due(printer_id, printer_name, items_needing_attention, db)
+                    await _rt().notification_service.on_maintenance_due(
+                        printer_id, printer_name, items_needing_attention, db
+                    )
                     logger.info("[MAINT-BG] Sent notification: %s items need attention", len(items_needing_attention))
 
                     # MQTT relay - publish maintenance alerts
                     for item in items_needing_attention:
                         try:
-                            await mqtt_relay.on_maintenance_alert(
+                            await _rt().mqtt_relay.on_maintenance_alert(
                                 printer_id=printer_id,
                                 printer_name=printer_name,
                                 maintenance_type=item["name"],
@@ -1533,8 +1521,8 @@ async def on_print_complete(printer_id: int, data: dict):
         except Exception as e:
             logger.warning("[MAINT-BG] Failed: %s", e)
 
-    spawn_background_task(_background_smart_plug(), name="background-smart-plug")
-    spawn_background_task(_background_maintenance_check(), name="background-maintenance-check")
+    _rt().spawn_background_task(_background_smart_plug(), name="background-smart-plug")
+    _rt().spawn_background_task(_background_maintenance_check(), name="background-maintenance-check")
 
     # Notification task waits for photo capture to complete first (with timeout).
     # When a timelapse was recording, photo sourcing polls the per-print
@@ -1576,7 +1564,7 @@ async def on_print_complete(printer_id: int, data: dict):
         except Exception as e:
             logger.error("[PHOTO-NOTIFY] Notification sending failed: %s", e, exc_info=True)
 
-    spawn_background_task(_photo_then_notify(), name="photo-then-notify")
+    _rt().spawn_background_task(_photo_then_notify(), name="photo-then-notify")
 
     # Stitch external camera layer timelapse if session was active
     print_status = data.get("status", "completed")
@@ -1591,8 +1579,8 @@ async def on_print_complete(printer_id: int, data: dict):
                 timelapse_path = await tl_complete(printer_id)
                 if timelapse_path and archive_id:
                     logger.info("[LAYER-TL] Attaching timelapse %s to archive %s", timelapse_path, archive_id)
-                    async with async_session() as db:
-                        service = ArchiveService(db)
+                    async with _rt().async_session() as db:
+                        service = _rt().ArchiveService(db)
                         timelapse_data = await _rt().asyncio.to_thread(timelapse_path.read_bytes)
                         await service.attach_timelapse(archive_id, timelapse_data, "layer_timelapse.mp4")
                         # Clean up the temp file
@@ -1615,7 +1603,7 @@ async def on_print_complete(printer_id: int, data: dict):
             except Exception:
                 pass  # Best-effort timelapse session cancellation on error
 
-    spawn_background_task(_background_layer_timelapse(), name="background-layer-timelapse")
+    _rt().spawn_background_task(_background_layer_timelapse(), name="background-layer-timelapse")
 
     log_timing("All background tasks scheduled")
 
@@ -1625,7 +1613,7 @@ async def on_print_complete(printer_id: int, data: dict):
         # Schedule timelapse scan as background task with retries
         # The printer needs time to encode the video after print completion
         baseline = _rt()._timelapse_baselines.pop(printer_id, None)
-        spawn_background_task(
+        _rt().spawn_background_task(
             _scan_for_timelapse_with_retries(archive_id, baseline),
             name=f"scan-timelapse-{archive_id}",
         )

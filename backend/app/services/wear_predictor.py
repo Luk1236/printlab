@@ -92,7 +92,7 @@ def predict_job_wear(
     extruder_wear_hours = hours * min(factor, 4.0)
 
     # Kann der Druck sicher beendet werden?
-    can_safely_print = (nozzle_remaining_before >= effective_wear_hours)
+    can_safely_print = nozzle_remaining_before >= effective_wear_hours
     warning_level = "OK"
     recommendations: list[str] = []
 
