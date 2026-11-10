@@ -22,6 +22,7 @@ from backend.app.services.scheduler.filament import (
     _filament_constraints,
     _ModelCandidate,
 )
+from backend.app.services.scheduler.wake import try_power_on_pinned
 from backend.app.services.smart_plug_manager import smart_plug_manager
 from backend.app.utils.printer_models import is_gcode_compatible
 
@@ -99,7 +100,18 @@ class SelectionMixin:
                 # Power on using the plug that actually feeds the printer, and
                 # wait for it to boot on that one only (#2629).
                 primary_plug = self._s._pick_power_plug(auto_on_plugs)
-                powered_on = await self._s._power_on_and_wait(primary_plug, item.printer_id, self.db)
+                #
+                # At most one power-on per pass, and a failed printer sits out a cool-off, exactly as
+                # for model-based items (T4-01); `None` means it was not tried this pass.
+                powered_on = await try_power_on_pinned(self, item.printer_id, primary_plug)
+                if powered_on is None:
+                    await self.hold_for_printer(
+                        item,
+                        item.printer_id,
+                        "waiting for its turn to be powered on",
+                        f"Offline: {self.printer_label(item.printer_id)} — waiting to be powered on",
+                    )
+                    return
                 if powered_on:
                     # Also turn on any remaining auto_on plugs (e.g., filter)
                     for extra_plug in [p for p in auto_on_plugs if p.id != primary_plug.id]:
@@ -435,6 +447,10 @@ class SelectionMixin:
                     return
 
             # Assign printer and start - clear waiting reason
+            # Remember what the row looked like before this pass touched it, so an item the upload
+            # pool cannot take this tick can be handed back unchanged (T4-03). The AMS mapping
+            # belongs to the printer picked here, so it goes back with the printer.
+            self.model_assigned[item.id] = item.ams_mapping
             item.printer_id = printer_id
             item.waiting_reason = None
             logger.info("Model-based assignment: queue item %s assigned to printer %s", item.id, printer_id)

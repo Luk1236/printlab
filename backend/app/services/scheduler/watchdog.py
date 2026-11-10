@@ -218,6 +218,13 @@ class WatchdogMixin:
                     "then start the job again."
                 )
                 item.completed_at = rt.datetime.now(timezone.utc)
+                # Same as the "gave_up" branch below: the item will never print, so its budget hold goes (T4-02).
+                await rt.release_budget_reservation(
+                    db,
+                    source_type="print_queue",
+                    source_id=item.id,
+                    status="released",
+                )
                 await db.commit()
                 return "command_rejected"
             if item.dispatch_attempts >= rt.DISPATCH_MAX_ATTEMPTS:

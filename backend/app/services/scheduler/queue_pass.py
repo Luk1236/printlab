@@ -25,6 +25,7 @@ from sqlalchemy.orm import selectinload
 
 from backend.app.models.print_queue import PrintQueueItem, PrintQueueVariant
 from backend.app.models.printer import Printer
+from backend.app.services.scheduler.reservations import release_orphaned_reservations
 from backend.app.services.scheduler.selection import SelectionMixin
 
 if TYPE_CHECKING:
@@ -49,6 +50,8 @@ class QueuePass(SelectionMixin):
     async def run(self) -> bool:
         """Die Runde ausführen; True, wenn etwas abgesetzt wurde oder noch läuft."""
         async with _rt().async_session() as self.db:
+            # Reservierungen beendeter Aufträge freigeben, die sonst Budget binden (T4-02); selbst gedrosselt.
+            await release_orphaned_reservations(self.db)
             if not await self._collect():
                 return bool(self._s._inflight)
             await self._select()
@@ -336,6 +339,10 @@ class QueuePass(SelectionMixin):
         # parallel (#2555). See _dispatch_selected().
         self.dispatch_ids: list[int] = []
 
+        # Model-based items that got a printer this pass: item id -> the AMS mapping they had before
+        # (T4-03). Used to undo the assignment for items the upload pool defers.
+        self.model_assigned: dict[int, str | None] = {}
+
         # Library rows queued with `cleanup_library_after_dispatch` (the
         # printer-card "upload and print" flow) are CONSUMED by the dispatch
         # that prints them: the row is deleted and the 3MF is unlinked from
@@ -447,6 +454,7 @@ class QueuePass(SelectionMixin):
         # and on SQLite a pinned WAL read snapshot that stops the WAL being
         # checkpointed while every dispatch is writing to it.
         upload_limit = max(1, await self._s._get_int_setting(self.db, "queue_max_concurrent_uploads", default=4))
+        self._unpin_deferred(upload_limit)
 
         # Selection is done; every decision above is recorded on `db`
         # (model-based printer assignment, computed ams_mapping). Flush it
@@ -477,6 +485,30 @@ class QueuePass(SelectionMixin):
         # 30 s idle sleep (#2602). Selecting anything this pass (launched or
         # deferred because the pool was full) also counts as productive.
         return bool(self.dispatch_ids) or bool(self._s._inflight)
+
+    def _unpin_deferred(self, upload_limit: int) -> list[int]:
+        """Model-based items the upload pool cannot take this tick go back to "any printer of the model".
+
+        ``_launch_uploads`` takes the first ``limit - in flight`` selected ids and defers the rest.
+        A deferred item that came from ``_select_for_model`` already carries the printer chosen for it,
+        and from the next pass on it would count as pinned to that printer and could no longer move to a
+        sibling that is free (T4-03). Put its printer and AMS mapping back; items whose printer the user
+        picked are not in ``model_assigned`` and stay as they are. Mirrors the slicing in
+        ``_launch_uploads`` and runs before the commit, so the undo is written with the rest of the pass.
+        """
+        free = max(upload_limit - len(self._s._inflight), 0)
+        released: list[int] = []
+        by_id = {it.id: it for it in self.items}
+        for item_id in self.dispatch_ids[free:]:
+            item = by_id.get(item_id)
+            if item is None or item_id not in self.model_assigned:
+                continue
+            item.printer_id = None
+            item.ams_mapping = self.model_assigned[item_id]
+            released.append(item_id)
+        if released:
+            logger.info("Upload pool full: model-based item(s) %s keep no printer until a later tick", released)
+        return released
 
     def mark_busy(self, printer_id: int, reason: str) -> None:
         """Take ``printer_id`` out of this pass, recording why.

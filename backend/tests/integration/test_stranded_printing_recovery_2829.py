@@ -103,6 +103,34 @@ class TestTheSweep:
 
         assert await self._status_of(db_session, item.id) == "printing"
 
+    async def test_closing_a_row_releases_its_budget_hold_t4_02(
+        self, scheduler, db_session, printer_factory, monkeypatch
+    ):
+        """The sweep replays no billing, so nothing else would ever free the reserved budget (T4-02)."""
+        from backend.app.models.finance import BudgetReservation, CostCenter
+
+        printer = await printer_factory()
+        item = await self._item(db_session, printer)
+        center = CostCenter(name="Werkstatt", monthly_budget=100.0)
+        db_session.add(center)
+        await db_session.flush()
+        reservation = BudgetReservation(
+            cost_center_id=center.id, amount=40.0, status="active", source_type="print_queue", source_id=item.id
+        )
+        db_session.add(reservation)
+        await db_session.commit()
+        monkeypatch.setattr(
+            "backend.app.services.print_scheduler.printer_manager.get_status", lambda _pid: _state("FAILED")
+        )
+
+        await scheduler._close_stranded_printing_items()
+        scheduler._terminal_since[printer.id] -= _STRANDED_PRINTING_GRACE_SECONDS + 1
+        await scheduler._close_stranded_printing_items()
+
+        assert await self._status_of(db_session, item.id) == "failed"
+        await db_session.refresh(reservation)
+        assert reservation.status == "released"
+
     async def test_a_row_is_closed_once_the_grace_period_passes(
         self, scheduler, db_session, printer_factory, monkeypatch
     ):

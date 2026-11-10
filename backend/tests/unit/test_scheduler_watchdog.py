@@ -668,6 +668,30 @@ class TestWatchdogCommandRejected:
             assert item.completed_at is not None
 
     @pytest.mark.asyncio
+    async def test_releases_the_budget_hold_t4_02(self, db_session):
+        """The item will never print, so the cost center must get its reserved budget back (T4-02)."""
+        from backend.app.models.finance import BudgetReservation, CostCenter
+
+        async with db_session() as db:
+            center = CostCenter(name="Werkstatt", monthly_budget=100.0)
+            db.add(center)
+            await db.flush()
+            db.add(
+                BudgetReservation(
+                    cost_center_id=center.id, amount=40.0, status="active", source_type="print_queue", source_id=1
+                )
+            )
+            await db.commit()
+
+        await self._run(db_session, self._rejected_status())
+
+        async with db_session() as db:
+            from sqlalchemy import select
+
+            reservation = (await db.execute(select(BudgetReservation))).scalar_one()
+            assert reservation.status == "released"
+
+    @pytest.mark.asyncio
     async def test_error_message_names_the_fix(self, db_session):
         """The old wording sent this user to check their SD card."""
         await self._run(db_session, self._rejected_status())

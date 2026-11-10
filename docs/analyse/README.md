@@ -11,7 +11,7 @@ Abdeckungsstufen: **A** Datei vollständig gelesen und je Funktion beschrieben, 
 | T1 | Sicherheit | erledigt (Teile B, siehe Abschnitt 0 und 6) | 18 (5 mittel) | [T1-sicherheit.md](T1-sicherheit.md) |
 | T2 | Drucker-Kommunikation (MQTT, FTP, Druckstart/-ende) | erledigt, überwiegend Stufe B; Vertiefung T2b offen | 9 (2 mittel) | [T2-drucker-kommunikation.md](T2-drucker-kommunikation.md) |
 | T3 | Datenbank und Migrationen | erledigt, `run_migrations` Stufe B+ | 10 (1 hoch, 4 mittel) | [T3-datenbank.md](T3-datenbank.md) |
-| T4 | Warteschlange und Scheduler | offen | | |
+| T4 | Warteschlange und Scheduler | erledigt, Kern Stufe A, Rest Stufe B; Vertiefung T4b offen | 11 (4 mittel, behoben) | [T4-warteschlange-scheduler.md](T4-warteschlange-scheduler.md) |
 | T5 | Archiv, Bibliothek, Dateien | offen | | |
 | T6 | Drucker-Routen, Kamera, virtueller Drucker | offen | | |
 | T7 | Inventar und Verbrauch | offen | | |

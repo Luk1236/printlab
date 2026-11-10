@@ -3957,3 +3957,76 @@ async def test_stop_online_leaves_archive_for_mqtt_to_reconcile_2603(
     await db_session.refresh(archive)
     assert item.status == "cancelled"
     assert archive.status == "printing", "an online stop must leave the archive for the MQTT completion path"
+
+
+async def _reserve_for_item(db_session, item_id: int, amount: float = 40.0):
+    from backend.app.models.finance import BudgetReservation, CostCenter
+
+    center = CostCenter(name="Werkstatt", monthly_budget=100.0)
+    db_session.add(center)
+    await db_session.flush()
+    reservation = BudgetReservation(
+        cost_center_id=center.id, amount=amount, status="active", source_type="print_queue", source_id=item_id
+    )
+    db_session.add(reservation)
+    await db_session.commit()
+    await db_session.refresh(reservation)
+    return reservation
+
+
+@pytest.mark.asyncio
+async def test_stop_offline_releases_the_budget_hold_t4_02(
+    async_client: AsyncClient, printer_factory, archive_factory, db_session
+):
+    """No completion event ever bills an offline stop, so the stop itself must give the hold back (T4-02)."""
+    from unittest.mock import MagicMock, patch
+
+    from backend.app.models.print_queue import PrintQueueItem
+
+    printer = await printer_factory(name="Offline printer")
+    archive = await archive_factory(printer.id, status="printing", filename="heart 3.gcode.3mf", with_run=False)
+    item = PrintQueueItem(printer_id=printer.id, archive_id=archive.id, status="printing")
+    db_session.add(item)
+    await db_session.commit()
+    await db_session.refresh(item)
+    reservation = await _reserve_for_item(db_session, item.id)
+
+    with patch("backend.app.services.printer_manager.printer_manager.stop_print", MagicMock(return_value=False)):
+        resp = await async_client.post(f"/api/v1/queue/{item.id}/stop")
+
+    assert resp.status_code == 200
+    await db_session.refresh(reservation)
+    assert reservation.status == "released"
+
+
+@pytest.mark.asyncio
+async def test_stop_online_keeps_the_budget_hold_for_billing_t4_02(
+    async_client: AsyncClient, printer_factory, archive_factory, db_session
+):
+    """When the stop reaches the printer, the completion path bills and consumes the hold; the route must not."""
+    from unittest.mock import MagicMock, patch
+
+    from backend.app.models.print_queue import PrintQueueItem
+
+    printer = await printer_factory(name="Online printer")
+    archive = await archive_factory(printer.id, status="printing", filename="heart 3.gcode.3mf", with_run=False)
+    item = PrintQueueItem(printer_id=printer.id, archive_id=archive.id, status="printing")
+    db_session.add(item)
+    await db_session.commit()
+    await db_session.refresh(item)
+    reservation = await _reserve_for_item(db_session, item.id)
+
+    with patch("backend.app.services.printer_manager.printer_manager.stop_print", MagicMock(return_value=True)):
+        resp = await async_client.post(f"/api/v1/queue/{item.id}/stop")
+
+    assert resp.status_code == 200
+    await db_session.refresh(reservation)
+    assert reservation.status == "active"
+
+
+@pytest.mark.asyncio
+async def test_add_to_queue_rejects_unbounded_quantity_t4_04(async_client: AsyncClient):
+    """One request must not be able to ask for a million copies (T4-04)."""
+    for quantity in (0, -1, 1000, 10**9):
+        resp = await async_client.post("/api/v1/queue/", json={"archive_id": 1, "quantity": quantity})
+        assert resp.status_code == 422, f"quantity={quantity} should fail validation, got {resp.status_code}"

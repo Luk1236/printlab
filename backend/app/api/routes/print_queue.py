@@ -2337,6 +2337,9 @@ async def stop_queue_item(
     # archive 436). Close it out here, mirroring what the MQTT path would have
     # done. Only touch a still-"printing" archive so we never overwrite a real
     # completion that raced in.
+    if not stop_sent:
+        # No completion event will come to bill and release the hold (T4-02).
+        await release_budget_reservation(db, source_type="print_queue", source_id=item.id, status="released")
     if not stop_sent and item.archive_id:
         archive = await db.get(PrintArchive, item.archive_id)
         if archive and archive.status == "printing":

@@ -481,6 +481,7 @@ class PrintScheduler(AvailabilityMixin, PreheatMixin, DryingMixin, WatchdogMixin
 
                     item.status = status
                     item.completed_at = datetime.now(timezone.utc)
+                    await release_budget_reservation(db, source_type="print_queue", source_id=item.id)
                     closed = True
                     logger.warning(
                         "Queue item %s was still 'printing' after printer %s reported %s for %.0fs — "

@@ -5,6 +5,9 @@ from pydantic import BaseModel, BeforeValidator, Field, PlainSerializer, field_v
 
 from backend.app.utils.printer_models import MAX_CHAMBER_TEMP_C
 
+# Most copies one add-to-queue request may create. Same bound as the batch plate targets below.
+MAX_QUEUE_QUANTITY = 999
+
 
 # Custom serializer to ensure UTC datetimes have Z suffix
 def serialize_utc_datetime(dt: datetime | None) -> str | None:
@@ -114,8 +117,9 @@ class PrintQueueItemCreate(BaseModel):
     preheat_chamber_target_override: int | None = Field(default=None, ge=0, le=MAX_CHAMBER_TEMP_C)
     # Auto-print G-code injection
     gcode_injection: bool = False
-    # Batch: create multiple copies (creates a batch if > 1)
-    quantity: int = 1
+    # Batch: create multiple copies (creates a batch if > 1). Bounded because the
+    # route creates one row per copy inside a single request (T4-04).
+    quantity: int = Field(default=1, ge=1, le=MAX_QUEUE_QUANTITY)
     # Existing batch to add this item into. When set, the item's batch_id is
     # populated on insert so the queue UI groups it with its siblings. Used by
     # the multi-plate auto-batch flow and by the "Group as batch" action.
