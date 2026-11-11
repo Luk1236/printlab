@@ -17,7 +17,7 @@ import shutil
 import socket
 from collections.abc import AsyncGenerator, Callable
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 import aiohttp
 
@@ -151,6 +151,49 @@ def _sanitize_camera_url(url: str, allowed_schemes: tuple[str, ...] = ("http", "
         return sanitized
     except ValueError:
         return None
+
+
+_REDIRECT_STATUSES = frozenset({301, 302, 303, 307, 308})
+_MAX_REDIRECTS = 3
+# A still image, not a stream. Without a cap a stream URL entered as "snapshot" was buffered until the timeout.
+_MAX_SNAPSHOT_BYTES = 20 * 1024 * 1024
+
+
+class CameraRedirectError(aiohttp.ClientError):
+    """A camera URL redirected to a destination we refuse to fetch, or too often."""
+
+
+@contextlib.asynccontextmanager
+async def _get_checked(session: aiohttp.ClientSession, safe_url: str):
+    """GET a vetted camera URL, vetting every redirect hop the same way (T6-06).
+
+    aiohttp follows redirects on its own by default, and the destination check
+    only ever saw the first URL — so a camera (or anything posing as one) could
+    answer ``302 → http://127.0.0.1:…`` and have PrintLab fetch exactly the
+    addresses ``_blocked_host_reason`` exists to refuse.
+    """
+    current = safe_url
+    for _ in range(_MAX_REDIRECTS + 1):
+        async with session.get(current, allow_redirects=False) as response:
+            location = response.headers.get("Location") if response.status in _REDIRECT_STATUSES else None
+            if not location:
+                yield response
+                return
+        target = _sanitize_camera_url(urljoin(current, location), ("http", "https"))
+        if not target:
+            raise CameraRedirectError("camera URL redirects to a destination that is not allowed")
+        current = target
+    raise CameraRedirectError("camera URL redirects too many times")
+
+
+async def _read_limited(response: aiohttp.ClientResponse, max_bytes: int) -> bytes | None:
+    """Response body, or None once it turns out larger than ``max_bytes``."""
+    data = bytearray()
+    async for chunk in response.content.iter_chunked(65536):
+        data += chunk
+        if len(data) > max_bytes:
+            return None
+    return bytes(data)
 
 
 def _validate_camera_url(url: str, allowed_schemes: tuple[str, ...] = ("http", "https", "rtsp")) -> bool:
@@ -568,7 +611,7 @@ async def _capture_mjpeg_frame(url: str, timeout: int) -> bytes | None:
     try:
         async with (
             aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=timeout)) as session,
-            session.get(safe_url) as response,
+            _get_checked(session, safe_url) as response,
         ):
             if response.status != 200:
                 logger.error("MJPEG stream returned status %s", response.status)
@@ -775,13 +818,16 @@ async def _capture_snapshot(url: str, timeout: int) -> bytes | None:
     try:
         async with (
             aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=timeout)) as session,
-            session.get(safe_url) as response,
+            _get_checked(session, safe_url) as response,
         ):
             if response.status != 200:
                 logger.error("Snapshot URL returned status %s", response.status)
                 return None
 
-            data = await response.read()
+            data = await _read_limited(response, _MAX_SNAPSHOT_BYTES)
+            if data is None:
+                logger.error("Snapshot is larger than %s MB; is this a stream URL?", _MAX_SNAPSHOT_BYTES // 1048576)
+                return None
     except TimeoutError:
         logger.warning("Snapshot capture timed out after %ss", timeout)
         return None
@@ -1017,7 +1063,7 @@ async def _stream_mjpeg(url: str) -> AsyncGenerator[bytes, None]:
 
     try:
         timeout = aiohttp.ClientTimeout(total=None, sock_read=30)
-        async with aiohttp.ClientSession(timeout=timeout) as session, session.get(safe_url) as response:
+        async with aiohttp.ClientSession(timeout=timeout) as session, _get_checked(session, safe_url) as response:
             if response.status != 200:
                 logger.error("MJPEG stream returned status %s", response.status)
                 return

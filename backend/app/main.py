@@ -11,7 +11,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path, PurePosixPath
 from urllib.parse import urlparse
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from sqlalchemy import or_, select, text
 
 from backend.app.api.routes import (
@@ -85,6 +85,7 @@ from backend.app.api.routes.maintenance import _get_printer_maintenance_internal
 from backend.app.api.routes.support import init_debug_logging
 from backend.app.core.config import APP_VERSION, settings as app_settings
 from backend.app.core.database import async_session, engine, init_db
+from backend.app.core.printer_scope import enforce_api_key_printer_scope
 from backend.app.core.tasks import spawn_background_task
 from backend.app.core.websocket import ws_manager
 from backend.app.services import (  # noqa: F401 — Test-Patch-Ziel (kprofile_drift)
@@ -1392,6 +1393,8 @@ app = FastAPI(
     description="Archive and manage Bambu Lab 3MF files",
     version=APP_VERSION,
     lifespan=lifespan,
+    # Ein auf einzelne Drucker beschränkter API-Schlüssel gilt auf jeder Route nur für diese (T6-01).
+    dependencies=[Depends(enforce_api_key_printer_scope)],
 )
 
 

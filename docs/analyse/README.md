@@ -13,7 +13,7 @@ Abdeckungsstufen: **A** Datei vollständig gelesen und je Funktion beschrieben, 
 | T3 | Datenbank und Migrationen | erledigt, `run_migrations` Stufe B+ | 10 (1 hoch, 4 mittel) | [T3-datenbank.md](T3-datenbank.md) |
 | T4 | Warteschlange und Scheduler | erledigt, Kern Stufe A, Rest Stufe B; Vertiefung T4b offen | 11 (4 mittel, behoben) | [T4-warteschlange-scheduler.md](T4-warteschlange-scheduler.md) |
 | T5 | Archiv, Bibliothek, Dateien | erledigt, Uploads und Pfade Stufe A, Rest Stufe B; Vertiefung T5b offen | 10 (3 hoch, 2 mittel; 3 hoch + F3D behoben) | [T5-archiv-bibliothek-dateien.md](T5-archiv-bibliothek-dateien.md) |
-| T6 | Drucker-Routen, Kamera, virtueller Drucker | offen | | |
+| T6 | Drucker-Routen, Kamera, virtueller Drucker | erledigt, Server des virtuellen Druckers Stufe A, Rest Teile A und B; Vertiefung T6b offen | 15 (1 hoch, 6 mittel; behoben bis auf Teile von T6-04 und T6-08) | [T6-drucker-routen-kamera-virtueller-drucker.md](T6-drucker-routen-kamera-virtueller-drucker.md) |
 | T7 | Inventar und Verbrauch | offen | | |
 | T8 | Integrationen und Betrieb | offen | | |
 | T9 | Frontend | offen | | |

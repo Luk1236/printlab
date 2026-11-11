@@ -889,8 +889,13 @@ class BambuFTPClient:
 
         return files
 
-    def download_file(self, remote_path: str, expected_size: int | None = None) -> bytes | None:
-        """Download a file from the printer.
+    def download_file(
+        self, remote_path: str, expected_size: int | None = None, max_bytes: int | None = None
+    ) -> bytes | None:
+        """Download a file from the printer into memory.
+
+        ``max_bytes`` raises :class:`DownloadLimitExceeded` as soon as the file
+        turns out larger; callers that hold the result in RAM should set it.
 
         ``expected_size`` is the byte count the directory listing reported for
         this file. Pass it whenever a short read must not be mistaken for a
@@ -908,7 +913,13 @@ class BambuFTPClient:
 
         try:
             buffer = BytesIO()
-            self._ftp.retrbinary(f"RETR {remote_path}", buffer.write)
+
+            def _collect(chunk: bytes) -> None:
+                if max_bytes is not None and buffer.tell() + len(chunk) > max_bytes:
+                    raise DownloadLimitExceeded(remote_path)
+                buffer.write(chunk)
+
+            self._ftp.retrbinary(f"RETR {remote_path}", _collect)
             data = buffer.getvalue()
         except (OSError, ftplib.Error):
             return None
@@ -2273,8 +2284,9 @@ async def download_file_bytes_async(
     printer_model: str | None = None,
     timeout: float = 300.0,
     expected_size: int | None = None,
+    max_bytes: int | None = None,
 ) -> bytes | None:
-    """Async wrapper for downloading file as bytes.
+    """Async wrapper for downloading file as bytes (``max_bytes``: see :meth:`BambuFTPClient.download_file`).
 
     Args:
         socket_timeout: FTP socket timeout for slow connections (e.g., A1 printers)
@@ -2295,7 +2307,7 @@ async def download_file_bytes_async(
         client = BambuFTPClient(ip_address, access_code, timeout=socket_timeout, printer_model=printer_model)
         if client.connect():
             try:
-                return client.download_file(remote_path, expected_size=expected_size)
+                return client.download_file(remote_path, expected_size=expected_size, max_bytes=max_bytes)
             finally:
                 client.disconnect()
         return None

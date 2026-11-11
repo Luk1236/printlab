@@ -17,6 +17,8 @@ import zipfile
 from collections.abc import Callable
 from pathlib import Path
 
+from backend.app.services.virtual_printer.auth_limiter import AuthRateLimiter
+
 logger = logging.getLogger(__name__)
 
 # Default FTP port for Bambu printers (implicit FTPS).
@@ -28,10 +30,9 @@ FTP_PORT = 990
 
 # Hard cap on a single upload. 4 GiB covers the largest realistic
 # multi-plate .gcode.3mf and rejects runaway / malicious clients before
-# they can exhaust the disk or OOM the host. STOR still buffers the
-# whole file in memory before write_bytes — peak RSS ~2x file size during
-# the b''.join — so the cap also caps that peak. If real users hit it
-# with a legitimate file, raise here.
+# they can exhaust the disk. STOR streams to disk chunk by chunk, so the
+# cap bounds disk use, not memory. If real users hit it with a legitimate
+# file, raise here.
 MAX_UPLOAD_BYTES = 4 * 1024 * 1024 * 1024  # 4 GiB
 
 
@@ -50,7 +51,11 @@ class FTPSession:
         pasv_address: str = "",
         bind_address: str = "0.0.0.0",  # nosec B104
         vp_name: str = "",
+        auth_limiter: AuthRateLimiter | None = None,
     ):
+        # Shared across all sessions of one VP so reconnecting does not reset the count (T6-02).
+        self.auth_limiter = auth_limiter or AuthRateLimiter()
+        self._close_requested = False
         self.reader = reader
         self.writer = writer
         self.upload_dir = upload_dir
@@ -128,6 +133,8 @@ class FTPSession:
                 handler = getattr(self, f"cmd_{cmd}", None)
                 if handler:
                     await handler(arg)
+                    if self._close_requested:
+                        break
                 else:
                     logger.debug("%sFTP command not implemented: %s", self._log_prefix, cmd)
                     await self.send(502, f"Command {cmd} not implemented")
@@ -170,16 +177,30 @@ class FTPSession:
             await self.send(530, "Invalid user")
 
     async def cmd_PASS(self, arg: str) -> None:
-        """Handle PASS command."""
+        """Handle PASS command.
+
+        Failed attempts are counted per source IP across sessions, same rule
+        as the MQTT side: once the address is over its allowance it is told
+        so and disconnected until the window has passed (T6-02). Without this
+        the access code — the real printer's, when the VP has a target — could
+        be tried thousands of times per second on a single connection.
+        """
+        if self.auth_limiter.is_blocked(self.remote_ip):
+            logger.warning("%sFTP login rate-limited from %s", self._log_prefix, self.remote_ip)
+            await self.send(421, "Too many failed logins, try again later")
+            self._close_requested = True
+            return
         if self.username and self.username.lower() == "bblp":
             # ``hmac.compare_digest`` is constant-time — keeps the auth check
             # from leaking the access code via response timing under network
             # jitter. LAN-only threat is marginal; this is the standard fix.
             if hmac.compare_digest(arg, self.access_code):
+                self.auth_limiter.clear(self.remote_ip)
                 self.authenticated = True
                 await self.send(230, "Login successful")
                 logger.info("%sFTP login from %s", self._log_prefix, self.remote_ip)
             else:
+                self.auth_limiter.record_failure(self.remote_ip)
                 await self.send(530, "Login incorrect")
                 logger.warning("%sFTP failed login from %s (access code mismatch)", self._log_prefix, self.remote_ip)
         else:
@@ -328,6 +349,26 @@ class FTPSession:
         would complete and the StreamReaderProtocol could release its strong
         reader reference, potentially destabilising the connection.
         """
+        # Only the host that owns the control connection may supply the data
+        # (T6-03). The passive port needs no login of its own, so without this
+        # anyone who connected first delivered the file's content. The listener
+        # stays open: the rightful client can still connect afterwards.
+        peername = writer.get_extra_info("peername")
+        peer_ip = peername[0] if peername else "unknown"
+        if peer_ip != self.remote_ip:
+            logger.warning(
+                "%sFTP rejecting data connection from %s: control connection is %s",
+                self._log_prefix,
+                peer_ip,
+                self.remote_ip,
+            )
+            try:
+                writer.close()
+                await writer.wait_closed()
+            except OSError:
+                pass
+            return
+
         # Reject duplicate connections — only one data connection per transfer
         if self._data_reader is not None:
             logger.warning("FTP rejecting duplicate data connection from %s", self.remote_ip)
@@ -684,6 +725,7 @@ class VirtualPrinterFTPServer:
         self.ready = asyncio.Event()
         self._ssl_context: ssl.SSLContext | None = None
         self._active_sessions: list[asyncio.Task] = []
+        self._auth_limiter = AuthRateLimiter()
         # Override PASV response IP for Docker bridge mode / NAT environments
         self._pasv_address = os.environ.get("VIRTUAL_PRINTER_PASV_ADDRESS", "")
 
@@ -781,6 +823,7 @@ class VirtualPrinterFTPServer:
             pasv_address=self._pasv_address,
             bind_address=self.bind_address,
             vp_name=self.vp_name,
+            auth_limiter=self._auth_limiter,
         )
 
         # Track the session task so we can cancel it on stop

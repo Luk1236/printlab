@@ -59,7 +59,7 @@ class _FakeMjpegSession:
     def __init__(self, response):
         self._response = response
 
-    def get(self, _url):
+    def get(self, _url, **_kwargs):  # the code passes allow_redirects=False
         return self._response
 
     async def __aenter__(self):
@@ -615,6 +615,7 @@ def _fake_snapshot_session(body: bytes, status: int = 200):
     class _Resp:
         def __init__(self):
             self.status = status
+            self.content = self  # the body is read through `response.content.iter_chunked(...)`
 
         async def __aenter__(self):
             return self
@@ -622,8 +623,8 @@ def _fake_snapshot_session(body: bytes, status: int = 200):
         async def __aexit__(self, *a):
             return False
 
-        async def read(self):
-            return body
+        async def iter_chunked(self, _size):
+            yield body
 
     class _Session:
         def __init__(self, *a, **k):
@@ -635,7 +636,7 @@ def _fake_snapshot_session(body: bytes, status: int = 200):
         async def __aexit__(self, *a):
             return False
 
-        def get(self, _url):
+        def get(self, _url, **_kwargs):
             return _Resp()
 
     return _Session

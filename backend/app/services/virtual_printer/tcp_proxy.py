@@ -816,6 +816,8 @@ class FTPTLSProxy(TLSProxy):
 
     PASV_PORT_MIN = 50000
     PASV_PORT_MAX = 50100
+    # Slicer data held in memory while the data connection to the printer is still being opened.
+    MAX_PRECONNECT_BUFFER = 8 * 1024 * 1024
 
     async def stop(self) -> None:
         """Stop proxy and clean up data connection servers."""
@@ -912,6 +914,9 @@ class FTPTLSProxy(TLSProxy):
         session_state: dict[str, str | ssl.SSLSession] = {"prot": "C"}
         if ctrl_tls_session:
             session_state["tls_session"] = ctrl_tls_session
+        if peername:
+            # Data connections are only accepted from this address (T6-03).
+            session_state["client_ip"] = peername[0]
 
         # Client→Printer: intercept EPSV and replace with PASV
         # EPSV responses only contain a port (no IP), so the slicer reuses
@@ -1175,11 +1180,14 @@ class FTPTLSProxy(TLSProxy):
 
         # Get control channel TLS session for data channel reuse
         tls_session = session_state.get("tls_session") if use_tls else None
+        allowed_peer = session_state.get("client_ip")
 
         # Try the printer's original port first — this ensures the port
         # matches even when bounce protection or iptables REDIRECT is in play.
         try:
-            await self._start_data_proxy_server(printer_port, printer_ip, printer_port, use_tls, tls_session)
+            await self._start_data_proxy_server(
+                printer_port, printer_ip, printer_port, use_tls, tls_session, allowed_peer=allowed_peer
+            )
             logger.info("FTP data proxy: using printer's port %s", printer_port)
             return printer_port
         except OSError as e:
@@ -1192,7 +1200,9 @@ class FTPTLSProxy(TLSProxy):
         for _attempt in range(10):
             port = random.randint(self.PASV_PORT_MIN, self.PASV_PORT_MAX)
             try:
-                await self._start_data_proxy_server(port, printer_ip, printer_port, use_tls, tls_session)
+                await self._start_data_proxy_server(
+                    port, printer_ip, printer_port, use_tls, tls_session, allowed_peer=allowed_peer
+                )
                 logger.info("FTP data proxy: using random port %s", port)
                 return port
             except OSError:
@@ -1208,8 +1218,15 @@ class FTPTLSProxy(TLSProxy):
         printer_port: int,
         use_tls: bool,
         tls_session: ssl.SSLSession | None = None,
+        allowed_peer: str | None = None,
     ) -> None:
         """Start a one-shot server for one FTP data connection.
+
+        ``allowed_peer`` is the address of the control connection this data
+        port belongs to. A connection from anywhere else is closed without
+        using up the one shot (T6-03): the listener has no login and no TLS,
+        so whoever connected first used to supply the file that went to the
+        real printer.
 
         When the slicer connects, immediately connects to the printer's data
         port and buffers any slicer data until the printer connection is ready.
@@ -1256,6 +1273,16 @@ class FTPTLSProxy(TLSProxy):
             """Handle one FTP data connection, then close the server."""
             peername = client_writer.get_extra_info("peername")
             data_client = f"{peername[0]}:{peername[1]}" if peername else "unknown"
+            if allowed_peer is not None and (not peername or peername[0] != allowed_peer):
+                logger.warning(
+                    "FTP data proxy port %s: rejecting %s, control connection is %s", port, data_client, allowed_peer
+                )
+                try:
+                    client_writer.close()
+                    await client_writer.wait_closed()
+                except OSError:
+                    pass
+                return
             logger.info(
                 "FTP data proxy port %s (slicer=cleartext, printer=%s): client connected from %s, bridging to %s:%s",
                 port,
@@ -1270,6 +1297,7 @@ class FTPTLSProxy(TLSProxy):
                 server_holder[0].close()
 
             printer_writer = None
+            printer_to_client: asyncio.Task | None = None
             try:
                 # Buffer any slicer data while connecting to printer.
                 # This handles the race where the slicer sends data (or closes
@@ -1279,12 +1307,27 @@ class FTPTLSProxy(TLSProxy):
 
                 async def buffer_slicer():
                     nonlocal slicer_eof
-                    while True:
+                    # Bounded: the connect below may take up to 10 s, and a fast
+                    # slicer would otherwise park a whole upload in memory. What
+                    # is not read here stays in the socket for the loop below.
+                    while len(slicer_buffer) < self.MAX_PRECONNECT_BUFFER:
                         chunk = await client_reader.read(65536)
                         if not chunk:
                             slicer_eof = True
                             return
                         slicer_buffer.extend(chunk)
+
+                async def pump_printer_to_client() -> int:
+                    """Printer → slicer, for RETR and LIST. Ends when the printer closes its side."""
+                    total = 0
+                    try:
+                        while chunk := await printer_reader.read(65536):
+                            client_writer.write(chunk)
+                            await client_writer.drain()
+                            total += len(chunk)
+                    except OSError as e:
+                        logger.debug("FTP data proxy port %s: printer→slicer ended: %s", port, e)
+                    return total
 
                 buffer_task = asyncio.create_task(buffer_slicer())
 
@@ -1319,6 +1362,12 @@ class FTPTLSProxy(TLSProxy):
                     printer_writer.write(bytes(slicer_buffer))
                     await printer_writer.drain()
 
+                # The other direction (T6-08). Until now nothing the printer
+                # sent on the data channel reached the slicer, so a download or
+                # a directory listing through the proxy stayed empty. During an
+                # upload the printer sends nothing here and this task just waits.
+                printer_to_client = asyncio.create_task(pump_printer_to_client())
+
                 # Forward remaining slicer data to printer, then close the
                 # printer side to signal upload complete.
                 #
@@ -1340,6 +1389,8 @@ class FTPTLSProxy(TLSProxy):
                     # after sending data. Too long and the slicer times out.
                     idle_timeout = 0.3
                     while True:
+                        if total_c2p == 0 and printer_to_client.done():
+                            break  # Download: the printer sent its data and closed
                         try:
                             chunk = await asyncio.wait_for(client_reader.read(65536), timeout=idle_timeout)
                         except TimeoutError:
@@ -1370,6 +1421,11 @@ class FTPTLSProxy(TLSProxy):
                     await printer_writer.wait_closed()
                 except OSError:
                     pass
+                # Let the printer→slicer direction finish what it already read.
+                try:
+                    await asyncio.wait_for(printer_to_client, timeout=2.0)
+                except (TimeoutError, OSError):
+                    pass
 
                 # Wait for 226 response to propagate through the FTP control
                 # channel before closing the slicer's data channel.
@@ -1390,6 +1446,8 @@ class FTPTLSProxy(TLSProxy):
             except Exception as e:
                 logger.error("FTP data proxy port %s: error: %s", port, e)
             finally:
+                if printer_to_client is not None and not printer_to_client.done():
+                    printer_to_client.cancel()
                 for w in [client_writer, printer_writer]:
                     if w:
                         try:

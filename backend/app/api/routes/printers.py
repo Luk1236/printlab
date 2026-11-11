@@ -51,6 +51,7 @@ from backend.app.schemas.printer import (
 )
 from backend.app.services import drying_preflight, kprofile_drift
 from backend.app.services.bambu_ftp import (
+    DownloadLimitExceeded,
     cache_3mf_download,
     delete_file_async,
     download_file_bytes_async,
@@ -1602,6 +1603,19 @@ async def _load_printer_or_404(printer_id: int) -> Printer:
     return printer
 
 
+async def _download_for_preview(printer: Printer, path: str) -> bytes:
+    """A printer file into memory for a preview, capped at 256 MB (T6-05); real downloads go via disk."""
+    try:
+        data = await download_file_bytes_async(
+            printer.ip_address, printer.access_code, path, printer_model=printer.model, max_bytes=256 * 1024 * 1024
+        )
+    except DownloadLimitExceeded as exc:
+        raise HTTPException(413, "File is too large to preview; download it instead") from exc
+    if data is None:
+        raise HTTPException(404, f"File not found: {path}")
+    return data
+
+
 @router.get("/{printer_id}/files")
 async def list_printer_files(
     printer_id: int,
@@ -1693,27 +1707,24 @@ async def get_printer_file_gcode(
 
     printer = await _load_printer_or_404(printer_id)
 
-    data = await download_file_bytes_async(printer.ip_address, printer.access_code, path, printer_model=printer.model)
-    if data is None:
-        raise HTTPException(404, f"File not found: {path}")
-
-    filename = path.split("/")[-1]
-    lower = filename.lower()
+    # Type first, download second: this used to pull any file (a timelapse video, say) into memory
+    # and only then find out it was not G-code (T6-05).
+    lower = path.split("/")[-1].lower()
+    if not lower.endswith((".gcode", ".3mf")):
+        raise HTTPException(status_code=400, detail="Unsupported file type")
+    data = await _download_for_preview(printer, path)
 
     if lower.endswith(".gcode"):
         return Response(content=data, media_type="text/plain")
-    if lower.endswith(".3mf"):
-        try:
-            with zipfile.ZipFile(io.BytesIO(data), "r") as zf:
-                gcode_files = [n for n in zf.namelist() if n.endswith(".gcode")]
-                if not gcode_files:
-                    raise HTTPException(status_code=404, detail="No gcode found in 3MF file")
-                gcode_content = read_member(zf, gcode_files[0])
-                return Response(content=gcode_content, media_type="text/plain")
-        except zipfile.BadZipFile:
-            raise HTTPException(status_code=400, detail="Invalid 3MF file")
-
-    raise HTTPException(status_code=400, detail="Unsupported file type")
+    try:
+        with zipfile.ZipFile(io.BytesIO(data), "r") as zf:
+            gcode_files = [n for n in zf.namelist() if n.endswith(".gcode")]
+            if not gcode_files:
+                raise HTTPException(status_code=404, detail="No gcode found in 3MF file")
+            gcode_content = read_member(zf, gcode_files[0])
+            return Response(content=gcode_content, media_type="text/plain")
+    except zipfile.BadZipFile:
+        raise HTTPException(status_code=400, detail="Invalid 3MF file")
 
 
 @router.get("/{printer_id}/files/plates")
@@ -1740,9 +1751,7 @@ async def get_printer_file_plates(
             "is_multi_plate": False,
         }
 
-    data = await download_file_bytes_async(printer.ip_address, printer.access_code, path, printer_model=printer.model)
-    if data is None:
-        raise HTTPException(404, f"File not found: {path}")
+    data = await _download_for_preview(printer, path)
 
     plates = []
 
@@ -1967,9 +1976,7 @@ async def get_printer_file_plate_thumbnail(
 
     printer = await _load_printer_or_404(printer_id)
 
-    data = await download_file_bytes_async(printer.ip_address, printer.access_code, path, printer_model=printer.model)
-    if data is None:
-        raise HTTPException(404, f"File not found: {path}")
+    data = await _download_for_preview(printer, path)
 
     try:
         with zipfile.ZipFile(io.BytesIO(data), "r") as zf:
@@ -2843,7 +2850,7 @@ async def configure_ams_slot(
     setting_id: str = Query(""),
     kprofile_filament_id: str = Query(""),
     kprofile_setting_id: str = Query(""),
-    k_value: float = Query(0.0),
+    k_value: float = Query(0.0, allow_inf_nan=False),
     orca_profile_id: str = Query(""),
     db: AsyncSession = Depends(get_db),
     current_user: User | None = RequirePermissionIfAuthEnabled(Permission.PRINTERS_CONTROL),
@@ -3963,6 +3970,7 @@ async def bed_jog(
             "toolhead does (A1 / A2L), so no per-model sign translation exists "
             "or is needed."
         ),
+        allow_inf_nan=False,  # "nan" passed every range check and went out as `G1 Znan` (T6-04)
     ),
     _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_CONTROL),
     db: AsyncSession = Depends(get_db),
@@ -4041,8 +4049,8 @@ async def bed_jog(
 @router.post("/{printer_id}/xy-jog")
 async def xy_jog(
     printer_id: int,
-    x: float = Query(0, description="Signed relative X movement in mm"),
-    y: float = Query(0, description="Signed relative Y movement in mm"),
+    x: float = Query(0, description="Signed relative X movement in mm", allow_inf_nan=False),
+    y: float = Query(0, description="Signed relative Y movement in mm", allow_inf_nan=False),
     _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_CONTROL),
     db: AsyncSession = Depends(get_db),
 ):
@@ -4078,7 +4086,9 @@ async def xy_jog(
 async def extruder_jog(
     printer_id: int,
     distance: float = Query(
-        ..., description="Signed relative extrusion distance in mm. Positive extrudes, negative retracts."
+        ...,
+        description="Signed relative extrusion distance in mm. Positive extrudes, negative retracts.",
+        allow_inf_nan=False,
     ),
     _=RequirePermissionIfAuthEnabled(Permission.PRINTERS_CONTROL),
     db: AsyncSession = Depends(get_db),
