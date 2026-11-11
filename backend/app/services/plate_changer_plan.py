@@ -18,6 +18,11 @@ G = 9.81  # m/s²
 STEPS_PER_REV = 200  # 1,8°-Motor
 MICROSTEPS = 16  # TMC2209 im StealthChop-Betrieb
 REQUIRED_TORQUE_MARGIN = 2.0  # verlangtes Verhältnis nutzbares Moment / benötigtes Moment
+# Gewindereibung der Z-Spindel: sehr gut geschmiert bis trocken. Herstellerangaben: Bronze geschmiert 0,08 bis 0,12,
+# Stahl auf Messing trocken 0,15 bis 0,19. Bei 0,08 hemmt Tr8x2 schon nicht mehr (Reibwinkel 4,6° < Steigung 5,2°),
+# Kunststoffmuttern (POM) hemmen laut Herstellern nicht sicher. Deshalb Messingmutter plus Reibbremse (Z_DRAG_NM).
+Z_FRICTION_RANGE = (0.05, 0.15)
+Z_DRAG_NM = 0.005  # ASSUMPTION: Reibbremse je Spindel (Federring/Bremsklotz auf der Welle), am Gerät einstellen
 
 # Fahrzeit-Annahmen (am Gerät messen)
 DOOR_SERVO_DEG_PER_S = 66.7  # gpio_mechanik: 2° je 0,03 s
@@ -45,6 +50,7 @@ class Axis:
     spindle_mean_dia_mm: float = 0.0
     friction: float = 0.0  # Gewindereibung (Spindel)
     efficiency: float = 1.0  # Wirkungsgrad (Spindel)
+    drag_nm: float = 0.0  # Reibbremse je Spindel gegen Rücklauf; der Motor muss sie mit überwinden
 
     @property
     def steps_per_mm(self) -> float:
@@ -69,7 +75,7 @@ class Axis:
             force = mass * (self.accel / 1000.0 + 0.02 * G)
             return force * (self.mm_per_rev / 1000.0) / (2 * math.pi)
         force = mass * (self.accel / 1000.0 + G)
-        return force * (self.mm_per_rev / 1000.0) / (2 * math.pi * self.efficiency)
+        return force * (self.mm_per_rev / 1000.0) / (2 * math.pi * self.efficiency) + self.drag_nm
 
     @property
     def torque_ratio(self) -> float:
@@ -78,16 +84,46 @@ class Axis:
     def lead_angle_deg(self) -> float:
         return math.degrees(math.atan(self.mm_per_rev / (math.pi * self.spindle_mean_dia_mm)))
 
-    def self_locking(self) -> bool:
+    def self_locking(self, friction: float | None = None) -> bool:
         """Selbsthemmend, wenn der Reibwinkel über dem Steigungswinkel liegt: Die Last fällt dann ohne Strom nicht herunter."""
-        return self.drive == "spindle" and math.degrees(math.atan(self.friction)) > self.lead_angle_deg()
+        mu = self.friction if friction is None else friction
+        return self.drive == "spindle" and math.degrees(math.atan(mu)) > self.lead_angle_deg()
+
+    def backdrive_torque_nm(self, friction: float) -> float:
+        """Moment, mit dem die Last eine stromlose Spindel zurückdreht (0, wenn sie bei dieser Reibung selbst hemmt)."""
+        angle = math.radians(self.lead_angle_deg()) - math.atan(friction)
+        if self.drive != "spindle" or angle <= 0:
+            return 0.0
+        force = self.moving_mass_kg / self.motors * G
+        return force * (self.spindle_mean_dia_mm / 2000.0) * math.tan(angle)
+
+    def holds_without_power(self) -> bool:
+        """Hält die Achse bei Not-Halt (Treiber stromlos) auch bei der niedrigsten angenommenen Reibung?"""
+        if self.drive != "spindle":
+            return True
+        worst = self.backdrive_torque_nm(Z_FRICTION_RANGE[0])
+        return self.drag_nm >= REQUIRED_TORQUE_MARGIN * worst
 
 
 X_AXIS = Axis("x", "X Querträger", "belt", pc.MAG_X, 40.0, 250.0, 800.0, 2.2, 1, 0.15)
 Y_AXIS = Axis("y", "Y Greiferarm", "belt", pc.PARK_Y - pc.Y_GRIP, 40.0, 200.0, 600.0, 1.0, 1, 0.15)
 # Tr8x2: Die Steigung 8 mm der ersten Auslegung ist nicht selbsthemmend, der Querträger fiele bei Not-Halt auf Platte oder Regal.
+# Auch Tr8x2 hemmt nur bei trockener Messingmutter sicher; die Reibbremse hält ihn bei jeder Schmierung.
 Z_AXIS = Axis(
-    "z", "Z Hub (2 Spindeln)", "spindle", max(pc.SLOT_Z) - pc.WASH_Z, 2.0, 15.0, 60.0, 3.5, 2, 0.15, 7.0, 0.15, 0.25
+    "z",
+    "Z Hub (2 Spindeln)",
+    "spindle",
+    max(pc.SLOT_Z) - pc.WASH_Z,
+    2.0,
+    15.0,
+    60.0,
+    3.5,
+    2,
+    0.15,
+    7.0,
+    0.15,
+    0.25,
+    Z_DRAG_NM,
 )
 AXES = (X_AXIS, Y_AXIS, Z_AXIS)
 LEGACY_Z_LEAD_MM = 8.0  # Tr8x8 der ersten Auslegung, nur für den Vergleich im Plan
@@ -166,7 +202,9 @@ LOADS: tuple[tuple[str, float, str], ...] = (
     ("4× NEMA17 fahrend (je 0,8 A)", 3.2, "move"),
     ("4× NEMA17 haltend (je 0,35 A)", 1.4, "hold"),
     ("Elektromagnet 12 V / 80 N", 0.6, "move"),
-    ("Tür-Servo MG90S über 5-V-Wandler (Anlauf)", 0.45, "door"),
+    # Auf der 12-V-Seite: 0,45 A x 12 V = 5,4 W, nach dem Wandler (90 %) knapp 1 A bei 5 V. Deckt den Blockierstrom
+    # des MG90S laut Datenblatt (0,75 A bei 4,8 V, 0,86 A bei 6 V).
+    ("Tür-Servo MG90S über 5-V-Wandler (Blockierstrom, 12-V-Seite)", 0.45, "door"),
     ("Walzenmotor N20 (Anlauf)", 0.8, "wash"),
     ("Peristaltikpumpe", 0.3, "wash"),
     ("Radiallüfter 5015", 0.25, "wash"),
@@ -263,8 +301,9 @@ def axis_checks() -> list[dict[str, Any]]:
                 "torque_need_nm": round(ax.required_torque_nm(), 3),
                 "torque_have_nm": ax.motor_torque_nm,
                 "torque_ratio": round(ax.torque_ratio, 1),
-                "ok": ax.torque_ratio >= REQUIRED_TORQUE_MARGIN and (ax.drive != "spindle" or ax.self_locking()),
+                "ok": ax.torque_ratio >= REQUIRED_TORQUE_MARGIN and ax.holds_without_power(),
                 "self_locking": ax.self_locking() if ax.drive == "spindle" else None,
+                "holds_without_power": ax.holds_without_power(),
             }
         )
     return out

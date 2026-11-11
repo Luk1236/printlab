@@ -36,6 +36,25 @@ def test_z_spindle_holds_its_load_without_power():
     assert not old.self_locking()
 
 
+def test_z_self_locking_depends_on_the_lubrication():
+    """Tr8x2 hemmt trocken (0,15), geschmiert (0,08) nicht mehr: Selbsthemmung allein reicht nicht als Sicherung."""
+    assert plan.Z_AXIS.self_locking(0.15)
+    assert not plan.Z_AXIS.self_locking(0.08)
+    assert plan.Z_AXIS.backdrive_torque_nm(0.15) == 0.0
+    assert plan.Z_AXIS.backdrive_torque_nm(plan.Z_FRICTION_RANGE[0]) > 0.0
+
+
+def test_z_drag_brake_holds_the_beam_at_any_lubrication():
+    """Not-Halt schaltet die Treiber stromlos; die Reibbremse hält den Querträger mit doppelter Reserve."""
+    worst = plan.Z_AXIS.backdrive_torque_nm(plan.Z_FRICTION_RANGE[0])
+    assert plan.Z_AXIS.drag_nm >= plan.REQUIRED_TORQUE_MARGIN * worst
+    assert plan.Z_AXIS.holds_without_power()
+    without_brake = plan.Axis("z", "ohne Bremse", "spindle", 246, 2.0, 15, 60, 3.5, 2, 0.15, 7.0, 0.15, 0.25)
+    assert not without_brake.holds_without_power()
+    # Der Motor überwindet die Bremse mit Reserve (steckt in required_torque_nm).
+    assert plan.Z_AXIS.torque_ratio >= plan.REQUIRED_TORQUE_MARGIN
+
+
 def test_step_rates_stay_within_the_driver():
     for ax in plan.AXES:
         assert ax.step_rate_hz < 50_000, ax.id  # TMC2209 mit Step/Dir weit darunter

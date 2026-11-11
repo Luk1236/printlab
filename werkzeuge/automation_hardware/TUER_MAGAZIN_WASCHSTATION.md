@@ -101,7 +101,7 @@ flowchart LR
      * **X-Querträger (fährt auf Z mit):** Alu-Profil **2020**, Länge **$685{,}0\text{ mm}$** ($X = -160\dots +525\text{ mm}$) + Linearschiene **MGN12H ($600\text{ mm}$)**.
      * **Verfahrweg (Netto-Hub X):** $\Delta X = 360{,}0\text{ mm}$ ($X = 0{,}0\text{ mm}$ P2S-Mitte $\leftrightarrow X = +360{,}0\text{ mm}$ Kompakt-Turm-Mitte).
   2. **Z-Achse (Vertikaler Hub für P2S-Heizbett, 4 Regalfächer & Waschstation):**
-     * **Führung & Antrieb:** 2× Linearschiene **MGN12H ($300\text{ mm}$)** + Trapezgewindespindel **T8×8 ($300\text{ mm}$)** mit NEMA17-Motor.
+     * **Führung & Antrieb:** 2× Linearschiene **MGN12H ($300\text{ mm}$)** + je Pfosten eine Trapezgewindespindel **Tr8×2 ($300\text{ mm}$)** mit Messingmutter, Reibbremse und eigenem NEMA17-Motor (Abschnitt 5.1 und 7).
      * **Anfahrpositionen Z:**
        * Waschstation-Walzenhöhe: $Z_{\text{Wash}} = 44{,}0\text{ mm}$
        * Regalfächer 1–4: $Z = 185{,}0 / 220{,}0 / 255{,}0 / 290{,}0\text{ mm}$
@@ -148,7 +148,7 @@ flowchart LR
 | **M4** | Linearschiene MGN12H | Länge **$600{,}0\text{ mm}$** inkl. 1× Wagen MGN12H | 1 Satz | X-Achse Wechsler-Shuttle ($\Delta X = 360\text{ mm}$) |
 | **M5** | Linearschiene MGN12H | Länge **$300{,}0\text{ mm}$** inkl. je 1× Wagen MGN12H | 2 Sätze | Z-Achse Vertikalhub Shuttle (links & rechts) |
 | **M6** | Linearschiene MGN9H | Länge **$500{,}0\text{ mm}$** inkl. 1× Wagen MGN9H | 1 Satz | Y-Teleskoparm ($\Delta Y = 405{,}5\text{ mm}$ in den P2S) |
-| **M7** | Trapezgewindespindel | **Tr8×2** (Steigung 2 mm, selbsthemmend), Länge **$300{,}0\text{ mm}$** + Flanschmutter POM | 2 Sätze | Z-Hub, je Pfosten eine (Abschnitt 5.1; die erste Auslegung Tr8×8 hemmte nicht) |
+| **M7** | Trapezgewindespindel | **Tr8×2** (Steigung 2 mm), Länge **$300{,}0\text{ mm}$** + **Flanschmutter Messing** (keine POM-Mutter: Kunststoffmuttern hemmen nicht sicher) | 2 Sätze | Z-Hub, je Pfosten eine (Abschnitt 5.1; die erste Auslegung Tr8×8 hemmte nicht) |
 | **M8** | GT2 Zahnriemen + Pulleys | Breite $6\text{ mm}$, **3 m** Rolle (X etwa 1400 mm, Y etwa 1200 mm, offen mit Klemmen) + 2× 20T Pulley ($\varnothing 5\text{ mm}$) + 2× 20T Umlenkrolle | 1 Satz | Antrieb X-Achse & Y-Teleskoparm |
 | **M9** | Edelstahlwellen $\varnothing 8\text{ mm}$ | Länge **$260{,}0\text{ mm}$** (Passung h6) | 2 Stk. | Walzenachsen in der IPA-Waschstation |
 | **M10** | Kugellager 608ZZ | $\varnothing 8 \times \varnothing 22 \times 7\text{ mm}$ (gedichtet) | 4 Stk. | Walzenlagerung in der Waschstation |
@@ -161,7 +161,7 @@ flowchart LR
 | :---: | :--- | :--- | :--- | :--- |
 | **E1** | Metall-Servo **MG90S** | $4{,}8\dots 6{,}0\text{ V}$, Stellmoment $2{,}2\text{ kg}\cdot\text{cm}$ | **BCM 18 (Pin 12)** – Hardware-PWM | P2S-Türöffner links ($0^\circ \leftrightarrow 115^\circ$) |
 | **E2** | **4×** Schrittmotor **NEMA17** | $1{,}8^\circ$, $1{,}5\text{ A}$ + **4×** Treiber **TMC2209** | **Bewegungs-Controller per USB** (Abschnitt 6.1) | Shuttle-Achsen X (360 mm), Y (405,5 mm), Z links und rechts |
-| **E3** | Elektromagnet-Greifer | 12V DC, $80\text{ N}$ Haltekraft ($\varnothing 25 \times 20\text{ mm}$) | MOSFET-Ausgang des Bewegungs-Controllers (E9), Sicherung F2 | Greift die Vorderkante der $257\text{ mm}$ Federstahlplatte |
+| **E3** | Elektromagnet-Greifer | 12V DC, $80\text{ N}$ Haltekraft ($\varnothing 25 \times 20\text{ mm}$). Nennkraft gilt auf dickem Baustahl ohne Luftspalt; auf 0,5-mm-Federstahl deutlich weniger. Beim Kauf auf die Typangabe achten: der kleinere P20/15 hält nur 25 bis 30 N | MOSFET-Ausgang des Bewegungs-Controllers (E9), Sicherung F2 | Greift die Vorderkante der $257\text{ mm}$ Federstahlplatte |
 | **E4** | Getriebemotor **N20 12V** | $150\text{ U/min}$, hohes Drehmoment | **BCM 19 (Pin 35)** – Relais Kanal 1 | Treibt die 2 Mikrofaser-Walzen gegenläufig an |
 | **E5** | **Peristaltikpumpe 12V** | $80\text{ ml/min}$, IPA-beständiger Silikonschlauch | **BCM 6 (Pin 31)** – Relais Kanal 2 | Dosiert Isopropanol ($99{,}9\,\%$) auf die Platte |
 | **E6** | **Radiallüfter 5015 12V** | $50 \times 50 \times 15\text{ mm}$, $6000\text{ U/min}$ | **BCM 13 (Pin 33)** – Relais Kanal 3 | Trocknet die gewaschene Platte in $15\text{ s}$ |
@@ -178,7 +178,7 @@ flowchart LR
 | **M16** | Energiekette | innen 10 × 15 mm; 240 / 300 / 320 mm | 3 Stk. | Z, X, Y (Abschnitt 5.1) |
 | **M17** | Schleppkettenleitung | geschirmt, 4-adrig 0,34 mm² (Motoren), 0,14 mm² (Signale) | je Bedarf | Motoren, Endschalter, Magnet |
 | **E9** | Bewegungs-Controller | 4× TMC2209, USB, Klipper/Marlin | 1 Stk. | X, Y, Z links und rechts, Endschalter, Magnetausgang |
-| **E10** | Mikroschalter KW12 | Öffner, Rolle | 5 Stk. | Endschalter X, Y, Z sowie Tür offen und zu |
+| **E10** | Mikroschalter KW12 | Öffner, Rolle | 4 Stk. (+1 optional) | Endschalter X, Y, Z sowie Tür offen; „Tür zu“ meldet der Türsensor des P2S (Abschnitt 5.2), ein fünfter Schalter nur als zweite Bestätigung |
 | **E11** | Kontaktschalter | Mikroschalter mit Hebel | 1 Stk. | „Platte gegriffen“ in der Backe (3g) |
 | **E12** | Not-Halt-Taster | Pilzkopf, Ø 22 mm, Öffner, rastend | 1 Stk. | Abschnitt 6.2 |
 | **E13** | Sicherungen | 10 A träge (F1), 5 A, 2 A, 2 A, 1 A | 1 Satz | Abschnitt 6.1 |
@@ -186,6 +186,7 @@ flowchart LR
 | **E15** | Schwimmerschalter | klein, IPA-beständig | 1 Stk. | Sammelflasche der Waschstation |
 | **E16** | Sammelflasche | 1 l, IPA-beständig, Silikonschlauch | 1 Stk. | Ablauf der Wanne (Abschnitt 5.4) |
 | **E17** | Pi-Netzteil | 5 V / 5 A | 1 Stk. | Raspberry Pi 5, getrennt vom 12-V-Netzteil |
+| **M18** | Z-Reibbremse | Federscheibe oder federnder Bremsklotz (PETG/Messing) auf der Spindelwelle, Bremsmoment je Spindel **etwa 0,005 N·m** (am Gerät einstellen) | 2 Stk. | Hält den Querträger bei Not-Halt auch bei geschmierter Mutter (Abschnitt 7) |
 
 ---
 
@@ -283,12 +284,13 @@ Lochbild $20 \times 20$, M3; **MGN9H** Wagen $20 \times 39{,}9$, Lochbild $15 \t
 
 **Energieketten** (Länge $\approx$ Hub/2 + $\pi \cdot R$ + 60 mm mit $R = 18$ mm): **Z** 240 mm (Basis $\to$ Querträger), **X** 300 mm (Querträger $\to$ X-Schlitten), **Y** 320 mm (X-Schlitten $\to$ Y-Wagen). Im Z-Kabelweg liegen alle Leitungen des X-Motors, Y-Motors, Magneten, der Endschalter und des Kontaktschalters.
 
-**Warum zwei Z-Spindeln:** Der Querträger ist 685 mm lang und hängt an zwei Pfosten (669 mm Abstand). Eine einzelne Spindel auf einer Seite würde ihn verkanten. Jeder Pfosten bekommt eine **Tr8×2**-Spindel mit eigenem NEMA17; beide Treiber bekommen dieselben Schritt- und Richtungssignale. Die Steigung ist 2 mm (nicht 8 mm wie in der ersten Auslegung), damit die Spindel **selbsthemmend** ist: Beim Not-Halt fällt der Querträger sonst herunter (Rechnung in Abschnitt 7).
+**Warum zwei Z-Spindeln:** Der Querträger ist 685 mm lang und hängt an zwei Pfosten (669 mm Abstand). Eine einzelne Spindel auf einer Seite würde ihn verkanten. Jeder Pfosten bekommt eine **Tr8×2**-Spindel mit eigenem NEMA17; beide Treiber bekommen dieselben Schritt- und Richtungssignale. Die Steigung ist 2 mm (nicht 8 mm wie in der ersten Auslegung), damit die Spindel trocken **selbsthemmend** ist. Weil das nur bei trockener Messingmutter sicher gilt, sitzt an jeder Spindel zusätzlich eine kleine **Reibbremse** (M18): Beim Not-Halt fällt der Querträger sonst herunter (Rechnung in Abschnitt 7).
 
 ### 5.2 Baugruppe 1 – Türöffner (Ergänzung)
 
-* **Servo-Stromversorgung:** MG90S an **eigenem 5-V-Wandler (3 A)** aus der 12-V-Schiene, nicht aus dem Pi. Anlaufstrom bis 0,8 A bricht sonst die Pi-Versorgung ein.
-* **Endschalter** Tür offen und zu (Mikroschalter, Öffner) sitzen am Scharnier, nicht an der Stange. Verdrahtung nach Abschnitt 6.
+* **Servo-Stromversorgung:** MG90S an **eigenem 5-V-Wandler (3 A)** aus der 12-V-Schiene, nicht aus dem Pi. Der Blockierstrom liegt laut Datenblatt bei 0,75 A (4,8 V) bis 0,86 A (6 V) und bricht sonst die Pi-Versorgung ein. Im Strombudget (Abschnitt 9) steht er mit 0,45 A auf der 12-V-Seite, das sind knapp 1 A bei 5 V.
+* **Stellmoment:** 1,8 kg·cm (4,8 V) bis 2,0–2,5 kg·cm (6 V), am 28-mm-Horn also etwa 6 bis 8 N. Die Kraft, mit der der Magnetverschluss der Tür hält, ist nicht veröffentlicht: vor dem Bau mit der Federwaage am Anlenkpunkt messen (75 mm vom Scharnier). Reicht es nicht, das Servo mit 6 V betreiben oder ein stärkeres Servo derselben Baugröße nehmen.
+* **Endschalter:** „Tür offen“ (Mikroschalter, Öffner) sitzt am Scharnier, nicht an der Stange. **„Tür zu“ meldet der P2S selbst:** Er hat einen magnetischen Türsensor, PrintLab liest ihn über MQTT (`door_open`). Ein zweiter Mikroschalter für „zu“ ist nur noch als unabhängige Bestätigung nötig (Pin `door_endstop_closed` bleibt belegt). Verdrahtung nach Abschnitt 6.
 * **Vor dem Einbau am Gerät:** Servo auf $0^\circ$ stellen, Horn so aufstecken, dass die Stange bei „zu“ in Totpunktlage steht (Kniehebel hält die Tür ohne Strom geschlossen).
 
 ### 5.3 Baugruppe 2 – Plattenregal (Ergänzung)
@@ -362,9 +364,13 @@ Annahmen: NEMA17 $1{,}8^\circ$, 1,2 A, 12 V, 16 Mikroschritte. Nutzbares Moment 
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | X Querträger | 80.0 | 12.5 µm | 375 U/min | 20.0 kHz | 0.014 N·m | 0.15 N·m | 10.8 × |
 | Y Greiferarm | 80.0 | 12.5 µm | 300 U/min | 16.0 kHz | 0.005 N·m | 0.15 N·m | 29.6 × |
-| Z Hub (2 Spindeln) | 1600.0 | 0.6 µm | 450 U/min | 24.0 kHz | 0.022 N·m | 0.15 N·m | 6.8 × |
+| Z Hub (2 Spindeln) | 1600.0 | 0.6 µm | 450 U/min | 24.0 kHz | 0.027 N·m | 0.15 N·m | 5.6 × |
 
-Die Z-Achse braucht wegen der Reibung der Spindelmutter einen Wirkungsgrad von etwa 0,25 (Annahme). **Selbsthemmung:** Steigungswinkel Tr8×2 $5{,}2^\circ$, Reibwinkel (Reibung 0,15) $8{,}5^\circ$: hemmt. Tr8×8: Steigungswinkel $20{,}0^\circ$: hemmt **nicht**.
+Die Z-Achse braucht wegen der Reibung der Spindelmutter einen Wirkungsgrad von etwa 0,25 (Annahme); das Moment enthält die Reibbremse (0,005 N·m je Spindel).
+
+**Selbsthemmung:** Steigungswinkel Tr8×2 $5{,}2^\circ$. Herstellerangaben zur Gewindereibung: Stahl auf Messing trocken 0,15 bis 0,19 (Reibwinkel $8{,}5^\circ$: hemmt), Bronze geschmiert 0,08 bis 0,12 (bei 0,08 Reibwinkel $4{,}6^\circ$: hemmt **nicht**). Kunststoffmuttern (POM) hemmen laut Herstellern nicht sicher, Vibration hebt die Hemmung zusätzlich auf. Tr8×8: Steigungswinkel $20{,}0^\circ$: hemmt nie.
+
+**Deshalb Reibbremse (M18):** Bei der niedrigsten angenommenen Reibung (0,05, sehr gut geschmiert) dreht die Last von 1,75 kg je Spindel diese mit **0,0024 N·m** zurück. Eine Reibbremse mit **0,005 N·m** je Spindel hält mit doppelter Reserve, der Motor überwindet sie mit (siehe Tabelle). Prüfung 6 in Abschnitt 10.2 („Strom aus: Querträger bleibt stehen“) bestätigt das am Gerät, **einmal trocken und einmal nach dem Schmieren**.
 
 **Weichen Grenzen (Software):** $X \in [-5; 365]$ mm, $Z \in [40; 292]$ mm, Y begrenzt auf Parkposition bis $Y_{\text{Grip}}$. Harte Anschläge liegen mit mindestens 4 mm Abstand dahinter (Reserve Z 8,6 mm, Abschnitt 4.3).
 
@@ -435,11 +441,11 @@ Typische Datenblattwerte, **nicht gemessen**. Verlangte Reserve: 25 % unter 8,5 
 | 3 | Not-Halt (Software) | `is_estop_active` meldet wahr, Bewegungsbefehle werden verweigert |
 | 4 | Endschalter | Jeder Schalter von Hand auslösen: Controller meldet die richtige Achse; Kabel abziehen: gilt als ausgelöst |
 | 5 | Referenzfahrt ohne Last | Z, Y, X nacheinander, kein Anschlagen, Positionen nach Tabelle 7.1 |
-| 6 | Z mit Last | 3,5 kg am Querträger: Fahrt $40 \to 292$ mm ohne Schrittverlust; Strom aus: Querträger bleibt stehen |
+| 6 | Z mit Last | 3,5 kg am Querträger: Fahrt $40 \to 292$ mm ohne Schrittverlust; Strom aus: Querträger bleibt stehen, mit trockener und mit geschmierter Mutter |
 | 7 | Y und X leer | Gesamtweg, Hin- und Rückfahrt: Rückkehr auf dieselbe Position (±0,2 mm) |
 | 8 | Magnet | Platte heben: hält; Haltekraft mit Federwaage messen und in Abschnitt 4.3 eintragen |
 | 9 | Abziehkraft Heizbett | Kraft messen, mit der sich die Platte vom Bettmagneten schieben lässt; Magnetkraft muss darüber liegen |
-| 10 | Tür | Öffnungswinkel und Endschalter; Abstand Tür–Portal am echten Gerät messen (Abschnitt 4.3, erste Zeile) |
+| 10 | Tür | Öffnungswinkel und Endschalter „offen“; „zu“ über den Türsensor des P2S in PrintLab prüfen; Abstand Tür–Portal am echten Gerät messen (Abschnitt 4.3, erste Zeile) |
 | 11 | Trockenlauf | Kompletter Wechsel mit Probeplatte, **Hand am Not-Halt**, drei Mal |
 | 12 | Waschen | Mit 2 ml Wasser statt IPA, dann mit IPA; Auffangflasche und Abluft prüfen |
 
