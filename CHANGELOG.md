@@ -3,6 +3,28 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.55 (11.11.2026) — Sicherheits- und Fehlerkorrekturen aus der Code-Analyse (T3 bis T6)
+
+Befunde und Belege: `docs/analyse/` (je Tranche ein Dokument, Abschnitt „Umsetzung“).
+
+- **API-Schlüssel mit Drucker-Liste** gelten jetzt auf jeder Route nur für diese Drucker. Bisher wurde die Liste nur in den
+  Dateirouten geprüft; Stopp, Pause, Bewegung, Kamera und der Rest ließen jeden Drucker zu (T6-01).
+- **Virtueller Drucker:** FTP sperrt eine Adresse nach 5 falschen Zugangscodes für 60 s, Datenverbindungen werden nur noch von
+  der Adresse der Steuerverbindung angenommen, der FTP-Proxy reicht Listen und Downloads vom Drucker zum Slicer durch (T6-02, T6-03, T6-08).
+- **Uploads und Zip-Dateien begrenzt:** Obergrenzen für alle Upload-Routen (`MAX_UPLOAD_MB`, Standard 1024; `MAX_PORTAL_UPLOAD_MB`,
+  Standard 25), Zip-Bomben werden vor dem Entpacken erkannt, die Modellanalyse im Kundenportal läuft begrenzt und außerhalb der
+  Ereignisschleife (T5-01 bis T5-03). Auf einem Pi mit 1 GB RAM `MAX_UPLOAD_MB` niedriger setzen.
+- **F3D-Upload** für Archive ohne 3MF schreibt nicht mehr oberhalb des Datenordners (T5-04).
+- **Bewegungsbefehle** lehnen `nan` und `inf` ab; die Vorschau von Druckerdateien lädt höchstens 256 MB; externe Kameras folgen keiner
+  Weiterleitung mehr auf gesperrte Ziele und liefern Einzelbilder bis 20 MB (T6-04 bis T6-06).
+- **Warteschlange:** Budget-Reservierungen werden bei Abbruch, Ablehnung und Aufräumen freigegeben, die Stückzahl ist auf 999 begrenzt,
+  ein Drucker, der erst eingeschaltet werden muss, blockiert den Durchlauf nicht mehr, und Aufträge für ein Modell werden nicht mehr
+  dauerhaft an einen Drucker gebunden, wenn der Upload zurückgestellt wird (T4-01 bis T4-04).
+- **Lieferzeit-Einstellung** bleibt nach einem Neustart erhalten (T3-01).
+- **Tests** schreiben nicht mehr in den Projektordner und überschreiben keine versionierten Kalibrierdateien.
+- Dazu aus anderen Sitzungen: CI-Befunde (Tests, Lint, Typen, Übersetzungen, Webhook-Härtung), Dateimanager-Reparatur, Plattenwechsler-
+  Planung und 3D-Ansicht der Automatik-Hardware (Dokumentation).
+
 ## v2.0.54 (08.11.2026) — Multi-Location Farm Mesh & Cloud-Relay (Phase 25)
 
 - **Multi-Location Farm Mesh Relay (`backend/app/services/farm_mesh_relay.py`, `/api/v1/mesh/*`):**
