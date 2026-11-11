@@ -23,6 +23,7 @@ from backend.app.utils.ffmpeg_output import NO_FFMPEG_OUTPUT, summarize_ffmpeg_s
 from backend.app.utils.filename import clean_display_name
 from backend.app.utils.safe_path import PathTraversalError, assert_under, safe_join_under
 from backend.app.utils.threemf_tools import bed_temperature_from_config
+from backend.app.utils.zip_limits import check_zip, read_member, read_member_large
 
 logger = logging.getLogger(__name__)
 
@@ -154,7 +155,7 @@ def plate_indexes_in_3mf(file_path: Path) -> list[int | None]:
         with zipfile.ZipFile(file_path, "r") as zf:
             if "Metadata/slice_info.config" not in zf.namelist():
                 return []
-            root = ET.fromstring(zf.read("Metadata/slice_info.config").decode())
+            root = ET.fromstring(read_member(zf, "Metadata/slice_info.config").decode())
             return [_read_plate_index(plate) for plate in root.findall(".//plate")]
     except Exception:
         return []
@@ -267,6 +268,7 @@ class ThreeMFParser:
         """Extract metadata from 3MF file."""
         try:
             with zipfile.ZipFile(self.file_path, "r") as zf:
+                check_zip(zf)  # a zip bomb is refused before any member is unpacked (T5-01)
                 self._parse_slice_info(zf)  # Now sets self.plate_number from slice_info
                 self._parse_project_settings(zf)
                 self._parse_gcode_header(zf)
@@ -308,7 +310,7 @@ class ThreeMFParser:
         """Parse slice_info.config for print settings and printable objects."""
         try:
             if "Metadata/slice_info.config" in zf.namelist():
-                content = zf.read("Metadata/slice_info.config").decode()
+                content = read_member(zf, "Metadata/slice_info.config").decode()
                 root = ET.fromstring(content)
 
                 # Extract printer_model_id from plate metadata
@@ -454,7 +456,7 @@ class ThreeMFParser:
         """Parse project settings for print configuration."""
         try:
             if "Metadata/project_settings.config" in zf.namelist():
-                content = zf.read("Metadata/project_settings.config").decode()
+                content = read_member(zf, "Metadata/project_settings.config").decode()
                 try:
                     data = json.loads(content)
                     self._extract_filament_info(data)
@@ -730,7 +732,7 @@ class ThreeMFParser:
 
         for thumb_path in thumbnail_paths:
             if thumb_path in zf.namelist():
-                self.metadata["_thumbnail_data"] = zf.read(thumb_path)
+                self.metadata["_thumbnail_data"] = read_member(zf, thumb_path)
                 self.metadata["_thumbnail_ext"] = ".png"
                 break
 
@@ -782,7 +784,7 @@ def extract_printable_objects_from_3mf(
             if "Metadata/slice_info.config" not in zf.namelist():
                 return printable_objects
 
-            content = zf.read("Metadata/slice_info.config").decode()
+            content = read_member(zf, "Metadata/slice_info.config").decode()
             root = ET.fromstring(content)
 
             plates = root.findall(".//plate")
@@ -813,7 +815,7 @@ def extract_printable_objects_from_3mf(
                 plate_json_path = f"Metadata/plate_{plate_idx}.json"
                 if plate_json_path in zf.namelist():
                     try:
-                        plate_json = json.loads(zf.read(plate_json_path).decode())
+                        plate_json = json.loads(read_member(zf, plate_json_path).decode())
                         # Get bbox_all - the bounding box of all objects (used for image bounds)
                         bbox_all = plate_json.get("bbox_all")
                         for bbox_obj in plate_json.get("bbox_objects", []):
@@ -983,7 +985,7 @@ class ProjectPageParser:
         try:
             with zipfile.ZipFile(self.file_path, "r") as zf:
                 if image_path in zf.namelist():
-                    data = zf.read(image_path)
+                    data = read_member(zf, image_path)
                     # Determine content type from extension
                     ext = image_path.lower().split(".")[-1]
                     content_types = {
@@ -1019,7 +1021,7 @@ class ProjectPageParser:
                 if model_path not in zf_read.namelist():
                     return False
 
-                content = zf_read.read(model_path).decode("utf-8")
+                content = read_member(zf_read, model_path).decode("utf-8")
 
                 # Update metadata fields
                 field_mapping = {
@@ -1050,7 +1052,7 @@ class ProjectPageParser:
                         if item == model_path:
                             zf_write.writestr(item, content.encode("utf-8"))
                         else:
-                            zf_write.writestr(item, zf_read.read(item))
+                            zf_write.writestr(item, read_member_large(zf_read, item))
 
             # Replace original file with updated one
             shutil.move(tmp_path, self.file_path)

@@ -97,6 +97,7 @@ from backend.app.utils.fts_routing import slot_extruder
 from backend.app.utils.http import build_content_disposition, download_error_response, safe_download_filename
 from backend.app.utils.kprofile_lookup import build_slot_k_resolver
 from backend.app.utils.printer_models import MAX_CHAMBER_TEMP_C, uses_exhaust_fan_label
+from backend.app.utils.zip_limits import read_member
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/printers", tags=["printers"])
@@ -1536,7 +1537,7 @@ async def _produce_cover_image(
 
             for thumb_path in thumbnail_paths:
                 try:
-                    image_data = zf.read(thumb_path)
+                    image_data = read_member(zf, thumb_path)
                     if printer_id not in _cover_cache:
                         _cover_cache[printer_id] = {}
                     _cover_cache[printer_id][(subtask_name, view_key)] = image_data
@@ -1554,7 +1555,7 @@ async def _produce_cover_image(
             if view != "pick":
                 for name in zf.namelist():
                     if name.startswith("Metadata/") and name.endswith(".png"):
-                        image_data = zf.read(name)
+                        image_data = read_member(zf, name)
                         if printer_id not in _cover_cache:
                             _cover_cache[printer_id] = {}
                         _cover_cache[printer_id][(subtask_name, view_key)] = image_data
@@ -1707,7 +1708,7 @@ async def get_printer_file_gcode(
                 gcode_files = [n for n in zf.namelist() if n.endswith(".gcode")]
                 if not gcode_files:
                     raise HTTPException(status_code=404, detail="No gcode found in 3MF file")
-                gcode_content = zf.read(gcode_files[0])
+                gcode_content = read_member(zf, gcode_files[0])
                 return Response(content=gcode_content, media_type="text/plain")
         except zipfile.BadZipFile:
             raise HTTPException(status_code=400, detail="Invalid 3MF file")
@@ -1801,7 +1802,7 @@ async def get_printer_file_plates(
             plate_names = {}
             if "Metadata/model_settings.config" in namelist:
                 try:
-                    model_content = zf.read("Metadata/model_settings.config").decode()
+                    model_content = read_member(zf, "Metadata/model_settings.config").decode()
                     model_root = ET.fromstring(model_content)
                     for plate_elem in model_root.findall(".//plate"):
                         plater_id = None
@@ -1824,7 +1825,7 @@ async def get_printer_file_plates(
             # Parse slice_info.config for plate metadata
             plate_metadata = {}
             if "Metadata/slice_info.config" in namelist:
-                content = zf.read("Metadata/slice_info.config").decode()
+                content = read_member(zf, "Metadata/slice_info.config").decode()
                 root = ET.fromstring(content)
 
                 for plate_elem in root.findall(".//plate"):
@@ -1902,7 +1903,7 @@ async def get_printer_file_plates(
                 except ValueError:
                     continue
                 try:
-                    payload = json.loads(zf.read(name).decode())
+                    payload = json.loads(read_member(zf, name).decode())
                     bbox_objects = payload.get("bbox_objects", [])
                     names: list[str] = []
                     for obj in bbox_objects:
@@ -1974,7 +1975,7 @@ async def get_printer_file_plate_thumbnail(
         with zipfile.ZipFile(io.BytesIO(data), "r") as zf:
             thumb_path = f"Metadata/plate_{plate_index}.png"
             if thumb_path in zf.namelist():
-                image_data = zf.read(thumb_path)
+                image_data = read_member(zf, thumb_path)
                 return Response(content=image_data, media_type="image/png")
     except Exception:
         pass  # Corrupt or unreadable 3MF; fall through to 404

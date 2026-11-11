@@ -34,6 +34,8 @@ from backend.app.services.slicer_cli import (  # noqa: F401 - Tests biegen slice
     program_path,
     slice_file,
 )
+from backend.app.utils.upload_limits import MAX_SMALL_FILE_UPLOAD_BYTES, read_upload_limited
+from backend.app.utils.zip_limits import read_member
 
 logger = logging.getLogger(__name__)
 app = FastAPI(title="PrintLab Integrated Slicer Sidecar", version=BUILTIN_VERSION)
@@ -156,7 +158,7 @@ async def _read_form_text(item: Any) -> str | None:
     if item is None:
         return None
     if isinstance(item, (UploadFile, StarletteUploadFile)) or hasattr(item, "read"):
-        raw = await item.read()
+        raw = await read_upload_limited(item, MAX_SMALL_FILE_UPLOAD_BYTES)
         return raw.decode("utf-8", "replace") if isinstance(raw, (bytes, bytearray)) else str(raw)
     return str(item)
 
@@ -248,7 +250,7 @@ async def slice_route(request: Request):
             if wanted is None:
                 found = [n for n in names if n.endswith(".gcode")][:3]
                 raise KeyError(f"plate_N.gcode nicht in der 3MF (gefunden: {found})")
-            gcode = zf.read(wanted)
+            gcode = read_member(zf, wanted)
         return Response(content=gcode, media_type="text/plain", headers=headers)
     except (OSError, KeyError, zipfile.BadZipFile) as exc:
         raise HTTPException(500, f"Erzeugte 3MF ohne G-code: {exc}") from exc

@@ -45,6 +45,7 @@ from backend.app.utils.filename import (
 from backend.app.utils.library_paths import library_photos_dir, remove_library_photos_dir
 from backend.app.utils.safe_path import PathTraversalError, assert_under, safe_join_under
 from backend.app.utils.threemf_tools import carries_gcode, default_plate_gcode_name
+from backend.app.utils.zip_limits import read_member
 
 logger = logging.getLogger(__name__)
 
@@ -518,7 +519,7 @@ def _read_3mf_entry(zip_path: Path, entry: str) -> bytes | None:
         with zipfile.ZipFile(zip_path, "r") as zf:
             if entry not in zf.namelist():
                 return None
-            return zf.read(entry)
+            return read_member(zf, entry)
     except (zipfile.BadZipFile, OSError, KeyError):
         return None
 

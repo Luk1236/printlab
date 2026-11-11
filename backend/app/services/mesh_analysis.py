@@ -14,8 +14,12 @@ from __future__ import annotations
 import base64
 import io
 import logging
+import zipfile
 from pathlib import Path
 from typing import Any
+
+from backend.app.core.config import settings
+from backend.app.utils.zip_limits import check_zip
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +31,8 @@ except ImportError:
     trimesh = None  # type: ignore[assignment]
     TRIMESH_AVAILABLE = False
 
+# Entpackte Obergrenze einer 3MF aus dem Portal: das Sechsfache der Upload-Grenze (Standard 25 MB, also 150 MB).
+PORTAL_MAX_UNPACKED_BYTES = 6 * settings.max_portal_upload_mb * 1024 * 1024
 MAX_BED_DIMENSIONS_MM = (256.0, 256.0, 256.0)  # Bambu Lab P1/X1/A1 Bauraum
 
 
@@ -91,6 +97,16 @@ def analyze_mesh_data(file_bytes: bytes, filename: str) -> MeshAnalysisResult:
         ext = "stl"
 
     warnings: list[str] = []
+
+    if ext == "3mf":
+        # A 3MF is a zip, and this function is reachable without sign-in: refuse a zip bomb before
+        # trimesh unpacks it (T5-01/T5-03). The unpacked size may be a multiple of the upload cap
+        # (mesh XML compresses well), but not unbounded.
+        try:
+            with zipfile.ZipFile(io.BytesIO(file_bytes)) as zf:
+                check_zip(zf, max_members=2000, max_total_bytes=PORTAL_MAX_UNPACKED_BYTES)
+        except zipfile.BadZipFile as exc:
+            raise ValueError("Die 3MF-Datei ist beschädigt.") from exc
 
     try:
         # Mesh via Trimesh laden

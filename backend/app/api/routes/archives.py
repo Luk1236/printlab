@@ -54,7 +54,7 @@ from backend.app.services.print_storage import (
     REASON_NO_EXTERNAL_STORAGE,
 )
 from backend.app.services.printer_media import VIDEO_SUFFIXES, match_ipcam_chunks
-from backend.app.utils.archive_paths import archive_photos_dir, find_archive_photo
+from backend.app.utils.archive_paths import archive_photos_dir, f3d_target, find_archive_photo
 from backend.app.utils.http import build_content_disposition, download_error_response, safe_download_filename
 from backend.app.utils.threemf_tools import (
     default_plate_gcode_name,
@@ -65,6 +65,14 @@ from backend.app.utils.threemf_tools import (
     names_carry_gcode,
     select_plate_gcode_name,
 )
+from backend.app.utils.upload_limits import (
+    MAX_AUDIO_UPLOAD_BYTES,
+    MAX_DESIGN_UPLOAD_BYTES,
+    MAX_IMAGE_UPLOAD_BYTES,
+    max_upload_bytes,
+    read_upload_limited,
+)
+from backend.app.utils.zip_limits import read_member
 
 logger = logging.getLogger(__name__)
 
@@ -3088,7 +3096,7 @@ async def upload_timelapse(
     if not file.filename or not file.filename.endswith((".mp4", ".avi", ".mkv")):
         raise HTTPException(400, "File must be a video file (.mp4, .avi, .mkv)")
 
-    content = await file.read()
+    content = await read_upload_limited(file, max_upload_bytes())
     safe_filename = _safe_filename(file.filename)
     success = await service.attach_timelapse(archive_id, content, safe_filename)
 
@@ -3218,7 +3226,7 @@ async def process_timelapse(
         if not audio.filename.lower().endswith((".mp3", ".wav", ".m4a", ".aac", ".ogg")):
             raise HTTPException(400, "Audio must be .mp3, .wav, .m4a, .aac, or .ogg")
 
-        audio_content = await audio.read()
+        audio_content = await read_upload_limited(audio, MAX_AUDIO_UPLOAD_BYTES)
         # Extract and validate suffix to prevent path injection
         suffix = Path(audio.filename).suffix.lower()
         if suffix not in (".mp3", ".wav", ".m4a", ".aac", ".ogg"):
@@ -3309,6 +3317,9 @@ async def upload_photo(
     if not file.filename or not file.filename.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
         raise HTTPException(400, "File must be an image (.jpg, .jpeg, .png, .webp)")
 
+    # Read first, with the size cap (T5-02): a refused upload must not leave directories behind.
+    content = await read_upload_limited(file, MAX_IMAGE_UPLOAD_BYTES)
+
     # Get archive directory. parents=True because an archive with no 3MF owns
     # <archive_dir>/<id>/, which nothing else has necessarily created yet.
     photos_dir = archive_photos_dir(archive)
@@ -3322,7 +3333,6 @@ async def upload_photo(
     photo_path = photos_dir / photo_filename  # SEC-PATH-OK: photo_filename = uuid.uuid4().hex[:8] + ext
 
     # Save file
-    content = await file.read()
     photo_path.write_bytes(content)
 
     # Update archive photos list (create new list to trigger SQLAlchemy change detection)
@@ -3784,7 +3794,7 @@ async def get_archive_capabilities(
                 for name in names:
                     if name.endswith(".model"):
                         try:
-                            content = zf.read(name).decode("utf-8")
+                            content = read_member(zf, name).decode("utf-8")
                             if "<vertex" in content or "<mesh" in content:
                                 found_mesh = True
                                 break
@@ -3794,7 +3804,7 @@ async def get_archive_capabilities(
                 # Extract filament colors from project_settings.config
                 if "Metadata/project_settings.config" in names:
                     try:
-                        config_content = zf.read("Metadata/project_settings.config").decode("utf-8")
+                        config_content = read_member(zf, "Metadata/project_settings.config").decode("utf-8")
                         config_data = json.loads(config_content)
 
                         # Parse printable_area: ['0x0', '256x0', '256x256', '0x256']
@@ -3861,7 +3871,7 @@ async def get_archive_capabilities(
                 for name in names:
                     if name.endswith(".model"):
                         try:
-                            content = zf.read(name).decode("utf-8")
+                            content = read_member(zf, name).decode("utf-8")
                             if "<vertex" in content or "<mesh" in content:
                                 has_model = True
                                 break
@@ -3873,7 +3883,7 @@ async def get_archive_capabilities(
             slice_colors: list[str] = []
             if "Metadata/slice_info.config" in names:
                 try:
-                    slice_content = zf.read("Metadata/slice_info.config").decode("utf-8")
+                    slice_content = read_member(zf, "Metadata/slice_info.config").decode("utf-8")
                     root = ET.fromstring(slice_content)
 
                     filaments = root.findall(".//filament")
@@ -3910,7 +3920,7 @@ async def get_archive_capabilities(
             if build_volume["x"] == 256 and build_volume["y"] == 256:
                 if "Metadata/project_settings.config" in names:
                     try:
-                        config_content = zf.read("Metadata/project_settings.config").decode("utf-8")
+                        config_content = read_member(zf, "Metadata/project_settings.config").decode("utf-8")
                         config_data = json.loads(config_content)
 
                         printable_area = config_data.get("printable_area", [])
@@ -4008,7 +4018,7 @@ async def get_gcode(
             else:
                 selected = default_plate_gcode_name(gcode_files)
 
-            gcode_content = zf.read(selected).decode("utf-8")
+            gcode_content = read_member(zf, selected).decode("utf-8")
             return Response(content=gcode_content, media_type="text/plain")
     except zipfile.BadZipFile:
         raise HTTPException(400, "Invalid 3MF file")
@@ -4056,7 +4066,7 @@ async def get_plate_preview(
                 try:
                     import defusedxml.ElementTree as ET
 
-                    slice_content = zf.read("Metadata/slice_info.config").decode("utf-8")
+                    slice_content = read_member(zf, "Metadata/slice_info.config").decode("utf-8")
                     root = ET.fromstring(slice_content)
                     plate_elem = root.find(".//plate/metadata[@key='index']")
                     if plate_elem is not None:
@@ -4073,13 +4083,13 @@ async def get_plate_preview(
 
             for preview_path in preview_paths:
                 if preview_path in names:
-                    image_data = zf.read(preview_path)
+                    image_data = read_member(zf, preview_path)
                     return Response(content=image_data, media_type="image/png")
 
             # If no plate image, try any PNG in Metadata
             for name in names:
                 if name.startswith("Metadata/plate_") and name.endswith(".png") and "_small" not in name:
-                    image_data = zf.read(name)
+                    image_data = read_member(zf, name)
                     return Response(content=image_data, media_type="image/png")
 
             raise HTTPException(404, "No plate preview found in 3MF file")
@@ -4129,7 +4139,7 @@ async def upload_archive(
     temp_path.parent.mkdir(parents=True, exist_ok=True)
 
     try:
-        content = await file.read()
+        content = await read_upload_limited(file, max_upload_bytes())
         # #1401: same content validation as library upload — catches
         # raw-gcode-renamed-to-.3mf and other unprintable shapes before
         # archiving them and offering them up for print.
@@ -4192,7 +4202,7 @@ async def upload_archives_bulk(
         temp_path.parent.mkdir(parents=True, exist_ok=True)
 
         try:
-            content = await file.read()
+            content = await read_upload_limited(file, max_upload_bytes())
             # #1401: bulk-upload variant of the library validation. Collect
             # the rejection per-file rather than aborting the whole batch
             # so one bad file in a 10-file drag-drop doesn't lose the
@@ -4286,7 +4296,9 @@ async def get_archive_plates(
                 try:
                     design_overrides = [
                         o._asdict()
-                        for o in overrides_from_config(json.loads(zf.read(_PROJECT_SETTINGS_PATH).decode("utf-8")))
+                        for o in overrides_from_config(
+                            json.loads(read_member(zf, _PROJECT_SETTINGS_PATH).decode("utf-8"))
+                        )
                     ]
                 except (ValueError, OSError, KeyError):
                     design_overrides = []
@@ -4349,7 +4361,7 @@ async def get_archive_plates(
             object_names_by_id: dict[str, str] = {}
             if "Metadata/model_settings.config" in namelist:
                 try:
-                    model_content = zf.read("Metadata/model_settings.config").decode()
+                    model_content = read_member(zf, "Metadata/model_settings.config").decode()
                     model_root = ET.fromstring(model_content)
                     # Build object ID -> name map
                     for obj_elem in model_root.findall(".//object"):
@@ -4393,7 +4405,7 @@ async def get_archive_plates(
             # Parse slice_info.config for plate metadata
             plate_metadata = {}  # plate_index -> {filaments, prediction, weight, name, objects}
             if "Metadata/slice_info.config" in namelist:
-                content = zf.read("Metadata/slice_info.config").decode()
+                content = read_member(zf, "Metadata/slice_info.config").decode()
                 root = ET.fromstring(content)
 
                 for plate_elem in root.findall(".//plate"):
@@ -4488,7 +4500,7 @@ async def get_archive_plates(
                 except ValueError:
                     continue
                 try:
-                    payload = json.loads(zf.read(name).decode())
+                    payload = json.loads(read_member(zf, name).decode())
                     bbox_objects = payload.get("bbox_objects", [])
                     names = []
                     for obj in bbox_objects:
@@ -4584,7 +4596,7 @@ async def get_plate_thumbnail(
         with zipfile.ZipFile(file_path, "r") as zf:
             thumb_path = f"Metadata/plate_{plate_index}.png"
             if thumb_path in zf.namelist():
-                data = zf.read(thumb_path)
+                data = read_member(zf, thumb_path)
                 return Response(content=data, media_type="image/png")
     except Exception:
         pass  # Fall through to 404 if archive is unreadable or thumbnail missing
@@ -4678,7 +4690,7 @@ async def get_filament_requirements(
         with zipfile.ZipFile(file_path, "r") as zf:
             # Parse slice_info.config for filament requirements
             if "Metadata/slice_info.config" in zf.namelist():
-                content = zf.read("Metadata/slice_info.config").decode()
+                content = read_member(zf, "Metadata/slice_info.config").decode()
                 root = ET.fromstring(content)
 
                 # If plate_id is specified, find filaments for that specific plate
@@ -5134,7 +5146,7 @@ async def upload_source_3mf(
         if old_source_path.exists():
             old_source_path.unlink()
 
-    content = await file.read()
+    content = await read_upload_limited(file, max_upload_bytes())
     # #1401: validate zip header on source 3MF uploads too — source files
     # are uploaded for reprint and slicing, so an invalid one breaks the
     # same downstream paths as a bad sliced file.
@@ -5348,7 +5360,7 @@ async def upload_source_3mf_by_name(
         if old_source_path.exists():
             old_source_path.unlink()
 
-    content = await file.read()
+    content = await read_upload_limited(file, max_upload_bytes())
     # #1401: same zip-header check as the other upload routes — the
     # match-by-name endpoint is used by slicer post-processing scripts,
     # so a misconfigured script is exactly how a bad 3MF would slip in.
@@ -5427,11 +5439,12 @@ async def upload_f3d(
     if not file.filename or not file.filename.endswith(".f3d"):
         raise HTTPException(400, "File must be a .f3d file")
 
-    # Get archive directory and create f3d subdirectory
-    file_path = settings.base_dir / archive.file_path
-    archive_dir = file_path.parent
-    f3d_dir = archive_dir / "f3d"
-    f3d_dir.mkdir(exist_ok=True)
+    # The target lives under the archive's own directory. `archive_dir()` knows archives without a
+    # 3MF (file_path == ""), which `(base_dir / file_path).parent` does not: that wrote one folder
+    # above the data directory (T5-04).
+    f3d_path = f3d_target(archive, _safe_filename(file.filename))
+    content = await read_upload_limited(file, MAX_DESIGN_UPLOAD_BYTES)  # before touching the old file
+    f3d_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Delete old F3D file if exists
     if archive.f3d_path:
@@ -5439,15 +5452,10 @@ async def upload_f3d(
         if old_f3d_path.exists():
             old_f3d_path.unlink()
 
-    # Save the F3D file - preserve original filename, strip directory components
-    f3d_filename = _safe_filename(file.filename)
-    f3d_path = f3d_dir / f3d_filename  # SEC-PATH-OK: f3d_filename = _safe_filename(...) basename-stripped above
-
-    content = await file.read()
     f3d_path.write_bytes(content)
 
     # Update archive with F3D path (relative to base_dir)
-    archive.f3d_path = f3d_path.relative_to(settings.base_dir).as_posix()
+    archive.f3d_path = f3d_path.relative_to(settings.base_dir.resolve()).as_posix()
 
     await db.commit()
     await db.refresh(archive)
@@ -5455,7 +5463,7 @@ async def upload_f3d(
     return {
         "status": "uploaded",
         "f3d_path": archive.f3d_path,
-        "filename": f3d_filename,
+        "filename": f3d_path.name,
     }
 
 

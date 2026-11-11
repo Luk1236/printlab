@@ -46,6 +46,8 @@ from backend.app.schemas.project import (
 )
 from backend.app.utils.http import build_content_disposition
 from backend.app.utils.safe_path import safe_join_under
+from backend.app.utils.upload_limits import MAX_IMAGE_UPLOAD_BYTES, max_upload_bytes, read_upload_limited
+from backend.app.utils.zip_limits import read_member
 
 logger = logging.getLogger(__name__)
 
@@ -1231,7 +1233,7 @@ async def upload_attachment(
     # Save file
     try:
         with open(file_path, "wb") as f:
-            content = await file.read()
+            content = await read_upload_limited(file, max_upload_bytes())
             f.write(content)
         logger.info("=== FILE SAVED: %s, size: %s ===", file_path, len(content))
     except Exception as e:
@@ -1407,7 +1409,7 @@ async def upload_project_cover_image(
     file_path = attachments_dir / unique_filename  # SEC-PATH-OK: unique_filename = f"cover_{uuid.uuid4().hex}{ext}"
     try:
         with open(file_path, "wb") as f:
-            content = await file.read()
+            content = await read_upload_limited(file, MAX_IMAGE_UPLOAD_BYTES)
             f.write(content)
     except OSError as e:
         logger.error("Failed to save cover image: %s", e)
@@ -2113,7 +2115,7 @@ async def import_project_file(
 
     # Determine file type
     filename_lower = file.filename.lower()
-    content = await file.read()
+    content = await read_upload_limited(file, max_upload_bytes())
 
     if filename_lower.endswith(".zip"):
         # Extract project.json from ZIP
@@ -2121,11 +2123,11 @@ async def import_project_file(
             with zipfile.ZipFile(io.BytesIO(content)) as zf:
                 if "project.json" not in zf.namelist():
                     raise HTTPException(status_code=400, detail="ZIP must contain project.json")
-                project_json = zf.read("project.json")
+                project_json = read_member(zf, "project.json")
                 data = json.loads(project_json)
 
                 # Get list of files in the ZIP
-                zip_files = {name: zf.read(name) for name in zf.namelist() if name.startswith("files/")}
+                zip_files = {name: read_member(zf, name) for name in zf.namelist() if name.startswith("files/")}
         except zipfile.BadZipFile:
             raise HTTPException(status_code=400, detail="Invalid ZIP file")
     elif filename_lower.endswith(".json"):

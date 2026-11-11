@@ -19,6 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.models.local_preset import LocalPreset
 from backend.app.models.orca_base_cache import OrcaBaseProfile
+from backend.app.utils.zip_limits import read_member
 
 logger = logging.getLogger(__name__)
 
@@ -374,7 +375,7 @@ async def import_orca_file(filename: str, content: bytes, db: AsyncSession) -> d
                 for entry in zf.namelist():
                     if entry.endswith(".json") and "bundle_structure" not in entry:
                         try:
-                            raw = zf.read(entry)
+                            raw = read_member(zf, entry)
                             data = json.loads(raw)
                             result = await _import_single_preset(data, db, path_hint=entry)
                             if result == "imported":

@@ -91,6 +91,7 @@ from backend.app.utils.threemf_tools import (
     select_plate_gcode_name,
     supports_enabled_in_config,
 )
+from backend.app.utils.zip_limits import read_member
 
 logger = logging.getLogger("backend.app.api.routes.library")
 
@@ -287,7 +288,7 @@ def _patch_process_support_settings(
         with zipfile.ZipFile(BytesIO(source_3mf_bytes), "r") as zf:
             if "Metadata/project_settings.config" not in zf.namelist():
                 return process_json
-            src_cfg = json.loads(zf.read("Metadata/project_settings.config").decode("utf-8"))
+            src_cfg = json.loads(read_member(zf, "Metadata/project_settings.config").decode("utf-8"))
     except (zipfile.BadZipFile, json.JSONDecodeError, UnicodeDecodeError, OSError, KeyError):
         return process_json
     if not isinstance(src_cfg, dict):

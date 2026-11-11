@@ -22,6 +22,8 @@ from xml.etree.ElementTree import Element as XmlElement
 
 import defusedxml.ElementTree as ET
 
+from backend.app.utils.zip_limits import read_member, read_member_large
+
 logger = logging.getLogger(__name__)
 
 # Default filament properties
@@ -198,7 +200,7 @@ def extract_layer_filament_usage_from_3mf(
             if gcode_path is None:
                 return None
 
-            gcode_content = zf.read(gcode_path).decode("utf-8", errors="ignore")
+            gcode_content = read_member(zf, gcode_path).decode("utf-8", errors="ignore")
 
             return parse_gcode_layer_filament_usage(gcode_content)
     except Exception:
@@ -249,7 +251,7 @@ def extract_filament_properties_from_3mf(file_path: Path) -> dict[int, dict]:
         with zipfile.ZipFile(file_path, "r") as zf:
             # Try slice_info.config first for filament types
             if "Metadata/slice_info.config" in zf.namelist():
-                content = zf.read("Metadata/slice_info.config").decode()
+                content = read_member(zf, "Metadata/slice_info.config").decode()
                 root = ET.fromstring(content)
                 for f in root.findall(".//filament"):
                     try:
@@ -265,7 +267,7 @@ def extract_filament_properties_from_3mf(file_path: Path) -> dict[int, dict]:
 
             # Try project_settings.config for density values
             if "Metadata/project_settings.config" in zf.namelist():
-                content = zf.read("Metadata/project_settings.config").decode()
+                content = read_member(zf, "Metadata/project_settings.config").decode()
                 try:
                     data = json.loads(content)
                     densities = data.get("filament_density", [])
@@ -318,7 +320,7 @@ def extract_embedded_presets_from_3mf(zf: zipfile.ZipFile) -> dict[str, str | No
     try:
         if "Metadata/project_settings.config" not in zf.namelist():
             return result
-        data = json.loads(zf.read("Metadata/project_settings.config").decode())
+        data = json.loads(read_member(zf, "Metadata/project_settings.config").decode())
     except (KeyError, ValueError, OSError):
         return result
     if not isinstance(data, dict):
@@ -479,7 +481,7 @@ def _rack_plan(zf: zipfile.ZipFile, plate_id: int | None) -> RackPlan | None:
     if "Metadata/slice_info.config" not in names:
         return None
 
-    data = json.loads(zf.read("Metadata/project_settings.config").decode())
+    data = json.loads(read_member(zf, "Metadata/project_settings.config").decode())
     physical_extruder_map = data.get("physical_extruder_map")
     if not physical_extruder_map or len(physical_extruder_map) <= 1:
         return None
@@ -498,7 +500,7 @@ def _rack_plan(zf: zipfile.ZipFile, plate_id: int | None) -> RackPlan | None:
     if not rack_indices:
         return None
 
-    si_root = ET.fromstring(zf.read("Metadata/slice_info.config").decode())
+    si_root = ET.fromstring(read_member(zf, "Metadata/slice_info.config").decode())
     plates = _plates_in_scope(si_root, plate_id)
     group_extruders = _group_extruder_indices(plates)
     if not group_extruders:
@@ -645,7 +647,7 @@ def extract_nozzle_mapping_from_3mf(zf: zipfile.ZipFile, plate_id: int | None = 
         if "Metadata/project_settings.config" not in zf.namelist():
             return None
 
-        content = zf.read("Metadata/project_settings.config").decode()
+        content = read_member(zf, "Metadata/project_settings.config").decode()
         data = json.loads(content)
 
         physical_extruder_map = data.get("physical_extruder_map")
@@ -671,7 +673,7 @@ def extract_nozzle_mapping_from_3mf(zf: zipfile.ZipFile, plate_id: int | None = 
         group_extruders: dict[int, int] | None = None
         distinct_group_ids: set[int] = set()
         if "Metadata/slice_info.config" in zf.namelist():
-            si_content = zf.read("Metadata/slice_info.config").decode()
+            si_content = read_member(zf, "Metadata/slice_info.config").decode()
             si_root = ET.fromstring(si_content)
             plates = _plates_in_scope(si_root, plate_id)
             group_extruders = _group_extruder_indices(plates)
@@ -841,7 +843,7 @@ def _parse_plate_metadata_uncached(file_path: Path, plate_id: int | None) -> Pla
         with zipfile.ZipFile(file_path, "r") as zf:
             if "Metadata/slice_info.config" not in zf.namelist():
                 return _EMPTY_PLATE_METADATA
-            content = zf.read("Metadata/slice_info.config").decode()
+            content = read_member(zf, "Metadata/slice_info.config").decode()
             root = ET.fromstring(content)
     except Exception as e:
         logger.warning("Failed to read plate metadata from %s: %s", file_path, e)
@@ -1109,7 +1111,7 @@ def extract_bed_temperature_from_3mf(file_path: Path) -> int | None:
         with zipfile.ZipFile(file_path, "r") as zf:
             if "Metadata/project_settings.config" not in zf.namelist():
                 return None
-            data = json.loads(zf.read("Metadata/project_settings.config").decode())
+            data = json.loads(read_member(zf, "Metadata/project_settings.config").decode())
         return bed_temperature_from_config(data) if isinstance(data, dict) else None
     except Exception:
         return None
@@ -1418,7 +1420,7 @@ def inject_gcode_into_3mf(
                 return None
 
             # Read and modify gcode content
-            gcode_content = zf.read(target_gcode).decode("utf-8", errors="ignore")
+            gcode_content = read_member(zf, target_gcode).decode("utf-8", errors="ignore")
             header = _parse_3mf_gcode_header(gcode_content)
 
             if start_gcode:
@@ -1455,7 +1457,7 @@ def inject_gcode_into_3mf(
                     elif item == md5_name:
                         zf_write.writestr(info, md5_value)
                     else:
-                        zf_write.writestr(info, zf.read(item))
+                        zf_write.writestr(info, read_member(zf, item))
 
         return tmp_path
 
@@ -1482,7 +1484,7 @@ def extract_project_filaments_from_3mf(zf: zipfile.ZipFile) -> list[dict]:
     if "Metadata/project_settings.config" not in zf.namelist():
         return []
     try:
-        proj = json.loads(zf.read("Metadata/project_settings.config").decode())
+        proj = json.loads(read_member(zf, "Metadata/project_settings.config").decode())
     except (ValueError, OSError):
         return []
     if not isinstance(proj, dict):
@@ -1589,7 +1591,7 @@ def extract_support_filament_slots_from_3mf(zf: zipfile.ZipFile) -> set[int]:
     if "Metadata/project_settings.config" not in zf.namelist():
         return set()
     try:
-        cfg = json.loads(zf.read("Metadata/project_settings.config").decode("utf-8"))
+        cfg = json.loads(read_member(zf, "Metadata/project_settings.config").decode("utf-8"))
     except (json.JSONDecodeError, UnicodeDecodeError, OSError):
         return set()
     if not isinstance(cfg, dict):
@@ -1656,7 +1658,7 @@ def extract_plate_extruder_set_from_3mf(zf: zipfile.ZipFile, plate_id: int) -> s
     if "Metadata/model_settings.config" not in zf.namelist():
         return set()
     try:
-        root = ET.fromstring(zf.read("Metadata/model_settings.config").decode())
+        root = ET.fromstring(read_member(zf, "Metadata/model_settings.config").decode())
     except (ET.ParseError, OSError):
         return set()
 
@@ -1697,7 +1699,7 @@ def extract_plate_extruder_set_from_3mf(zf: zipfile.ZipFile, plate_id: int) -> s
     # without namespace gymnastics — `p:path` becomes `path` etc.
     if "3D/3dmodel.model" in zf.namelist():
         try:
-            raw = zf.read("3D/3dmodel.model").decode()
+            raw = read_member(zf, "3D/3dmodel.model").decode()
             stripped = re.sub(r'xmlns:?\w*="[^"]*"', "", raw)
             stripped = re.sub(r"<(/?)\w+:", r"<\1", stripped)
             stripped = re.sub(r" \w+:(\w+=)", r" \1", stripped)
@@ -1731,7 +1733,7 @@ def extract_plate_extruder_set_from_3mf(zf: zipfile.ZipFile, plate_id: int) -> s
             paint_cache[path] = out
             return out
         try:
-            data = zf.read(path)
+            data = read_member(zf, path)
         except OSError:
             paint_cache[path] = out
             return out
@@ -1883,7 +1885,7 @@ def sanitize_project_settings_sentinels(zip_bytes: bytes) -> bytes:
             if PROJECT_SETTINGS_PATH not in zin.namelist():
                 return zip_bytes
             try:
-                config = json.loads(zin.read(PROJECT_SETTINGS_PATH).decode("utf-8"))
+                config = json.loads(read_member(zin, PROJECT_SETTINGS_PATH).decode("utf-8"))
             except (json.JSONDecodeError, UnicodeDecodeError):
                 return zip_bytes
             if not isinstance(config, dict):
@@ -1908,7 +1910,7 @@ def sanitize_project_settings_sentinels(zip_bytes: bytes) -> bytes:
                     if item.filename == PROJECT_SETTINGS_PATH:
                         zout.writestr(item, patched)
                     else:
-                        zout.writestr(item, zin.read(item.filename))
+                        zout.writestr(item, read_member_large(zin, item.filename))
             return dst.getvalue()
     except (zipfile.BadZipFile, OSError):
         return zip_bytes

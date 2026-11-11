@@ -26,7 +26,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from backend.app.core.config import settings
-from backend.app.utils.safe_path import PathTraversalError, safe_join_under
+from backend.app.utils.safe_path import PathTraversalError, assert_under, safe_join_under
 
 
 def archive_dir(archive: object) -> Path:
@@ -99,3 +99,13 @@ def find_archive_photo(archive: object, filename: str) -> Path | None:
         if candidate.exists():
             return candidate
     return None
+
+
+def f3d_target(archive: object, filename: str) -> Path:
+    """Where the Fusion 360 design file *filename* of *archive* is stored; always under the data directory.
+
+    Derived from :func:`archive_dir`, so an archive without a 3MF gets ``<archive_dir>/<id>/f3d`` instead of
+    a folder above the data directory (T5-04). Raises ``HTTPException(400)`` for a name that escapes.
+    """
+    target = safe_join_under(archive_dir(archive) / "f3d", filename)
+    return assert_under(settings.base_dir, target)

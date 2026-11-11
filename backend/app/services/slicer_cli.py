@@ -17,6 +17,8 @@ import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 
+from backend.app.utils.zip_limits import read_member, read_member_large
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_PROGRAM = r"C:\Program Files\Bambu Studio\bambu-studio.exe"
@@ -279,7 +281,7 @@ def _package_gcode_3mf(source: Path, tmp_path: Path, out_path: Path, plate: int 
                 skip.add(f"Metadata/{gf.name}.md5")
             for item in zin.infolist():
                 if item.filename not in skip:
-                    zout.writestr(item, zin.read(item.filename))
+                    zout.writestr(item, read_member_large(zin, item.filename))
             for gf in gcode_files:
                 gdata = gf.read_bytes()
                 md5_hex = hashlib.md5(gdata).hexdigest()  # noqa: S324
@@ -324,7 +326,7 @@ def _read_slice_info(path: Path) -> tuple[int, float]:
     """Druckzeit (Sekunden) und Filament (Gramm) aus der erzeugten 3MF lesen."""
     try:
         with zipfile.ZipFile(path) as zf:
-            text = zf.read("Metadata/slice_info.config").decode("utf-8", "replace")
+            text = read_member(zf, "Metadata/slice_info.config").decode("utf-8", "replace")
     except (KeyError, OSError, zipfile.BadZipFile):
         return 0, 0.0
     prediction = re.search(r'key="prediction"\s+value="([\d.]+)"', text)

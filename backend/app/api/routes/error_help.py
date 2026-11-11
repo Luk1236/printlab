@@ -31,6 +31,7 @@ from backend.app.services import (
     local_ai_watch,
 )
 from backend.app.utils import failure_images
+from backend.app.utils.upload_limits import MAX_IMAGE_UPLOAD_BYTES, read_upload_limited
 
 router = APIRouter(prefix="/error-help", tags=["error-help"])
 
@@ -144,7 +145,7 @@ async def scan_upload(
     _: User | None = RequirePermissionIfAuthEnabled(Permission.PRINTERS_CONTROL),
 ):
     """Ein hochgeladenes Bild klassifizieren und den Treffer ablegen."""
-    image = await file.read()
+    image = await read_upload_limited(file, MAX_IMAGE_UPLOAD_BYTES)
     if not image:
         raise HTTPException(400, "Die Datei ist leer.")
     try:

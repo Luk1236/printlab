@@ -63,6 +63,7 @@ from backend.app.utils.threemf_tools import (
     extract_plate_metadata_from_3mf,
     extract_print_time_from_3mf,
 )
+from backend.app.utils.zip_limits import read_member
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +108,7 @@ def _extract_filament_types_from_3mf(file_path: Path, plate_id: int | None = Non
             if "Metadata/slice_info.config" not in zf.namelist():
                 return []
 
-            content = zf.read("Metadata/slice_info.config").decode()
+            content = read_member(zf, "Metadata/slice_info.config").decode()
             root = ET.fromstring(content)
 
             if plate_id is not None:

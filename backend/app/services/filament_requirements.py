@@ -24,6 +24,7 @@ from backend.app.utils.threemf_tools import (
     extract_nozzle_mapping_from_3mf,
     extract_rack_plan_from_3mf,
 )
+from backend.app.utils.zip_limits import read_member
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +53,7 @@ def extract_filament_requirements(file_path: Path, plate_id: int | None = None) 
             if "Metadata/slice_info.config" not in zf.namelist():
                 return []
 
-            content = zf.read("Metadata/slice_info.config").decode()
+            content = read_member(zf, "Metadata/slice_info.config").decode()
             root = ET.fromstring(content)  # noqa: S314  # nosec B314
 
             if plate_id is not None:

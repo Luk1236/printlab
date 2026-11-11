@@ -28,6 +28,7 @@ from backend.app.services.orca_profiles import (
     refresh_base_cache,
     resolve_preset,
 )
+from backend.app.utils.upload_limits import MAX_SMALL_FILE_UPLOAD_BYTES, read_upload_limited
 
 logger = logging.getLogger(__name__)
 
@@ -324,7 +325,7 @@ async def import_presets(
     if not file.filename:
         raise HTTPException(400, "No filename provided")
 
-    content = await file.read()
+    content = await read_upload_limited(file, MAX_SMALL_FILE_UPLOAD_BYTES)
     if not content:
         raise HTTPException(400, "Empty file")
 

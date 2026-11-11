@@ -92,6 +92,12 @@ class Settings(BaseSettings):
     log_dir: Path = _log_dir
     database_url: str = _external_db_url or f"sqlite+aiosqlite:///{_db_path}"
 
+    # Upload limits (T5-02 / T5-03). Uploads are read in chunks and refused with 413 above these.
+    # ``max_upload_mb``: library, archive and ZIP uploads. ``max_portal_upload_mb``: the public
+    # customer portal, which takes a model file without any sign-in. Env: MAX_UPLOAD_MB, MAX_PORTAL_UPLOAD_MB.
+    max_upload_mb: int = Field(default=1024, gt=0)
+    max_portal_upload_mb: int = Field(default=25, gt=0)
+
     # Database connection pool sizing. ``None`` = use the built-in, dialect-aware
     # default (PostgreSQL: pool_size 20 + max_overflow 60; SQLite: 20 + 200).
     # Large PostgreSQL printer farms can raise these via the DB_POOL_SIZE /

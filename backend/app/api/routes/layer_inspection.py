@@ -16,6 +16,7 @@ from backend.app.core.permissions import Permission
 from backend.app.models.printer import Printer
 from backend.app.services.layer_inspection import layer_inspection_service
 from backend.app.services.printer_telemetry_flow import calibrate_snapshot
+from backend.app.utils.upload_limits import MAX_IMAGE_UPLOAD_BYTES, read_upload_limited
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +96,7 @@ async def test_layer_inspection(
     is_warped = False
 
     if file and file.filename:
-        image_data = await file.read()
+        image_data = await read_upload_limited(file, MAX_IMAGE_UPLOAD_BYTES)
     else:
         # Live-Snapshot vom Drucker holen
         from backend.app.main import _capture_snapshot_for_notification

@@ -20,6 +20,8 @@ import re
 import zipfile
 from io import BytesIO
 
+from backend.app.utils.zip_limits import read_member, read_member_large
+
 logger = logging.getLogger(__name__)
 
 _PROJECT_SETTINGS_PATH = "Metadata/project_settings.config"
@@ -38,7 +40,7 @@ def count_plates_in_3mf(zip_bytes: bytes) -> int:
         with zipfile.ZipFile(BytesIO(zip_bytes), "r") as zf:
             if _MODEL_SETTINGS_PATH not in zf.namelist():
                 return 0
-            xml = zf.read(_MODEL_SETTINGS_PATH).decode("utf-8", errors="replace")
+            xml = read_member(zf, _MODEL_SETTINGS_PATH).decode("utf-8", errors="replace")
     except (zipfile.BadZipFile, OSError, KeyError):
         return 0
     # Count ``<metadata key="plater_id" value="..."/>`` entries — each
@@ -64,7 +66,7 @@ def extract_source_printer_model(zip_bytes: bytes) -> str | None:
         with zipfile.ZipFile(BytesIO(zip_bytes), "r") as zf:
             if _PROJECT_SETTINGS_PATH not in zf.namelist():
                 return None
-            cfg = json.loads(zf.read(_PROJECT_SETTINGS_PATH).decode("utf-8"))
+            cfg = json.loads(read_member(zf, _PROJECT_SETTINGS_PATH).decode("utf-8"))
     except (zipfile.BadZipFile, json.JSONDecodeError, UnicodeDecodeError, OSError, KeyError):
         return None
     if not isinstance(cfg, dict):
@@ -133,7 +135,7 @@ def merge_plate_3mfs(
             with zipfile.ZipFile(BytesIO(plate_bytes), "r") as zf:
                 if _SLICE_INFO_PATH not in zf.namelist():
                     continue
-                xml = zf.read(_SLICE_INFO_PATH).decode("utf-8", errors="replace")
+                xml = read_member(zf, _SLICE_INFO_PATH).decode("utf-8", errors="replace")
         except (zipfile.BadZipFile, OSError, KeyError) as exc:
             logger.warning("merge_plate_3mfs: couldn't read plate %d slice_info (%s)", plate_num, exc)
             continue
@@ -180,7 +182,7 @@ def merge_plate_3mfs(
             with zipfile.ZipFile(BytesIO(source_3mf_bytes), "r") as src_zf:
                 for name in src_zf.namelist():
                     if name in wanted:
-                        found[name] = src_zf.read(name)
+                        found[name] = read_member(src_zf, name)
         except (zipfile.BadZipFile, OSError) as exc:
             logger.warning("merge_plate_3mfs: source thumbnail fallback failed (%s)", exc)
         return found
@@ -200,7 +202,7 @@ def merge_plate_3mfs(
             if item.filename == _SLICE_INFO_PATH:
                 out_zf.writestr(item, combined_slice_info)
             else:
-                out_zf.writestr(item, base_zf.read(item.filename))
+                out_zf.writestr(item, read_member_large(base_zf, item.filename))
 
         # Source-thumbnail fallback for the base plate when the slicer
         # didn't write its own preview.
@@ -219,7 +221,7 @@ def merge_plate_3mfs(
                 with zipfile.ZipFile(BytesIO(plate_bytes), "r") as plate_zf:
                     for name in plate_zf.namelist():
                         if name in wanted:
-                            out_zf.writestr(name, plate_zf.read(name))
+                            out_zf.writestr(name, read_member_large(plate_zf, name))
                             written.add(name)
             except (zipfile.BadZipFile, OSError) as exc:
                 logger.warning(

@@ -109,6 +109,8 @@ from backend.app.utils.threemf_tools import (
     select_plate_gcode_name,
     supports_enabled_in_config,
 )
+from backend.app.utils.upload_limits import max_upload_bytes, save_upload_limited
+from backend.app.utils.zip_limits import ZipLimitError, check_zip, extract_member_limited, read_member
 
 logger = logging.getLogger(__name__)
 
@@ -1601,14 +1603,15 @@ async def upload_file(
         # ordering / tests.
         file_path, is_external_upload = _resolve_upload_destination(target_folder, filename)
 
-        # Read upload now so the validation can sniff magic bytes; the file
-        # is written to disk only after the checks. #1401.
-        content = await file.read()
-        validate_print_file_upload(filename, content)
-
-        # Save file
-        with open(file_path, "wb") as f:
-            f.write(content)
+        # Streamed to disk in chunks with a size cap (T5-02): the upload is no longer
+        # held in memory whole. The magic-byte check (#1401) needs only the first bytes;
+        # a rejected upload is removed again.
+        file_size, head = await save_upload_limited(file, file_path, max_upload_bytes())
+        try:
+            validate_print_file_upload(filename, head)
+        except HTTPException:
+            file_path.unlink(missing_ok=True)
+            raise
 
         # Now that the bytes are on disk the zip can settle what the name only
         # guessed at: a sliced 3MF uploaded as `Foo.3mf` is a sliced 3MF (#2993).
@@ -1709,7 +1712,7 @@ async def upload_file(
             filename=filename,
             file_path=_stored_file_path(file_path, is_external_upload),
             file_type=file_type,
-            file_size=len(content),
+            file_size=file_size,
             file_hash=file_hash,
             thumbnail_path=to_relative_path(thumbnail_path) if thumbnail_path else None,
             file_metadata=_without_print_name(metadata) if metadata else None,
@@ -1784,11 +1787,14 @@ async def extract_zip_file(
     # Save ZIP to temp file
     try:
         with tempfile.NamedTemporaryFile(delete=False, suffix=".zip") as tmp:
-            content = await file.read()
-            tmp.write(content)
             tmp_path = tmp.name
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to save ZIP file: {str(e)}")
+        # In chunks and with a cap (T5-02): the whole ZIP no longer sits in memory.
+        await save_upload_limited(file, Path(tmp_path), max_upload_bytes())
+    except HTTPException:
+        raise
+    except Exception:
+        logger.error("Failed to save the uploaded ZIP", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to save ZIP file")
 
     extracted_files: list[ZipExtractResult] = []
     errors: list[ZipExtractError] = []
@@ -1826,6 +1832,7 @@ async def extract_zip_file(
 
     try:
         with zipfile.ZipFile(tmp_path, "r") as zf:
+            check_zip(zf)  # entry count and unpacked size, before anything is unpacked (T5-01)
             # Filter out directories and hidden/system files
             file_list = [
                 name
@@ -1892,10 +1899,8 @@ async def extract_zip_file(
                         get_library_files_dir() / unique_filename
                     )  # SEC-PATH-OK: unique_filename = uuid.uuid4().hex + ext
 
-                    # Extract and save file
-                    file_content = zf.read(zip_path)
-                    with open(file_path, "wb") as f:
-                        f.write(file_content)
+                    # Extract and save file, streamed with a per-member cap (T5-01)
+                    file_size = extract_member_limited(zf, zip_path, file_path, max_bytes=max_upload_bytes())
 
                     # Classified once the bytes are on disk so a sliced 3MF
                     # named `Foo.3mf` inside the zip is recognised as sliced
@@ -1970,7 +1975,7 @@ async def extract_zip_file(
                         # even a single triangle, and bulk-uploaded ZIPs of
                         # stub STLs would otherwise log one debug line per
                         # file via the empty-mesh branch in trimesh.load.
-                        if generate_stl_thumbnails and len(file_content) >= MIN_USABLE_STL_BYTES:
+                        if generate_stl_thumbnails and file_size >= MIN_USABLE_STL_BYTES:
                             thumbnail_path = generate_stl_thumbnail(file_path, thumbnails_dir)
 
                     # Create database entry (store relative paths for portability)
@@ -1979,7 +1984,7 @@ async def extract_zip_file(
                         filename=filename,
                         file_path=to_relative_path(file_path),
                         file_type=file_type,
-                        file_size=len(file_content),
+                        file_size=file_size,
                         file_hash=file_hash,
                         thumbnail_path=to_relative_path(thumbnail_path) if thumbnail_path else None,
                         file_metadata=_without_print_name(metadata) if metadata else None,
@@ -2016,9 +2021,11 @@ async def extract_zip_file(
 
     except zipfile.BadZipFile:
         raise HTTPException(status_code=400, detail="Invalid or corrupted ZIP file")
+    except ZipLimitError as e:
+        raise HTTPException(status_code=413, detail=str(e))
     except Exception as e:
         logger.error("ZIP extraction failed: %s", e, exc_info=True)
-        raise HTTPException(status_code=500, detail=f"ZIP extraction failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="ZIP extraction failed")
     finally:
         # Clean up temp file
         try:
@@ -2533,7 +2540,9 @@ async def get_library_file_plates(
                 try:
                     design_overrides = [
                         o._asdict()
-                        for o in overrides_from_config(json.loads(zf.read(_PROJECT_SETTINGS_PATH).decode("utf-8")))
+                        for o in overrides_from_config(
+                            json.loads(read_member(zf, _PROJECT_SETTINGS_PATH).decode("utf-8"))
+                        )
                     ]
                 except (ValueError, OSError, KeyError):
                     design_overrides = []
@@ -2588,7 +2597,7 @@ async def get_library_file_plates(
             object_names_by_id: dict[str, str] = {}
             if "Metadata/model_settings.config" in namelist:
                 try:
-                    model_content = zf.read("Metadata/model_settings.config").decode()
+                    model_content = read_member(zf, "Metadata/model_settings.config").decode()
                     model_root = ET.fromstring(model_content)
                     for obj_elem in model_root.findall(".//object"):
                         obj_id = obj_elem.get("id")
@@ -2631,7 +2640,7 @@ async def get_library_file_plates(
             # Parse slice_info.config for plate metadata
             plate_metadata = {}
             if "Metadata/slice_info.config" in namelist:
-                content = zf.read("Metadata/slice_info.config").decode()
+                content = read_member(zf, "Metadata/slice_info.config").decode()
                 root = ET.fromstring(content)
 
                 for plate_elem in root.findall(".//plate"):
@@ -2709,7 +2718,7 @@ async def get_library_file_plates(
                 except ValueError:
                     continue
                 try:
-                    payload = json.loads(zf.read(name).decode())
+                    payload = json.loads(read_member(zf, name).decode())
                     bbox_objects = payload.get("bbox_objects", [])
                     names: list[str] = []
                     for obj in bbox_objects:
@@ -2799,7 +2808,7 @@ async def get_library_file_plate_thumbnail(
         with zipfile.ZipFile(file_path, "r") as zf:
             thumb_path = f"Metadata/plate_{plate_index}.png"
             if thumb_path in zf.namelist():
-                data = zf.read(thumb_path)
+                data = read_member(zf, thumb_path)
                 return Response(content=data, media_type="image/png")
     except Exception:
         pass  # Archive unreadable or thumbnail missing; fall through to 404
@@ -2905,7 +2914,7 @@ async def get_library_file_filament_requirements(
         with zipfile.ZipFile(file_path, "r") as zf:
             # Parse slice_info.config for filament requirements
             if "Metadata/slice_info.config" in zf.namelist():
-                content = zf.read("Metadata/slice_info.config").decode()
+                content = read_member(zf, "Metadata/slice_info.config").decode()
                 root = ET.fromstring(content)
 
                 if plate_id is not None:
@@ -3700,7 +3709,7 @@ async def get_gcode(
                         raise HTTPException(status_code=404, detail=f"Plate {plate} not found in this file")
                 else:
                     selected = default_plate_gcode_name(gcode_files)
-                gcode_content = zf.read(selected)
+                gcode_content = read_member(zf, selected)
                 from fastapi.responses import Response
 
                 return Response(content=gcode_content, media_type="text/plain")

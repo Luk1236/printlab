@@ -27,6 +27,7 @@ from backend.app.services.virtual_printer.mqtt_bridge import MQTTBridge
 from backend.app.services.virtual_printer.mqtt_server import SimpleMQTTServer
 from backend.app.services.virtual_printer.ssdp_server import SSDPProxy, VirtualPrinterSSDPServer
 from backend.app.services.virtual_printer.tcp_proxy import SlicerProxyManager, TCPProxy
+from backend.app.utils.zip_limits import read_member
 
 if TYPE_CHECKING:
     from backend.app.services.printer_manager import PrinterManager
@@ -1263,7 +1264,7 @@ class VirtualPrinterInstance:
 
             with zipfile.ZipFile(file_path, "r") as zf:
                 if "Metadata/slice_info.config" in zf.namelist():
-                    content = zf.read("Metadata/slice_info.config").decode()
+                    content = read_member(zf, "Metadata/slice_info.config").decode()
                     root = ET.fromstring(content)  # noqa: S314  # nosec B314
                     plate_ids: list[int] = []
                     for plate in root.findall(".//plate"):

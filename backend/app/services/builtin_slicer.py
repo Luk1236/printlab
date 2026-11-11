@@ -26,6 +26,7 @@ from typing import Any
 
 from backend.app.services.slicer_cli import SliceOutput, slice_file
 from backend.app.services.slicer_manager import find_existing_slicer, install_orca_slicer_from_github
+from backend.app.utils.zip_limits import read_member
 
 logger = logging.getLogger(__name__)
 
@@ -204,10 +205,10 @@ def _try_extract_existing_3mf_slice(source: Path, plate: int | None) -> SliceOut
             found = next((c for c in candidates if c in names), None)
             if not found:
                 return None
-            gcode = zf.read(found).decode("utf-8", "replace")
+            gcode = read_member(zf, found).decode("utf-8", "replace")
             seconds, grams = 0, 0.0
             if "Metadata/slice_info.config" in names:
-                info_txt = zf.read("Metadata/slice_info.config").decode("utf-8", "replace")
+                info_txt = read_member(zf, "Metadata/slice_info.config").decode("utf-8", "replace")
                 pred = re.search(r'key="prediction"\s+value="([\d.]+)"', info_txt)
                 wgt = re.search(r'key="weight"\s+value="([\d.]+)"', info_txt)
                 if pred:

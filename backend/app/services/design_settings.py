@@ -42,6 +42,8 @@ import zipfile
 from io import BytesIO
 from typing import Any, NamedTuple
 
+from backend.app.utils.zip_limits import read_member
+
 logger = logging.getLogger(__name__)
 
 _PROJECT_SETTINGS = "Metadata/project_settings.config"
@@ -148,7 +150,7 @@ def extract_design_process_overrides(zip_bytes: bytes) -> list[DesignOverride]:
         with zipfile.ZipFile(BytesIO(zip_bytes), "r") as zf:
             if _PROJECT_SETTINGS not in zf.namelist():
                 return []
-            config = json.loads(zf.read(_PROJECT_SETTINGS).decode("utf-8"))
+            config = json.loads(read_member(zf, _PROJECT_SETTINGS).decode("utf-8"))
     except (zipfile.BadZipFile, json.JSONDecodeError, UnicodeDecodeError, OSError, KeyError):
         return []
     return overrides_from_config(config)

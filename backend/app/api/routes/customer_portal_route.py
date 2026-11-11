@@ -13,6 +13,7 @@ abgelehnt.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 from typing import Any
@@ -35,6 +36,7 @@ from backend.app.services.delivery_note_service import (
 )
 from backend.app.services.mesh_analysis import analyze_mesh_data
 from backend.app.services.portal_quote_store import get_quote, store_quote
+from backend.app.utils.upload_limits import max_portal_upload_bytes, read_upload_limited
 
 logger = logging.getLogger(__name__)
 
@@ -155,6 +157,23 @@ async def initiate_checkout(
         raise HTTPException(400, str(exc))
 
 
+# Eine Analyse darf nicht länger als das rechnen: das Portal ist ohne Anmeldung erreichbar (T5-03).
+ANALYZE_TIMEOUT_SECONDS = 30.0
+
+
+async def _analyze_off_loop(content: bytes, filename: str):
+    """``analyze_mesh_data`` in einem Thread und mit Zeitgrenze.
+
+    Der Aufruf rechnet (trimesh) und blockierte vorher den ganzen Ereignis-Loop, während jemand ohne
+    Anmeldung eine Datei hochlud. Im Thread läuft der Rest der Anwendung weiter; bei Überschreitung der
+    Zeitgrenze bekommt der Aufrufer eine Fehlermeldung statt einer hängenden Anfrage.
+    """
+    try:
+        return await asyncio.wait_for(asyncio.to_thread(analyze_mesh_data, content, filename), ANALYZE_TIMEOUT_SECONDS)
+    except asyncio.TimeoutError as exc:
+        raise ValueError("Die Analyse dauert zu lange. Bitte eine kleinere Datei hochladen.") from exc
+
+
 @router.post("/analyze-model")
 async def analyze_model(
     request: Request,
@@ -165,9 +184,9 @@ async def analyze_model(
         raise HTTPException(429, "Zu viele Analyse-Anfragen. Bitte kurz warten.")
     if not file.filename:
         raise HTTPException(400, "Keine Datei übergeben.")
-    content = await file.read()
+    content = await read_upload_limited(file, max_portal_upload_bytes())
     try:
-        result = analyze_mesh_data(content, file.filename)
+        result = await _analyze_off_loop(content, file.filename)
         return result.to_dict()
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
@@ -190,9 +209,9 @@ async def create_quote_from_model(
         raise HTTPException(429, "Zu viele Kalkulationen in kurzer Zeit. Bitte einen Moment warten.")
     if not file.filename:
         raise HTTPException(400, "Keine Datei übergeben.")
-    content = await file.read()
+    content = await read_upload_limited(file, max_portal_upload_bytes())
     try:
-        analysis = analyze_mesh_data(content, file.filename)
+        analysis = await _analyze_off_loop(content, file.filename)
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
 

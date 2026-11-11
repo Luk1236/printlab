@@ -24,6 +24,7 @@ from backend.app.core.permissions import Permission
 from backend.app.models.settings import Settings
 from backend.app.models.user import User
 from backend.app.schemas.settings import AppSettings, AppSettingsUpdate
+from backend.app.utils.upload_limits import max_upload_bytes, read_upload_limited
 
 logger = logging.getLogger(__name__)
 
@@ -1324,7 +1325,7 @@ async def restore_backup(
         temp_path = Path(temp_dir)
 
         # 1. Read and extract ZIP
-        content = await file.read()
+        content = await read_upload_limited(file, max_upload_bytes())
 
         # Check if it's a valid ZIP
         if not file.filename or not file.filename.endswith(".zip"):

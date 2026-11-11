@@ -46,6 +46,7 @@ from backend.app.services.slicer_api import (
     SlicerApiService,
 )
 from backend.app.utils.threemf_tools import sanitize_project_settings_sentinels
+from backend.app.utils.zip_limits import read_member
 
 logger = logging.getLogger(__name__)
 
@@ -149,8 +150,8 @@ def _blank_custom_gcode(file_bytes: bytes, option: str) -> bytes | None:
         with zipfile.ZipFile(BytesIO(file_bytes)) as zf:
             if _PROJECT_SETTINGS_PATH not in zf.namelist():
                 return None
-            entries = [(info, zf.read(info.filename)) for info in zf.infolist()]
-            settings = json.loads(zf.read(_PROJECT_SETTINGS_PATH).decode("utf-8", "replace"))
+            entries = [(info, read_member(zf, info.filename)) for info in zf.infolist()]
+            settings = json.loads(read_member(zf, _PROJECT_SETTINGS_PATH).decode("utf-8", "replace"))
     except (zipfile.BadZipFile, OSError, UnicodeDecodeError, json.JSONDecodeError):
         return None
     if not isinstance(settings, dict):
@@ -341,7 +342,7 @@ def _parse_filaments_from_sliced_3mf(content: bytes, plate_id: int) -> list[dict
         with zipfile.ZipFile(BytesIO(content)) as zf:
             if "Metadata/slice_info.config" not in zf.namelist():
                 return None
-            data = zf.read("Metadata/slice_info.config").decode()
+            data = read_member(zf, "Metadata/slice_info.config").decode()
     except (zipfile.BadZipFile, OSError):
         return None
 

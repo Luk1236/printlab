@@ -30,6 +30,8 @@ import zipfile
 from collections import defaultdict
 from dataclasses import dataclass, field
 
+from backend.app.utils.zip_limits import read_member
+
 logger = logging.getLogger(__name__)
 
 
@@ -254,7 +256,7 @@ def _parse_model_file(zf: zipfile.ZipFile, path: str) -> tuple[dict[str, _Object
     components: list = []
 
     parse = etree.iterparse(
-        io.BytesIO(zf.read(path)),
+        io.BytesIO(read_member(zf, path)),
         events=("end",),
         resolve_entities=False,
         no_network=True,
