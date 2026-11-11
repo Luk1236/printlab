@@ -3642,6 +3642,9 @@ async def clear_plate(
         )
 
     printer_manager.set_awaiting_plate_clear(printer_id, False)
+    from backend.app.services.print_scheduler import scheduler as print_scheduler
+
+    print_scheduler.clear_plate_block(printer_id)  # the camera looks again on the next pass, not in a minute
 
     # #1898: releasing the plate without answering the outcome prompt can
     # count as "good" (opt-in setting) — this is the moment the operator

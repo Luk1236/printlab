@@ -22,8 +22,13 @@ async def check_queue_plate_clear(
     printer: Printer,
     item: PrintQueueItem,
     db: AsyncSession,
+    *,
+    notify: bool = True,
 ) -> tuple[bool, str | None]:
     """Check build plate emptiness before queue print dispatch if enabled.
+
+    ``notify=False`` skips the "plate not empty" notification. The scheduler passes it
+    for every block after the first in a row, which it re-checks once a minute.
 
     Returns:
         (is_clear, reason_if_blocked)
@@ -80,6 +85,8 @@ async def check_queue_plate_clear(
 
         printer_manager.set_awaiting_plate_clear(printer.id, True)
 
+        if not notify:
+            return False, reason
         try:
             from backend.app.services.notification_service import notification_service
 

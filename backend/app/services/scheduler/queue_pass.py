@@ -295,6 +295,20 @@ class QueuePass(SelectionMixin):
                 f"{self.printer_label(backoff_pid)} is not accepting files — PrintLab will retry automatically",
             )
 
+        # Printers whose plate check saw objects on the bed (see scheduler/plate_hold.py). Inside
+        # the window they sit out like a refused upload: the row keeps the plate reason, there is
+        # no "job waiting" notification (the plate check sent its own) and no keep-warm. After the
+        # window the printer is picked again so the camera can look.
+        for plate_pid, (retry_at, plate_text) in list(self._s._plate_blocks.items()):
+            if now_mono >= retry_at:
+                continue
+            self.backoff_printers.add(plate_pid)
+            self.silent_hold_printers.add(plate_pid)
+            self.mark_busy(
+                plate_pid, f"its plate check saw objects on the bed; looking again in {retry_at - now_mono:.0f}s"
+            )
+            self.item_hold_reasons.setdefault(plate_pid, plate_text)
+
         # Printers held by a Home Assistant sensor interlock (#1148) — an
         # enclosure door left open, say. The fixed-printer branch turns
         # this into a waiting_reason the user can act on; the model-based

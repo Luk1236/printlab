@@ -127,6 +127,7 @@ from backend.app.services.scheduler.nozzles import (  # noqa: F401 — Namensrau
     _rack_nozzle_diameters,
     _unmatched_filament_message,
 )
+from backend.app.services.scheduler.plate_hold import PlateHoldMixin
 from backend.app.services.scheduler.preheat import PreheatMixin
 from backend.app.services.scheduler.queue_pass import QueuePass
 from backend.app.services.scheduler.upload import (  # noqa: F401 — Namensraum bleibt hier
@@ -195,7 +196,7 @@ def _terminal_queue_status(state) -> str | None:
     return _TERMINAL_STATE_QUEUE_STATUS.get(getattr(state, "state", None))
 
 
-class PrintScheduler(AvailabilityMixin, PreheatMixin, DryingMixin, WatchdogMixin):
+class PrintScheduler(AvailabilityMixin, PreheatMixin, DryingMixin, WatchdogMixin, PlateHoldMixin):
     """Background scheduler that processes the print queue."""
 
     # Built-in drying presets per filament type (from BambuStudio filament profiles)
@@ -258,6 +259,7 @@ class PrintScheduler(AvailabilityMixin, PreheatMixin, DryingMixin, WatchdogMixin
         # a new reason; without this, every retry would notify. Cleared with
         # `_upload_refusals`.
         self._upload_refusal_notified: set[int] = set()
+        self._plate_blocks: dict[int, tuple[float, str]] = {}  # see PlateHoldMixin
         # Track which printers are currently auto-drying (printer_id -> start timestamp)
         self._drying_in_progress: dict[int, float] = {}
         # Per-AMS memory of the auto-drying cycles WE armed, keyed by
@@ -3435,11 +3437,8 @@ class PrintScheduler(AvailabilityMixin, PreheatMixin, DryingMixin, WatchdogMixin
                 await self._power_off_if_needed(db, item)
                 return
 
-        # Automated build plate empty check before preheat & dispatch
-        from backend.app.services.queue_plate_check import check_queue_plate_clear
-
-        plate_clear, _ = await check_queue_plate_clear(printer, item, db)
-        if not plate_clear:
+        # Automated build plate empty check before preheat & dispatch (holds the row, see PlateHoldMixin)
+        if not await self._plate_check_passes(db, item, printer):
             await self._power_off_if_needed(db, item)
             return
 
