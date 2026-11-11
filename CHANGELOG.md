@@ -3,6 +3,16 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
+## v2.0.56 (11.11.2026) — Plattenprüfung hält den Auftrag sichtbar
+
+- **Plattenprüfung vor dem Start:** Sieht die Kamera Objekte auf der Platte, steht der Grund jetzt am Auftrag
+  („Objekt auf Druckbett erkannt … – Platte abräumen“), statt dass er ohne Hinweis und mit ETA als startbar erscheint.
+  Die Kamera prüft danach nur noch einmal pro Minute statt bei jedem Durchlauf alle paar Sekunden (vorher Kamerabild und
+  KI-Prüfung in Dauerschleife), und nur die erste Sperre einer Folge benachrichtigt. Ist die Platte frei, startet der Druck
+  spätestens nach einer Minute von selbst; „Platte geräumt“ hebt die Wartezeit sofort auf.
+- **Plattenwechsler-Plan** (nur Planung, keine Hardware): Z-Spindel mit Messingmutter und Reibbremse, damit der Querträger
+  bei Not-Halt auch mit geschmierter Mutter hält; Servostrom erklärt; „Tür zu“ über den Türsensor des P2S.
+
 ## v2.0.55 (11.11.2026) — Sicherheits- und Fehlerkorrekturen aus der Code-Analyse (T3 bis T6)
 
 Befunde und Belege: `docs/analyse/` (je Tranche ein Dokument, Abschnitt „Umsetzung“).
