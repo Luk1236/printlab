@@ -45,6 +45,25 @@ def _cleanup_test_app_db_dir():
 
 atexit.register(_cleanup_test_app_db_dir)
 
+# Same problem for files. `core/config.py` snapshots ``DATA_DIR`` at import time
+# into ``settings.base_dir`` / ``settings.archive_dir``, and a number of services
+# derive their own JSON files from it at import (``wear_tracking.json``,
+# ``hardware.json``, the GPIO files, ...). Without ``DATA_DIR`` all of that is the
+# checkout itself: the suite then leaves archives, library files and state files
+# in the working tree, and the GPIO calibration test rewrote the tracked
+# ``backend/data/gpio_mechanik.json``. So the whole data directory is a throwaway
+# one as well. The per-test ``DATA_DIR`` set by ``mfa_encryption_isolation`` only
+# reaches code that reads the variable at call time.
+_TEST_DATA_DIR = Path(tempfile.mkdtemp(prefix="printlab_test_data_"))
+os.environ["DATA_DIR"] = str(_TEST_DATA_DIR)
+
+
+def _cleanup_test_data_dir():
+    shutil.rmtree(_TEST_DATA_DIR, ignore_errors=True)
+
+
+atexit.register(_cleanup_test_data_dir)
+
 
 def _assert_disposable_database(url, source: str) -> None:
     """Abort the run unless *url* is the throwaway database created above.
@@ -77,6 +96,13 @@ if settings.database_url != APP_DATABASE_URL:
         f"rather than the disposable test database. Something read DATABASE_URL "
         f"before conftest could override it."
     )
+for _name in ("base_dir", "archive_dir"):
+    if _TEST_DATA_DIR not in (getattr(settings, _name), *getattr(settings, _name).parents):
+        raise RuntimeError(
+            f"Refusing to run tests: settings.{_name} is {getattr(settings, _name)!r}, not below the "
+            f"disposable data directory {_TEST_DATA_DIR}. Something imported the settings before "
+            f"conftest could set DATA_DIR."
+        )
 
 # Use a temp directory for plate calibration to avoid deleting real calibration files
 _test_plate_cal_dir = Path(tempfile.mkdtemp(prefix="printlab_test_plate_cal_"))
