@@ -91,9 +91,18 @@ class TestDesignChecks:
     def test_known_findings_stay_visible(self):
         """Wer die Schiene verschiebt oder das Regal anpasst, muss diese Erwartung bewusst ändern."""
         summary = pc.design_summary()
-        assert set(summary["warn"]) == {"door_portal", "jaw_ceiling", "part_height"}
+        assert set(summary["warn"]) == {"door_portal", "jaw_ceiling", "part_height", "tower_gap"}
         gap = next(c for c in summary["checks"] if c["id"] == "door_portal")
         assert 5.0 < gap["value"] < 10.0  # 7 mm zur Profilvorderkante, nicht die 17 mm der Doku (Schienenmitte)
+
+    def test_the_plate_fits_between_the_tower_posts(self):
+        """Der erste Turm (X 220 bis 500) ließ zwischen den 2020-Stehern nur 240 mm: kein Platz für die 257-mm-Platte."""
+        assert pc.TOWER_CLEAR_X - pc.PLATE_EDGE >= 2 * 3.0
+        assert pc.PLATE_EDGE < pc.PLATE_GUIDE < pc.TOWER_CLEAR_X
+        assert (pc.TOWER_X[0] + pc.TOWER_X[1]) / 2 == pc.MAG_X
+        assert 500.0 - 220.0 - 2 * pc.PROFILE < pc.PLATE_EDGE  # so war es vorher
+        passage = next(c for c in pc.design_checks() if c["id"] == "tower_passage")
+        assert passage["status"] == "ok"
 
     def test_the_arm_rail_had_to_grow_from_440_mm(self):
         stroke = pc.PARK_Y - pc.Y_GRIP

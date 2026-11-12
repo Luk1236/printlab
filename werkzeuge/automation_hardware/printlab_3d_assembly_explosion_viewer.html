@@ -222,11 +222,21 @@
       "id": "tower_gap",
       "label": "Turm ↔ rechte Druckerwand",
       "limit": 15.0,
-      "margin": 9.0,
-      "note": "Turm ab X 220, Druckerwand bei X 196.",
+      "margin": -4.0,
+      "note": "Turm ab X 207, Druckerwand bei X 196. Turm und Drucker getrennt aufstellen, nicht verschrauben. Für 15 mm Turm und Wechsler-Mitte (MAG_X) um 4 mm nach rechts setzen.",
+      "status": "warn",
+      "unit": "mm",
+      "value": 11.0
+    },
+    {
+      "id": "tower_passage",
+      "label": "Platte ↔ Turmsteher (Durchfahrt nach vorne, je Seite)",
+      "limit": 3.0,
+      "margin": 1.5,
+      "note": "Lichte Weite 266 mm zwischen den Stehern, Platte 257 mm; die Fachleisten führen auf 258.5 mm. Mit dem ersten Turm (X 220 bis 500) blieben 240 mm: Die Platte passte nicht hindurch.",
       "status": "ok",
       "unit": "mm",
-      "value": 24.0
+      "value": 4.5
     },
     {
       "id": "x_stroke",
@@ -399,7 +409,19 @@
     29.5,
     29.5,
     17.0
-  ]
+  ],
+  "tower": {
+    "guide": 258.5,
+    "profile": 20.0,
+    "x": [
+      207.0,
+      513.0
+    ],
+    "y": [
+      -145.0,
+      145.0
+    ]
+  }
 }
 </script>
 <script>
@@ -824,25 +846,29 @@ function buildScene(P, e) {
 
   // ---- 5. Schritt 2 & 4: Kompakt-Turm (Rechts neben dem P2S, 2020-Alurahmen) ----
   const mx = 140 * e, mz = 65 * e;
-  // 4 tragende 2020 Alu-Eckpfosten von Z = 0 bis Z = 320 mm
-  [[220, -145], [220, 125], [480, -145], [480, 125]].forEach(([lx, ly]) =>
-    box(lx + mx, ly, 0, lx + 20 + mx, ly + 20, 320 + mz, '#475569'));
+  // 4 tragende 2020 Alu-Eckpfosten von Z = 0 bis Z = 320 mm (Maße aus plate_changer.TOWER_X/Y, lichte Weite 266 mm)
+  const [TX0, TX1] = DATA.tower.x, [TY0, TY1] = DATA.tower.y, TP = DATA.tower.profile;
+  [[TX0, TY0], [TX0, TY1 - TP], [TX1 - TP, TY0], [TX1 - TP, TY1 - TP]].forEach(([lx, ly]) =>
+    box(lx + mx, ly, 0, lx + TP + mx, ly + TP, 320 + mz, '#475569'));
   // Grundplatte (Z = 0..8 mm)
-  box(220 + mx, -145, 0, 500 + mx, 145, 8, '#1e293b');
+  box(TX0 + mx, TY0, 0, TX1 + mx, TY1, 8, '#1e293b');
   // Trennboden / Dampfsperre (Z = 153..161 mm)
-  box(220 + mx, -145, 153 + mz, 500 + mx, 145, 161 + mz, '#1e293b');
+  box(TX0 + mx, TY0, 153 + mz, TX1 + mx, TY1, 161 + mz, '#1e293b');
   // Deckplatte (Z = 312..320 mm)
-  box(220 + mx, -145, 312 + mz, 500 + mx, 145, 320 + mz, '#1e293b');
-  // Acryl-Seitenverkleidung (grün transparent)
-  box(220 + mx, -145, 161 + mz, 224 + mx, 145, 312 + mz, '#047857', { alpha: 0.35 });
-  box(496 + mx, -145, 161 + mz, 500 + mx, 145, 312 + mz, '#047857', { alpha: 0.35 });
-  box(224 + mx, -145, 161 + mz, 496 + mx, -141, 312 + mz, '#047857', { alpha: 0.35 });
+  box(TX0 + mx, TY0, 312 + mz, TX1 + mx, TY1, 320 + mz, '#1e293b');
+  // Acryl-Seitenverkleidung (grün transparent), außen an den Stehern
+  box(TX0 - 4 + mx, TY0, 161 + mz, TX0 + mx, TY1, 312 + mz, '#047857', { alpha: 0.35 });
+  box(TX1 + mx, TY0, 161 + mz, TX1 + 4 + mx, TY1, 312 + mz, '#047857', { alpha: 0.35 });
+  box(TX0 + mx, TY0 - 4, 161 + mz, TX1 + mx, TY0, 312 + mz, '#047857', { alpha: 0.35 });
 
-  // 4 Regalfächer (Raster 35 mm: Z = 185, 220, 255, 290 mm)
+  // 4 Regalfächer (Raster 35 mm: Z = 185, 220, 255, 290 mm); Fachleisten führen auf DATA.tower.guide
+  const GI = DATA.tower.guide / 2;
   SLOT_Z.forEach((z, k) => {
-    // Auflageschienen links und rechts mit 45°-Einlaufschrägen
-    box(224 + mx, -135, z - 5.5 + mz, 240 + mx, 135, z - 1.5 + mz, '#34d399');
-    box(480 + mx, -135, z - 5.5 + mz, 496 + mx, 135, z - 1.5 + mz, '#34d399');
+    // Auflageleisten der vier Fachkämme (2a/2b), 6 mm unter die Plattenkante
+    box(TX0 + TP + mx, TY0 + TP, z - 4.5 + mz, MAG_X - PLATE + 6 + mx, TY1 - TP, z - 1.5 + mz, '#34d399');
+    box(MAG_X + PLATE - 6 + mx, TY0 + TP, z - 4.5 + mz, TX1 - TP + mx, TY1 - TP, z - 1.5 + mz, '#34d399');
+    box(TX0 + TP + mx, TY0 + TP, z - 1.5 + mz, MAG_X - GI + mx, TY1 - TP, z + 6 + mz, '#10b981', { alpha: 0.6 });
+    box(MAG_X + GI + mx, TY0 + TP, z - 1.5 + mz, TX1 - TP + mx, TY1 - TP, z + 6 + mz, '#10b981', { alpha: 0.6 });
     if (P.slots[k]) plateMesh(MAG_X + mx, MAG_Y, z + mz, P.slots[k]);
   });
   pin([MAG_X + mx, 140, 320 + mz], '2 · Plattenregal (oben)', '4 Fächer · rechts neben P2S', 2);
@@ -850,17 +876,17 @@ function buildScene(P, e) {
 
   // ---- Schritt 4: IPA-Waschstation (im Kompakt-Turm unten Z = 0..64 mm) ----
   const wx = 140 * e, wy = 160 * e;
-  // Edelstahl-/PP-Waschwanne (260 × 280 × 64 mm)
-  box(230 + wx, -140 + wy, 6, 490 + wx, 140 + wy, 64, '#4c1d95', { alpha: 0.75 });
-  box(230 + wx, 134 + wy, 6, 490 + wx, 140 + wy, 32, '#4c1d95');                 // Abgesenkte Einlauflippe vorne
-  box(236 + wx, -134 + wy, 6, 484 + wx, 134 + wy, 20, '#06b6d4', { alpha: 0.45, edge: false }); // IPA-Flüssigkeit
+  // PETG-Waschwanne aus zwei Hälften (4a/4b, zusammen 266 × 162 × 64 mm, Fuge bei X = 360)
+  box(227 + wx, -81 + wy, 0, 493 + wx, 81 + wy, 64, '#4c1d95', { alpha: 0.75 });
+  box(227 + wx, 75 + wy, 0, 493 + wx, 81 + wy, 32, '#4c1d95');                   // Abgesenkte Einlauflippe vorne
+  box(237 + wx, -75 + wy, 4, 483 + wx, 75 + wy, 12, '#06b6d4', { alpha: 0.45, edge: false }); // IPA-Rest in der Wanne
   // 2 gegenläufige Mikrofaser-Walzen (Ø 24 × 246 mm, Achse Z = 32 mm)
   cyl([237 + wx, -45 + wy, 32], 'x', 12, 246, '#c084fc', { stripe: '#7e22ce', rot: P.roll }, 16);
   cyl([237 + wx,  45 + wy, 32], 'x', 12, 246, '#c084fc', { stripe: '#7e22ce', rot: -P.roll }, 16);
   // Anbauten rechts außen: Peristaltikpumpe, IPA-Vorratsflasche, 5015 Radiallüfter
-  box(503 + wx, -65 + wy, 0, 543 + wx, -5 + wy, 48, '#6d28d9');                  // 12V Dosierpumpe
-  cyl([523 + wx, 30 + wy, 0], 'z', 18, 64, '#e0f2fe', { alpha: 0.65 }, 14);        // 250 ml IPA-Flasche
-  box(503 + wx, 65 + wy, 12, 543 + wx, 130 + wy, 66, '#4c1d95');                 // 5015 Lüfter + Düse
+  box(519 + wx, -65 + wy, 0, 559 + wx, -5 + wy, 48, '#6d28d9');                  // 12V Dosierpumpe (außen am Turm)
+  cyl([539 + wx, 30 + wy, 0], 'z', 18, 64, '#e0f2fe', { alpha: 0.65 }, 14);        // 250 ml IPA-Flasche
+  box(519 + wx, 65 + wy, 12, 559 + wx, 130 + wy, 66, '#4c1d95');                 // 5015 Lüfter + Düse
   if (P.spray) effects.push({ type: 'spray', x: wx, y: wy });
   if (P.fan) effects.push({ type: 'fan', x: wx, y: wy });
   pin([MAG_X + wx, 140 + wy, 64], '4 · Waschstation (unten)', 'direkt unter Plattenregal', 4);
@@ -955,9 +981,9 @@ function getDimensions(P) {
       { p0: [-PW, PD, 0], p1: [PW, PD, 0], off: [0, 60, 0], label: '392 mm (P2S Breite)', col: '#38bdf8' },
       { p0: [-PW, -PD, 0], p1: [-PW, PD, 0], off: [-70, 0, 0], label: '406 mm (P2S Tiefe)', col: '#38bdf8' },
       { p0: [-PW, -PD, 0], p1: [-PW, -PD, PH], off: [-70, -40, 0], label: '478 mm (P2S Höhe)', col: '#38bdf8' },
-      { p0: [220, 145, 0], p1: [500, 145, 0], off: [0, 60, 0], label: 'Turmbreite 280 mm', col: '#34d399' },
-      { p0: [500, 145, 0], p1: [500, 145, 320], off: [60, 0, 0], label: 'Turmhöhe 320 mm', col: '#34d399' },
-      { p0: [PW, 145, 0], p1: [220, 145, 0], off: [0, 60, 0], label: '24 mm Freiraum', col: '#a7f3d0' },
+      { p0: [207, 145, 0], p1: [513, 145, 0], off: [0, 60, 0], label: 'Turmbreite 306 mm (innen 266)', col: '#34d399' },
+      { p0: [513, 145, 0], p1: [513, 145, 320], off: [60, 0, 0], label: 'Turmhöhe 320 mm', col: '#34d399' },
+      { p0: [PW, 145, 0], p1: [207, 145, 0], off: [0, 60, 0], label: '11 mm Freiraum', col: '#a7f3d0' },
       { p0: [0, PD, 0], p1: [0, RAIL_Y, 0], off: [-55, 0, 0], label: 'Schiene Y = 575 mm', col: '#38bdf8' },
       { p0: [-160, RAIL_Y, 335], p1: [525, RAIL_Y, 335], off: [0, 45, 25], label: 'Portalbreite 685 mm', col: '#38bdf8' }
     );
@@ -971,10 +997,10 @@ function getDimensions(P) {
     );
   } else if (activeStep === 2) { // 3. Baugruppe 2: Plattenregal
     dims.push(
-      { p0: [220, 145, 153], p1: [500, 145, 153], off: [0, 50, 0], label: 'Regal-Außenbreite: 280 mm', col: '#34d399' },
-      { p0: [500, -145, 153], p1: [500, 145, 153], off: [55, 0, 0], label: 'Regal-Tiefe: 290 mm', col: '#34d399' },
-      { p0: [500, 0, 153], p1: [500, 0, 320], off: [55, 0, 0], label: 'Regal-Bauhöhe: 167 mm', col: '#34d399' },
-      { p0: [480, -80, 185], p1: [480, -80, 220], off: [45, 0, 0], label: 'Rastermaß: ΔZ = 35 mm', col: '#34d399' },
+      { p0: [207, 145, 153], p1: [513, 145, 153], off: [0, 50, 0], label: 'Regal-Außenbreite: 306 mm (lichte Weite 266)', col: '#34d399' },
+      { p0: [513, -145, 153], p1: [513, 145, 153], off: [55, 0, 0], label: 'Regal-Tiefe: 290 mm', col: '#34d399' },
+      { p0: [513, 0, 153], p1: [513, 0, 320], off: [55, 0, 0], label: 'Regal-Bauhöhe: 167 mm', col: '#34d399' },
+      { p0: [493, -80, 185], p1: [493, -80, 220], off: [45, 0, 0], label: 'Rastermaß: ΔZ = 35 mm', col: '#34d399' },
       { p0: [MAG_X - PLATE, 0, 220], p1: [MAG_X + PLATE, 0, 220], off: [0, 45, 20], label: 'Federstahlplatte: 257 × 257 mm', col: '#fbbf24' }
     );
   } else if (activeStep === 3) { // 4. Baugruppe 3: Wechsler-Shuttle
@@ -1103,24 +1129,24 @@ function render(pose) {
 const STEPS = [
   { t: 'P2S Tür-Servo & Kniehebel', c: 'text-amber-300', tag: 'MG90S · über 5"-Touchscreen', preset: 'door',
     d: 'Speziell für den Bambu Lab P2S (Höhe Z = 478 mm, Tiefe Y = +203 mm) mit 14-mm-Frontüberstand ausgelegt, damit die Schubstange frei vor dem 5-Zoll-Touchscreen an der Türoberkante (Z = 442 mm, 75 mm vom linken Scharnier X = −176,5 mm) angreift und die 353 mm breite Glastür um 115° nach vorne-links öffnet.',
-    dim: 'Halter 54×42×26 mm (Z = 478..504 mm) · Hebel 90×8×5 mm · Winkel 0°→115°',
-    hw: '2× M3×12 (Halter), 2× M3×10 + Selbstsicherungsmutter (Gelenke), GPIO 18 PWM',
-    p: 'models_stl/bambu_door_opener_servo_bracket.stl + bambu_door_push_pull_linkage.stl' },
+    dim: 'Halter 54×42×26 mm (18 mm Überstand) · Schubstange 90 mm Stichmaß · Winkel 0°→115°',
+    hw: 'VHB-Band, 2× M3-Kugelgelenk + Mutter, Klemmclip auf der Glasoberkante, KW12 „Tür offen“, GPIO 18 PWM',
+    p: 'models_stl/bauteile/tuer_servohalter.stl, tuer_schubstange.stl, tuer_klemmclip.stl, tuer_endschalterhalter.stl' },
   { t: 'Plattenregal (Kompakt-Turm oben)', c: 'text-emerald-300', tag: '4 Fächer · X = +360', preset: 'magazine',
-    d: 'Oberes Modul des Kompakt-Turms rechts neben dem Bambu Lab P2S (Mitte X = +360 mm, 24 mm Vibrationsabstand zur rechten P2S-Seitenwand bei X = +196 mm). Nimmt 4 Federstahlplatten (257 × 257 × 0,5 mm) auf; Fach 2 liegt exakt auf der P2S-Bettübergabehöhe (Z = 220 mm).',
-    dim: 'Außen 280×290×167 mm (Z = 153..320 mm) · 4 Slots: Z = 185 / 220 / 255 / 290 mm (Raster 35 mm)',
-    hw: '4× Alu-Profil 2020 (L = 320 mm), 16× M4×10 + Nutenstein, 4× Gabellichtschranke TCST2103',
-    p: 'models_stl/plate_magazine_rack_tower.stl' },
+    d: 'Oberes Modul des Kompakt-Turms rechts neben dem Bambu Lab P2S (Mitte X = +360 mm, 11 mm Abstand zur rechten P2S-Seitenwand bei X = +196 mm). Vier gedruckte Fachkämme an den Stehern tragen 4 Federstahlplatten (257 × 257 mm); Fach 2 liegt exakt auf der P2S-Bettübergabehöhe (Z = 220 mm). Lichte Weite zwischen den Stehern 266 mm, damit die Platte nach vorne hinausfährt.',
+    dim: 'Außen 306×290 mm (Steher X = 207..513) · 4 Fächer: Z = 185 / 220 / 255 / 290 mm (Raster 35 mm)',
+    hw: '4× Alu-Profil 2020 (L = 320 mm), 8× M5×10 Senkkopf + Nutenstein, 4× Gabellichtschranke TCST2103',
+    p: 'models_stl/bauteile/fachkamm_vorne_rechts/_links.stl, fachkamm_hinten_rechts/_links.stl' },
   { t: '3-Achs-Wechsler-Shuttle (P2S)', c: 'text-cyan-300', tag: 'X/Y/Z-Portal · Y = 575', preset: 'shuttle',
     d: 'Wegen der größeren P2S-Gehäusetiefe (406 mm, Türschwenkradius bis Y = 558 mm) auf Y = 575 mm positioniert (17 mm bis zur Schienenmitte, nur 7 mm bis zur Profilkante: siehe Konstruktionsprüfung). X-Achse verfährt zwischen P2S-Mitte (X = 0) und Kompakt-Turm (X = +360 mm); Y-Teleskoparm (Hub 405,5 mm auf MGN9H 500 mm) greift die Plattenvorderkante.',
     dim: 'X-Träger 685 mm (X = −160..+525) · Z-Steher 2× 335 mm · Y-Teleskoparm: Hub 405,5 mm',
-    hw: 'Alu 2020 (1× 685 mm, 2× 335 mm), MGN12H (600 mm + 2× 300 mm), MGN9H (500 mm), T8×8 (300 mm), 3× NEMA17',
-    p: 'Zukauf-Linearportal (2020 Alu + MGN12H) + Greiferaufnahme' },
-  { t: 'IPA-Waschstation (Kompakt-Turm unten)', c: 'text-purple-300', tag: 'Z = 0..64 mm · unten', preset: 'washer',
-    d: 'Sitzt im Untergeschoss des rechten Kompakt-Turms (X = +360 mm, Y = 0 mm, Z = 0..64 mm) direkt unter dem Plattenregal. Shuttle senkt die verschmutzte Platte senkrecht auf Z = 44 mm ab und führt sie ±26 mm über 2 gegenläufige Mikrofaser-Walzen (Ø 24 × 246 mm) unter 99,9 % IPA-Sprühung und 5015-Gebläsetrocknung.',
-    dim: 'Wanne 260×280×64 mm (Wandstärke 6 mm) · 2× Walze Ø24×246 mm (Y = −45 / +45 mm, Z = 32 mm)',
-    hw: '4× Kugellager 608ZZ (8×22×7 mm), 12V Peristaltikpumpe (Relais GPIO 19), N20 Getriebemotor (GPIO 26), 5015 Lüfter (GPIO 13)',
-    p: 'models_stl/plate_washer_station_basin.stl' },
+    hw: 'Alu 2020 (1× 685 mm, 2× 335 mm), MGN12H (600 mm + 2× 300 mm), MGN9H (500 mm), 2× Tr8×2 mit Messingmutter und Reibbremse, 4× NEMA17',
+    p: 'models_stl/bauteile/z_wagenplatte, z_mutterhalter, x_schlitten, y_wagen, greiferkopf, riemenklemme, riemenspanner, motorhalter, endschalterhalter, schaltfahne, kettenaufnahme, z_reibbremse' },
+  { t: 'IPA-Waschstation (Kompakt-Turm unten)', c: 'text-purple-300', tag: 'Z = 0..42 mm · unten', preset: 'washer',
+    d: 'Sitzt im Untergeschoss des rechten Kompakt-Turms (X = +360 mm, Y = 0 mm) direkt unter dem Plattenregal. Shuttle senkt die verschmutzte Platte auf Z = 44 mm ab und führt sie über 2 Mikrofaser-Walzen (Ø 24 × 246 mm), je eine N20 gegenläufig. Die Wannenwände enden 2 mm unter der Walzenoberkante, damit die Platte darüber läuft.',
+    dim: 'Wanne 266×162×42 mm aus zwei PETG-Hälften (Fuge X = 360) · 2× Walze Ø24×246 mm (Y = −45 / +45 mm, Achse Z = 32 mm)',
+    hw: '4× Kugellager 608ZZ (8×22×7 mm), 12V Peristaltikpumpe (Relais BCM 6), 2× N20 Getriebemotor (Relais BCM 19), 5015 Lüfter (BCM 13), neutrales Silikon für die Fuge',
+    p: 'models_stl/bauteile/waschwanne_links.stl, waschwanne_rechts.stl, n20_halter.stl, walzenkupplung.stl, luefterduese.stl, schlauchclip.stl' },
 ];
 
 const stepsEl = document.getElementById('steps');

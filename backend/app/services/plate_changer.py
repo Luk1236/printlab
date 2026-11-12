@@ -40,6 +40,13 @@ MAG_X = 360.0
 TRANSFER_Y = 355.0
 RAIL_Y = 575.0
 PROFILE = 20.0  # Alu-Profil 2020
+# Kompakt-Turm (Baugruppe 2 und 4): Außenkanten der vier 2020-Steher. Lichte Weite zwischen den Stehern 266 mm, damit die
+# 257-mm-Platte nach vorne (+Y) hindurchfährt. Die erste Auslegung (X 220 bis 500) ließ nur 240 mm frei: Die Platte passte
+# weder ins Regal noch zwischen den vorderen Stehern hindurch.
+TOWER_X = (207.0, 513.0)
+TOWER_Y = (-145.0, 145.0)
+TOWER_CLEAR_X = TOWER_X[1] - TOWER_X[0] - 2 * PROFILE  # 266 mm
+PLATE_GUIDE = 258.5  # Führungsmaß der Fachleisten (Platte 257 mm + 0,75 mm je Seite)
 PARK_Y = 540.0  # Greiferbacke geparkt
 PARK_Z = 220.0
 JAW_OFFSET = PLATE_HALF + 6.0  # Backe sitzt 6 mm hinter der Plattenvorderkante: Plattenmitte Y + 134,5
@@ -247,11 +254,22 @@ def design_checks() -> list[dict[str, Any]]:
         _check(
             "tower_gap",
             "Turm ↔ rechte Druckerwand",
-            220.0 - PRINTER_HALF_W,
+            TOWER_X[0] - PRINTER_HALF_W,
             MIN_CLEARANCE,
             "mm",
-            "Turm ab X 220, Druckerwand bei X 196.",
+            f"Turm ab X {TOWER_X[0]:.0f}, Druckerwand bei X {PRINTER_HALF_W:.0f}. Turm und Drucker getrennt aufstellen, "
+            "nicht verschrauben. Für 15 mm Turm und Wechsler-Mitte (MAG_X) um 4 mm nach rechts setzen.",
             hard=3.0,
+        ),
+        _check(
+            "tower_passage",
+            "Platte ↔ Turmsteher (Durchfahrt nach vorne, je Seite)",
+            (TOWER_CLEAR_X - PLATE_EDGE) / 2,
+            3.0,
+            "mm",
+            f"Lichte Weite {TOWER_CLEAR_X:.0f} mm zwischen den Stehern, Platte {PLATE_EDGE:.0f} mm; die Fachleisten führen "
+            f"auf {PLATE_GUIDE} mm. Mit dem ersten Turm (X 220 bis 500) blieben 240 mm: Die Platte passte nicht hindurch.",
+            hard=1.0,
         ),
         _check(
             "x_stroke",
@@ -363,6 +381,7 @@ def viewer_payload() -> dict[str, Any]:
         "portal_front": list(portal_front_box()),
         "plate_half": PLATE_HALF,
         "slot_capacity": list(SLOT_CAPACITY),
+        "tower": {"x": list(TOWER_X), "y": list(TOWER_Y), "profile": PROFILE, "guide": PLATE_GUIDE},
     }
 
 

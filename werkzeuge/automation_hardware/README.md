@@ -6,6 +6,12 @@
 > Alle 6 funktionalen CAD-Modelle wurden als standardisierte, wasserdichte binäre STL-Dateien generiert und liegen einsatzbereit im Repository unter [`werkzeuge/automation_hardware/models_stl/`](file:///C:/Users/lukas/OneDrive/Desktop/Bambuddy-Fork/werkzeuge/automation_hardware/models_stl).  
 > Ergänzend steht das interaktive 3D-Simulations-Cockpit unter [`printlab_automation_3d_simulation.html`](file:///C:/Users/lukas/.gemini/antigravity/brain/e9e4f911-96ba-4410-8738-c60f903ba9db/printlab_automation_3d_simulation.html) zur visuellen Zyklusprüfung bereit.
 
+> [!NOTE]
+> **Plattenwechsler (Baugruppen 1 bis 4):** Alle 26 Druckteile mit Bohrungen, Material und Druckeinstellungen liegen in
+> [`models_stl/bauteile/`](models_stl/bauteile) (Liste: `bauteile.json`, Tabelle: `TUER_MAGAZIN_WASCHSTATION.md`, Abschnitt 3 A).
+> Neu erzeugen mit `python werkzeuge/automation_hardware/bauteile.py` (braucht `pip install manifold3d numpy`). Die früheren
+> Quader-Platzhalter für Türöffner, Regal und Wanne sind entfernt; dieser Katalog unten betrifft nur die übrigen Zusatzteile.
+
 ---
 
 ### Inhaltsverzeichnis

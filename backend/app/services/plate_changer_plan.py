@@ -205,7 +205,8 @@ LOADS: tuple[tuple[str, float, str], ...] = (
     # Auf der 12-V-Seite: 0,45 A x 12 V = 5,4 W, nach dem Wandler (90 %) knapp 1 A bei 5 V. Deckt den Blockierstrom
     # des MG90S laut Datenblatt (0,75 A bei 4,8 V, 0,86 A bei 6 V).
     ("Tür-Servo MG90S über 5-V-Wandler (Blockierstrom, 12-V-Seite)", 0.45, "door"),
-    ("Walzenmotor N20 (Anlauf)", 0.8, "wash"),
+    # Zwei N20, je Walze einer, gegenläufig verdrahtet an einem Relais (statt Zahnradpaar, das nicht in die Wanne passt)
+    ("2× Walzenmotor N20 (Anlauf)", 1.6, "wash"),
     ("Peristaltikpumpe", 0.3, "wash"),
     ("Radiallüfter 5015", 0.25, "wash"),
     ("Bewegungs-Controller und Relais", 0.3, "base"),

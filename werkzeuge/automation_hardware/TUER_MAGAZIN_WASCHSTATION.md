@@ -17,7 +17,7 @@
 > * **Baugruppe 1 (P2S Glastür & Servo-Brücke links):** Scharnier links bei $X = -176{,}5\text{ mm}, Y = +205{,}0\text{ mm}$ (Türbreite $353\text{ mm}$). Der Servohalter auf $Z = 478\text{ mm}$ besitzt einen **$14\text{ mm}$ Frontüberstand**, damit die $90\text{ mm}$ Schubstange frei vor dem **5-Zoll-Touchscreen** des P2S ($Z = 444\dots 475\text{ mm}$) läuft.
 > * **Baugruppen 2 & 4 (Kompakt-Turm rechts bei $X = +360\text{ mm}, Y = 0\text{ mm}$):**
 >   * **Oben ($Z = 153\dots 320\text{ mm}$):** 4-Fach-Plattenregal (`Baugruppe 2`) mit **Fach 2 exakt auf P2S-Bettübergabehöhe ($Z = 220\text{ mm}$)**.
->   * **Unten ($Z = 0\dots 64\text{ mm}$):** Integrierte IPA-Waschstation (`Baugruppe 4`) direkt unter dem Plattenregal.
+>   * **Unten ($Z = 0\dots 42\text{ mm}$):** Integrierte IPA-Waschstation (`Baugruppe 4`) direkt unter dem Plattenregal.
 > * **Baugruppe 3 (3-Achs-Wechsler-Shuttle):** Wegen der größeren P2S-Gehäusetiefe ($406\text{ mm}$, Türschwenkbogen bis $Y = +558\text{ mm}$) auf **$Y_{\text{Rail}} = +575\text{ mm}$** vorgerückt ($17\text{ mm}$ Sicherheitsabstand vor der offenen P2S-Glastür).
 
 ---
@@ -34,7 +34,7 @@ flowchart LR
     end
     subgraph RECHTS["Rechte Seite: Kompakt-Turm (X = +220 .. +543 mm)"]
         M["Baugruppe 2: Plattenregal (OBEN)\nZ = 153 .. 320 mm (4 Fächer: 185/220/255/290 mm)"]
-        W["Baugruppe 4: IPA-Waschstation (UNTEN)\nZ = 0 .. 64 mm (2 Walzen + Pumpe + Lüfter)"]
+        W["Baugruppe 4: IPA-Waschstation (UNTEN)\nZ = 0 .. 42 mm (2 Walzen + Pumpe + Lüfter)"]
         M --- W
     end
     subgraph VORNE["Vorzone (Y = +205 .. +591 mm)"]
@@ -63,33 +63,34 @@ flowchart LR
 * **Einbauposition am P2S:** Oben links auf dem P2S-Rahmenprofil direkt über der linken Tür-Drehachse ($X = -186\dots -132\text{ mm}$, $Y = +170\dots +212\text{ mm}$, $Z = 478\dots 504\text{ mm}$).
 * **Besonderheit beim Bambu Lab P2S (5-Zoll-Touchscreen):**
   * Der P2S besitzt oben links in der Frontblende ($X = -188\dots -92\text{ mm}, Z = 444\dots 475\text{ mm}$) das vorstehende **5-Zoll-Touchdisplay**.
-  * Deshalb kragt der P2S-Servohalter um **$14{,}0\text{ mm}$ nach vorne ($+Y$)** über die obere Rahmenkante aus (Abtriebswelle bei $X = -148\text{ mm}, Y = +210\text{ mm}, Z = 508\text{ mm}$), sodass die Kniehebelstange frei vor dem Touchscreen zur Glastür-Oberkante ($Z = 442\text{ mm}$) verläuft.
-* **Einzelteile & exakte Maße:**
-  1. **P2S Servo-Halterblock (`bambu_door_opener_servo_bracket.stl`):**
-     * Außenmaße: **$54 \times 42 \times 26\text{ mm}$** (Wandstärke $4{,}0\text{ mm}$, Material **ASA** oder **PETG**, $4\text{ Wände}$, $35\,\%$ Gyroid-Infill).
-     * Servotasche: $23{,}2 \times 12{,}6 \times 18{,}0\text{ mm}$ (Passung $+0{,}2\text{ mm}$ für Metallgetriebe-Servo **MG90S**).
+  * Deshalb kragt der P2S-Servohalter um **$18{,}0\text{ mm}$ nach vorne ($+Y$)** über die obere Rahmenkante aus (vorher 14 mm: Der Servokörper hängt unter der Platte und muss ganz vor der Druckeroberkante sitzen), sodass die Kniehebelstange frei vor dem Touchscreen zur Glastür-Oberkante ($Z = 442\text{ mm}$) verläuft.
+* **Einzelteile & exakte Maße** (Druckdateien in `models_stl/bauteile/`, Material und Einstellungen in Abschnitt 3 A):
+  1. **P2S Servo-Halterblock (`tuer_servohalter.stl`, 1a):**
+     * Außenmaße: **$54 \times 42 \times 26\text{ mm}$**, **ASA**, mit 3M VHB auf der Druckeroberseite; 2 Langlöcher M4 für eine spätere Verschraubung.
+     * Servotasche: $23{,}2 \times 12{,}6\text{ mm}$ durch die Platte (Passung $+0{,}2\text{ mm}$ für Metallgetriebe-Servo **MG90S**), Servo von oben eingesetzt, Laschen mit 2× M2 (Lochabstand 27,6 mm), Abtrieb nach unten.
   2. **Servohorn (Antriebshebel):**
      * Wirksame Hebellänge: $L_1 = 28{,}0\text{ mm}$ (Aluminium-Servoarm 25T auf MG90S-Abtriebswelle).
-  3. **P2S Kniehebel-Schubstange (`bambu_door_push_pull_linkage.stl`):**
-     * Länge von Auge zu Auge: **$L_2 = 90{,}0\text{ mm}$** (Gesamtlänge $101\text{ mm}$, Querschnitt $8{,}0 \times 5{,}0\text{ mm}$, beidseitig $\varnothing 3{,}05\text{ mm}$ Bohrung für M3-Kugelgelenke).
-     * Tür-Anlenkpunkt: **$75{,}0\text{ mm}$** vom linken P2S-Scharnier entlang der Türoberkante ($Z = 442\text{ mm}$) mit 3M-VHB-Acrylklebeband + Klemmclip an der Glastür fixiert.
+  3. **P2S Kniehebel-Schubstange (`tuer_schubstange.stl`, 1b):**
+     * Länge von Auge zu Auge: **$L_2 = 90{,}0\text{ mm}$** (Gesamtlänge 102 mm, Augen Ø 12 × 7 mm, Steg 8 × 5 mm, beidseitig Ø 3,4 mm für M3-Kugelgelenke mit Mutter, PETG).
+     * Tür-Anlenkpunkt: **$75{,}0\text{ mm}$** vom linken P2S-Scharnier entlang der Türoberkante ($Z = 442\text{ mm}$) mit Klemmclip (`tuer_klemmclip.stl`, 1c, für 4 mm Glas: Annahme, messen) und 3M VHB an der Glastür.
+  4. **Endschalter „Tür offen“** (`tuer_endschalterhalter.stl`, 1d) am Scharnier; „Tür zu“ meldet der Türsensor des P2S.
 
 ---
 
 ### Baugruppe 2: Plattenregal (4-Fach-Magazin im Kompakt-Turm oben)
-* **Einbauposition:** Rechts neben dem Bambu Lab P2S im Obergeschoss des Kompakt-Turms ($X = +220\dots +500\text{ mm}$, Plattenmitte **$X = +360\text{ mm}$**, $Y = -145\dots +145\text{ mm}$, $Z = 153\dots 320\text{ mm}$).
+* **Einbauposition:** Rechts neben dem Bambu Lab P2S im Obergeschoss des Kompakt-Turms ($X = +207\dots +513\text{ mm}$, Plattenmitte **$X = +360\text{ mm}$**, $Y = -145\dots +145\text{ mm}$, $Z = 153\dots 320\text{ mm}$).
 * **Tragrahmen (Kompakt-Turm-Grundgestell für Baugruppe 2 + 4):**
-  * **4× Vertikal-Steher:** Aluminiumprofil **2020 I-Typ Nut 5**, Länge jeweils **$320{,}0\text{ mm}$** an den Ecken $(+220, -145)$, $(+220, +135)$, $(+490, -145)$, $(+490, +135)$.
-  * **Zwischenboden (Dampfsperre über der Waschstation):** $280 \times 290 \times 8\text{ mm}$ auf Höhe $Z = 153\dots 161\text{ mm}$.
-  * **Deckelplatte:** $280 \times 290 \times 8\text{ mm}$ auf Höhe $Z = 312\dots 320\text{ mm}$.
-* **Fächer-Geometrie (`plate_magazine_rack_tower.stl`):**
-  * **Lichte Innenbreite:** $266{,}0\text{ mm}$ mit $45^\circ$-Zentriertrichtern auf $258{,}5\text{ mm}$ Führungsmaß für die $257 \times 257 \times 0{,}5\text{ mm}$ Bambu-Federstahlplatten.
+  * **4× Vertikal-Steher:** Aluminiumprofil **2020 I-Typ Nut 5**, Länge jeweils **$320{,}0\text{ mm}$**, Außenkanten $X = 207$ und $513$, $Y = -145$ und $+145$ (Steher $X = 207\dots 227$ und $493\dots 513$). **Korrigiert:** Die erste Auslegung ($X = 220\dots 500$) ließ zwischen den Stehern nur 240 mm frei, die 257-mm-Platte passte weder ins Regal noch nach vorne hinaus.
+  * **Zwischenboden (Dampfsperre über der Waschstation):** $306 \times 290 \times 8\text{ mm}$ PP-Platte (dicht, IPA-fest) auf Höhe $Z = 153\dots 161\text{ mm}$.
+  * **Deckelplatte:** $306 \times 290 \times 8\text{ mm}$ (PP, Siebdruck- oder Alu-Platte) auf Höhe $Z = 312\dots 320\text{ mm}$.
+* **Fächer-Geometrie:** 4 gedruckte **Fachkämme** (`fachkamm_vorne_rechts.stl`, `fachkamm_vorne_links.stl`, `fachkamm_hinten_rechts.stl`, `fachkamm_hinten_links.stl`; 2a/2b), je mit 2× M5 Senkkopf an der Innenseite eines Stehers. Ein Regal aus einem Stück (280 × 290 mm) passte nicht auf das Druckbett.
+  * **Lichte Innenbreite:** $266{,}0\text{ mm}$ zwischen den Stehern, Führungsflächen der Kämme auf $259\text{ mm}$, Auflageleisten 6 mm unter der Plattenkante, $45^\circ$-Einlaufschräge vorne, für die $257 \times 257 \times 0{,}5\text{ mm}$ Bambu-Federstahlplatten.
   * **Exakte P2S Slot-Höhen (Plattenoberkante $Z$):**
     * **Fach 1:** $Z_1 = 185{,}0\text{ mm}$ (Auflageleiste Oberkante bei $Z = 183{,}5\text{ mm}$)
     * **Fach 2:** $Z_2 = 220{,}0\text{ mm}$ (**exakt gleich der P2S-Bettübergabehöhe $Z_{\text{Swap}} = 220{,}0\text{ mm}$** $\Rightarrow$ 0 mm Z-Hub beim Direktwechsel!)
     * **Fach 3:** $Z_3 = 255{,}0\text{ mm}$ (Rastermaß $\Delta Z = 35{,}0\text{ mm}$)
     * **Fach 4:** $Z_4 = 290{,}0\text{ mm}$ (Rastermaß $\Delta Z = 35{,}0\text{ mm}$)
-  * **Belegungssensorik:** 4× optische Gabellichtschranke **TCST2103** an der hinteren Anschlagschiene ($Y = -128{,}5\text{ mm}$).
+  * **Belegungssensorik:** 4× optische Gabellichtschranke **TCST2103** im hinteren rechten Kamm hinter dem Anschlag ($Y \approx -129\text{ mm}$), je 2× M3; Lage am Aufbau prüfen.
 
 ---
 
@@ -116,27 +117,56 @@ flowchart LR
 ---
 
 ### Baugruppe 4: IPA-Platten-Waschstation (im Kompakt-Turm unten)
-* **Einbauposition:** Im Untergeschoss des rechten Kompakt-Turms direkt unter dem Plattenregal ($X = +230\dots +490\text{ mm}$, Mitte **$X = +360\text{ mm}$**, $Y = -140\dots +140\text{ mm}$, $Z = 0\dots 64\text{ mm}$).
-* **Einzelteile & exakte Maße (`plate_washer_station_basin.stl`):**
-  1. **Chemikalienbeständige Waschwanne (PETG / PP, 5 Wände):**
-     * Außenmaß Wanne: $260 \times 280 \times 64\text{ mm}$ (Wandstärke $6{,}0\text{ mm}$, vordere Einlauflippe bei $Y = +134\dots +140\text{ mm}$ auf $Z = 32{,}0\text{ mm}$ abgesenkt).
+* **Einbauposition:** Im Untergeschoss des rechten Kompakt-Turms direkt unter dem Plattenregal ($X = +227\dots +493\text{ mm}$, Mitte **$X = +360\text{ mm}$**, $Y = -81\dots +81\text{ mm}$, $Z = 0\dots 42\text{ mm}$).
+* **Einzelteile & exakte Maße** (`waschwanne_links.stl`, `waschwanne_rechts.stl`, 4a/4b; dazu 4c bis 4f):
+  1. **Chemikalienbeständige Waschwanne (PETG, 5 Wände), zwei Hälften:**
+     * Außenmaß Wanne: $266 \times 162 \times 42\text{ mm}$ (Seitenwände 6 mm, Stirnwände 10 mm, Boden 5 mm auf 4 mm Füßen). Die Wände enden 2 mm unter der Walzenoberkante ($Z = 42$), damit die 257-mm-Platte über sie hinwegläuft. Die erste Wanne (64 mm hoch, $260 \times 280$) hätte die Platte gestoppt und passte nicht auf das Druckbett.
+     * Fuge bei $X = 360$ als 12-mm-Überlappung mit neutralem Silikon und 2× M4 durch den Boden; Ablauf Ø 5 mit Schlauchtülle Ø 8 rechts unten, Wanne 2° zum Ablauf neigen.
   2. **2× Gegenläufige Mikrofaser-Schrubbwalzen:**
-     * Walze 1 bei $Y = -45{,}0\text{ mm}$, Walze 2 bei $Y = +45{,}0\text{ mm}$, Wellenachse auf $Z = 32{,}0\text{ mm}$, Außendurchmesser $\varnothing 24{,}0\text{ mm}$ (Walzenoberkante $Z = 44{,}0\text{ mm}$), Länge $246\text{ mm}$ ($X = +237\dots +483\text{ mm}$) auf $\varnothing 8\text{ mm}$ Edelstahlwellen in $4 \times$ Kugellagern **608ZZ**, angetrieben über **12V N20-Getriebemotor** (GPIO 26).
-  3. **IPA-Sprühsystem & Trocknungsgebläse ($X = +503\dots +543\text{ mm}$):**
-     * **12V Peristaltikpumpe** ($40 \times 60 \times 48\text{ mm}$, GPIO 19) + $250\text{ ml}$ IPA-Flasche + **12V Radiallüfter 5015** ($40 \times 65 \times 54\text{ mm}$ Luftleitdüse, GPIO 13).
+     * Walze 1 bei $Y = -45{,}0\text{ mm}$, Walze 2 bei $Y = +45{,}0\text{ mm}$, Wellenachse auf $Z = 32{,}0\text{ mm}$, Außendurchmesser $\varnothing 24{,}0\text{ mm}$ (Walzenoberkante $Z = 44{,}0\text{ mm}$), Länge $246\text{ mm}$ ($X = +237\dots +483\text{ mm}$) auf $\varnothing 8\text{ mm}$ Edelstahlwellen in $4 \times$ Kugellagern **608ZZ** (Sitze oben offen zum Einlegen).
+     * Antrieb: **2× 12V N20-Getriebemotor**, je Walze einer, gegenläufig verdrahtet an einem Relais (BCM 19), Halter 4c und Kupplung 4d an der linken Stirnwand. Ein Zahnradpaar für 90 mm Achsabstand hätte unter die Wanne gereicht.
+  3. **IPA-Sprühsystem & Trocknungsgebläse (außen am Turm, $X = +519\dots +559\text{ mm}$):**
+     * **12V Peristaltikpumpe** ($40 \times 60 \times 48\text{ mm}$, BCM 6) + $250\text{ ml}$ IPA-Flasche + Silikonschlauch 2 × 4 mit Clip (4f) + **12V Radiallüfter 5015** mit Breitschlitzdüse 146 × 3 mm (4e, BCM 13).
 
 ---
 
 ## 3. Vollständige Zuschnitt- & Stückliste (BOM für Bambu Lab P2S)
 
-### A. 3D-Druckteile (für Bambu Lab P2S generiert in `werkzeuge/automation_hardware/models_stl/`)
+### A. 3D-Druckteile (alle Baugruppen, `werkzeuge/automation_hardware/models_stl/bauteile/`)
 
-| Nr. | Baugruppe | STL-Datei | P2S-Außenmaße $(B \times T \times H)$ | Material | Wände / Infill |
-| :---: | :--- | :--- | :--- | :---: | :---: |
-| **1a** | 1 · P2S Türöffner | [`bambu_door_opener_servo_bracket.stl`](file:///C:/Users/lukas/OneDrive/Desktop/Bambuddy-Fork/werkzeuge/automation_hardware/models_stl/bambu_door_opener_servo_bracket.stl) | **$54 \times 42 \times 26\text{ mm}$** (14 mm Überstand) | ASA / PETG | 4 Wände · 35 % Gyroid |
-| **1b** | 1 · P2S Türöffner | [`bambu_door_push_pull_linkage.stl`](file:///C:/Users/lukas/OneDrive/Desktop/Bambuddy-Fork/werkzeuge/automation_hardware/models_stl/bambu_door_push_pull_linkage.stl) | **$90\text{ mm}$** Stichmaß ($101 \times 16 \times 7\text{ mm}$) | ASA / PETG | 5 Wände · 50 % Linien |
-| **2** | 2 · Plattenregal | [`plate_magazine_rack_tower.stl`](file:///C:/Users/lukas/OneDrive/Desktop/Bambuddy-Fork/werkzeuge/automation_hardware/models_stl/plate_magazine_rack_tower.stl) | **$280 \times 290 \times 167\text{ mm}$** (Slots 185..290) | PETG | 4 Wände · 30 % Gyroid |
-| **4** | 4 · Waschstation | [`plate_washer_station_basin.stl`](file:///C:/Users/lukas/OneDrive/Desktop/Bambuddy-Fork/werkzeuge/automation_hardware/models_stl/plate_washer_station_basin.stl) | **$260 \times 280 \times 64\text{ mm}$** | PETG / PP | 5 Wände · 35 % (dicht) |
+Erzeugt von `python werkzeuge/automation_hardware/bauteile.py` (braucht `pip install manifold3d numpy`), Material und Druckeinstellungen stehen zusätzlich maschinenlesbar in `bauteile.json`. Jedes Teil ist ein geschlossener Körper in Drucklage und passt auf das P2S-Bett (256 × 256 mm, 3 mm Rand); der Generator prüft außerdem, dass die Platte frei durch alle Fächer und über die Wanne läuft. Druck: Düse 0,4 mm (gehärtet, beim P2S Serie, nötig für PETG-CF), Schicht 0,2 mm, ohne Stützen. Gewichte sind eine Schätzung aus Wänden und Füllung, der Slicer rechnet genauer.
+
+**Material:** **ASA** für Teile am Drucker und an warmen Bauteilen (Motoren 60 bis 70 °C, Magnet), wärme- und UV-fest. **PETG** für Halter, Klemmen und alles im Waschbereich: beständig gegen Isopropanol (ASA und PLA nicht in die Wanne). **PETG-CF** für die tragenden Shuttle-Teile, weil steifer. Kein PLA: Es kriecht unter Last und wird im Turm neben dem Drucker zu warm.
+
+| Nr. | Teil | Datei | Menge | Material | Wände · Füllung | Drucklage | Größe (mm) | ca. g je Stück | Hinweis |
+| :---: | :--- | :--- | :---: | :---: | :---: | :--- | :--- | ---: | :--- |
+| **1a** | Servohalter Türöffner | `tuer_servohalter.stl` | 1 | ASA | 4 · 35 % Gyroid | Platte unten | 54 × 42 × 26 | 20 | Mit 3M VHB auf der Druckeroberseite, Servo hängt im 18-mm-Überstand (Annahme, am Gerät anpassen). |
+| **1b** | Kniehebel-Schubstange | `tuer_schubstange.stl` | 1 | PETG | 5 · 50 % Linien | flach | 102 × 12 × 7 | 6 | M3-Kugelgelenke mit Mutter; Stichmaß 90 mm. |
+| **1c** | Klemmclip Glastür | `tuer_klemmclip.stl` | 1 | PETG | 4 · 40 % Gyroid | Schlitz unten | 30 × 22,2 × 16 | 5 | Für 4 mm Glas (Annahme, messen), zusätzlich VHB im Schlitz. |
+| **1d** | Endschalterhalter Tür offen | `tuer_endschalterhalter.stl` | 1 | PETG | 3 · 30 % Gyroid | Fuß unten | 30 × 15 × 15 | 3 | KW12 mit 2× M2 selbstschneidend; „Tür zu“ meldet der Türsensor des P2S. |
+| **2a** | Fachkamm vorne rechts | `fachkamm_vorne_rechts.stl` | 1 | PETG | 4 · 30 % Gyroid | Anlagefläche am Steher unten | 105 × 125 × 10,5 | 69 | 2× M5×10 Senkkopf mit Nutenstein; Einlaufschräge vorne. |
+| **2a** | Fachkamm vorne links | `fachkamm_vorne_links.stl` | 1 | PETG | 4 · 30 % Gyroid | Anlagefläche am Steher unten | 105 × 125 × 10,5 | 69 | Spiegelbild von vorne rechts. |
+| **2b** | Fachkamm hinten rechts mit Lichtschranken | `fachkamm_hinten_rechts.stl` | 1 | PETG | 4 · 30 % Gyroid | Anlagefläche am Steher unten | 105 × 125,5 × 24,5 | 81 | Anschlag hinter der Platte, 4 Taschen für TCST2103 (2× M3 je Sensor); Sensorlage am Aufbau prüfen. |
+| **2b** | Fachkamm hinten links | `fachkamm_hinten_links.stl` | 1 | PETG | 4 · 30 % Gyroid | Anlagefläche am Steher unten | 105 × 125 × 10,5 | 72 | Anschlag hinter der Platte, ohne Sensoren. |
+| **3a** | Z-Wagenplatte | `z_wagenplatte.stl` | 2 | PETG-CF | 5 · 60 % Gyroid | flach | 62 × 50 × 10 | 34 | Trägt den Querträger: 4× M3 zum MGN12H, 2× M5 in die Nut, 2 Inserts für den Mutterhalter. |
+| **3b** | Spindelmutter-Halter | `z_mutterhalter.stl` | 2 | PETG-CF | 5 · 60 % Gyroid | flach | 40 × 28 × 12 | 15 | Messing-Flanschmutter Tr8×2, 4× M3 selbstschneidend; Langlöcher gleichen 0,5 mm aus. |
+| **3c** | X-Schlitten | `x_schlitten.stl` | 1 | PETG-CF | 5 · 50 % Gyroid | flach | 90 × 60 × 8 | 47 | MGN12H, Y-Träger mit 2× M5, Riemenklemmen auf 4 Inserts. |
+| **3e** | Y-Wagen | `y_wagen.stl` | 1 | PETG-CF | 5 · 50 % Gyroid | flach | 60 × 30 × 10 | 20 | MGN9H, Greiferarm 20 × 10 mit 2× M4, Riemenklemme auf 2 Inserts. |
+| **3g** | Greiferkopf | `greiferkopf.stl` | 1 | ASA | 5 · 50 % Gyroid | Magnetfläche unten | 80 × 34 × 22 | 40 | Magnet Ø25 × 20 mit 2 Madenschrauben M3, Mikroschalter „Platte gegriffen“ mit M2. |
+| **3h** | Riemenklemme GT2 | `riemenklemme.stl` | 4 | PETG | 4 · 60 % Linien | Zahnseite unten | 20 × 12 × 8 | 2 | Zahnprofil 2 mm, Riemen 6 mm, 2× M3. |
+| **3i** | Riemenspanner | `riemenspanner.stl` | 2 | PETG | 4 · 50 % Gyroid | flach | 30 × 26 × 14 | 7 | Umlenkrolle 20T, Achse M5; Spannschraube M3 mit Mutter. |
+| **3j** | Motorhalter X/Y | `motorhalter.stl` | 2 | ASA | 5 · 40 % Gyroid | Fuß unten | 48 × 30 × 53 | 18 | NEMA17 wird 60 bis 70 °C warm: ASA, kein PLA oder PETG. |
+| **3k** | Endschalterhalter X/Y/Z | `endschalterhalter.stl` | 3 | PETG | 3 · 30 % Gyroid | Fuß unten | 30 × 15 × 14 | 3 | KW12, 2× M2 selbstschneidend, M5-Langloch für die Profilnut. |
+| **3k** | Schaltfahne | `schaltfahne.stl` | 3 | PETG | 3 · 30 % Gyroid | flach | 25 × 10 × 3 | 1 | Mit M3 am bewegten Teil, Langloch zum Einstellen. |
+| **3l** | Kettenaufnahme | `kettenaufnahme.stl` | 6 | PETG | 3 · 30 % Gyroid | flach | 25 × 30 × 8 | 5 | Lochbild der Kettenendstücke am Kauf prüfen. |
+| **3m** | Z-Reibbremse (M18) | `z_reibbremse.stl` | 2 | PETG | 4 · 50 % Gyroid | flach | 30 × 20 × 16 | 9 | Filzklotz Ø6 + Druckfeder + M4-Madenschraube; auf etwa 0,005 N·m einstellen (Abschnitt 7). |
+| **4a** | Waschwanne links (mit Zunge) | `waschwanne_links.stl` | 1 | PETG | 5 · 40 % Gyroid | Boden unten | 145 × 162 × 42 | 236 | Lagersitze 608ZZ, Wellendurchgang, Inserts für die N20-Halter; Fuge mit neutralem Silikon. |
+| **4b** | Waschwanne rechts (mit Ablauf) | `waschwanne_rechts.stl` | 1 | PETG | 5 · 40 % Gyroid | Boden unten | 145 × 162 × 42 | 223 | Ablauf Ø5 mit Schlauchtülle Ø8; 2× M4 durch die Überlappung. |
+| **4c** | N20-Halter | `n20_halter.stl` | 2 | PETG | 4 · 40 % Gyroid | flach | 26 × 34 × 24 | 12 | Zwei N20 (je Walze einer, gegenläufig verdrahtet) statt Zahnräder. |
+| **4d** | Walzenkupplung | `walzenkupplung.stl` | 2 | PETG | 4 · 100 % Linien | stehend | 14 × 14 × 20 | 3 | 3-mm-D-Welle auf Ø8, je M3-Madenschraube. |
+| **4e** | Lüfterdüse 5015 | `luefterduese.stl` | 1 | PETG | 3 · 15 % Gyroid | Einlass unten | 150 × 18 × 60 | 34 | Breitschlitz 146 × 3 über der Platte. |
+| **4f** | Schlauchclip IPA | `schlauchclip.stl` | 2 | PETG | 3 · 40 % Gyroid | flach | 20 × 10 × 8 | 1 | Silikonschlauch 2 × 4. |
+| | **Summe** | 26 Dateien | 46 Teile | | | | | **1173** | ASA 96 g, PETG 912 g, PETG-CF 165 g |
 
 ### B. Aluminium-Profile, Lineartechnik & Mechanik (P2S-Zuschnittliste)
 
@@ -162,7 +192,7 @@ flowchart LR
 | **E1** | Metall-Servo **MG90S** | $4{,}8\dots 6{,}0\text{ V}$, Stellmoment $2{,}2\text{ kg}\cdot\text{cm}$ | **BCM 18 (Pin 12)** – Hardware-PWM | P2S-Türöffner links ($0^\circ \leftrightarrow 115^\circ$) |
 | **E2** | **4×** Schrittmotor **NEMA17** | $1{,}8^\circ$, $1{,}5\text{ A}$ + **4×** Treiber **TMC2209** | **Bewegungs-Controller per USB** (Abschnitt 6.1) | Shuttle-Achsen X (360 mm), Y (405,5 mm), Z links und rechts |
 | **E3** | Elektromagnet-Greifer | 12V DC, $80\text{ N}$ Haltekraft ($\varnothing 25 \times 20\text{ mm}$). Nennkraft gilt auf dickem Baustahl ohne Luftspalt; auf 0,5-mm-Federstahl deutlich weniger. Beim Kauf auf die Typangabe achten: der kleinere P20/15 hält nur 25 bis 30 N | MOSFET-Ausgang des Bewegungs-Controllers (E9), Sicherung F2 | Greift die Vorderkante der $257\text{ mm}$ Federstahlplatte |
-| **E4** | Getriebemotor **N20 12V** | $150\text{ U/min}$, hohes Drehmoment | **BCM 19 (Pin 35)** – Relais Kanal 1 | Treibt die 2 Mikrofaser-Walzen gegenläufig an |
+| **E4** | **2×** Getriebemotor **N20 12V** | $150\text{ U/min}$, Welle 3 mm mit D-Fläche | **BCM 19 (Pin 35)** – Relais Kanal 1 (beide Motoren, gegenläufig gepolt) | Je einer treibt eine Mikrofaser-Walze |
 | **E5** | **Peristaltikpumpe 12V** | $80\text{ ml/min}$, IPA-beständiger Silikonschlauch | **BCM 6 (Pin 31)** – Relais Kanal 2 | Dosiert Isopropanol ($99{,}9\,\%$) auf die Platte |
 | **E6** | **Radiallüfter 5015 12V** | $50 \times 50 \times 15\text{ mm}$, $6000\text{ U/min}$ | **BCM 13 (Pin 33)** – Relais Kanal 3 | Trocknet die gewaschene Platte in $15\text{ s}$ |
 | **E7** | 4× Lichtschranke **TCST2103** | Optischer Slot-Sensor $3{,}3\text{ V}$ | **BCM 4, 5, 12, 7** (Fächer 1–4) | Erkennt belegte/freie Fächer im Plattenregal |
@@ -186,6 +216,9 @@ flowchart LR
 | **E15** | Schwimmerschalter | klein, IPA-beständig | 1 Stk. | Sammelflasche der Waschstation |
 | **E16** | Sammelflasche | 1 l, IPA-beständig, Silikonschlauch | 1 Stk. | Ablauf der Wanne (Abschnitt 5.4) |
 | **E17** | Pi-Netzteil | 5 V / 5 A | 1 Stk. | Raspberry Pi 5, getrennt vom 12-V-Netzteil |
+| **M19** | Kleinteile zu den Druckteilen | 30× Gewindeeinsatz M3 (Ruthex), 8× M5×10 Senkkopf DIN 7991 + 8× Nutenstein M5, 2× M3-Kugelgelenk, 2× M4 + Mutter (Wannenfuge), 4× M3-Madenschraube, 2× M4-Madenschraube, 2× Druckfeder Ø 6, 2× Filzklotz Ø 6, 2× Umlenkrolle GT2 20T (Bohrung 5 mm) + M5-Achse | 1 Satz | Abschnitt 3 A |
+| **M20** | Verbrauchsmaterial | 3M VHB (19 mm), neutrales Silikon (IPA-fest), Silikonschlauch 2 × 4 und 5 × 8 (Ablauf) | je 1 | Türöffner, Wannenfuge, IPA und Ablauf |
+| **M21** | Filament | ASA ≈ 0,1 kg, PETG ≈ 0,9 kg, PETG-CF ≈ 0,2 kg (Schätzung aus Abschnitt 3 A, mit Reserve je 1 Spule) | – | alle Druckteile |
 | **M18** | Z-Reibbremse | Federscheibe oder federnder Bremsklotz (PETG/Messing) auf der Spindelwelle, Bremsmoment je Spindel **etwa 0,005 N·m** (am Gerät einstellen) | 2 Stk. | Hält den Querträger bei Not-Halt auch bei geschmierter Mutter (Abschnitt 7) |
 
 ---
@@ -242,7 +275,8 @@ Erzeugt mit `python werkzeuge/automation_hardware/sync_viewer.py --report` (rech
 | Tür ↔ Portalprofil (Draufsicht, ganzer Öffnungsweg) | 7,3 mm | 15 mm | **KNAPP** | Die 17 mm gelten bis zur Schienenmitte ($Y = 575$), die Profilvorderkante liegt bei $Y = 565$: Schiene auf $Y \ge 583$ setzen oder die Türöffnung am Gerät auf unter $90^\circ$ begrenzen. |
 | Tür ($115^\circ$) ↔ Platte im Übergabekorridor | 52,6 mm | 15 mm | ok | Gilt nur bei ganz offener Tür. |
 | Plattenhinterkante ↔ Druckerfront im Korridor | 21,5 mm | 15 mm | ok | |
-| Turm ↔ rechte Druckerwand | 24,0 mm | 15 mm | ok | |
+| Turm ↔ rechte Druckerwand | 11,0 mm | 15 mm | **KNAPP** | Turm ab $X = 207$ (vorher 220), Druckerwand bei $X = 196$. Turm und Drucker getrennt aufstellen, nicht verschrauben. Für 15 mm Turm und Wechsler-Mitte (`MAG_X`) um 4 mm nach rechts setzen. |
+| Platte ↔ Turmsteher (Durchfahrt nach vorne, je Seite) | 4,5 mm | 3 mm | ok | **Korrigiert:** Der erste Turm ($X = 220$ bis $500$) ließ zwischen den 2020-Stehern nur 240 mm frei, die 257-mm-Platte passte weder ins Regal noch nach vorne hinaus. Jetzt Steher-Außenkanten $X = 207$ und $513$, lichte Weite 266 mm, Fachleisten führen auf 258,5 mm. |
 | Reserve Verfahrweg X | 194,6 mm | 5 mm | ok | |
 | Reserve Verfahrweg Y-Arm | 54,6 mm | 5 mm | ok | **Schiene von 440 auf 500 mm geändert**, sonst fehlten 5,4 mm. |
 | Reserve Verfahrweg Z | 8,6 mm | 5 mm | ok | Knapp: Spindelmutter und Anschläge brauchen Platz, am Gerät prüfen. |
@@ -275,12 +309,15 @@ Lochbild $20 \times 20$, M3; **MGN9H** Wagen $20 \times 39{,}9$, Lochbild $15 \t
 | **3d** | Y-Träger | 1 | Alu 2020, **500 mm** | Alu | Trägt die MGN9H-Schiene (500 mm) und den Y-Antrieb; hängt am X-Schlitten. |
 | **3e** | Y-Wagen | 1 | $60 \times 30 \times 10$ mm | PETG-CF | MGN9H-Wagen (Lochbild $15 \times 10$), Riemenklemme, Aufnahme des Greiferarms (2× M4). |
 | **3f** | Greiferarm | 1 | Alu-Rechteckrohr $20 \times 10 \times 1{,}5$ | Alu | Länge am Aufbau festlegen: Die Backe muss bei hinterem Anschlag auf $Y = 540$ stehen (Parkposition) und vorne $Y = 134{,}5$ erreichen. |
-| **3g** | Greiferkopf | 1 | $70 \times 34 \times 22$ mm | ASA | Magnettasche $\varnothing 25{,}3 \times 20$ (Magnet $\varnothing 25 \times 20$), 2× M3 Madenschraube, Kabelausgang $6 \times 4$. Magnetfläche liegt **6 mm hinter der Plattenvorderkante** auf der Platte, Backenoberkante 8 mm über der Plattenoberkante. Kontaktschalter in der Backe meldet „Platte gegriffen“. |
+| **3g** | Greiferkopf | 1 | $80 \times 34 \times 22$ mm | ASA | Magnettasche $\varnothing 25{,}3 \times 20$ (Magnet $\varnothing 25 \times 20$), 2× M3 Madenschraube, Kabelausgang $6 \times 4$. Magnetfläche liegt **6 mm hinter der Plattenvorderkante** auf der Platte, Backenoberkante 8 mm über der Plattenoberkante. Kontaktschalter in der Backe meldet „Platte gegriffen“. |
 | **3h** | Riemenklemme GT2 | 4 | $20 \times 12 \times 8$ mm | PETG | Je zwei an X- und Y-Riemen, Zahnprofil 2 mm, Riemen 6 mm. |
-| **3i** | Riemenspanner | 2 | $30 \times 20 \times 14$ mm | PETG | Am Umlenkende von X und Y, Spannweg 8 mm. |
-| **3j** | Motorhalter X und Y | 2 | $48 \times 48 \times 30$ mm | ASA-CF | NEMA17 (Lochbild 31 mm, Zentrierbund $\varnothing 22$). Motor wird 60 bis 70 °C warm: ASA, kein PLA. |
+| **3i** | Riemenspanner | 2 | $30 \times 26 \times 14$ mm | PETG | Am Umlenkende von X und Y, Spannweg 8 mm. |
+| **3j** | Motorhalter X und Y | 2 | $48 \times 30 \times 53$ mm | ASA | NEMA17 (Lochbild 31 mm, Zentrierbund $\varnothing 22$). Motor wird 60 bis 70 °C warm: ASA, kein PLA. |
 | **3k** | Endschalter-Halter und Fahnen | 3 + 3 | Halter $30 \times 15 \times 12$, Fahne $25 \times 10 \times 3$ | PETG | Mikroschalter KW12 (Lochabstand 9,5 mm, M2,5). Je einer für X, Y, Z. Fahne löst nur beim Anfahren von der Seite aus. |
 | **3l** | Kettenaufnahmen | 6 | $25 \times 30 \times 8$ mm | PETG | Zwei je Energiekette (Z, X, Y). Kette innen $10 \times 15$ mm. |
+| **3m** | Z-Reibbremse (M18) | 2 | $30 \times 20 \times 16$ mm | PETG | Spindel läuft durch, Filzklotz Ø 6 + Druckfeder + M4-Madenschraube drücken seitlich auf das Gewinde; auf etwa 0,005 N·m einstellen (Abschnitt 7). |
+
+Die Druckdateien, Material und Druckeinstellungen aller Teile stehen in Abschnitt 3 A; die Maße dort sind die der STL-Dateien und gehen vor.
 
 **Energieketten** (Länge $\approx$ Hub/2 + $\pi \cdot R$ + 60 mm mit $R = 18$ mm): **Z** 240 mm (Basis $\to$ Querträger), **X** 300 mm (Querträger $\to$ X-Schlitten), **Y** 320 mm (X-Schlitten $\to$ Y-Wagen). Im Z-Kabelweg liegen alle Leitungen des X-Motors, Y-Motors, Magneten, der Endschalter und des Kontaktschalters.
 
@@ -295,10 +332,10 @@ Lochbild $20 \times 20$, M3; **MGN9H** Wagen $20 \times 39{,}9$, Lochbild $15 \t
 
 ### 5.3 Baugruppe 2 – Plattenregal (Ergänzung)
 
-* **Fachauflage:** Leisten sind Teil von `plate_magazine_rack_tower.stl`. Die Platte liegt auf zwei Leisten, **Aufnahme-Fase 45°** am Fachanfang.
-* **Anschlag hinten** bei $Y = -128{,}5$ mm; dort sitzen die vier Gabellichtschranken TCST2103 (Abstand der Gabel 3,1 mm, Platte 0,5 mm dick).
+* **Fachauflage:** Leisten sind Teil der vier Fachkämme (2a/2b). Die Platte liegt links und rechts je 6 mm auf, vorne **Aufnahme-Fase 45°**. Der Generator prüft, dass die Platte in jedem Fach aufliegt und nach vorne frei hinausfährt.
+* **Anschlag hinten** bei $Y = -129$ mm in den hinteren Kämmen; im rechten sitzen die vier Gabellichtschranken TCST2103 (Abstand der Gabel 3,1 mm, Platte 0,5 mm dick).
 * **Teilehöhe auf der Platte:** Fach 1 bis 3 je 29,5 mm, Fach 4 nur 17 mm (Abschnitt 4.3). Für höhere Teile Raster vergrößern.
-* **Deckplatte und Zwischenboden** je $280 \times 290 \times 8$ mm, Zwischenboden **dicht** (Dampfsperre zur Waschstation, siehe 5.4).
+* **Deckplatte und Zwischenboden** je $306 \times 290 \times 8$ mm, Zwischenboden **dicht** (Dampfsperre zur Waschstation, siehe 5.4).
 
 ### 5.4 Baugruppe 4 – Waschstation (Ergänzung, Sicherheit)
 
@@ -416,9 +453,9 @@ Typische Datenblattwerte, **nicht gemessen**. Verlangte Reserve: 25 % unter 8,5 
 | Fall | Strom | Auslastung | Reserve 25 % |
 | :--- | ---: | ---: | :---: |
 | Wechsel (alle Achsen und Magnet) | 4.1 A | 48 % | ok |
-| Waschen (Achsen stehen unter Strom) | 3.05 A | 36 % | ok |
+| Waschen (Achsen stehen unter Strom) | 3.85 A | 45 % | ok |
 | Tür öffnen (Achsen stehen unter Strom) | 2.15 A | 25 % | ok |
-| Alles gleichzeitig (nicht vorgesehen) | 5.9 A | 69 % | ok |
+| Alles gleichzeitig (nicht vorgesehen) | 6.7 A | 79 % | nein |
 
 ---
 

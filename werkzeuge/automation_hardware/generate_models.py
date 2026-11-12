@@ -7,10 +7,9 @@ Erzeugt die CAD-Geometriedaten für:
 4. HX711 Loadcell Base (Wägezellen-Unterbau)
 5. HX711 Spool Cradle (Spulen-Wiegeteller mit Zentrierbund)
 6. Barcode Scanner Dock (Handscanner-Wand-/Rahmenhalter)
-7. P2S Door Opener Servo Bracket (Servohalter mit 14-mm-Frontüberstand über dem 5"-Touchscreen)
-8. P2S Door Push-Pull Linkage (Kniehebel-Schubstange 90 mm)
-9. Plate Magazine Rack Tower (4-Fach-Plattenregal für Kompakt-Turm oben)
-10. Plate Washer Station Basin (IPA-Waschstation-Wanne für Kompakt-Turm unten)
+
+Die Teile der Baugruppen 1 bis 4 (Türöffner, Plattenregal, Shuttle, Waschstation) erzeugt ``bauteile.py``
+mit Bohrungen und Drucklage nach ``models_stl/bauteile/``; die früheren Quader-Platzhalter dafür sind entfernt.
 """
 
 from __future__ import annotations
@@ -165,52 +164,6 @@ def generate_barcode_scanner_dock(out_path: Path) -> None:
     write_binary_stl(out_path, tris, "PrintLab Barcode Scanner Dock")
 
 
-def generate_door_opener_servo_bracket(out_path: Path) -> None:
-    """7. P2S Servomotor-Halterung mit 14-mm-Frontüberstand über dem 5"-Touchscreen (MG90S)."""
-    tris = []
-    tris.extend(make_box_triangles(-27.0, -21.0, 0.0, 27.0, 21.0, 6.0))
-    tris.extend(make_box_triangles(-18.0, -7.0, 6.0, -12.0, 21.0, 26.0))
-    tris.extend(make_box_triangles(12.0, -7.0, 6.0, 18.0, 21.0, 26.0))
-    tris.extend(make_box_triangles(-18.0, -7.0, 22.0, 18.0, 1.0, 26.0))
-    tris.extend(make_box_triangles(-18.0, 13.0, 22.0, 18.0, 21.0, 26.0))
-    write_binary_stl(out_path, tris, "PrintLab P2S Door Opener Servo Bracket")
-
-
-def generate_door_push_pull_linkage(out_path: Path) -> None:
-    """8. P2S Schub- und Zughebel für Türöffner (Kniehebelstange 90 mm mit Drehachsen)."""
-    tris = []
-    tris.extend(make_box_triangles(-4.0, -42.5, 0.0, 4.0, 42.5, 5.0))
-    tris.extend(make_box_triangles(-8.0, -50.5, 0.0, 8.0, -42.5, 7.0))
-    tris.extend(make_box_triangles(-8.0, 42.5, 0.0, 8.0, 50.5, 7.0))
-    write_binary_stl(out_path, tris, "PrintLab P2S Door Push-Pull Linkage")
-
-
-def generate_plate_magazine_rack_tower(out_path: Path) -> None:
-    """9. Vertikales Plattenmagazin (Tower für 4 Federstahl-Druckplatten, Raster 35 mm)."""
-    tris = []
-    tris.extend(make_box_triangles(-60.0, -40.0, 0.0, 60.0, 40.0, 8.0))
-    tris.extend(make_box_triangles(-60.0, -40.0, 8.0, -50.0, 40.0, 145.0))
-    tris.extend(make_box_triangles(50.0, -40.0, 8.0, 60.0, 40.0, 145.0))
-    tris.extend(make_box_triangles(-50.0, -40.0, 8.0, 50.0, -32.0, 145.0))
-    for z_slot in (32.0, 67.0, 102.0, 137.0):
-        tris.extend(make_box_triangles(-50.0, -32.0, z_slot, -42.0, 35.0, z_slot + 4.0))
-        tris.extend(make_box_triangles(42.0, -32.0, z_slot, 50.0, 35.0, z_slot + 4.0))
-    write_binary_stl(out_path, tris, "PrintLab P2S Plate Magazine Rack Tower")
-
-
-def generate_plate_washer_station_basin(out_path: Path) -> None:
-    """10. Waschstation-Wanne mit Walzenlagern und Schmutzablauf."""
-    tris = []
-    tris.extend(make_box_triangles(-55.0, -35.0, 0.0, 55.0, 35.0, 8.0))
-    tris.extend(make_box_triangles(-55.0, -35.0, 8.0, -47.0, 35.0, 45.0))
-    tris.extend(make_box_triangles(47.0, -35.0, 8.0, 55.0, 35.0, 45.0))
-    tris.extend(make_box_triangles(-47.0, -35.0, 8.0, 47.0, -28.0, 45.0))
-    tris.extend(make_box_triangles(-47.0, 28.0, 8.0, 47.0, 35.0, 45.0))
-    tris.extend(make_box_triangles(-15.0, -28.0, 8.0, -5.0, 28.0, 35.0))
-    tris.extend(make_box_triangles(5.0, -28.0, 8.0, 15.0, 28.0, 35.0))
-    write_binary_stl(out_path, tris, "PrintLab P2S Plate Washer Station Basin")
-
-
 def main() -> None:
     out_dir = Path(__file__).resolve().parent / "models_stl"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -222,10 +175,6 @@ def main() -> None:
         ("hx711_loadcell_base.stl", generate_hx711_loadcell_base),
         ("hx711_spool_cradle.stl", generate_hx711_spool_cradle),
         ("barcode_scanner_wall_dock.stl", generate_barcode_scanner_dock),
-        ("bambu_door_opener_servo_bracket.stl", generate_door_opener_servo_bracket),
-        ("bambu_door_push_pull_linkage.stl", generate_door_push_pull_linkage),
-        ("plate_magazine_rack_tower.stl", generate_plate_magazine_rack_tower),
-        ("plate_washer_station_basin.stl", generate_plate_washer_station_basin),
     ]
 
     print("=== Generiere wasserdichte 3D-Druck-STL-Dateien (Bambu Lab P2S) ===")

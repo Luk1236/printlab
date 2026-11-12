@@ -1,0 +1,596 @@
+{
+  "drucker": "Bambu Lab P2S, Druckbett 256 x 256 x 256 mm, Düse 0,4 mm (gehärtet)",
+  "schichthoehe_mm": 0.2,
+  "material": {
+    "ASA": {
+      "dichte_g_cm3": 1.07,
+      "warum": "UV- und wärmefest bis etwa 95 °C, für Teile am Drucker und am warmen Motor/Magneten"
+    },
+    "PETG": {
+      "dichte_g_cm3": 1.27,
+      "warum": "zäh, beständig gegen Isopropanol, für Halter, Klemmen und alles im Waschbereich"
+    },
+    "PETG-CF": {
+      "dichte_g_cm3": 1.3,
+      "warum": "steif, für tragende Teile des Shuttles; gehärtete Düse (beim P2S Serie)"
+    }
+  },
+  "annahmen": {
+    "glass_thickness": 4.0,
+    "servo_overhang": 18.0
+  },
+  "teile": [
+    {
+      "id": "1a",
+      "name": "Servohalter Türöffner",
+      "baugruppe": 1,
+      "datei": "tuer_servohalter.stl",
+      "menge": 1,
+      "material": "ASA",
+      "waende": 4,
+      "infill": 35,
+      "muster": "Gyroid",
+      "stuetzen": "keine",
+      "drucklage": "Platte unten",
+      "hinweis": "Mit 3M VHB auf der Druckeroberseite, Servo hängt im 18-mm-Überstand (Annahme, am Gerät anpassen).",
+      "groesse_mm": [
+        54.0,
+        42.0,
+        26.0
+      ],
+      "volumen_cm3": 20.2,
+      "gewicht_g": 20.0,
+      "dreiecke": 1152
+    },
+    {
+      "id": "1b",
+      "name": "Kniehebel-Schubstange",
+      "baugruppe": 1,
+      "datei": "tuer_schubstange.stl",
+      "menge": 1,
+      "material": "PETG",
+      "waende": 5,
+      "infill": 50,
+      "muster": "Linien",
+      "stuetzen": "keine",
+      "drucklage": "flach",
+      "hinweis": "M3-Kugelgelenke mit Mutter; Stichmaß 90 mm.",
+      "groesse_mm": [
+        102.0,
+        12.0,
+        7.0
+      ],
+      "volumen_cm3": 4.6,
+      "gewicht_g": 6.0,
+      "dreiecke": 1072
+    },
+    {
+      "id": "1c",
+      "name": "Klemmclip Glastür",
+      "baugruppe": 1,
+      "datei": "tuer_klemmclip.stl",
+      "menge": 1,
+      "material": "PETG",
+      "waende": 4,
+      "infill": 40,
+      "muster": "Gyroid",
+      "stuetzen": "keine",
+      "drucklage": "Schlitz unten",
+      "hinweis": "Für 4 mm Glas (Annahme, messen), zusätzlich VHB im Schlitz.",
+      "groesse_mm": [
+        30.0,
+        22.2,
+        16.0
+      ],
+      "volumen_cm3": 4.2,
+      "gewicht_g": 5.0,
+      "dreiecke": 304
+    },
+    {
+      "id": "1d",
+      "name": "Endschalterhalter Tür offen",
+      "baugruppe": 1,
+      "datei": "tuer_endschalterhalter.stl",
+      "menge": 1,
+      "material": "PETG",
+      "waende": 3,
+      "infill": 30,
+      "muster": "Gyroid",
+      "stuetzen": "keine",
+      "drucklage": "Fuß unten",
+      "hinweis": "KW12 mit 2× M2 selbstschneidend; „Tür zu“ meldet der Türsensor des P2S.",
+      "groesse_mm": [
+        30.0,
+        15.0,
+        15.0
+      ],
+      "volumen_cm3": 2.7,
+      "gewicht_g": 3.0,
+      "dreiecke": 560
+    },
+    {
+      "id": "2a",
+      "name": "Fachkamm vorne rechts",
+      "baugruppe": 2,
+      "datei": "fachkamm_vorne_rechts.stl",
+      "menge": 1,
+      "material": "PETG",
+      "waende": 4,
+      "infill": 30,
+      "muster": "Gyroid",
+      "stuetzen": "keine",
+      "drucklage": "Anlagefläche am Steher unten",
+      "hinweis": "2× M5×10 Senkkopf mit Nutenstein; Einlaufschräge vorne.",
+      "groesse_mm": [
+        105.0,
+        125.0,
+        10.5
+      ],
+      "volumen_cm3": 54.1,
+      "gewicht_g": 69.0,
+      "dreiecke": 1350
+    },
+    {
+      "id": "2a",
+      "name": "Fachkamm vorne links",
+      "baugruppe": 2,
+      "datei": "fachkamm_vorne_links.stl",
+      "menge": 1,
+      "material": "PETG",
+      "waende": 4,
+      "infill": 30,
+      "muster": "Gyroid",
+      "stuetzen": "keine",
+      "drucklage": "Anlagefläche am Steher unten",
+      "hinweis": "Spiegelbild von vorne rechts.",
+      "groesse_mm": [
+        105.0,
+        125.0,
+        10.5
+      ],
+      "volumen_cm3": 54.1,
+      "gewicht_g": 69.0,
+      "dreiecke": 1350
+    },
+    {
+      "id": "2b",
+      "name": "Fachkamm hinten rechts mit Lichtschranken",
+      "baugruppe": 2,
+      "datei": "fachkamm_hinten_rechts.stl",
+      "menge": 1,
+      "material": "PETG",
+      "waende": 4,
+      "infill": 30,
+      "muster": "Gyroid",
+      "stuetzen": "keine",
+      "drucklage": "Anlagefläche am Steher unten",
+      "hinweis": "Anschlag hinter der Platte, 4 Taschen für TCST2103 (2× M3 je Sensor); Sensorlage am Aufbau prüfen.",
+      "groesse_mm": [
+        105.0,
+        125.5,
+        24.5
+      ],
+      "volumen_cm3": 63.8,
+      "gewicht_g": 81.0,
+      "dreiecke": 3608
+    },
+    {
+      "id": "2b",
+      "name": "Fachkamm hinten links",
+      "baugruppe": 2,
+      "datei": "fachkamm_hinten_links.stl",
+      "menge": 1,
+      "material": "PETG",
+      "waende": 4,
+      "infill": 30,
+      "muster": "Gyroid",
+      "stuetzen": "keine",
+      "drucklage": "Anlagefläche am Steher unten",
+      "hinweis": "Anschlag hinter der Platte, ohne Sensoren.",
+      "groesse_mm": [
+        105.0,
+        125.0,
+        10.5
+      ],
+      "volumen_cm3": 56.8,
+      "gewicht_g": 72.0,
+      "dreiecke": 1512
+    },
+    {
+      "id": "3a",
+      "name": "Z-Wagenplatte",
+      "baugruppe": 3,
+      "datei": "z_wagenplatte.stl",
+      "menge": 2,
+      "material": "PETG-CF",
+      "waende": 5,
+      "infill": 60,
+      "muster": "Gyroid",
+      "stuetzen": "keine",
+      "drucklage": "flach",
+      "hinweis": "Trägt den Querträger: 4× M3 zum MGN12H, 2× M5 in die Nut, 2 Inserts für den Mutterhalter.",
+      "groesse_mm": [
+        62.0,
+        50.0,
+        10.0
+      ],
+      "volumen_cm3": 29.4,
+      "gewicht_g": 34.0,
+      "dreiecke": 3620
+    },
+    {
+      "id": "3b",
+      "name": "Spindelmutter-Halter",
+      "baugruppe": 3,
+      "datei": "z_mutterhalter.stl",
+      "menge": 2,
+      "material": "PETG-CF",
+      "waende": 5,
+      "infill": 60,
+      "muster": "Gyroid",
+      "stuetzen": "keine",
+      "drucklage": "flach",
+      "hinweis": "Messing-Flanschmutter Tr8×2, 4× M3 selbstschneidend; Langlöcher gleichen 0,5 mm aus.",
+      "groesse_mm": [
+        40.0,
+        28.0,
+        12.0
+      ],
+      "volumen_cm3": 11.9,
+      "gewicht_g": 15.0,
+      "dreiecke": 1896
+    },
+    {
+      "id": "3c",
+      "name": "X-Schlitten",
+      "baugruppe": 3,
+      "datei": "x_schlitten.stl",
+      "menge": 1,
+      "material": "PETG-CF",
+      "waende": 5,
+      "infill": 50,
+      "muster": "Gyroid",
+      "stuetzen": "keine",
+      "drucklage": "flach",
+      "hinweis": "MGN12H, Y-Träger mit 2× M5, Riemenklemmen auf 4 Inserts.",
+      "groesse_mm": [
+        90.0,
+        60.0,
+        8.0
+      ],
+      "volumen_cm3": 42.0,
+      "gewicht_g": 47.0,
+      "dreiecke": 3620
+    },
+    {
+      "id": "3e",
+      "name": "Y-Wagen",
+      "baugruppe": 3,
+      "datei": "y_wagen.stl",
+      "menge": 1,
+      "material": "PETG-CF",
+      "waende": 5,
+      "infill": 50,
+      "muster": "Gyroid",
+      "stuetzen": "keine",
+      "drucklage": "flach",
+      "hinweis": "MGN9H, Greiferarm 20 × 10 mit 2× M4, Riemenklemme auf 2 Inserts.",
+      "groesse_mm": [
+        60.0,
+        30.0,
+        10.0
+      ],
+      "volumen_cm3": 16.9,
+      "gewicht_g": 20.0,
+      "dreiecke": 3108
+    },
+    {
+      "id": "3g",
+      "name": "Greiferkopf",
+      "baugruppe": 3,
+      "datei": "greiferkopf.stl",
+      "menge": 1,
+      "material": "ASA",
+      "waende": 5,
+      "infill": 50,
+      "muster": "Gyroid",
+      "stuetzen": "keine",
+      "drucklage": "Magnetfläche unten",
+      "hinweis": "Magnet Ø25 × 20 mit 2 Madenschrauben M3, Mikroschalter „Platte gegriffen“ mit M2.",
+      "groesse_mm": [
+        80.0,
+        34.0,
+        22.0
+      ],
+      "volumen_cm3": 42.5,
+      "gewicht_g": 40.0,
+      "dreiecke": 2974
+    },
+    {
+      "id": "3h",
+      "name": "Riemenklemme GT2",
+      "baugruppe": 3,
+      "datei": "riemenklemme.stl",
+      "menge": 4,
+      "material": "PETG",
+      "waende": 4,
+      "infill": 60,
+      "muster": "Linien",
+      "stuetzen": "keine",
+      "drucklage": "Zahnseite unten",
+      "hinweis": "Zahnprofil 2 mm, Riemen 6 mm, 2× M3.",
+      "groesse_mm": [
+        20.0,
+        12.0,
+        8.0
+      ],
+      "volumen_cm3": 1.5,
+      "gewicht_g": 2.0,
+      "dreiecke": 1244
+    },
+    {
+      "id": "3i",
+      "name": "Riemenspanner",
+      "baugruppe": 3,
+      "datei": "riemenspanner.stl",
+      "menge": 2,
+      "material": "PETG",
+      "waende": 4,
+      "infill": 50,
+      "muster": "Gyroid",
+      "stuetzen": "keine",
+      "drucklage": "flach",
+      "hinweis": "Umlenkrolle 20T, Achse M5; Spannschraube M3 mit Mutter.",
+      "groesse_mm": [
+        30.0,
+        26.0,
+        14.0
+      ],
+      "volumen_cm3": 5.7,
+      "gewicht_g": 7.0,
+      "dreiecke": 1568
+    },
+    {
+      "id": "3j",
+      "name": "Motorhalter X/Y",
+      "baugruppe": 3,
+      "datei": "motorhalter.stl",
+      "menge": 2,
+      "material": "ASA",
+      "waende": 5,
+      "infill": 40,
+      "muster": "Gyroid",
+      "stuetzen": "keine",
+      "drucklage": "Fuß unten",
+      "hinweis": "NEMA17 wird 60 bis 70 °C warm: ASA, kein PLA oder PETG.",
+      "groesse_mm": [
+        48.0,
+        30.0,
+        53.0
+      ],
+      "volumen_cm3": 17.1,
+      "gewicht_g": 18.0,
+      "dreiecke": 1910
+    },
+    {
+      "id": "3k",
+      "name": "Endschalterhalter X/Y/Z",
+      "baugruppe": 3,
+      "datei": "endschalterhalter.stl",
+      "menge": 3,
+      "material": "PETG",
+      "waende": 3,
+      "infill": 30,
+      "muster": "Gyroid",
+      "stuetzen": "keine",
+      "drucklage": "Fuß unten",
+      "hinweis": "KW12, 2× M2 selbstschneidend, M5-Langloch für die Profilnut.",
+      "groesse_mm": [
+        30.0,
+        15.0,
+        14.0
+      ],
+      "volumen_cm3": 2.7,
+      "gewicht_g": 3.0,
+      "dreiecke": 828
+    },
+    {
+      "id": "3k",
+      "name": "Schaltfahne",
+      "baugruppe": 3,
+      "datei": "schaltfahne.stl",
+      "menge": 3,
+      "material": "PETG",
+      "waende": 3,
+      "infill": 30,
+      "muster": "Gyroid",
+      "stuetzen": "keine",
+      "drucklage": "flach",
+      "hinweis": "Mit M3 am bewegten Teil, Langloch zum Einstellen.",
+      "groesse_mm": [
+        25.0,
+        10.0,
+        3.0
+      ],
+      "volumen_cm3": 0.7,
+      "gewicht_g": 1.0,
+      "dreiecke": 280
+    },
+    {
+      "id": "3l",
+      "name": "Kettenaufnahme",
+      "baugruppe": 3,
+      "datei": "kettenaufnahme.stl",
+      "menge": 6,
+      "material": "PETG",
+      "waende": 3,
+      "infill": 30,
+      "muster": "Gyroid",
+      "stuetzen": "keine",
+      "drucklage": "flach",
+      "hinweis": "Lochbild der Kettenendstücke am Kauf prüfen.",
+      "groesse_mm": [
+        25.0,
+        30.0,
+        8.0
+      ],
+      "volumen_cm3": 5.7,
+      "gewicht_g": 5.0,
+      "dreiecke": 792
+    },
+    {
+      "id": "3m",
+      "name": "Z-Reibbremse (M18)",
+      "baugruppe": 3,
+      "datei": "z_reibbremse.stl",
+      "menge": 2,
+      "material": "PETG",
+      "waende": 4,
+      "infill": 50,
+      "muster": "Gyroid",
+      "stuetzen": "keine",
+      "drucklage": "flach",
+      "hinweis": "Filzklotz Ø6 + Druckfeder + M4-Madenschraube; auf etwa 0,005 N·m einstellen (Abschnitt 7).",
+      "groesse_mm": [
+        30.0,
+        20.0,
+        16.0
+      ],
+      "volumen_cm3": 7.1,
+      "gewicht_g": 9.0,
+      "dreiecke": 1704
+    },
+    {
+      "id": "4a",
+      "name": "Waschwanne links (mit Zunge)",
+      "baugruppe": 4,
+      "datei": "waschwanne_links.stl",
+      "menge": 1,
+      "material": "PETG",
+      "waende": 5,
+      "infill": 40,
+      "muster": "Gyroid",
+      "stuetzen": "keine",
+      "drucklage": "Boden unten",
+      "hinweis": "Lagersitze 608ZZ, Wellendurchgang, Inserts für die N20-Halter; Fuge mit neutralem Silikon.",
+      "groesse_mm": [
+        145.0,
+        162.0,
+        42.0
+      ],
+      "volumen_cm3": 208.7,
+      "gewicht_g": 236.0,
+      "dreiecke": 2724
+    },
+    {
+      "id": "4b",
+      "name": "Waschwanne rechts (mit Ablauf)",
+      "baugruppe": 4,
+      "datei": "waschwanne_rechts.stl",
+      "menge": 1,
+      "material": "PETG",
+      "waende": 5,
+      "infill": 40,
+      "muster": "Gyroid",
+      "stuetzen": "keine",
+      "drucklage": "Boden unten",
+      "hinweis": "Ablauf Ø5 mit Schlauchtülle Ø8; 2× M4 durch die Überlappung.",
+      "groesse_mm": [
+        145.0,
+        162.0,
+        42.0
+      ],
+      "volumen_cm3": 193.5,
+      "gewicht_g": 223.0,
+      "dreiecke": 2148
+    },
+    {
+      "id": "4c",
+      "name": "N20-Halter",
+      "baugruppe": 4,
+      "datei": "n20_halter.stl",
+      "menge": 2,
+      "material": "PETG",
+      "waende": 4,
+      "infill": 40,
+      "muster": "Gyroid",
+      "stuetzen": "keine",
+      "drucklage": "flach",
+      "hinweis": "Zwei N20 (je Walze einer, gegenläufig verdrahtet) statt Zahnräder.",
+      "groesse_mm": [
+        26.0,
+        34.0,
+        24.0
+      ],
+      "volumen_cm3": 9.8,
+      "gewicht_g": 12.0,
+      "dreiecke": 1378
+    },
+    {
+      "id": "4d",
+      "name": "Walzenkupplung",
+      "baugruppe": 4,
+      "datei": "walzenkupplung.stl",
+      "menge": 2,
+      "material": "PETG",
+      "waende": 4,
+      "infill": 100,
+      "muster": "Linien",
+      "stuetzen": "keine",
+      "drucklage": "stehend",
+      "hinweis": "3-mm-D-Welle auf Ø8, je M3-Madenschraube.",
+      "groesse_mm": [
+        14.0,
+        14.0,
+        20.0
+      ],
+      "volumen_cm3": 2.4,
+      "gewicht_g": 3.0,
+      "dreiecke": 1894
+    },
+    {
+      "id": "4e",
+      "name": "Lüfterdüse 5015",
+      "baugruppe": 4,
+      "datei": "luefterduese.stl",
+      "menge": 1,
+      "material": "PETG",
+      "waende": 3,
+      "infill": 15,
+      "muster": "Gyroid",
+      "stuetzen": "keine",
+      "drucklage": "Einlass unten",
+      "hinweis": "Breitschlitz 146 × 3 über der Platte.",
+      "groesse_mm": [
+        150.0,
+        18.0,
+        60.0
+      ],
+      "volumen_cm3": 26.5,
+      "gewicht_g": 34.0,
+      "dreiecke": 240
+    },
+    {
+      "id": "4f",
+      "name": "Schlauchclip IPA",
+      "baugruppe": 4,
+      "datei": "schlauchclip.stl",
+      "menge": 2,
+      "material": "PETG",
+      "waende": 3,
+      "infill": 40,
+      "muster": "Gyroid",
+      "stuetzen": "keine",
+      "drucklage": "flach",
+      "hinweis": "Silikonschlauch 2 × 4.",
+      "groesse_mm": [
+        20.0,
+        10.0,
+        8.0
+      ],
+      "volumen_cm3": 0.7,
+      "gewicht_g": 1.0,
+      "dreiecke": 704
+    }
+  ]
+}
