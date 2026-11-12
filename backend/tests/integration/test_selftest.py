@@ -266,6 +266,25 @@ class TestProbes:
         assert ready.status == selftest.OK
 
     @pytest.mark.asyncio
+    async def test_spaghetti_detection_without_ml_server_is_flagged(self, db_session):
+        from backend.app.models.settings import Settings
+
+        off = await selftest.check_spaghetti(deps(db_session))
+        assert off.status == selftest.SKIP
+        db_session.add_all([Settings(key="obico_enabled", value="true"), Settings(key="obico_ml_url", value="")])
+        await db_session.commit()
+        silent = await selftest.check_spaghetti(deps(db_session))
+        assert silent.status == selftest.WARN and "kein Druck geprüft" in silent.detail["de"]
+        await db_session.execute(
+            selftest.text("UPDATE settings SET value = 'http://obico-ml:3333' WHERE key = 'obico_ml_url'")
+        )
+        await db_session.commit()
+        ready = await selftest.check_spaghetti(deps(db_session))
+        assert ready.status == selftest.OK
+        broken = await selftest.check_spaghetti(deps(db_session, extra={"obico_last_error": "Connection refused"}))
+        assert broken.status == selftest.WARN and "Connection refused" in broken.detail["de"]
+
+    @pytest.mark.asyncio
     async def test_ai_watch_states(self, db_session, monkeypatch):
         from backend.app.services import local_ai_watch
 
@@ -305,6 +324,7 @@ class TestRun:
             "assistant",
             "ai_scan",
             "ai_watch",
+            "spaghetti",
             "probe_notification",
             "probe_assistant",
         ]
@@ -325,7 +345,7 @@ class TestRun:
         out = await selftest.run(deps(db_session, scheduler_running=boom), "en")
         scheduler = next(r for r in out["results"] if r["id"] == "scheduler")
         assert scheduler["status"] == "fail" and "Planer kaputt" in scheduler["detail"]
-        assert len(out["results"]) == 15 and out["summary"]["fail"] >= 1
+        assert len(out["results"]) == 16 and out["summary"]["fail"] >= 1
 
     @pytest.mark.asyncio
     async def test_a_failing_health_snapshot_does_not_break_the_run(self, db_session):
@@ -429,7 +449,7 @@ class TestApi:
         german = (await async_client.post("/api/v1/selftest")).json()
         english = (await async_client.post("/api/v1/selftest", headers={"Accept-Language": "en"})).json()
         assert german["results"][0]["title"] == "Datenbank" and english["results"][0]["title"] == "Database"
-        assert len(german["results"]) == 15 and set(german["summary"]) == {"ok", "warn", "fail", "skip"}
+        assert len(german["results"]) == 16 and set(german["summary"]) == {"ok", "warn", "fail", "skip"}
 
     @pytest.mark.asyncio
     async def test_a_second_run_at_the_same_time_gets_429(self, async_client: AsyncClient):

@@ -150,6 +150,16 @@ OOMScoreAdjust=500
 EOF
     systemctl daemon-reload
     echo "[OK] Ollama Speicherschutz (OLLAMA_KEEP_ALIVE=2m, OOMScoreAdjust=500) gesetzt."
+    # Die neuen Werte gelten erst nach einem Neustart. Und wer Ollama vor dem Update gestoppt hat
+    # (sudo systemctl stop ollama), hat sonst bis zum nächsten Booten keinen Assistenten und keine
+    # KI-Bildprüfung: also einmal (neu) starten, wenn der Dienst aktiviert ist.
+    if systemctl is-enabled --quiet ollama 2>/dev/null; then
+        if systemctl restart ollama; then
+            echo "[OK] Ollama neu gestartet."
+        else
+            echo "[WARN] Ollama ließ sich nicht starten: journalctl -u ollama -n 30"
+        fi
+    fi
 fi
 
 # 8. Status-Check Hardware

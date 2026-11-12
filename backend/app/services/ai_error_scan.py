@@ -39,6 +39,7 @@ MAX_FEEDBACK = 4000
 MAX_IMAGE_BYTES = 15 * 1024 * 1024
 MAX_IMAGE_PIXELS = 40_000_000  # ~40 MP; darüber ist es kein Kamerabild mehr
 MIN_VISION_TIMEOUT = 300  # am Pi 5 gemessen: ein neues Bild knapp 3 Minuten, der Kaltstart mehr als 3 Minuten
+SERVER_RETRY_SECONDS = 300  # nach "Server nicht erreichbar" pausieren automatische Prüfungen so lange
 _ALLOWED_IDS = {pattern["id"] for pattern in error_patterns.PATTERNS}
 _lock = threading.Lock()
 _write_lock = threading.Lock()
@@ -47,10 +48,32 @@ _tasks: set[asyncio.Task] = set()
 _ANNOUNCE_SOURCES = frozenset({"plate_not_empty", "ai_failure_detection"})
 _batch_lock = threading.Lock()
 _batch: dict[str, Any] = {"running": False, "done": 0, "total": 0, "matched": 0, "errors": 0, "started": None}
+# Monotone Zeit, bis zu der automatische Prüfungen ausbleiben, weil der Modell-Server nicht erreichbar war.
+# Ohne diese Pause startete jede blockierte Plattenprüfung einen neuen Versuch (am Pi 852 Fehlschläge an einem Abend).
+_server_down_until = 0.0
 
 
 class AiScanError(RuntimeError):
     """Modell nicht erreichbar, ohne Bildunterstützung oder Antwort unbrauchbar."""
+
+
+class AiServerUnreachable(AiScanError):
+    """Der Modell-Server nimmt keine Verbindung an (z. B. Ollama gestoppt)."""
+
+
+def server_down_remaining() -> float:
+    """Sekunden, die automatische Prüfungen noch pausieren (0 = keine Pause)."""
+    return max(0.0, _server_down_until - time.monotonic())
+
+
+def _mark_server_down() -> None:
+    global _server_down_until
+    _server_down_until = time.monotonic() + SERVER_RETRY_SECONDS
+
+
+def _mark_server_up() -> None:
+    global _server_down_until
+    _server_down_until = 0.0
 
 
 def _prepare_image(image_bytes: bytes) -> str:
@@ -214,6 +237,15 @@ async def classify(image_bytes: bytes, config: dict[str, Any] | None = None) -> 
                 content = await asyncio.wait_for(_openai_vision(base_url, model, image_b64, timeout), timeout=timeout)
         except asyncio.TimeoutError as exc:
             raise AiScanError(f"Die Bildanalyse hat das Zeitlimit von {timeout:.0f} s überschritten.") from exc
+        except (httpx.ConnectError, httpx.ConnectTimeout) as exc:
+            _mark_server_down()
+            raise AiServerUnreachable(
+                f"Der Modell-Server unter {base_url} ist nicht erreichbar. Läuft Ollama? "
+                "Auf dem Pi: sudo systemctl start ollama"
+            ) from exc
+        except httpx.HTTPError as exc:
+            raise AiScanError(f"Die Verbindung zum Modell-Server ist abgebrochen ({type(exc).__name__}).") from exc
+        _mark_server_up()
         duration_ms = int((time.monotonic() - started) * 1000)
     result = _parse_reply(content)
     result["model"] = model
@@ -645,6 +677,9 @@ def schedule_failure_scan(image_bytes: bytes, printer_id: int | None, source: st
         return False
     if not config.get("error_scan_enabled"):
         return False
+    if server_down_remaining() > 0:
+        logger.debug("AI error scan skipped: model server unreachable, retry in %.0f s", server_down_remaining())
+        return False
     try:
         asyncio.get_running_loop()
     except RuntimeError:
@@ -654,6 +689,10 @@ def schedule_failure_scan(image_bytes: bytes, printer_id: int | None, source: st
         async with _auto_semaphore:
             try:
                 await scan_and_record(image_bytes, source=source, printer_id=printer_id, config=config)
+            except AiServerUnreachable as exc:
+                logger.warning("AI error scan paused for %d s: %s", SERVER_RETRY_SECONDS, exc)
+            except AiScanError as exc:
+                logger.warning("AI error scan failed: %s", exc)
             except Exception:  # noqa: BLE001 - Hintergrundprüfung darf nichts abbrechen
                 logger.warning("AI error scan failed", exc_info=True)
 

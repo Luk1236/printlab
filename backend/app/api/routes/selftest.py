@@ -33,6 +33,17 @@ def _guard_state() -> str:
     return "ok" if update_guard.guard_in_unit(unit) else "missing"
 
 
+def _obico_last_error() -> str | None:
+    """Letzter Fehler der Spaghetti-Erkennung (nur Text, nie die Adresse mit Zugangsschlüssel)."""
+    try:
+        from backend.app.services.obico_detection import obico_detection_service
+
+        error = getattr(obico_detection_service, "_last_error", None)
+    except Exception:  # noqa: BLE001 - die Systemprüfung darf daran nicht scheitern
+        return None
+    return str(error)[:200] if error else None
+
+
 @router.post("")
 async def run_selftest(
     request: Request,
@@ -58,6 +69,7 @@ async def run_selftest(
             guard_state=_guard_state,
             auth_enabled=is_auth_enabled,
             due_watch_interval=queue_due_watch.CHECK_INTERVAL_SECONDS,
+            extra={"obico_last_error": _obico_last_error()},
         )
         language = "en" if wants_english(request.headers.get("accept-language")) else "de"
         return await selftest.run(deps, language)

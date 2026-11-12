@@ -66,6 +66,7 @@ TITLES = {
     "assistant": L("KI-Assistent", "AI assistant"),
     "ai_scan": L("KI-Fehlererkennung", "AI error detection"),
     "ai_watch": L("Laufende KI-Überwachung", "Continuous AI watch"),
+    "spaghetti": L("Spaghetti-Erkennung (Obico)", "Spaghetti detection (Obico)"),
     "probe_assistant": L("Probefrage an das Modell", "Test question to the model"),
     "backup": L("Sicherungen", "Backups"),
     "device": L("Zustand des Geräts", "Device health"),
@@ -318,8 +319,14 @@ async def check_ai_scan(d: Deps) -> Result:
         return Result(
             "ai_scan",
             FAIL,
-            L("Kein Modell-Server für die Bildprüfung erreichbar.", "No model server reachable for image checks."),
-            L("Auf dem Pi: werkzeuge/ki_einrichten.sh ausführen.", "On the Pi: run werkzeuge/ki_einrichten.sh."),
+            L(
+                f"Kein Modell-Server für die Bildprüfung unter {config.get('base_url') or 'http://127.0.0.1:11434'} erreichbar.",
+                f"No model server reachable for image checks at {config.get('base_url') or 'http://127.0.0.1:11434'}.",
+            ),
+            L(
+                "Auf dem Pi: sudo systemctl enable --now ollama (ist Ollama nicht installiert: werkzeuge/ki_einrichten.sh --installieren).",
+                "On the Pi: sudo systemctl enable --now ollama (if Ollama is not installed: werkzeuge/ki_einrichten.sh --installieren).",
+            ),
         )
     vision = str(config.get("vision_model") or config.get("model") or "").strip()
     models = server.get("models") or []
@@ -385,6 +392,40 @@ async def check_ai_watch(d: Deps) -> Result:
             f"Running, last {state['last_run'][:16].replace('T', ' ')}.",
         ),
     )
+
+
+async def check_spaghetti(d: Deps) -> Result:
+    """Obico-Spaghetti-Erkennung: eingeschaltet ohne ML-Server läuft sie still nie."""
+    query = text("SELECT key, value FROM settings WHERE key IN ('obico_enabled', 'obico_ml_url')")
+    rows = dict((await d.db.execute(query)).tuples().all())
+    if str(rows.get("obico_enabled") or "false").lower() != "true":
+        return Result(
+            "spaghetti", SKIP, L("Die Spaghetti-Erkennung ist ausgeschaltet.", "Spaghetti detection is turned off.")
+        )
+    if not str(rows.get("obico_ml_url") or "").strip():
+        return Result(
+            "spaghetti",
+            WARN,
+            L(
+                "Eingeschaltet, aber ohne Adresse des Obico-ML-Servers: Es wird kein Druck geprüft.",
+                "Turned on, but without an Obico ML server address: no print is checked.",
+            ),
+            L(
+                "Unter Einstellungen → Spaghetti-Erkennung die ML-URL eintragen (eigener Obico-ML-Container) "
+                "oder dort ausschalten und die laufende KI-Überwachung nutzen.",
+                "Enter the ML URL under Settings → Spaghetti detection (own Obico ML container), "
+                "or turn it off there and use the continuous AI watch.",
+            ),
+        )
+    error = d.extra.get("obico_last_error")
+    if error:
+        return Result(
+            "spaghetti",
+            WARN,
+            L(f"Der ML-Server meldete zuletzt: {error}", f"The ML server last reported: {error}"),
+            L("Läuft der Obico-ML-Container? Adresse unter Einstellungen prüfen.", "Is the Obico ML container running? Check the address in Settings."),
+        )  # fmt: skip
+    return Result("spaghetti", OK, L("Eingeschaltet, ML-Server eingetragen.", "Turned on, ML server configured."))
 
 
 async def check_assistant(d: Deps) -> Result:
@@ -569,6 +610,7 @@ async def run(d: Deps, lang: str = "de") -> dict[str, Any]:
     assistant = await add("assistant", lambda: check_assistant(d))
     await add("ai_scan", lambda: check_ai_scan(d))
     await add("ai_watch", lambda: check_ai_watch(d))
+    await add("spaghetti", lambda: check_spaghetti(d))
     await add("probe_notification", lambda: probe_notification(d))
     await add("probe_assistant", lambda: probe_assistant(d, assistant))
 

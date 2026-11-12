@@ -49,6 +49,57 @@ class TestClassifyLimits:
         assert vision.await_args.args[3] == ai_error_scan.MIN_VISION_TIMEOUT
 
 
+class TestServerUnreachable:
+    """Ollama gestoppt: klare Meldung statt Traceback, automatische Prüfungen pausieren (am Pi 852 Fehlschläge)."""
+
+    @pytest.fixture(autouse=True)
+    def _reset(self):
+        ai_error_scan._mark_server_up()
+        yield
+        ai_error_scan._mark_server_up()
+
+    async def test_a_refused_connection_names_the_server_and_pauses_automatic_scans(self):
+        import httpx
+
+        config = {"vision_model": "m", "base_url": "http://127.0.0.1:11434", "error_scan_enabled": True}
+        with (
+            patch.object(ai_error_scan, "_is_ollama", AsyncMock(return_value=False)),
+            patch.object(ai_error_scan, "_openai_vision", AsyncMock(side_effect=httpx.ConnectError("refused"))),
+            pytest.raises(ai_error_scan.AiServerUnreachable, match="127.0.0.1:11434.*systemctl start ollama"),
+        ):
+            await ai_error_scan.classify(TestClassifyLimits._image(), config)
+        assert ai_error_scan.server_down_remaining() > ai_error_scan.SERVER_RETRY_SECONDS - 5
+        with (
+            patch.object(ai_error_scan.assistant_config, "read", return_value=config),
+            patch.object(ai_error_scan, "_spawn") as spawn,
+        ):
+            assert ai_error_scan.schedule_failure_scan(b"img", 1, "plate_not_empty") is False
+        spawn.assert_not_called()
+
+    async def test_a_successful_answer_ends_the_pause(self):
+        ai_error_scan._mark_server_down()
+        reply = '{"pattern_id": "none", "confidence": 0, "reason": ""}'
+        with (
+            patch.object(ai_error_scan, "_is_ollama", AsyncMock(return_value=True)),
+            patch.object(ai_error_scan, "_ollama_vision", AsyncMock(return_value=reply)),
+        ):
+            await ai_error_scan.classify(TestClassifyLimits._image(), {"vision_model": "m"})
+        assert ai_error_scan.server_down_remaining() == 0
+
+    async def test_a_background_scan_logs_one_line_without_traceback(self, caplog):
+        config = {"vision_model": "m", "error_scan_enabled": True}
+        error = ai_error_scan.AiServerUnreachable("Der Modell-Server unter x ist nicht erreichbar.")
+        with (
+            patch.object(ai_error_scan.assistant_config, "read", return_value=config),
+            patch.object(ai_error_scan, "scan_and_record", AsyncMock(side_effect=error)),
+            caplog.at_level("WARNING", logger=ai_error_scan.__name__),
+        ):
+            assert ai_error_scan.schedule_failure_scan(b"img", 1, "plate_not_empty") is True
+            await asyncio.gather(*ai_error_scan._tasks)
+        records = [r for r in caplog.records if r.name == ai_error_scan.__name__]
+        assert len(records) == 1 and "paused" in records[0].getMessage() and records[0].exc_info is None
+
+
 class TestParseReply:
     def test_reads_the_json_even_inside_a_code_fence(self):
         result = ai_error_scan._parse_reply(
