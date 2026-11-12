@@ -108,7 +108,9 @@ class TestOverviews:
         invoices.cancel(gone["id"])
         assert [i["id"] for i in invoices.overdue(TODAY)] == [late["id"]]
         assert fresh["id"] not in [i["id"] for i in invoices.overdue(TODAY)]
-        assert invoices.totals() == {"EUR": {"open": 7.2, "overdue": 3.6, "paid": 3.6}}
+        assert invoices.totals(TODAY) == {"EUR": {"open": 7.2, "overdue": 3.6, "paid": 3.6}}
+        # Später ist auch die frische Rechnung über dem Zahlungsziel; ohne Stichtag zählte der Test das heutige Datum
+        assert invoices.totals(date(2027, 1, 1))["EUR"]["overdue"] == 7.2
 
     def test_list_filter_and_get(self):
         a = invoices.create_from_quote(quote()["id"], COMPANY, today=TODAY)

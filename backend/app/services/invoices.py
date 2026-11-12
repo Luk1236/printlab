@@ -195,14 +195,15 @@ def overdue(today: date | None = None) -> list[dict[str, Any]]:
     return out
 
 
-def totals() -> dict[str, dict[str, float]]:
+def totals(today: date | None = None) -> dict[str, dict[str, float]]:
     """Summen je Währung: offen, überfällig, bezahlt (stornierte zählen nicht).
 
+    ``today`` legt wie bei ``overdue`` den Stichtag für „überfällig“ fest (Standard: heute, UTC).
     Summiert in ``Decimal`` und rundet einmal am Ende: wiederholtes ``round()`` auf ``float`` driften
     bei vielen Rechnungen um Cents auseinander.
     """
     sums: dict[str, dict[str, Decimal]] = {}
-    overdue_ids = {i["id"] for i in overdue()}
+    overdue_ids = {i["id"] for i in overdue(today)}
     for item in _read():
         if item.get("status") == "cancelled":
             continue
