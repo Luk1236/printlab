@@ -91,6 +91,14 @@ def test_the_plan_lists_every_part():
     assert "plate_washer_station_basin.stl" not in text
 
 
+def test_generator_never_uses_manifold_rotate():
+    """``Manifold.rotate`` liefert in manifold3d 3.5.4 verzerrte Körper (doppeltes Volumen); bauteile.rotate nutzt transform."""
+    src = ROOT / "werkzeuge" / "automation_hardware" / "bauteile.py"
+    if not src.exists():
+        pytest.skip("werkzeuge/ fehlt in dieser Umgebung")
+    assert ".rotate(" not in src.read_text(encoding="utf-8")
+
+
 def test_rack_combs_keep_the_guide_inside_the_tower_posts():
     """Fachkamm-Führung liegt zwischen Plattenkante und Steher (lichte Weite 266 mm, Platte 257 mm)."""
     names = {p["datei"] for p in _parts()}

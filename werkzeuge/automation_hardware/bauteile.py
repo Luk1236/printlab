@@ -46,6 +46,7 @@ M3_HEAD = 6.2
 M4_CLEAR = 4.5
 M5_CLEAR = 5.5
 M5_CSK = 10.4  # Senkkopf M5 (DIN 7991)
+NEMA17_WIDTH = 42.3  # Kantenlänge des Motorgehäuses
 
 ANNAHMEN = {
     "glass_thickness": 4.0,  # Glasdicke der P2S-Tür (nicht veröffentlicht, messen)
@@ -85,13 +86,42 @@ def box(x0: float, y0: float, z0: float, x1: float, y1: float, z1: float) -> Man
     return Manifold.cube((x1 - x0, y1 - y0, z1 - z0)).translate((x0, y0, z0))
 
 
+def _cos_sin(deg: float) -> tuple[float, float]:
+    """cos/sin in Grad, für Vielfache von 90° exakt (keine Rundungsreste in den Flächen)."""
+    if deg % 90 == 0:
+        k = int(deg // 90) % 4
+        return ((1.0, 0.0), (0.0, 1.0), (-1.0, 0.0), (0.0, -1.0))[k]
+    a = math.radians(deg)
+    return math.cos(a), math.sin(a)
+
+
+def rotate(m: Manifold, v: tuple[float, float, float]) -> Manifold:
+    """Drehung um die globale X-, dann Y-, dann Z-Achse (Grad), wie ``Manifold.rotate`` dokumentiert.
+
+    ``Manifold.rotate`` selbst liefert in manifold3d 3.5.4 (Windows-Wheel) falsche Geometrie (verzerrt, doppeltes
+    Volumen, nicht einmal reproduzierbar); ``transform`` mit einer Matrix ist korrekt. Deshalb nie ``.rotate`` verwenden.
+    """
+    cx, sx = _cos_sin(v[0])
+    cy, sy = _cos_sin(v[1])
+    cz, sz = _cos_sin(v[2])
+    rx = [[1, 0, 0], [0, cx, -sx], [0, sx, cx]]
+    ry = [[cy, 0, sy], [0, 1, 0], [-sy, 0, cy]]
+    rz = [[cz, -sz, 0], [sz, cz, 0], [0, 0, 1]]
+
+    def mat(a: list[list[float]], b: list[list[float]]) -> list[list[float]]:
+        return [[sum(a[i][k] * b[k][j] for k in range(3)) for j in range(3)] for i in range(3)]
+
+    r = mat(rz, mat(ry, rx))
+    return m.transform([[*row, 0.0] for row in r])
+
+
 def cyl(axis: str, cx: float, cy: float, cz: float, length: float, d: float, *, segments: int = SEG) -> Manifold:
     """Zylinder entlang ``axis`` mit Mittelpunkt (cx, cy, cz) der Grundfläche, Länge in Achsrichtung positiv."""
     body = Manifold.cylinder(length, d / 2, d / 2, segments)
     if axis == "x":
-        body = body.rotate((0, 90, 0))
+        body = rotate(body, (0, 90, 0))
     elif axis == "y":
-        body = body.rotate((-90, 0, 0))
+        body = rotate(body, (-90, 0, 0))
     return body.translate((cx, cy, cz))
 
 
@@ -211,16 +241,16 @@ def _comb_right(front: bool, sensors: bool) -> Manifold:
         cuts.append(cyl("x", GUIDE_X - 1, post_y, z, 10, M5_CLEAR))
         # Senkung von der Führungsseite, bündig
         cuts.append(
-            Manifold.cylinder(2.75, M5_CSK / 2, M5_CLEAR / 2, SEG).rotate((0, 90, 0)).translate((GUIDE_X, post_y, z))
+            rotate(Manifold.cylinder(2.75, M5_CSK / 2, M5_CLEAR / 2, SEG), (0, 90, 0)).translate((GUIDE_X, post_y, z))
         )
     if front:
         # Einlaufschräge vorne an jeder Leiste: 45°-Fase über die Vorderkante (Würfel um die Kante gedreht)
         for z in pc.SLOT_Z:
             top = z - 1.5
             cuts.append(
-                Manifold.cube((GUIDE_X - LEDGE_IN + 2, 4.3, 4.3))
-                .rotate((45, 0, 0))
-                .translate((LEDGE_IN - 1, y1, top - 3.0))
+                rotate(Manifold.cube((GUIDE_X - LEDGE_IN + 2, 4.3, 4.3)), (45, 0, 0)).translate(
+                    (LEDGE_IN - 1, y1, top - 3.0)
+                )
             )
     if sensors:
         # Taschen für die Gabellichtschranken TCST2103 (24,5 × 6,3 × 10,8), Gabel waagerecht auf Plattenhöhe
@@ -346,26 +376,31 @@ def riemenspanner() -> Manifold:
         box(8, -4.75, -1, 31, 4.75, 15),  # Gabel 9,5 mm
         cyl("y", 20, -14, 7, 28, 5.2),  # Achse der Umlenkrolle
         cyl("x", -1, 0, 7, 10, M3_CLEAR),  # Spannschraube
-        Manifold.cylinder(3.0, 5.7 / math.sqrt(3), 5.7 / math.sqrt(3), 6).rotate((0, 90, 0)).translate((5.5, 0, 7)),
+        rotate(Manifold.cylinder(3.0, 5.7 / math.sqrt(3), 5.7 / math.sqrt(3), 6), (0, 90, 0)).translate((5.5, 0, 7)),
         *[slot_z(4.0, y, M5_CLEAR, 8.0, along="x") for y in (-9.5, 9.5)],
     ]
     return body - union(cuts)
 
 
 def motorhalter() -> Manifold:
-    """3j: L-Halter NEMA17 (Lochbild 31 mm, Zentrierbund Ø22) mit Fuß für das 2020-Profil."""
-    face = box(0, 0, 0, 48, 5, 53)
-    foot = box(0, 0, 0, 48, 30, 5)
+    """3j: L-Halter NEMA17 (Lochbild 31 mm, Zentrierbund Ø22) mit Fuß für das 2020-Profil.
+
+    Die Rippen stehen außen neben dem Motor: 44 mm lichte Weite für den 42,3 mm breiten NEMA17.
+    """
+    w = 52.0
+    face = box(0, 0, 0, w, 5, 53)
+    foot = box(0, 0, 0, w, 30, 5)
     gussets = [
         Manifold.cube((4, 25, 25)).translate((x, 0, 0))
-        ^ Manifold.cube((4, 40, 40)).rotate((45, 0, 0)).translate((x, 5, -28.3 + 5 + 25))
-        for x in (0, 44)
+        ^ rotate(Manifold.cube((4, 40, 40)), (45, 0, 0)).translate((x, 5, -28.3 + 5 + 25))
+        for x in (0, w - 4)
     ]
     body = union([face, foot, *gussets])
-    cz = 29.0
-    cuts = [cyl("y", 24, -1, cz, 7, 22.5)]
-    cuts += [cyl("y", 24 + dx, -1, cz + dz, 7, M3_CLEAR) for dx in (-15.5, 15.5) for dz in (-15.5, 15.5)]
-    cuts += [slot_z(x, 19.0, M5_CLEAR, 8.0, along="y") for x in (12.0, 36.0)]
+    cx, cz = w / 2, 29.0
+    assert w - 8 > NEMA17_WIDTH, "Motor muss zwischen die Rippen passen"
+    cuts = [cyl("y", cx, -1, cz, 7, 22.5)]
+    cuts += [cyl("y", cx + dx, -1, cz + dz, 7, M3_CLEAR) for dx in (-15.5, 15.5) for dz in (-15.5, 15.5)]
+    cuts += [slot_z(x, 19.0, M5_CLEAR, 8.0, along="y") for x in (cx - 12.0, cx + 12.0)]
     return body - union(cuts)
 
 
@@ -396,7 +431,7 @@ def z_reibbremse() -> Manifold:
     cuts = [
         drill_z(10, 0, 8.8),  # Spindel Tr8 läuft durch
         cyl("x", 14.0, 0, 8, 17, 6.5),  # Bohrung für Klotz und Feder
-        Manifold.cylinder(3.5, 7.2 / math.sqrt(3), 7.2 / math.sqrt(3), 6).rotate((0, 90, 0)).translate((25.5, 0, 8)),
+        rotate(Manifold.cylinder(3.5, 7.2 / math.sqrt(3), 7.2 / math.sqrt(3), 6), (0, 90, 0)).translate((25.5, 0, 8)),
         *[drill_z(24, y, M5_CLEAR) for y in (-7, 7)],
     ]
     return body - union(cuts)

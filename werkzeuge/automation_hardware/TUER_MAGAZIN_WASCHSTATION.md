@@ -147,26 +147,26 @@ Erzeugt von `python werkzeuge/automation_hardware/bauteile.py` (braucht `pip ins
 | **2a** | Fachkamm vorne rechts | `fachkamm_vorne_rechts.stl` | 1 | PETG | 4 · 30 % Gyroid | Anlagefläche am Steher unten | 105 × 125 × 10,5 | 69 | 2× M5×10 Senkkopf mit Nutenstein; Einlaufschräge vorne. |
 | **2a** | Fachkamm vorne links | `fachkamm_vorne_links.stl` | 1 | PETG | 4 · 30 % Gyroid | Anlagefläche am Steher unten | 105 × 125 × 10,5 | 69 | Spiegelbild von vorne rechts. |
 | **2b** | Fachkamm hinten rechts mit Lichtschranken | `fachkamm_hinten_rechts.stl` | 1 | PETG | 4 · 30 % Gyroid | Anlagefläche am Steher unten | 105 × 125,5 × 24,5 | 81 | Anschlag hinter der Platte, 4 Taschen für TCST2103 (2× M3 je Sensor); Sensorlage am Aufbau prüfen. |
-| **2b** | Fachkamm hinten links | `fachkamm_hinten_links.stl` | 1 | PETG | 4 · 30 % Gyroid | Anlagefläche am Steher unten | 105 × 125 × 10,5 | 72 | Anschlag hinter der Platte, ohne Sensoren. |
+| **2b** | Fachkamm hinten links | `fachkamm_hinten_links.stl` | 1 | PETG | 4 · 30 % Gyroid | Anlagefläche am Steher unten | 105 × 125 × 10,5 | 73 | Anschlag hinter der Platte, ohne Sensoren. |
 | **3a** | Z-Wagenplatte | `z_wagenplatte.stl` | 2 | PETG-CF | 5 · 60 % Gyroid | flach | 62 × 50 × 10 | 34 | Trägt den Querträger: 4× M3 zum MGN12H, 2× M5 in die Nut, 2 Inserts für den Mutterhalter. |
 | **3b** | Spindelmutter-Halter | `z_mutterhalter.stl` | 2 | PETG-CF | 5 · 60 % Gyroid | flach | 40 × 28 × 12 | 15 | Messing-Flanschmutter Tr8×2, 4× M3 selbstschneidend; Langlöcher gleichen 0,5 mm aus. |
 | **3c** | X-Schlitten | `x_schlitten.stl` | 1 | PETG-CF | 5 · 50 % Gyroid | flach | 90 × 60 × 8 | 47 | MGN12H, Y-Träger mit 2× M5, Riemenklemmen auf 4 Inserts. |
 | **3e** | Y-Wagen | `y_wagen.stl` | 1 | PETG-CF | 5 · 50 % Gyroid | flach | 60 × 30 × 10 | 20 | MGN9H, Greiferarm 20 × 10 mit 2× M4, Riemenklemme auf 2 Inserts. |
 | **3g** | Greiferkopf | `greiferkopf.stl` | 1 | ASA | 5 · 50 % Gyroid | Magnetfläche unten | 80 × 34 × 22 | 40 | Magnet Ø25 × 20 mit 2 Madenschrauben M3, Mikroschalter „Platte gegriffen“ mit M2. |
 | **3h** | Riemenklemme GT2 | `riemenklemme.stl` | 4 | PETG | 4 · 60 % Linien | Zahnseite unten | 20 × 12 × 8 | 2 | Zahnprofil 2 mm, Riemen 6 mm, 2× M3. |
-| **3i** | Riemenspanner | `riemenspanner.stl` | 2 | PETG | 4 · 50 % Gyroid | flach | 30 × 26 × 14 | 7 | Umlenkrolle 20T, Achse M5; Spannschraube M3 mit Mutter. |
-| **3j** | Motorhalter X/Y | `motorhalter.stl` | 2 | ASA | 5 · 40 % Gyroid | Fuß unten | 48 × 30 × 53 | 18 | NEMA17 wird 60 bis 70 °C warm: ASA, kein PLA oder PETG. |
+| **3i** | Riemenspanner | `riemenspanner.stl` | 2 | PETG | 4 · 50 % Gyroid | flach | 30 × 26 × 14 | 8 | Umlenkrolle 20T, Achse M5; Spannschraube M3 mit Mutter. |
+| **3j** | Motorhalter X/Y | `motorhalter.stl` | 2 | ASA | 5 · 40 % Gyroid | Fuß unten | 52 × 30 × 53 | 21 | NEMA17 wird 60 bis 70 °C warm: ASA, kein PLA oder PETG. |
 | **3k** | Endschalterhalter X/Y/Z | `endschalterhalter.stl` | 3 | PETG | 3 · 30 % Gyroid | Fuß unten | 30 × 15 × 14 | 3 | KW12, 2× M2 selbstschneidend, M5-Langloch für die Profilnut. |
 | **3k** | Schaltfahne | `schaltfahne.stl` | 3 | PETG | 3 · 30 % Gyroid | flach | 25 × 10 × 3 | 1 | Mit M3 am bewegten Teil, Langloch zum Einstellen. |
 | **3l** | Kettenaufnahme | `kettenaufnahme.stl` | 6 | PETG | 3 · 30 % Gyroid | flach | 25 × 30 × 8 | 5 | Lochbild der Kettenendstücke am Kauf prüfen. |
 | **3m** | Z-Reibbremse (M18) | `z_reibbremse.stl` | 2 | PETG | 4 · 50 % Gyroid | flach | 30 × 20 × 16 | 9 | Filzklotz Ø6 + Druckfeder + M4-Madenschraube; auf etwa 0,005 N·m einstellen (Abschnitt 7). |
-| **4a** | Waschwanne links (mit Zunge) | `waschwanne_links.stl` | 1 | PETG | 5 · 40 % Gyroid | Boden unten | 145 × 162 × 42 | 236 | Lagersitze 608ZZ, Wellendurchgang, Inserts für die N20-Halter; Fuge mit neutralem Silikon. |
+| **4a** | Waschwanne links (mit Zunge) | `waschwanne_links.stl` | 1 | PETG | 5 · 40 % Gyroid | Boden unten | 145 × 162 × 42 | 238 | Lagersitze 608ZZ, Wellendurchgang, Inserts für die N20-Halter; Fuge mit neutralem Silikon. |
 | **4b** | Waschwanne rechts (mit Ablauf) | `waschwanne_rechts.stl` | 1 | PETG | 5 · 40 % Gyroid | Boden unten | 145 × 162 × 42 | 223 | Ablauf Ø5 mit Schlauchtülle Ø8; 2× M4 durch die Überlappung. |
-| **4c** | N20-Halter | `n20_halter.stl` | 2 | PETG | 4 · 40 % Gyroid | flach | 26 × 34 × 24 | 12 | Zwei N20 (je Walze einer, gegenläufig verdrahtet) statt Zahnräder. |
+| **4c** | N20-Halter | `n20_halter.stl` | 2 | PETG | 4 · 40 % Gyroid | flach | 26 × 34 × 24 | 13 | Zwei N20 (je Walze einer, gegenläufig verdrahtet) statt Zahnräder. |
 | **4d** | Walzenkupplung | `walzenkupplung.stl` | 2 | PETG | 4 · 100 % Linien | stehend | 14 × 14 × 20 | 3 | 3-mm-D-Welle auf Ø8, je M3-Madenschraube. |
 | **4e** | Lüfterdüse 5015 | `luefterduese.stl` | 1 | PETG | 3 · 15 % Gyroid | Einlass unten | 150 × 18 × 60 | 34 | Breitschlitz 146 × 3 über der Platte. |
 | **4f** | Schlauchclip IPA | `schlauchclip.stl` | 2 | PETG | 3 · 40 % Gyroid | flach | 20 × 10 × 8 | 1 | Silikonschlauch 2 × 4. |
-| | **Summe** | 26 Dateien | 46 Teile | | | | | **1173** | ASA 96 g, PETG 912 g, PETG-CF 165 g |
+| | **Summe** | 26 Dateien | 46 Teile | | | | | **1186** | ASA 102 g, PETG 919 g, PETG-CF 165 g |
 
 ### B. Aluminium-Profile, Lineartechnik & Mechanik (P2S-Zuschnittliste)
 
@@ -312,7 +312,7 @@ Lochbild $20 \times 20$, M3; **MGN9H** Wagen $20 \times 39{,}9$, Lochbild $15 \t
 | **3g** | Greiferkopf | 1 | $80 \times 34 \times 22$ mm | ASA | Magnettasche $\varnothing 25{,}3 \times 20$ (Magnet $\varnothing 25 \times 20$), 2× M3 Madenschraube, Kabelausgang $6 \times 4$. Magnetfläche liegt **6 mm hinter der Plattenvorderkante** auf der Platte, Backenoberkante 8 mm über der Plattenoberkante. Kontaktschalter in der Backe meldet „Platte gegriffen“. |
 | **3h** | Riemenklemme GT2 | 4 | $20 \times 12 \times 8$ mm | PETG | Je zwei an X- und Y-Riemen, Zahnprofil 2 mm, Riemen 6 mm. |
 | **3i** | Riemenspanner | 2 | $30 \times 26 \times 14$ mm | PETG | Am Umlenkende von X und Y, Spannweg 8 mm. |
-| **3j** | Motorhalter X und Y | 2 | $48 \times 30 \times 53$ mm | ASA | NEMA17 (Lochbild 31 mm, Zentrierbund $\varnothing 22$). Motor wird 60 bis 70 °C warm: ASA, kein PLA. |
+| **3j** | Motorhalter X und Y | 2 | $52 \times 30 \times 53$ mm | ASA | NEMA17 (Lochbild 31 mm, Zentrierbund $\varnothing 22$), Rippen außen mit 44 mm lichter Weite für das 42,3-mm-Gehäuse. Motor wird 60 bis 70 °C warm: ASA, kein PLA. |
 | **3k** | Endschalter-Halter und Fahnen | 3 + 3 | Halter $30 \times 15 \times 12$, Fahne $25 \times 10 \times 3$ | PETG | Mikroschalter KW12 (Lochabstand 9,5 mm, M2,5). Je einer für X, Y, Z. Fahne löst nur beim Anfahren von der Seite aus. |
 | **3l** | Kettenaufnahmen | 6 | $25 \times 30 \times 8$ mm | PETG | Zwei je Energiekette (Z, X, Y). Kette innen $10 \times 15$ mm. |
 | **3m** | Z-Reibbremse (M18) | 2 | $30 \times 20 \times 16$ mm | PETG | Spindel läuft durch, Filzklotz Ø 6 + Druckfeder + M4-Madenschraube drücken seitlich auf das Gewinde; auf etwa 0,005 N·m einstellen (Abschnitt 7). |

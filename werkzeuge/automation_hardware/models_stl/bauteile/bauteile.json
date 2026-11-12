@@ -104,9 +104,9 @@
         15.0,
         15.0
       ],
-      "volumen_cm3": 2.7,
+      "volumen_cm3": 2.8,
       "gewicht_g": 3.0,
-      "dreiecke": 560
+      "dreiecke": 544
     },
     {
       "id": "2a",
@@ -126,9 +126,9 @@
         125.0,
         10.5
       ],
-      "volumen_cm3": 54.1,
+      "volumen_cm3": 54.3,
       "gewicht_g": 69.0,
-      "dreiecke": 1350
+      "dreiecke": 1086
     },
     {
       "id": "2a",
@@ -148,9 +148,9 @@
         125.0,
         10.5
       ],
-      "volumen_cm3": 54.1,
+      "volumen_cm3": 54.3,
       "gewicht_g": 69.0,
-      "dreiecke": 1350
+      "dreiecke": 1086
     },
     {
       "id": "2b",
@@ -170,9 +170,9 @@
         125.5,
         24.5
       ],
-      "volumen_cm3": 63.8,
+      "volumen_cm3": 63.7,
       "gewicht_g": 81.0,
-      "dreiecke": 3608
+      "dreiecke": 4498
     },
     {
       "id": "2b",
@@ -192,9 +192,9 @@
         125.0,
         10.5
       ],
-      "volumen_cm3": 56.8,
-      "gewicht_g": 72.0,
-      "dreiecke": 1512
+      "volumen_cm3": 57.1,
+      "gewicht_g": 73.0,
+      "dreiecke": 1240
     },
     {
       "id": "3a",
@@ -304,7 +304,7 @@
       ],
       "volumen_cm3": 42.5,
       "gewicht_g": 40.0,
-      "dreiecke": 2974
+      "dreiecke": 2950
     },
     {
       "id": "3h",
@@ -346,9 +346,9 @@
         26.0,
         14.0
       ],
-      "volumen_cm3": 5.7,
-      "gewicht_g": 7.0,
-      "dreiecke": 1568
+      "volumen_cm3": 6.0,
+      "gewicht_g": 8.0,
+      "dreiecke": 1116
     },
     {
       "id": "3j",
@@ -364,13 +364,13 @@
       "drucklage": "Fuß unten",
       "hinweis": "NEMA17 wird 60 bis 70 °C warm: ASA, kein PLA oder PETG.",
       "groesse_mm": [
-        48.0,
+        52.0,
         30.0,
         53.0
       ],
-      "volumen_cm3": 17.1,
-      "gewicht_g": 18.0,
-      "dreiecke": 1910
+      "volumen_cm3": 19.5,
+      "gewicht_g": 21.0,
+      "dreiecke": 1938
     },
     {
       "id": "3k",
@@ -392,7 +392,7 @@
       ],
       "volumen_cm3": 2.7,
       "gewicht_g": 3.0,
-      "dreiecke": 828
+      "dreiecke": 812
     },
     {
       "id": "3k",
@@ -456,9 +456,9 @@
         20.0,
         16.0
       ],
-      "volumen_cm3": 7.1,
+      "volumen_cm3": 7.3,
       "gewicht_g": 9.0,
-      "dreiecke": 1704
+      "dreiecke": 1500
     },
     {
       "id": "4a",
@@ -478,9 +478,9 @@
         162.0,
         42.0
       ],
-      "volumen_cm3": 208.7,
-      "gewicht_g": 236.0,
-      "dreiecke": 2724
+      "volumen_cm3": 214.2,
+      "gewicht_g": 238.0,
+      "dreiecke": 2562
     },
     {
       "id": "4b",
@@ -500,9 +500,9 @@
         162.0,
         42.0
       ],
-      "volumen_cm3": 193.5,
+      "volumen_cm3": 198.4,
       "gewicht_g": 223.0,
-      "dreiecke": 2148
+      "dreiecke": 1904
     },
     {
       "id": "4c",
@@ -522,9 +522,9 @@
         34.0,
         24.0
       ],
-      "volumen_cm3": 9.8,
-      "gewicht_g": 12.0,
-      "dreiecke": 1378
+      "volumen_cm3": 10.7,
+      "gewicht_g": 13.0,
+      "dreiecke": 1630
     },
     {
       "id": "4d",
@@ -544,9 +544,9 @@
         14.0,
         20.0
       ],
-      "volumen_cm3": 2.4,
+      "volumen_cm3": 2.5,
       "gewicht_g": 3.0,
-      "dreiecke": 1894
+      "dreiecke": 1776
     },
     {
       "id": "4e",
@@ -568,7 +568,7 @@
       ],
       "volumen_cm3": 26.5,
       "gewicht_g": 34.0,
-      "dreiecke": 240
+      "dreiecke": 252
     },
     {
       "id": "4f",
