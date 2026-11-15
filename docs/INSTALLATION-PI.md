@@ -74,7 +74,9 @@ Nach dem Update startet sich der Dienst von selbst neu. Voraussetzung: PrintLab 
 ## Überwachung und Meldung aufs Handy
 
 Der Installer richtet einen Timer ein (`printlab-watch.timer`), der jede Minute prüft, ob PrintLab antwortet. Nach 3
-Fehlschlägen startet er den Dienst neu und meldet es. Den Meldeweg trägst du am einfachsten in PrintLab unter **Wartung →
+Fehlschlägen startet er den Dienst neu und meldet es. Ist der KI-Assistent oder die KI-Fehlererkennung eingeschaltet,
+prüft er auch den Modell-Server (Ollama): Antwortet der 10 Minuten lang nicht, kommt eine Meldung mit dem Startbefehl
+(`sudo systemctl start ollama`), danach einmal am Tag eine Erinnerung und eine Meldung, sobald er wieder läuft. Den Meldeweg trägst du am einfachsten in PrintLab unter **Wartung →
 Meldung bei Ausfall** ein (Telegram-Bot-Token und Chat-Nummer oder eine ntfy-Adresse, dann „Testmeldung senden“); Token und
 Adressen werden nur gespeichert und nie wieder angezeigt. Alternativ in `~/.config/printlab.env` (Rechte 600, diese
 Variablen haben Vorrang):

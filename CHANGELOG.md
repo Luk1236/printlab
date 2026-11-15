@@ -3,7 +3,14 @@
 Alle nennenswerten Änderungen an PrintLab. Versionsschema: siehe `docs/VERSIONING.md`.
 PrintLab baut auf Bambuddy 1.2.5.7 auf (Herkunft und Lizenz: `NOTICE`).
 
-## v2.0.56 (13.11.2026) — Plattenprüfung hält den Auftrag sichtbar, KI meldet einen fehlenden Modell-Server
+## v2.0.56 (15.11.2026) — Plattenprüfung hält den Auftrag sichtbar, KI meldet einen fehlenden Modell-Server
+
+- **Überwachung von außen** (`printlab-watch`): prüft bei eingeschaltetem Assistenten oder eingeschalteter KI-Fehlererkennung
+  auch den Modell-Server. Antwortet er 10 Minuten nicht, kommt eine Meldung mit `sudo systemctl start ollama`, danach einmal
+  am Tag eine Erinnerung und eine Meldung, sobald er wieder läuft. Ein gestoppter Ollama fiel vorher tagelang nicht auf.
+- **Tests stabiler:** Zeitgrenzen der Leistungstests gelten in der CI dreifach (geteilte Rechner schwanken stark); der
+  Vorheiz-Test zählt nur noch die eigenen Wartezeiten statt aller `asyncio.sleep`-Aufrufe im Testlauf.
+- **Abhängigkeiten:** doppeltes `httpx` entfernt, `pydantic` auf Version 2 begrenzt.
 
 - **KI-Bildprüfung ohne Modell-Server:** Läuft Ollama nicht, steht jetzt eine klare Meldung mit Adresse und Startbefehl
   (`sudo systemctl start ollama`) in der Fehlerhilfe und im Protokoll, statt eines Tracebacks bei jedem Versuch. Automatische

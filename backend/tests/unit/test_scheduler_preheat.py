@@ -494,13 +494,22 @@ async def test_p1s_no_chamber_sensor_uses_soak_timer_only(scheduler, item, archi
     loop, only the soak timer applies."""
     db = AsyncMock()
     client = _make_client()
+    waits: list[float] = []
+    original_sleep = scheduler._preheat_sleep
+
+    async def _recording_sleep(item_id, seconds):
+        waits.append(seconds)
+        return await original_sleep(item_id, seconds)
 
     with (
         patch.object(scheduler, "_get_bool_setting", AsyncMock(return_value=True)),
         patch.object(scheduler, "_get_int_setting", _ints(preheat_soak_seconds=600)),
         patch.object(scheduler, "_get_setting", AsyncMock(return_value=None)),
+        patch.object(scheduler, "_preheat_sleep", _recording_sleep),
         patch("backend.app.services.print_scheduler.printer_manager") as pm,
-        patch("backend.app.services.print_scheduler.asyncio.sleep", AsyncMock()) as sleep_mock,
+        # Patcht asyncio.sleep global (dasselbe Modulobjekt überall): Die Aufrufe zählen deshalb auch fremde
+        # Hintergrundaufgaben mit. Gezählt wird unten nur, was der Vorheizschritt selbst wartet.
+        patch("backend.app.services.print_scheduler.asyncio.sleep", AsyncMock()),
     ):
         pm.get_client.return_value = client
         pm.get_status.return_value = _make_state(60.0, 0.0, trays=["ABS"])
@@ -508,10 +517,9 @@ async def test_p1s_no_chamber_sensor_uses_soak_timer_only(scheduler, item, archi
 
     client.set_bed_temperature.assert_called_once_with(60)
     client.set_chamber_temperature.assert_not_called()
-    # The soak is slept in slices so a cancellation landing mid-hold is noticed
-    # (a single 600s sleep could not see one), so assert the total rather than a
-    # single call of the full duration.
-    assert sum(call.args[0] for call in sleep_mock.call_args_list) == 600
+    # Bett schon warm: kein Warten auf Temperatur, nur die volle Haltezeit (in Scheiben geschlafen, damit ein
+    # Abbruch mitten in der Haltezeit bemerkt wird).
+    assert waits == [600]
 
 
 @pytest.mark.asyncio

@@ -11,6 +11,10 @@ Ohne Meldeweg wird nur geprüft, neu gestartet und ins Journal geschrieben.
 
 Weitere Einstellungen: PRINTLAB_WATCH_URL (Standard http://localhost:8000/api/v1/updates/version),
 PRINTLAB_WATCH_FAILS (Fehlschläge bis zum Neustart, Standard 3), DATA_DIR (für Statusdatei und Speicherplatz).
+
+Ist in ``assistant.json`` der Assistent oder die KI-Fehlererkennung eingeschaltet, prüft der Lauf auch den Modell-Server
+(Ollama): Antwortet er ``AI_FAILS_BEFORE_ALERT`` Minuten lang nicht, kommt eine Meldung mit dem Startbefehl. Neu gestartet
+wird er nicht (Systemdienst, braucht sudo). Vorher fiel ein gestoppter Ollama tagelang nicht auf.
 """
 
 import json
@@ -33,6 +37,8 @@ MIN_SECONDS_BETWEEN_RESTARTS = 600
 REMINDER_EVERY_FAILS = 30  # etwa alle 30 Minuten, solange der Ausfall anhält
 LOW_DISK_BYTES = 1_000_000_000
 DISK_REMINDER_SECONDS = 24 * 3600
+AI_FAILS_BEFORE_ALERT = 10  # Minuten; ein Neustart von Ollama dauert keine 10 Minuten
+AI_REMINDER_EVERY_FAILS = 24 * 60  # einmal am Tag erinnern, solange der Server fehlt
 
 
 def run_check(state: dict, *, probe, restart, notify, now: float, free_bytes: int | None = None, fail_limit: int = 3):
@@ -74,6 +80,48 @@ def run_check(state: dict, *, probe, restart, notify, now: float, free_bytes: in
         notify(f"Wenig Speicherplatz auf dem Pi: noch {free_bytes / 1e9:.1f} GB frei.")
         state["last_disk_alert"] = now
     return state
+
+
+def run_ai_check(state: dict, *, ai_url: str | None, ai_probe, notify) -> dict:
+    """KI-Server prüfen (nur wenn ``ai_url`` gesetzt, also Assistent oder Fehlererkennung eingeschaltet)."""
+    if not ai_url:
+        state.pop("ai_fails", None)
+        state.pop("ai_alerted", None)
+        return state
+    state.setdefault("ai_fails", 0)
+    state.setdefault("ai_alerted", False)
+    if ai_probe(ai_url):
+        if state["ai_alerted"]:
+            notify("Der KI-Server antwortet wieder: Assistent und KI-Bildprüfung laufen.")
+        state["ai_fails"] = 0
+        state["ai_alerted"] = False
+        return state
+    state["ai_fails"] += 1
+    fails = state["ai_fails"]
+    if fails == AI_FAILS_BEFORE_ALERT or (fails > AI_FAILS_BEFORE_ALERT and fails % AI_REMINDER_EVERY_FAILS == 0):
+        notify(
+            f"Der KI-Server unter {ai_url} antwortet seit {fails} Minuten nicht: Assistent, KI-Bildprüfung und "
+            "KI-Plattenprüfung arbeiten nicht. Auf dem Pi: sudo systemctl start ollama"
+        )
+        state["ai_alerted"] = True
+    return state
+
+
+def ai_server_url(data_dir: Path) -> str | None:
+    """Adresse des Modell-Servers, wenn eine KI-Funktion eingeschaltet ist; sonst None."""
+    try:
+        config = json.loads((data_dir / "assistant.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if not isinstance(config, dict) or not (config.get("enabled") or config.get("error_scan_enabled")):
+        return None
+    url = str(config.get("base_url") or "http://127.0.0.1:11434").rstrip("/")
+    return url if url.lower().startswith(("http://", "https://")) else None
+
+
+def ai_probe(base_url: str, timeout: float = 5.0) -> bool:
+    """Antwortet der Modell-Server? Ollama (``/api/tags``) oder OpenAI-kompatibel (``/v1/models``)."""
+    return http_probe(f"{base_url}/api/tags", timeout) or http_probe(f"{base_url}/v1/models", timeout)
 
 
 def http_probe(url: str, timeout: float = 8.0) -> bool:
@@ -148,15 +196,17 @@ def main() -> int:
         free = shutil.disk_usage(data_dir).free
     except OSError:
         free = None
+    notify = make_notifier(data_dir=data_dir)
     state = run_check(
         load_state(state_path),
         probe=lambda: http_probe(url),
         restart=systemd_restart,
-        notify=make_notifier(data_dir=data_dir),
+        notify=notify,
         now=time.time(),
         free_bytes=free,
         fail_limit=fail_limit,
     )
+    state = run_ai_check(state, ai_url=ai_server_url(data_dir), ai_probe=ai_probe, notify=notify)
     save_state(state_path, state)
     return 0
 

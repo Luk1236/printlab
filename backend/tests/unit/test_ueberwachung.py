@@ -174,3 +174,55 @@ def test_only_web_urls_are_ever_opened(monkeypatch):
     ue.make_notifier({"PRINTLAB_ALERT_NTFY_URL": "file:///etc/passwd"})("x")
     ue.make_notifier({"PRINTLAB_ALERT_NTFY_URL": "ftp://example.com/x"})("x")
     assert opened == []
+
+
+class TestAiServer:
+    """Ollama gestoppt fiel tagelang nicht auf: Der Lauf meldet es nach 10 Minuten, erinnert täglich und meldet die Rückkehr."""
+
+    URL = "http://127.0.0.1:11434"
+
+    def run(self, state, up, messages):
+        return ue.run_ai_check(state, ai_url=self.URL, ai_probe=lambda _url: up, notify=messages.append)
+
+    def test_alerts_once_after_ten_minutes_then_daily_and_on_recovery(self):
+        state, messages = {}, []
+        for _ in range(ue.AI_FAILS_BEFORE_ALERT - 1):
+            self.run(state, False, messages)
+        assert messages == []
+        self.run(state, False, messages)
+        assert len(messages) == 1 and "sudo systemctl start ollama" in messages[0] and self.URL in messages[0]
+        for _ in range(ue.AI_REMINDER_EVERY_FAILS - ue.AI_FAILS_BEFORE_ALERT - 1):
+            self.run(state, False, messages)
+        assert len(messages) == 1
+        self.run(state, False, messages)
+        assert len(messages) == 2
+        self.run(state, True, messages)
+        assert "wieder" in messages[-1] and state["ai_fails"] == 0 and state["ai_alerted"] is False
+        self.run(state, True, messages)
+        assert len(messages) == 3
+
+    def test_short_outage_stays_quiet(self):
+        state, messages = {}, []
+        for _ in range(3):
+            self.run(state, False, messages)
+        self.run(state, True, messages)
+        assert messages == []
+
+    def test_nothing_is_checked_when_no_ai_feature_is_on(self, tmp_path):
+        assert ue.ai_server_url(tmp_path) is None  # keine assistant.json
+        (tmp_path / "assistant.json").write_text('{"enabled": false, "error_scan_enabled": false}', encoding="utf-8")
+        assert ue.ai_server_url(tmp_path) is None
+        state = {"ai_fails": 5, "ai_alerted": True}
+        probe = []
+        ue.run_ai_check(state, ai_url=None, ai_probe=probe.append, notify=probe.append)
+        assert probe == [] and "ai_fails" not in state
+
+    def test_url_comes_from_the_assistant_settings(self, tmp_path):
+        (tmp_path / "assistant.json").write_text(
+            '{"enabled": false, "error_scan_enabled": true, "base_url": "http://pi:11434/"}', encoding="utf-8"
+        )
+        assert ue.ai_server_url(tmp_path) == "http://pi:11434"
+        (tmp_path / "assistant.json").write_text('{"enabled": true, "base_url": "file:///etc"}', encoding="utf-8")
+        assert ue.ai_server_url(tmp_path) is None
+        (tmp_path / "assistant.json").write_text('{"enabled": true}', encoding="utf-8")
+        assert ue.ai_server_url(tmp_path) == "http://127.0.0.1:11434"

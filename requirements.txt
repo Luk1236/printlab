@@ -29,7 +29,7 @@ asyncpg>=0.29.0
 greenlet>=3.0.0
 
 # Pydantic
-pydantic>=2.0.0
+pydantic>=2.0.0,<3  # 3.x bringt brechende Änderungen; bewusst anheben und testen
 # 2.14.2 patches GHSA-4xgf-cpjx-pc3j (NestedSecretsSettingsSource follows
 # symlinks out of secrets_dir). PrintLab does not use that source — pin
 # is precautionary so the audit stays clean.
@@ -172,7 +172,6 @@ numpy>=2.5.0 ; python_version >= "3.12"
 # Development
 pytest>=9.0.3
 pytest-asyncio>=0.23.0
-httpx>=0.26.0
 # Lint/format is pinned exactly in requirements-dev.txt — that file is the
 # source of truth for the version CI enforces. This floor only keeps `ruff`
 # importable for anyone who installs the runtime file alone.
