@@ -50,7 +50,7 @@ NEMA17_WIDTH = 42.3  # Kantenlänge des Motorgehäuses
 
 ANNAHMEN = {
     "glass_thickness": 4.0,  # Glasdicke der P2S-Tür (nicht veröffentlicht, messen)
-    "servo_overhang": 18.0,  # Überstand des Servohalters vor der Druckeroberkante (statt 14 mm, Servokörper muss davor hängen)
+    "servo_ear_height": 16.0,  # Unterkante der Befestigungslaschen über dem Boden des MG90S (Datenblätter 15,5 bis 16,5)
 }
 
 # Material: Dichte g/cm³ und Begründung
@@ -167,20 +167,31 @@ def rot_to_bed(m: Manifold, matrix: list[list[float]]) -> Manifold:
 
 
 # --- Baugruppe 1: Türöffner -----------------------------------------------------------------------------------------------
+SERVO_BODY = (23.2, 12.6)  # Tasche für den MG90S (22,8 × 12,2 mit Spiel)
+SERVO_EAR_PITCH = 27.6  # Lochabstand der Befestigungslaschen
+
+
 def tuer_servohalter() -> Manifold:
-    """1a: Platte auf der Druckeroberseite (VHB), Servo MG90S hängt im Überstand, Abtrieb nach unten."""
+    """1a: Platte auf der Druckeroberseite (VHB), Servo MG90S steht senkrecht, Abtrieb oben.
+
+    Nichts ragt über die Vorderkante (lokal y = 42 liegt auf der Druckerfront): Nur das Servohorn schwenkt über die Kante
+    hinaus. Die erste Auslegung ließ den Servo im 18-mm-Überstand hängen, direkt vor dem Touchscreen.
+    Die Tasche liegt längs zur Front, damit die Abtriebswelle (am vorderen Ende des Servos) nahe an der Kante sitzt.
+    """
     w, d, t = 54.0, 42.0, 6.0
-    over = ANNAHMEN["servo_overhang"]
+    ear_z = t + ANNAHMEN["servo_ear_height"]  # Laschen liegen auf dem Gehäuse auf
     body = box(-w / 2, 0, 0, w / 2, d, t)
-    ribs = [box(-w / 2, 0, t, -w / 2 + 4, d, 26), box(w / 2 - 4, 0, t, w / 2, d, 26), box(-w / 2, 0, t, w / 2, 4, 18)]
-    body = union([body, *ribs])
-    # Servotasche 23,2 × 12,6 im Überstand (vordere 18 mm), 3 mm Steg vorne
-    y_front = d - 3.0
-    pocket = box(-11.6, y_front - 12.6, -1, 11.6, y_front, 50)
-    ears = [drill_z(x, y_front - 6.3, M2_TAP) for x in (-13.8, 13.8)]  # Lochabstand MG90S 27,6 mm
-    slots = [slot_z(x, 10.0, M4_CLEAR, 6.0, along="y") for x in (-15.0, 15.0)]
-    assert d - over < y_front - 12.6, "Servokörper muss ganz im Überstand hängen"
-    return body - pocket - union(ears) - union(slots)
+    pocket_y1 = d - 5.0  # 5 mm Wand zur Vorderkante, die vordere Lasche bleibt auf der Platte
+    pocket_y0 = pocket_y1 - SERVO_BODY[0]
+    housing = box(-SERVO_BODY[1] / 2 - 3, pocket_y0 - 3, t, SERVO_BODY[1] / 2 + 3, d, ear_z)
+    body = body + housing
+    pocket = box(-SERVO_BODY[1] / 2, pocket_y0, t, SERVO_BODY[1] / 2, pocket_y1, ear_z + 1)  # Boden bleibt geschlossen
+    mid = (pocket_y0 + pocket_y1) / 2
+    ears = [drill_z(0, mid + s * SERVO_EAR_PITCH / 2, M2_TAP, z0=ear_z - 8) for s in (-1, 1)]
+    cable = box(-3, pocket_y0 - 4, t, 3, pocket_y0 + 1, t + 6)  # Kabel nach hinten hinaus
+    slots = [slot_z(x, 10.0, M4_CLEAR, 6.0, along="y") for x in (-18.0, 18.0)]
+    assert mid + SERVO_EAR_PITCH / 2 + 1.5 < d, "vordere Lasche muss auf der Platte liegen, nichts ragt über die Front"
+    return body - pocket - union(ears) - cable - union(slots)
 
 
 def tuer_schubstange() -> Manifold:
@@ -193,15 +204,19 @@ def tuer_schubstange() -> Manifold:
 
 
 def tuer_klemmclip() -> Manifold:
-    """1c: U-Clip auf die Oberkante der Glastür (mit VHB), Lasche für das M3-Kugelgelenk der Schubstange."""
-    g = ANNAHMEN["glass_thickness"] + 0.2
-    wall, depth, length = 3.0, 12.0, 30.0
-    outer_w = g + 2 * wall
-    body = box(-length / 2, -outer_w / 2, 0, length / 2, outer_w / 2, depth + 4)
-    slot = box(-length / 2 - 1, -g / 2, -1, length / 2 + 1, g / 2, depth)
-    lug = box(-6, outer_w / 2, depth - 2, 6, outer_w / 2 + 12, depth + 4)
-    hole = cyl("z", 0, outer_w / 2 + 7, depth - 3, 10, M3_CLEAR)
-    return (body + lug) - slot - hole
+    """1c: Winkel-Clip außen auf die Glastür (mit VHB), Lasche für das M3-Kugelgelenk der Schubstange.
+
+    Lokal: y = 0 ist die Außenseite des Glases, y < 0 liegt über der Glaskante. Keine Innenwand: Zwischen Glas und Rahmen
+    ist nur ein schmaler Spalt (nicht gemessen), eine 3-mm-Wand hätte dort angestoßen. Die obere Leiste deckt die Glaskante
+    bis 1 mm vor der Innenseite ab, damit sie auch bei dünnerem Glas nicht nach innen übersteht.
+    """
+    wall, depth, length = 3.0, 14.0, 30.0
+    top_w = ANNAHMEN["glass_thickness"] - 1.0
+    leg = box(-length / 2, 0, 0, length / 2, wall, depth + wall)  # liegt außen am Glas
+    top = box(-length / 2, -top_w, depth, length / 2, wall, depth + wall)  # liegt auf der Glaskante
+    lug = box(-6, wall, depth - 3, 6, wall + 12, depth + wall)
+    hole = cyl("z", 0, wall + 7, depth - 4, 10, M3_CLEAR)
+    return union([leg, top, lug]) - hole
 
 
 def tuer_endschalterhalter() -> Manifold:
@@ -437,15 +452,18 @@ def z_reibbremse() -> Manifold:
     return body - union(cuts)
 
 
-# --- Baugruppe 4: Waschstation (Aufbaukoordinaten) -------------------------------------------------------------------------
+# --- Baugruppe 4: Waschstation ------------------------------------------------------------------------------------------
+# X und Y in Aufbaukoordinaten, Z bezogen auf den Wannenboden (Füße auf Z 0). Im Aufbau steht die Wanne auf dem Sockel
+# (4g/4h) um ``pc.WASH_BASE_LIFT`` höher, siehe ``wanne_aufbau``.
 WASH_X = (227.0, 493.0)
 WASH_Y = (-81.0, 81.0)
-WASH_TOP = pc.WASH_Z - 2.0  # 2 mm unter der Walzenoberkante: Die Platte läuft über die Wände hinweg
+WASH_LOCAL_Z = pc.WASH_Z - pc.WASH_BASE_LIFT  # Plattenoberkante über dem Wannenboden (44)
+WASH_TOP = WASH_LOCAL_Z - 2.0  # 2 mm unter der Walzenoberkante: Die Platte läuft über die Wände hinweg
 WASH_FLOOR = (4.0, 9.0)
 WASH_WALL = 6.0
 WASH_END = 10.0
 ROLLER_Y = (-45.0, 45.0)
-ROLLER_AXIS_Z = pc.WASH_Z - 12.0
+ROLLER_AXIS_Z = WASH_LOCAL_Z - 12.0
 JOINT_X = pc.MAG_X
 N20_HOLE_DY = 14.0  # Befestigung des N20-Halters neben der Walzenachse
 N20_HOLE_DZ = 6.0  # über der Walzenachse (Achse Z 32 → Insert Z 38, Oberkante der Wand 42)
@@ -468,15 +486,16 @@ def _wanne_voll() -> Manifold:
             seat_x = x_face - 7.2 if sign < 0 else x_face
             cuts.append(cyl("x", seat_x, y, ROLLER_AXIS_Z, 7.2, 22.2))
             cuts.append(box(seat_x, y - 11.1, ROLLER_AXIS_Z, seat_x + 7.2, y + 11.1, WASH_TOP + 1))
-        cuts.append(cyl("x", x0 - 1, y, ROLLER_AXIS_Z, WASH_END + 2, 10.0))  # Welle zum Antrieb (links)
+        # Antrieb rechts: Links bleiben bis zum Drucker nur 31 mm, Halter und Motor brauchen 50 mm.
+        cuts.append(cyl("x", x1 - WASH_END - 1, y, ROLLER_AXIS_Z, WASH_END + 2, 10.0))  # Welle zum Antrieb
         for dy in (-N20_HOLE_DY, N20_HOLE_DY):  # Inserts für den N20-Halter, 2 mm unter der Wandoberkante
-            cuts.append(cyl("x", x0 - 1, y + dy, ROLLER_AXIS_Z + N20_HOLE_DZ, 7.0, M3_INSERT))
-    # Ablauf rechts unten, Schlauchtülle außen angesetzt
-    cuts.append(cyl("x", x1 - WASH_END - 1, 0, WASH_FLOOR[1] + 3.0, WASH_END + 2, 5.0))
+            cuts.append(cyl("x", x1 - 6.0, y + dy, ROLLER_AXIS_Z + N20_HOLE_DZ, 7.0, M3_INSERT))
+    # Ablauf links unten, Schlauchtülle außen angesetzt (links ist unter dem Antrieb kein Platz mehr nötig)
+    cuts.append(cyl("x", x0 - 1, 0, WASH_FLOOR[1] + 3.0, WASH_END + 2, 5.0))
     # Halterung für den IPA-Schlauch 2 × 4 an der Rückwand
     cuts.append(cyl("z", pc.MAG_X + 40, y0 + WASH_WALL / 2, WASH_TOP - 8, 10, 4.2))
     m = m - union(cuts)
-    barb = cyl("x", x1, 0, WASH_FLOOR[1] + 3.0, 12, 8.0) - cyl("x", x1 - 1, 0, WASH_FLOOR[1] + 3.0, 14, 5.0)
+    barb = cyl("x", x0 - 12, 0, WASH_FLOOR[1] + 3.0, 12, 8.0) - cyl("x", x0 - 13, 0, WASH_FLOOR[1] + 3.0, 14, 5.0)
     return m + barb
 
 
@@ -504,6 +523,57 @@ def _wanne_haelften() -> tuple[Manifold, Manifold]:
     )
     bolts = [cyl("z", JOINT_X + lap / 2, y, -1, 20, M4_CLEAR) for y in (-40.0, 40.0)]
     return left - union(bolts), right - union(bolts)
+
+
+def wanne_aufbau() -> tuple[Manifold, Manifold]:
+    """Beide Wannenhälften in Aufbaukoordinaten (auf dem Sockel)."""
+    left, right = _wanne_haelften()
+    lift = (0.0, 0.0, pc.WASH_BASE_LIFT)
+    return left.translate(lift), right.translate(lift)
+
+
+FOOT = 14.0  # Kantenlänge der Wannenfüße
+FOOT_H = WASH_FLOOR[0]  # Füße ragen 4 mm unter den Boden
+SOCKEL_WALL = 4.0
+SOCKEL_TAB = 9.0  # Lasche je Seite für eine M4-Senkschraube in die Grundplatte
+
+
+def _sockel(pocket_x: float) -> Manifold:
+    """Sockel unter einem Wannenfuß: Tasche oben nimmt den Fuß auf, die Oberkante trägt den Wannenboden."""
+    height = pc.WASH_BASE_LIFT + FOOT_H
+    px, py = pocket_x + 0.4, FOOT + 0.4
+    w, d = px + 2 * SOCKEL_WALL, py + 2 * SOCKEL_WALL + 2 * SOCKEL_TAB
+    body = box(-w / 2, -py / 2 - SOCKEL_WALL, 0, w / 2, py / 2 + SOCKEL_WALL, height)
+    tabs = box(-w / 2, -d / 2, 0, w / 2, d / 2, 5.0)
+    pocket = box(-px / 2, -py / 2, height - FOOT_H, px / 2, py / 2, height + 1)
+    screws = [
+        drill_z(0, s * (d / 2 - SOCKEL_TAB / 2), M4_CLEAR)
+        + counterbore_z(0, s * (d / 2 - SOCKEL_TAB / 2), 5.0, d_head=7.5, depth=2.5)
+        for s in (-1, 1)
+    ]
+    return body + tabs - pocket - union(screws)
+
+
+def wannensockel_ecke() -> Manifold:
+    """4g: Sockel unter einem Eckfuß (4 Stück)."""
+    return _sockel(FOOT)
+
+
+def wannensockel_fuge() -> Manifold:
+    """4h: Sockel unter der Fuge, nimmt die Füße beider Hälften auf und richtet sie zueinander aus (2 Stück)."""
+    return _sockel(2 * FOOT)
+
+
+def sockel_aufbau() -> list[Manifold]:
+    """Die sechs Sockel in Aufbaukoordinaten, je unter einem Fuß."""
+    x0, x1 = WASH_X
+    y0, y1 = WASH_Y
+    out = []
+    for fy in (y0 + FOOT / 2, y1 - FOOT / 2):
+        for fx in (x0 + FOOT / 2, x1 - FOOT / 2):
+            out.append(wannensockel_ecke().translate((fx, fy, 0)))
+        out.append(wannensockel_fuge().translate((JOINT_X, fy, 0)))
+    return out
 
 
 def n20_halter() -> Manifold:
@@ -575,7 +645,8 @@ def _katalog() -> list[tuple[Teil, Callable[[], Manifold]]]:
                 "Gyroid",
                 "keine",
                 "Platte unten",
-                "Mit 3M VHB auf der Druckeroberseite, Servo hängt im 18-mm-Überstand (Annahme, am Gerät anpassen).",
+                "Mit 3M VHB auf der Druckeroberseite, Vorderkante bündig mit der Front; Servo steht, nur das Horn "
+                "schwenkt über die Kante (nichts vor dem Display). Laschenhöhe 16 mm angenommen, am Servo messen.",
             ),
             lambda: lay_flat(tuer_servohalter()),
         ),
@@ -608,8 +679,9 @@ def _katalog() -> list[tuple[Teil, Callable[[], Manifold]]]:
                 40,
                 "Gyroid",
                 "keine",
-                "Schlitz unten",
-                "Für 4 mm Glas (Annahme, messen), zusätzlich VHB im Schlitz.",
+                "Außenseite unten",
+                "Winkel nur außen und auf der Glaskante, mit VHB; keine Innenwand, passt bei jedem Spalt zum Rahmen. "
+                "Obere Leiste 3 mm für 4-mm-Glas (Annahme, messen).",
             ),
             lambda: lay_flat(tuer_klemmclip()),
         ),
@@ -905,7 +977,7 @@ def _katalog() -> list[tuple[Teil, Callable[[], Manifold]]]:
         (
             T(
                 "4a",
-                "Waschwanne links (mit Zunge)",
+                "Waschwanne links (Zunge, Ablauf)",
                 4,
                 "waschwanne_links.stl",
                 1,
@@ -915,14 +987,14 @@ def _katalog() -> list[tuple[Teil, Callable[[], Manifold]]]:
                 "Gyroid",
                 "keine",
                 "Boden unten",
-                "Lagersitze 608ZZ, Wellendurchgang, Inserts für die N20-Halter; Fuge mit neutralem Silikon.",
+                "Lagersitze 608ZZ, Ablauf Ø5 mit Schlauchtülle Ø8 zur Druckerseite; Fuge mit neutralem Silikon.",
             ),
             lambda: rot_to_bed(wanne_l, flat_wanne),
         ),
         (
             T(
                 "4b",
-                "Waschwanne rechts (mit Ablauf)",
+                "Waschwanne rechts (Antriebsseite)",
                 4,
                 "waschwanne_rechts.stl",
                 1,
@@ -932,7 +1004,8 @@ def _katalog() -> list[tuple[Teil, Callable[[], Manifold]]]:
                 "Gyroid",
                 "keine",
                 "Boden unten",
-                "Ablauf Ø5 mit Schlauchtülle Ø8; 2× M4 durch die Überlappung.",
+                "Lagersitze, Wellendurchgang und Inserts für die N20-Halter (Antrieb rechts, links fehlt der Platz); "
+                "2× M4 durch die Überlappung.",
             ),
             lambda: rot_to_bed(wanne_r, flat_wanne),
         ),
@@ -1004,6 +1077,40 @@ def _katalog() -> list[tuple[Teil, Callable[[], Manifold]]]:
             ),
             lambda: lay_flat(schlauchclip()),
         ),
+        (
+            T(
+                "4g",
+                "Wannensockel Ecke",
+                4,
+                "wannensockel_ecke.stl",
+                4,
+                "PETG",
+                4,
+                30,
+                "Gyroid",
+                "keine",
+                "Tasche oben",
+                "Hebt die Wanne auf die Waschhöhe (Sockel 51 mm); Eckfuß sitzt in der Tasche, 2× M4 in die Grundplatte.",
+            ),
+            lambda: lay_flat(wannensockel_ecke()),
+        ),
+        (
+            T(
+                "4h",
+                "Wannensockel Fuge",
+                4,
+                "wannensockel_fuge.stl",
+                2,
+                "PETG",
+                4,
+                30,
+                "Gyroid",
+                "keine",
+                "Tasche oben",
+                "Nimmt die Füße beider Wannenhälften an der Fuge auf und richtet sie zueinander aus.",
+            ),
+            lambda: lay_flat(wannensockel_fuge()),
+        ),
     ]
 
 
@@ -1021,7 +1128,13 @@ def pruefe_zusammenbau() -> list[str]:
         )
         if (kaemme ^ auflage).volume() < 1.0:
             fehler.append(f"Fach Z {z:.0f}: keine Auflage unter der Platte")
-    links, rechts = _wanne_haelften()
+    links, rechts = wanne_aufbau()
+    wanne = links + rechts
+    for i, sockel in enumerate(sockel_aufbau()):
+        if (sockel ^ wanne).volume() > 1e-3:
+            fehler.append(f"Sockel {i + 1} durchdringt die Wanne")
+        if sockel.bounding_box()[5] < pc.WASH_BASE_LIFT + FOOT_H - 1e-6:
+            fehler.append(f"Sockel {i + 1} trägt den Wannenboden nicht")
     ueber = box(
         pc.MAG_X - pc.PLATE_HALF,
         -pc.PLATE_HALF - 300,

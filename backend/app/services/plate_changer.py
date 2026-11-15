@@ -34,7 +34,16 @@ DOOR_OPEN_DEG = 115.0
 SLOT_Z = (185.0, 220.0, 255.0, 290.0)  # Plattenoberkante je Fach
 SLOT_COUNT = len(SLOT_Z)
 Z_SWAP = 220.0  # Übergabehöhe am Heizbett (= Fach 2)
-WASH_Z = 44.0
+# Waschhöhe (Plattenoberkante auf den Walzen). Mit 44 mm lag der X-Träger beim Waschen bei Z −11 bis 9, im Bodenquerholm:
+# Vom Greifer bis zur Unterkante des X-Trägers stapeln sich 55 mm (SHUTTLE_STACK). Die Wanne steht deshalb auf einem
+# 51-mm-Sockel (WASH_BASE_LIFT), Walzen und Wanne sind sonst unverändert.
+WASH_Z = 95.0
+WASH_BASE_LIFT = WASH_Z - 44.0
+# Shuttle-Stapel (aus den Druckteilen abgeleitet, Senkungen geben die Lage der Wagen vor): Greiferkopf | Rohr 20 × 10 |
+# Y-Wagen 10 | MGN9H (gesamt 10) | Y-Träger 2020 | X-Schlitten 8 | MGN12H (gesamt 13) | X-Träger 2020.
+SHUTTLE_STACK = 55.0  # Greifhöhe bis Unterkante X-Träger
+Z_RAIL_START = 20.0  # Z-Schiene beginnt auf dem Bodenquerholm (2020)
+Z_CARRIAGE_HALF = 22.7  # halbe Länge MGN12H-Wagen
 HOME_Z = 310.0
 MAG_X = 360.0
 TRANSFER_Y = 355.0
@@ -295,7 +304,19 @@ def design_checks() -> list[dict[str, Any]]:
             RAIL_Z[1] - CARRIAGE_LEN[RAIL_Z[0]] - z_travel,
             MIN_MARGIN,
             "mm",
-            f"Hub {z_travel:.0f} mm (Waschhöhe 44 bis Fach 4 bei 290) auf {RAIL_Z[0]} {RAIL_Z[1]:.0f} mm.",
+            f"Hub {z_travel:.0f} mm (Waschhöhe {WASH_Z:.0f} bis Fach 4 bei {max(SLOT_Z):.0f}) auf "
+            f"{RAIL_Z[0]} {RAIL_Z[1]:.0f} mm.",
+            hard=0.0,
+        ),
+        _check(
+            "wash_reach",
+            "Z-Wagen beim Waschen ↔ Anfang der Z-Schiene",
+            (WASH_Z - SHUTTLE_STACK + PROFILE / 2) - Z_CARRIAGE_HALF - Z_RAIL_START,
+            MIN_MARGIN,
+            "mm",
+            f"Vom Greifer bis zum X-Träger {SHUTTLE_STACK:.0f} mm: Beim Waschen auf Z {WASH_Z:.0f} sitzt der Wagen mit der "
+            f"Mitte bei Z {WASH_Z - SHUTTLE_STACK + PROFILE / 2:.0f}, die Schiene beginnt bei Z {Z_RAIL_START:.0f}. "
+            f"Mit der ersten Waschhöhe 44 lag der X-Träger im Bodenquerholm.",
             hard=0.0,
         ),
         _check(
@@ -382,6 +403,7 @@ def viewer_payload() -> dict[str, Any]:
         "plate_half": PLATE_HALF,
         "slot_capacity": list(SLOT_CAPACITY),
         "tower": {"x": list(TOWER_X), "y": list(TOWER_Y), "profile": PROFILE, "guide": PLATE_GUIDE},
+        "wash": {"z": WASH_Z, "base_lift": WASH_BASE_LIFT},
     }
 
 

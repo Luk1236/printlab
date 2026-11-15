@@ -17,7 +17,7 @@
   },
   "annahmen": {
     "glass_thickness": 4.0,
-    "servo_overhang": 18.0
+    "servo_ear_height": 16.0
   },
   "teile": [
     {
@@ -32,15 +32,15 @@
       "muster": "Gyroid",
       "stuetzen": "keine",
       "drucklage": "Platte unten",
-      "hinweis": "Mit 3M VHB auf der Druckeroberseite, Servo hängt im 18-mm-Überstand (Annahme, am Gerät anpassen).",
+      "hinweis": "Mit 3M VHB auf der Druckeroberseite, Vorderkante bündig mit der Front; Servo steht, nur das Horn schwenkt über die Kante (nichts vor dem Display). Laschenhöhe 16 mm angenommen, am Servo messen.",
       "groesse_mm": [
         54.0,
         42.0,
-        26.0
+        22.0
       ],
-      "volumen_cm3": 20.2,
-      "gewicht_g": 20.0,
-      "dreiecke": 1152
+      "volumen_cm3": 17.5,
+      "gewicht_g": 17.0,
+      "dreiecke": 1086
     },
     {
       "id": "1b",
@@ -75,16 +75,16 @@
       "infill": 40,
       "muster": "Gyroid",
       "stuetzen": "keine",
-      "drucklage": "Schlitz unten",
-      "hinweis": "Für 4 mm Glas (Annahme, messen), zusätzlich VHB im Schlitz.",
+      "drucklage": "Außenseite unten",
+      "hinweis": "Winkel nur außen und auf der Glaskante, mit VHB; keine Innenwand, passt bei jedem Spalt zum Rahmen. Obere Leiste 3 mm für 4-mm-Glas (Annahme, messen).",
       "groesse_mm": [
         30.0,
-        22.2,
-        16.0
+        18.0,
+        17.0
       ],
-      "volumen_cm3": 4.2,
-      "gewicht_g": 5.0,
-      "dreiecke": 304
+      "volumen_cm3": 2.6,
+      "gewicht_g": 3.0,
+      "dreiecke": 302
     },
     {
       "id": "1d",
@@ -462,7 +462,7 @@
     },
     {
       "id": "4a",
-      "name": "Waschwanne links (mit Zunge)",
+      "name": "Waschwanne links (Zunge, Ablauf)",
       "baugruppe": 4,
       "datei": "waschwanne_links.stl",
       "menge": 1,
@@ -472,19 +472,19 @@
       "muster": "Gyroid",
       "stuetzen": "keine",
       "drucklage": "Boden unten",
-      "hinweis": "Lagersitze 608ZZ, Wellendurchgang, Inserts für die N20-Halter; Fuge mit neutralem Silikon.",
+      "hinweis": "Lagersitze 608ZZ, Ablauf Ø5 mit Schlauchtülle Ø8 zur Druckerseite; Fuge mit neutralem Silikon.",
       "groesse_mm": [
-        145.0,
+        157.0,
         162.0,
         42.0
       ],
-      "volumen_cm3": 214.2,
-      "gewicht_g": 238.0,
-      "dreiecke": 2562
+      "volumen_cm3": 215.1,
+      "gewicht_g": 240.0,
+      "dreiecke": 1656
     },
     {
       "id": "4b",
-      "name": "Waschwanne rechts (mit Ablauf)",
+      "name": "Waschwanne rechts (Antriebsseite)",
       "baugruppe": 4,
       "datei": "waschwanne_rechts.stl",
       "menge": 1,
@@ -494,15 +494,15 @@
       "muster": "Gyroid",
       "stuetzen": "keine",
       "drucklage": "Boden unten",
-      "hinweis": "Ablauf Ø5 mit Schlauchtülle Ø8; 2× M4 durch die Überlappung.",
+      "hinweis": "Lagersitze, Wellendurchgang und Inserts für die N20-Halter (Antrieb rechts, links fehlt der Platz); 2× M4 durch die Überlappung.",
       "groesse_mm": [
-        145.0,
+        133.0,
         162.0,
         42.0
       ],
-      "volumen_cm3": 198.4,
-      "gewicht_g": 223.0,
-      "dreiecke": 1904
+      "volumen_cm3": 197.5,
+      "gewicht_g": 222.0,
+      "dreiecke": 2804
     },
     {
       "id": "4c",
@@ -591,6 +591,50 @@
       "volumen_cm3": 0.7,
       "gewicht_g": 1.0,
       "dreiecke": 704
+    },
+    {
+      "id": "4g",
+      "name": "Wannensockel Ecke",
+      "baugruppe": 4,
+      "datei": "wannensockel_ecke.stl",
+      "menge": 4,
+      "material": "PETG",
+      "waende": 4,
+      "infill": 30,
+      "muster": "Gyroid",
+      "stuetzen": "keine",
+      "drucklage": "Tasche oben",
+      "hinweis": "Hebt die Wanne auf die Waschhöhe (Sockel 51 mm); Eckfuß sitzt in der Tasche, 2× M4 in die Grundplatte.",
+      "groesse_mm": [
+        22.4,
+        40.4,
+        55.0
+      ],
+      "volumen_cm3": 28.5,
+      "gewicht_g": 22.0,
+      "dreiecke": 1086
+    },
+    {
+      "id": "4h",
+      "name": "Wannensockel Fuge",
+      "baugruppe": 4,
+      "datei": "wannensockel_fuge.stl",
+      "menge": 2,
+      "material": "PETG",
+      "waende": 4,
+      "infill": 30,
+      "muster": "Gyroid",
+      "stuetzen": "keine",
+      "drucklage": "Tasche oben",
+      "hinweis": "Nimmt die Füße beider Wannenhälften an der Fuge auf und richtet sie zueinander aus.",
+      "groesse_mm": [
+        36.4,
+        40.4,
+        55.0
+      ],
+      "volumen_cm3": 46.2,
+      "gewicht_g": 33.0,
+      "dreiecke": 1086
     }
   ]
 }

@@ -129,7 +129,7 @@ AXES = (X_AXIS, Y_AXIS, Z_AXIS)
 LEGACY_Z_LEAD_MM = 8.0  # Tr8x8 der ersten Auslegung, nur für den Vergleich im Plan
 
 Z_TOP_ENDSTOP = max(pc.SLOT_Z) + 2.0  # Z-Referenz oben: 2 mm über Fach 4
-Z_SOFT_MIN = 40.0
+Z_SOFT_MIN = pc.WASH_Z - 4.0  # 4 mm unter der Waschhöhe
 Z_SOFT_MAX = Z_TOP_ENDSTOP
 X_SOFT_MIN = -5.0
 X_SOFT_MAX = pc.MAG_X + 5.0
